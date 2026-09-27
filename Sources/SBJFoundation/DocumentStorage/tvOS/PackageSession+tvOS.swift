@@ -178,8 +178,8 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 		var result: Result<Snapshot, Error>?
 		NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { coordinatedURL in
 			result = Result {
-				let wrapper = try FileWrapper(url: coordinatedURL, options: .immediate)
-				let loaded = try Document.snapshot(from: wrapper)
+				let wrapper = try FileWrapper(url: coordinatedURL, options: [])
+				let loaded = try Document.snapshot(from: wrapper, at: coordinatedURL)
 				stateLock.withLock { currentURL = coordinatedURL }
 				registerPresenterIfNeeded()
 				return loaded
@@ -200,8 +200,8 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 			error: &coordinationError
 		) { coordinatedURL in
 			result = Result {
-				let wrapper = try FileWrapper(url: coordinatedURL, options: .immediate)
-				return try Document.snapshot(from: wrapper)
+				let wrapper = try FileWrapper(url: coordinatedURL, options: [])
+				return try Document.snapshot(from: wrapper, at: coordinatedURL)
 			}
 		}
 		if let coordinationError { throw coordinationError }

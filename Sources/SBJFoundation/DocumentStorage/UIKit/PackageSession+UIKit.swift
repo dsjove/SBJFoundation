@@ -46,7 +46,7 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 
 	override func load(fromContents contents: Any, ofType typeName: String?) throws {
 		guard let wrapper = contents as? FileWrapper else { throw CocoaError(.fileReadCorruptFile) }
-		let loaded = try Document.snapshot(from: wrapper)
+		let loaded = try Document.snapshot(from: wrapper, at: fileURL)
 		let shouldEmit = stateLock.withLock { () -> Bool in
 			storedState = loaded
 			if suppressNextLoadedEvent {

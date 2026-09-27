@@ -33,7 +33,7 @@ final class PhotoMarkupState {
     }
 
     var hasDrawing: Bool { !drawing.bounds.isEmpty }
-    var extendedToolsSupported: Bool { !ProcessInfo.isRunningOnAnyMac }
+    var extendedToolsSupported: Bool { !ProcessInfo.isAnyMac }
 
     var markup: PhotoMarkup? {
         guard hasDrawing, canvasSize.width > 0, canvasSize.height > 0 else { return nil }

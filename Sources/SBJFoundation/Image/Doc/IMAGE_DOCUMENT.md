@@ -43,7 +43,7 @@ The default is `.thumbnail`. A generated thumbnail is bounded to 512 pixels on i
 The package deliberately separates three jobs:
 
 1. **Thumbnail providers** ask `SBJImageDocument.thumbnailURL(in:)` for the persisted thumbnail. If the document has none, the host provider chooses its own fallback behavior. Generated thumbnails have a maximum edge of 512 pixels and are encoded for compact storage (JPEG for opaque images, PNG when alpha is required).
-2. **Quick Look / full preview consumers** ask `SBJImageDocument.renderedURL(in:)` when they specifically want a persisted full-render cache, or `SBJImageDocument.renderedImage(at:options:)` to use that cache when present and otherwise render on demand.
+2. **Quick Look / full preview consumers** ask `SBJImageDocument.renderedImage(at:renderIfNeeded:options:)` with an explicit cache-miss policy. Persisted rendered-cache lookup remains an implementation detail of that operation.
 3. **Source fallback** is reserved for full rendering when the requested derivative cannot be produced; cache URL lookup itself does not fall back to the source.
 
 Hosts can therefore trade package size for preview speed explicitly rather than having separate thumbnail policy semantics.
@@ -111,9 +111,8 @@ The current editor uses serialized PencilKit `PKDrawing` data and composition co
 - `PhotoEditor`: edits an image document and returns one atomically updated document.
 - `SBJImageDocument.RenderCache`: option set containing `.thumbnail`, `.rendered`, and `.all`. Use `SBJImageDocument(source:renderCache:)`; the default is `.thumbnail`.
 - `SBJImageDocument.thumbnailURL(in:)`: cheap thumbnail-provider path that returns only the thumbnail cache already stored in the package, or `nil` when none is present. It does not render or fall back to the source image.
-- `SBJImageDocument.thumbnailImage`: image convenience over the same stored-thumbnail semantics.
-- `SBJImageDocument.renderedURL(in:)`: cheap full-preview path that returns only the persisted full rendered cache, or `nil` when none is present.
-- `SBJImageDocument.renderedImage(at:options:)` and `renderedImage(options:)`: use a full rendered cache when present and otherwise render on demand; source fallback remains the last resort.
+- `SBJImageDocument.thumbnailImage(at:renderIfNeeded:options:)` and `thumbnailImage(renderIfNeeded:options:)`: callers explicitly choose whether a missing thumbnail cache may be rendered or must fail fast.
+- `SBJImageDocument.renderedImage(at:renderIfNeeded:options:)` and `renderedImage(renderIfNeeded:options:)`: callers explicitly choose whether a missing full-render cache may be rendered; source fallback is used only after an allowed render attempt fails.
 - `SBJImageDocument`: owns source/edit/cache consistency internally rather than exposing those components for callers to coordinate.
 
 `PhotoMenu` infers edit semantics from the bound resource. An ordinary image is edited destructively/in memory; an `SBJImageDocument` is reopened with its saved geometry, color state, and markup. Applications choose persistence semantics by what their resource binding stores. A binding that requires non-destructive images can normalize assigned images with `SBJResourceContent.preservingImageEdits`.
@@ -122,4 +121,4 @@ The current editor uses serialized PencilKit `PKDrawing` data and composition co
 
 `SBJImageDocument` is a framework-provided persistence/interchange format, not a document type that every host application must advertise. Host applications that merely embed image documents inside their own documents do **not** need to register `.sbjimage` as a standalone document type.
 
-Embedded thumbnail presentation uses `SBJResourceContent.uiImage`, `SBJImageDocument.thumbnailImage`, or `ImageReference.document`. Quick Look thumbnail providers should prefer `SBJImageDocument.thumbnailURL(in:)` and choose their own fallback when it returns `nil`. Full-size preview code can use `SBJImageDocument.renderedURL(in:)` when it requires a persisted derivative, or `SBJImageDocument.renderedImage(options:)` / `renderedImage(at:options:)` when on-demand rendering is acceptable.
+Embedded thumbnail presentation uses `SBJResourceContent.uiImage`, `SBJImageDocument.thumbnailImage(renderIfNeeded:options:)`, or `ImageReference.document`. Quick Look thumbnail providers can use `SBJImageDocument.thumbnailURL(in:)` for the persisted-cache-only URL path and choose their own fallback when it returns `nil`. Image-returning presentation APIs require an explicit `renderIfNeeded` choice. Full-size preview code uses `renderedImage(..., renderIfNeeded: ...)`, keeping persisted-cache lookup behind that API.

@@ -221,6 +221,30 @@ struct PhotoEditBehaviorTests {
         #expect(abs(renderedLocation.coordinate.longitude - location.coordinate.longitude) < 0.000_001)
     }
 
+    @Test func imageDocumentPresentationHonorsRenderIfNeeded() throws {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 20)).image { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 32, height: 20))
+        }
+        let source = SBJResourceContent(
+            data: try #require(image.pngData()),
+            contentType: .png
+        )
+        let document = SBJImageDocument(source: source, renderCache: [])
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let packageURL = directory.appendingPathComponent("uncached.sbjimage", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try document.write(to: packageURL)
+
+        #expect(SBJImageDocument.thumbnailImage(at: packageURL, renderIfNeeded: false) == nil)
+        #expect(SBJImageDocument.renderedImage(at: packageURL, renderIfNeeded: false) == nil)
+        #expect(SBJImageDocument.thumbnailImage(at: packageURL, renderIfNeeded: true) != nil)
+        #expect(SBJImageDocument.renderedImage(at: packageURL, renderIfNeeded: true) != nil)
+    }
+
     @Test func imageDocumentResourceContentUsesLocalPackageType() throws {
         let source = SBJResourceContent(data: Data([1, 2, 3]), contentType: .png)
         let content = try #require(

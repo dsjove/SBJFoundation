@@ -23,7 +23,7 @@ public extension DocumentURLRouting {
 }
 
 /// Immutable package state used by a `PackageDocument`.
-public protocol PackageDocumentSnapshot: Sendable {
+public protocol PackageDocumentSnapshot: Sendable, Equatable {
 	associatedtype ID: Hashable & Comparable & Sendable
 	var id: ID { get }
 }
@@ -63,10 +63,13 @@ where DocumentID == Snapshot.ID {
 
 	static func fileWrapper(for snapshot: Snapshot) throws -> FileWrapper
 	static func snapshot(from wrapper: FileWrapper) throws -> Snapshot
-	/// Lightweight snapshot used for library discovery. The default implementation
-	/// loads the complete package; document types with expensive resources can
-	/// override this to decode only the metadata/payload needed for catalog UI.
-	static func catalogSnapshot(from wrapper: FileWrapper) throws -> Snapshot
+	/// Opens a persisted package when its URL is available. Document types may
+	/// use the URL as lazy backing storage instead of materializing package resources.
+	static func snapshot(from wrapper: FileWrapper, at url: URL) throws -> Snapshot
+	/// Lightweight snapshot used for library discovery. URL-based access lets
+	/// document types read only the files needed for catalog UI without first
+	/// materializing the package tree as a `FileWrapper`.
+	static func catalogSnapshot(at url: URL) throws -> Snapshot
 }
 
 public extension PackageDocument {
@@ -77,8 +80,11 @@ public extension PackageDocument {
 	func restoreCatalog(from snapshot: Snapshot) { restore(from: snapshot) }
 
 	static func snapshotForExport(_ snapshot: Snapshot) -> Snapshot { snapshot }
-	static func catalogSnapshot(from wrapper: FileWrapper) throws -> Snapshot {
+	static func snapshot(from wrapper: FileWrapper, at url: URL) throws -> Snapshot {
 		try snapshot(from: wrapper)
+	}
+	static func catalogSnapshot(at url: URL) throws -> Snapshot {
+		try snapshot(from: FileWrapper(url: url, options: .immediate))
 	}
 }
 #endif

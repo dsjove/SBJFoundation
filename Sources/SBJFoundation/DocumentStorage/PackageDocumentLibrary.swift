@@ -88,9 +88,11 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	private var pendingImport: Snapshot?
 	private var persistedIDs: Set<ID> = []
 	private var initialLoadCompleted = false
-	private var initialLoadTask: Task<[Snapshot], Error>?
+	private var initialLoadTask: Task<PackageCatalogScan<Snapshot>, Error>?
 	private var refreshTask: Task<Void, Never>?
-	private var refreshRequested = false
+	private var refreshAllRequested = false
+	private var pendingRefreshURLs: Set<URL> = []
+	private var catalogSnapshots: [ID: Snapshot] = [:]
 
 	public convenience init(
 		builtInDocuments: [Document] = [],
@@ -117,8 +119,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 				return try Document.snapshot(from: wrapper)
 			},
 			loadCatalogPackage: { url in
-				let wrapper = try FileWrapper(url: url, options: .immediate)
-				return try Document.catalogSnapshot(from: wrapper)
+				try Document.catalogSnapshot(at: url)
 			},
 			fileManager: location.fileManager
 		)
@@ -131,23 +132,23 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	public func load() async throws {
 		if initialLoadCompleted { return }
 
-		let task: Task<[Snapshot], Error>
+		let task: Task<PackageCatalogScan<Snapshot>, Error>
 		if let existing = initialLoadTask {
 			task = existing
 		} else {
 			let catalog = self.catalog
 			let openIDs = Set(sessions.keys)
 			let created = Task.detached(priority: .utility) {
-				try catalog.loadAll(excludingIDs: openIDs)
+				try catalog.scanCatalog(excludingIDs: openIDs)
 			}
 			initialLoadTask = created
 			task = created
 		}
 
 		do {
-			let snapshots = try await task.value
+			let scan = try await task.value
 			if !initialLoadCompleted {
-				reconcileCatalogSnapshots(snapshots)
+				reconcileCatalogScan(scan)
 				startLibraryMonitorIfNeeded()
 				initialLoadCompleted = true
 			}
@@ -176,7 +177,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 
 	/// Ensures a catalog document has an active package session and complete resource state.
 	/// Library discovery may intentionally materialize only a lightweight catalog snapshot.
-	public func activate(_ document: Document) async throws -> Document {
+	func activate(_ document: Document) async throws -> Document {
 		let id = document.id
 		let canonical = liveDocuments[id] ?? document
 		guard canonical.role == .user else { return canonical }
@@ -199,7 +200,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		}
 	}
 
-	public func activate(id: Document.Snapshot.ID) async throws -> Document? {
+	func activate(id: Document.Snapshot.ID) async throws -> Document? {
 		guard let document = liveDocuments[id] else { return nil }
 		return try await activate(document)
 	}
@@ -373,49 +374,109 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		return true
 	}
 
-	private func reconcileCatalogSnapshots(_ snapshots: [Snapshot]) {
+	private func reconcileCatalogScan(_ scan: PackageCatalogScan<Snapshot>) {
 		let activeIDs = Set(sessions.keys)
-		let incomingIDs = Set(snapshots.map(\.id))
-		let staleIDs = persistedIDs.subtracting(activeIDs).subtracting(incomingIDs)
+		let staleIDs = persistedIDs.subtracting(activeIDs).filter { id in
+			!scan.presentPackageNames.contains(location.packageURL(for: id, root: rootDirectory).lastPathComponent)
+		}
+		var changed = false
 
 		for id in staleIDs {
-			liveDocuments[id] = nil
-			saveErrorHandlers[id] = nil
-			externalConflicts[id] = nil
-			persistedIDs.remove(id)
+			changed = removeCatalogState(id: id) || changed
 		}
 
-		for snapshot in snapshots {
+		for snapshot in scan.states {
 			let id = snapshot.id
 			persistedIDs.insert(id)
+			guard catalogSnapshots[id] != snapshot else { continue }
+			catalogSnapshots[id] = snapshot
 			if let existing = liveDocuments[id], sessions[id] == nil {
 				existing.restoreCatalog(from: snapshot)
 			} else if liveDocuments[id] == nil {
 				liveDocuments[id] = Document(restoring: snapshot)
 			}
+			changed = true
 		}
 
-		rebuildAvailableDocuments()
+		if changed { rebuildAvailableDocuments() }
 	}
 
 	private func refreshCatalog() async throws {
 		let catalog = self.catalog
 		let openIDs = Set(sessions.keys)
-		let snapshots = try await Task.detached(priority: .utility) {
-			try catalog.loadAll(excludingIDs: openIDs)
+		let scan = try await Task.detached(priority: .utility) {
+			try catalog.scanCatalog(excludingIDs: openIDs)
 		}.value
-		reconcileCatalogSnapshots(snapshots)
+		reconcileCatalogScan(scan)
 	}
 
-	private func requestCatalogRefresh() {
-		refreshRequested = true
+	private func refreshCatalog(at packageURLs: Set<URL>) async throws {
+		guard !packageURLs.isEmpty else { return }
+		let catalog = self.catalog
+		let openPackageNames = Set(sessions.keys.map { location.packageURL(for: $0, root: rootDirectory).lastPathComponent })
+		let urls = packageURLs.filter { !openPackageNames.contains($0.lastPathComponent) }
+		guard !urls.isEmpty else { return }
+
+		let loaded = await Task.detached(priority: .utility) {
+			urls.map { url -> (URL, Snapshot?, Bool) in
+				do { return (url, try catalog.loadCatalogPackage(at: url), true) }
+				catch { return (url, nil, false) }
+			}
+		}.value
+
+		var changed = false
+		for (url, snapshot, readSucceeded) in loaded {
+			guard readSucceeded else { continue }
+			let priorID = persistedIDs.first {
+				location.packageURL(for: $0, root: rootDirectory).lastPathComponent == url.lastPathComponent
+			}
+
+			guard let snapshot else {
+				if let priorID { changed = removeCatalogState(id: priorID) || changed }
+				continue
+			}
+
+			let id = snapshot.id
+			if let priorID, priorID != id {
+				changed = removeCatalogState(id: priorID) || changed
+			}
+			persistedIDs.insert(id)
+			guard catalogSnapshots[id] != snapshot else { continue }
+			catalogSnapshots[id] = snapshot
+			if let existing = liveDocuments[id], sessions[id] == nil {
+				existing.restoreCatalog(from: snapshot)
+			} else if liveDocuments[id] == nil {
+				liveDocuments[id] = Document(restoring: snapshot)
+			}
+			changed = true
+		}
+
+		if changed { rebuildAvailableDocuments() }
+	}
+
+	private func requestCatalogRefresh(_ change: UbiquitousDirectoryMonitor.Change) {
+		switch change {
+		case .all:
+			refreshAllRequested = true
+			pendingRefreshURLs.removeAll()
+		case .urls(let urls):
+			guard !refreshAllRequested else { break }
+			pendingRefreshURLs.formUnion(urls)
+		}
 		guard refreshTask == nil else { return }
 
 		refreshTask = Task { @MainActor [weak self] in
 			guard let self else { return }
-			while self.refreshRequested {
-				self.refreshRequested = false
-				try? await self.refreshCatalog()
+			while self.refreshAllRequested || !self.pendingRefreshURLs.isEmpty {
+				if self.refreshAllRequested {
+					self.refreshAllRequested = false
+					self.pendingRefreshURLs.removeAll()
+					try? await self.refreshCatalog()
+				} else {
+					let urls = self.pendingRefreshURLs
+					self.pendingRefreshURLs.removeAll()
+					try? await self.refreshCatalog(at: urls)
+				}
 			}
 			self.refreshTask = nil
 		}
@@ -488,9 +549,9 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 
 	private func startLibraryMonitorIfNeeded() {
 		guard libraryMonitor == nil else { return }
-		libraryMonitor = UbiquitousDirectoryMonitor(directoryURL: { [rootDirectory] in rootDirectory }) { [weak self] in
+		libraryMonitor = UbiquitousDirectoryMonitor(directoryURL: { [rootDirectory] in rootDirectory }) { [weak self] change in
 			guard let self else { return }
-			Task { @MainActor in self.requestCatalogRefresh() }
+			Task { @MainActor in self.requestCatalogRefresh(change) }
 		}
 	}
 
@@ -512,12 +573,20 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		didChange()
 	}
 
-	private func removeFromCatalog(id: ID) {
+	@discardableResult
+	private func removeCatalogState(id: ID) -> Bool {
+		let existed = persistedIDs.contains(id) || liveDocuments[id] != nil || catalogSnapshots[id] != nil
 		persistedIDs.remove(id)
+		catalogSnapshots[id] = nil
 		sessions[id] = nil
 		liveDocuments[id] = nil
 		saveErrorHandlers[id] = nil
 		externalConflicts[id] = nil
+		return existed
+	}
+
+	private func removeFromCatalog(id: ID) {
+		guard removeCatalogState(id: id) else { return }
 		availableDocuments.removeAll { $0.id == id }
 		didChange()
 	}

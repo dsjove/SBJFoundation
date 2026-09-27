@@ -24,7 +24,7 @@ public enum MacFlavor {
 }
 
 public extension ProcessInfo {
-	static var isRunningOnAnyMac: Bool {
+	static var isAnyMac: Bool {
 		MacFlavor() != nil
 	}
 }

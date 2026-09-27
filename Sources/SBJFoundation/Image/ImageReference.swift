@@ -144,7 +144,7 @@ public extension Image {
 
         case .document(let url):
             #if canImport(UIKit) && !os(watchOS) && !os(tvOS)
-            if let image = SBJImageDocument.thumbnailImage(at: url) {
+            if let image = SBJImageDocument.thumbnailImage(at: url, renderIfNeeded: false) {
                 self = Image(uiImage: image)
             } else {
                 self = Image("")
@@ -202,7 +202,7 @@ public extension ImageReference {
 
         case .document(let url):
             #if !os(watchOS) && !os(tvOS)
-            return SBJImageDocument.thumbnailImage(at: url)
+            return SBJImageDocument.thumbnailImage(at: url, renderIfNeeded: false)
             #else
             return nil
             #endif

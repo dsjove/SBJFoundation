@@ -93,19 +93,34 @@ public struct SBJImageDocument: Sendable, Equatable {
         }
     }
 
-    /// Convenience for UI consumers that need the persisted thumbnail as an image.
-    /// Like `thumbnailURL(in:)`, this does not render or fall back to the source.
-    public static func thumbnailImage(at fileURL: URL) -> UIImage? {
-        guard let url = thumbnailURL(in: fileURL),
-              let data = try? Data(contentsOf: url) else {
-            return nil
+    /// Resolves a thumbnail image for this package.
+    ///
+    /// When `renderIfNeeded` is `false`, only a persisted thumbnail cache is used.
+    /// When it is `true`, a missing cache may be rendered from the document source/edit state.
+    public static func thumbnailImage(
+        at fileURL: URL,
+        renderIfNeeded: Bool,
+        options: PhotoEditorOptions = .default
+    ) -> UIImage? {
+        if let url = thumbnailURL(in: fileURL),
+           let data = try? Data(contentsOf: url),
+           let image = UIImage(data: data) {
+            return image
         }
-        return UIImage(data: data)
+        guard renderIfNeeded else { return nil }
+        return fileURL.withSecurityScopedAccess { packageURL in
+            guard let document = try? SBJImageDocument(
+                fileWrapper: FileWrapper(url: packageURL, options: [])
+            ) else {
+                return nil
+            }
+            return document.thumbnailImage(renderIfNeeded: true, options: options)
+        }
     }
 
     /// Fast disk path for full-preview consumers. Returns the fully rendered component
     /// already stored in the package, or `nil` when that cache option is disabled or unavailable.
-    public static func renderedURL(in fileURL: URL) -> URL? {
+    static func renderedURL(in fileURL: URL) -> URL? {
         fileURL.withSecurityScopedAccess { packageURL in
             guard let manifest = try? manifest(at: packageURL),
                   let descriptor = manifest.rendered,
@@ -117,10 +132,13 @@ public struct SBJImageDocument: Sendable, Equatable {
         }
     }
 
-    /// Disk convenience for full preview/Quick Look consumers. A persisted full render is
-    /// used when available; otherwise the current edit recipe is rendered on demand.
+    /// Resolves a fully rendered image for this package.
+    ///
+    /// When `renderIfNeeded` is `false`, only a persisted rendered cache is used.
+    /// When it is `true`, a missing cache may be rendered from the document source/edit state.
     public static func renderedImage(
         at fileURL: URL,
+        renderIfNeeded: Bool,
         options: PhotoEditorOptions = .default
     ) -> UIImage? {
         if let url = renderedURL(in: fileURL),
@@ -128,18 +146,19 @@ public struct SBJImageDocument: Sendable, Equatable {
            let image = UIImage(data: data) {
             return image
         }
+        guard renderIfNeeded else { return nil }
         return fileURL.withSecurityScopedAccess { packageURL in
             guard let document = try? SBJImageDocument(
                 fileWrapper: FileWrapper(url: packageURL, options: [])
             ) else {
                 return nil
             }
-            return document.renderedImage(options: options)
+            return document.renderedImage(renderIfNeeded: true, options: options)
         }
     }
 
     /// Opens a serialized image-document package.
-    public init(serializedRepresentation data: Data) throws {
+    init(serializedRepresentation data: Data) throws {
         guard let wrapper = FileWrapper(serializedRepresentation: data) else {
             throw Error.invalidPackage
         }
@@ -322,21 +341,29 @@ public struct SBJImageDocument: Sendable, Equatable {
         )
     }
 
-    /// Small persisted representation intended for document browsers and thumbnail providers.
-    /// This is only the stored thumbnail component; it does not fall back to the source.
-    public var thumbnailImage: UIImage? {
-        thumbnail?.uiImage
+    /// Resolves this document's thumbnail according to the caller's cache-miss policy.
+    public func thumbnailImage(
+        renderIfNeeded: Bool,
+        options: PhotoEditorOptions = .default
+    ) -> UIImage? {
+        if let image = thumbnail?.uiImage { return image }
+        guard renderIfNeeded else { return nil }
+        return makeThumbnail(options: options)?.uiImage
     }
 
-    /// Performs or resolves a full render of the current edit recipe for Quick Look/export-style consumers.
-    /// A persisted full-render cache is used when present; otherwise rendering is performed on demand.
-    /// The immutable source is used only when rendering fails.
-    public func renderedImage(options: PhotoEditorOptions = .default) -> UIImage? {
-        rendered?.uiImage ?? renderedContent(options: options)?.uiImage ?? source.uiImage
+    /// Resolves this document's full rendered image according to the caller's cache-miss policy.
+    /// The immutable source is used only after an attempted render fails.
+    public func renderedImage(
+        renderIfNeeded: Bool,
+        options: PhotoEditorOptions = .default
+    ) -> UIImage? {
+        if let image = rendered?.uiImage { return image }
+        guard renderIfNeeded else { return nil }
+        return renderedContent(options: options)?.uiImage ?? source.uiImage
     }
 
     /// Serializes the complete package, including the selected rendered caches.
-    public var serializedRepresentation: Data {
+    var serializedRepresentation: Data {
         get throws {
             guard let data = try makeFileWrapper().serializedRepresentation else {
                 throw Error.invalidPackage

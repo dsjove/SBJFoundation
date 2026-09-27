@@ -25,7 +25,7 @@ public struct PhotoViewer: View {
     ) {
         let image: UIImage?
         if let document = try? SBJImageDocument(resourceContent: resource) {
-            image = document.renderedImage()
+            image = document.renderedImage(renderIfNeeded: true)
         } else {
             image = resource.uiImage
         }
@@ -131,7 +131,7 @@ public struct PhotoViewer: View {
     /// Ordinary image resources are already flattened and can be shared directly.
     private func imageForSharing() -> UIImage {
         guard let document = try? SBJImageDocument(resourceContent: resource) else { return image }
-        return document.renderedImage() ?? image
+        return document.renderedImage(renderIfNeeded: true) ?? image
     }
 }
 
