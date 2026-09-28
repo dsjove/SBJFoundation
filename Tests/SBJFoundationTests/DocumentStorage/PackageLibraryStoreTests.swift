@@ -19,7 +19,7 @@ struct PackageLibraryStoreTests {
 		try Data("junk".utf8).write(to: root.appendingPathComponent("unrelated.pkg/state.txt"))
 
 		let store = makeStore(root: root)
-		#expect(try store.loadAll() == [
+		#expect(try store.scanCatalog().states == [
 			.init(id: "one", value: "First"),
 			.init(id: "two", value: "Second"),
 		])
@@ -33,7 +33,7 @@ struct PackageLibraryStoreTests {
 		try write(.init(id: "two", value: "Second"), root: root)
 
 		let store = makeStore(root: root)
-		#expect(try store.loadAll(excludingIDs: ["one"]) == [
+		#expect(try store.scanCatalog(excludingIDs: ["one"]).states == [
 			.init(id: "two", value: "Second"),
 		])
 	}
