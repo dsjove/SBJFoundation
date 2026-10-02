@@ -19,27 +19,6 @@ enum SBJEditorRootValidationResult {
 }
 
 
-private func sbjFontAttributeIsVisuallyIneffective<Root, Value>(
-    root: Root,
-    keyPath: WritableKeyPath<Root, Value>
-) -> Bool {
-    guard let font = root as? CodableFont else { return false }
-
-    let capabilities = CodableFontCache.shared.capabilities(forFamily: font.name)
-    let erasedKeyPath = keyPath as AnyKeyPath
-
-    if erasedKeyPath == (\CodableFont.weight as AnyKeyPath) {
-        return !capabilities.weightIsEffective
-    }
-    if erasedKeyPath == (\CodableFont.italic as AnyKeyPath) {
-        return !capabilities.italicIsEffective
-    }
-    if erasedKeyPath == (\CodableFont.width as AnyKeyPath) {
-        return !capabilities.widthIsEffective
-    }
-    return false
-}
-
 
 /// Type-erased metadata for one writable property on `Root`.
 ///
@@ -48,7 +27,7 @@ private func sbjFontAttributeIsVisuallyIneffective<Root, Value>(
 /// and use in the same isolation domain also prevents writable key paths from
 /// being transferred into a main-actor closure from a nonisolated context.
 @MainActor
-public struct SBJEditorField<Root: SBJStructured> {
+public struct SBJEditorField<Root: SBJSwiftUIEditable> {
     public let name: String
     public let editableField: SBJEditableField<Root>
     private let makeView: (Binding<Root>, Root?, SBJEditorRegistry, String?, SBJEditorFocusRequest?, Bool, SBJEditTraversalContext) -> AnyView
@@ -152,9 +131,9 @@ public struct SBJEditorField<Root: SBJStructured> {
                 binding: value,
                 defaultContent: defaultContent
             ) ?? defaultContent
-            let visuallyIneffective = sbjFontAttributeIsVisuallyIneffective(
-                root: root.wrappedValue,
-                keyPath: keyPath
+            let visuallyIneffective = Root.sbjEditorFieldIsVisuallyIneffective(
+                keyPath,
+                in: root.wrappedValue
             )
             return AnyView(
                 SBJEditorPropertyInfoContainer(content: content, propertyName: name, info: propertyInfo)

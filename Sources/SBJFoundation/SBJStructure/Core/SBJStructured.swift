@@ -5,7 +5,7 @@ import Foundation
 /// SBJStructure declarations describe the model; they do not intercept property
 /// access or automatically enforce invariants. Consumers explicitly choose when
 /// to inspect metadata, content state, or validation rules.
-public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralComparable {
+public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralComparable, SBJSwiftExpressionRepresentable {
     /// Structural metadata for the coded stored properties of this model.
     static var sbjProperties: [SBJPropertyMetadata<Self>] { get }
 
@@ -22,9 +22,6 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
 
     /// Initializer parameter mapping used by Swift source export.
     static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] { get }
-
-    /// Produces this value as a Swift construction expression.
-    func sbjSwiftExpression(using encoder: SBJSwiftEncoder, nested: Bool) -> String
 
     /// Recursively reports whether any structural property contains empty content.
     /// Consumers may treat application-defined types as atomic traversal leaves.

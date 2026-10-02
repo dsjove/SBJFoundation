@@ -139,10 +139,13 @@ public struct SBJSwiftEncoder {
     }
 
     private func expression(forAny value: Any, nested: Bool) -> String {
-        if let structured = value as? any SBJStructured {
-            return structured.sbjSwiftExpression(using: self, nested: nested)
+        if let representable = value as? any SBJSwiftExpressionRepresentable {
+            return representable.sbjSwiftExpression(using: self, nested: nested)
         }
 
+        // Intentional built-in syntax table for Swift/Foundation primitives.
+        // Custom SBJ/application value types must use
+        // `SBJSwiftExpressionRepresentable` rather than adding concrete cases here.
         if let value = value as? String { return String(reflecting: value) }
         if let value = value as? Character { return String(reflecting: value) }
         if let value = value as? Bool { return value ? "true" : "false" }
@@ -158,7 +161,6 @@ public struct SBJSwiftEncoder {
         if let value = value as? UInt64 { return String(value) }
         if let value = value as? Float { return floatingPointExpression(value) }
         if let value = value as? Double { return floatingPointExpression(value) }
-        if let value = value as? CodableColor { return colorExpression(value) }
         if let value = value as? URL { return urlExpression(value) }
         if let value = value as? UUID { return "UUID(uuidString: \(String(reflecting: value.uuidString)))!" }
         if let value = value as? Date { return "Date(timeIntervalSinceReferenceDate: \(floatingPointExpression(value.timeIntervalSinceReferenceDate)))" }
@@ -190,17 +192,6 @@ public struct SBJSwiftEncoder {
         }
     }
 
-    private func colorExpression(_ value: CodableColor) -> String {
-        var components = [
-            floatingPointExpression(value.red),
-            floatingPointExpression(value.green),
-            floatingPointExpression(value.blue)
-        ]
-        if value.opacity != 1.0 {
-            components.append(floatingPointExpression(value.opacity))
-        }
-        return ".init(\(components.joined(separator: ", ")))"
-    }
 
     private func urlExpression(_ value: URL) -> String {
         if value.isFileURL {
@@ -214,7 +205,7 @@ public struct SBJSwiftEncoder {
         return "Data([\(value.map(String.init).joined(separator: ", "))])"
     }
 
-    private func floatingPointExpression<T: BinaryFloatingPoint>(_ value: T) -> String {
+    func floatingPointExpression<T: BinaryFloatingPoint>(_ value: T) -> String {
         if value.isNaN { return ".nan" }
         if value == .infinity { return ".infinity" }
         if value == -.infinity { return "-.infinity" }

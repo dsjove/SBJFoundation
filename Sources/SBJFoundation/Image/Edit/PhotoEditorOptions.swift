@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 
 @SBJStructure
-public enum PhotoCropOption: Hashable, Sendable, Codable, Identifiable {
+public enum PhotoCropOption: SBJFoundationType, Hashable, Sendable, Identifiable {
     case none
     case original
     case square
@@ -77,7 +77,7 @@ public enum PhotoCropOption: Hashable, Sendable, Codable, Identifiable {
 }
 
 @SBJStructure
-public enum PhotoFramingConstraint: Sendable, Hashable, Codable {
+public enum PhotoFramingConstraint: SBJFoundationType, Sendable, Hashable {
     /// The transformed image must cover the complete crop/output rectangle.
     case cover
     /// The transformed image may expose frame background, but may not become
@@ -88,7 +88,7 @@ public enum PhotoFramingConstraint: Sendable, Hashable, Codable {
 }
 
 @SBJStructure
-public enum PhotoMirrorAxis: String, Sendable, Hashable, Codable {
+public enum PhotoMirrorAxis: String, SBJFoundationType, Sendable, Hashable {
     case horizontal
     case vertical
 }
@@ -98,7 +98,7 @@ public enum PhotoMirrorAxis: String, Sendable, Hashable, Codable {
 /// This value deliberately describes what the caller permits. It contains no
 /// user edit state; that lives in PhotoEditGeometry.
 @SBJStructure
-public struct PhotoEditorOptions: Sendable, Hashable, Codable {
+public struct PhotoEditorOptions: SBJFoundationType, Sendable, Hashable {
     @SBJArray(unique: true)
     public var cropOptions: [PhotoCropOption]
     public var initialCrop: PhotoCropOption

@@ -207,22 +207,6 @@ public enum SBJInvariantCheck {
         }
     }
 
-    public static func requireMinimum<Unit: UnitType>(
-        _ value: UnitValue<Unit>,
-        _ minimum: Double,
-        at keyPath: SBJValidationKeyPath
-    ) throws {
-        try require(value.value >= minimum, value: value.value, at: keyPath, "must be at least \(minimum)")
-    }
-
-    public static func requireMinimum<Unit: UnitType>(
-        _ value: UnitValue<Unit>?,
-        _ minimum: Double,
-        at keyPath: SBJValidationKeyPath
-    ) throws {
-        if let value { try requireMinimum(value, minimum, at: keyPath) }
-    }
-
     public static func requireMinimum(_ value: Double, _ minimum: Double, at keyPath: SBJValidationKeyPath) throws {
         try require(value.isFinite && value >= minimum, value: value, at: keyPath, "must be finite and at least \(minimum)")
     }

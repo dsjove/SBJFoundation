@@ -7,7 +7,8 @@ import CoreGraphics
 ///
 /// This protocol is intentionally behavior-free. It replaces duplicated lists of
 /// concrete leaf types in editor capability checks while keeping the capability
-/// boundary explicit.
+/// boundary explicit. It is an editor capability, not a Foundation-type or
+/// structural-search classification.
 public protocol SBJTypedEditorValue {}
 
 extension String: SBJTypedEditorValue {}

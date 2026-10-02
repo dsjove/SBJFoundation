@@ -50,7 +50,7 @@ struct CameraAvailability {
     #endif
 }
 
-public enum CameraPosition: Int, Codable, Sendable {
+public enum CameraPosition: Int, SBJFoundationType, Sendable {
     case unspecified = 0
     case back = 1
     case front = 2

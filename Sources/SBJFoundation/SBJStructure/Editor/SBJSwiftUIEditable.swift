@@ -8,9 +8,28 @@ import SwiftUI
 public protocol SBJSwiftUIEditable: SBJEditable {
     @MainActor
     static var sbjEditorFields: [SBJEditorField<Self>] { get }
+
+    /// Returns whether an editor field should be presented with an inactive
+    /// appearance while remaining fully interactive.
+    ///
+    /// This is presentation state only: implementations must not use it to
+    /// change or normalize the stored value.
+    @MainActor
+    static func sbjEditorFieldIsVisuallyIneffective<Value>(
+        _ keyPath: WritableKeyPath<Self, Value>,
+        in root: Self
+    ) -> Bool
 }
 
 public extension SBJSwiftUIEditable {
+    @MainActor
+    static func sbjEditorFieldIsVisuallyIneffective<Value>(
+        _ keyPath: WritableKeyPath<Self, Value>,
+        in root: Self
+    ) -> Bool {
+        false
+    }
+
     /// Type-erased field count used by the recursive SwiftUI editor.
     @MainActor
     internal static var _sbjEditorFieldCount: Int {

@@ -7,7 +7,7 @@ import Foundation
 /// type provides a stable representation for export, recovery, interchange, and
 /// other serialization without coupling Codable to SwiftData relationships.
 @SBJStructure
-public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable {
+public struct TagCodableValue<ID: Codable & Equatable>: SBJFoundationType {
     public var id: ID
     public var name: String
     public var color: CodableColor

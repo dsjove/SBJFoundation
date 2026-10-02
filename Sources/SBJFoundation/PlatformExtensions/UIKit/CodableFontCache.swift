@@ -132,23 +132,6 @@ public final class CodableFontCache: @unchecked Sendable {
 		)
 	}
 
-	/// Returns the family's basic/default face for use as a visual specimen.
-	/// No requested CodableFont weight, italic, or width traits are applied.
-	public func basicFont(forFamily family: String, size: CGFloat) -> UIFont {
-		let descriptor = UIFontDescriptor(fontAttributes: [.family: family])
-		let matched = UIFont(descriptor: descriptor, size: size)
-		if matched.familyName.caseInsensitiveCompare(family) == .orderedSame {
-			return matched
-		}
-
-		if let firstFace = catalog().facesByFamily[family]?.first,
-		   let fallback = UIFont(name: firstFace.postScriptName, size: size) {
-			return fallback
-		}
-
-		return matched
-	}
-
 	/// Returns a cached `UIFont` for the supplied description and scale.
 	/// A font is created only the first time a particular pair is requested.
 	public func font(for font: CodableFont, scale: Double = 1.0) -> UIFont {

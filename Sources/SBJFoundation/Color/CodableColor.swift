@@ -5,7 +5,7 @@ import SwiftUI
 import UIKit
 #endif
 
-public struct CodableColor: Codable, Comparable, Equatable, CustomDebugStringConvertible {
+public struct CodableColor: SBJFoundationType, Comparable, CustomDebugStringConvertible, SBJDefaultValueCreatable, SBJSwiftExpressionRepresentable {
     public var red: Double
     public var green: Double
     public var blue: Double
@@ -23,6 +23,22 @@ public struct CodableColor: Codable, Comparable, Equatable, CustomDebugStringCon
         self.green = 1.0
         self.blue = 1.0
         self.opacity = 1.0
+    }
+
+    public static func sbjCreateDefaultValueIfPossible() -> Self? {
+        Self()
+    }
+
+    public func sbjSwiftExpression(using encoder: SBJSwiftEncoder, nested: Bool) -> String {
+        var components = [
+            encoder.floatingPointExpression(red),
+            encoder.floatingPointExpression(green),
+            encoder.floatingPointExpression(blue)
+        ]
+        if opacity != 1.0 {
+            components.append(encoder.floatingPointExpression(opacity))
+        }
+        return ".init(\(components.joined(separator: ", ")))"
     }
 
     public static func < (lhs: CodableColor, rhs: CodableColor) -> Bool {

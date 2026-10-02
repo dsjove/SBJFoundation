@@ -320,6 +320,9 @@ enum SBJValueEditor {
         labelIsUnknown: Bool = false,
         context: SBJEditTraversalContext = .root
     ) -> AnyView {
+        // Intentional built-in editor composition point. Concrete standard value
+        // editors are selected here so the generic traversal/property layers do
+        // not depend on them. Application-specific editors belong in the registry.
         if presentation == .fontFamily, Value.self == String?.self {
             return wrapLeaf(
                 SBJFontFamilyEditor(

@@ -6,7 +6,7 @@ import Foundation
 /// shown as a fraction, decimal, compound measurement, abbreviation, and so on
 /// belongs to presentation policy rather than to the measurement system itself.
 @SBJStructure
-public enum MeasurementSystem: String, Codable, Sendable, CaseIterable, Hashable {
+public enum MeasurementSystem: String, SBJFoundationType, Sendable, CaseIterable, Hashable {
     case metric
     case imperial
     case universal
@@ -14,7 +14,7 @@ public enum MeasurementSystem: String, Codable, Sendable, CaseIterable, Hashable
 
 /// Reusable measurement dimensions supplied by SBJFoundation.
 @SBJStructure
-public enum UnitCategory: String, Codable, Sendable, CaseIterable, Hashable {
+public enum UnitCategory: String, SBJFoundationType, Sendable, CaseIterable, Hashable {
     case length
     case mass
     case duration

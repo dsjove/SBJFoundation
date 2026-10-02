@@ -52,7 +52,7 @@ struct FlashAvailability {
     #endif
 }
 
-public enum CameraFlashMode: Int, Codable, Sendable {
+public enum CameraFlashMode: Int, SBJFoundationType, Sendable {
     case off = 0
     case on = 1
     case auto = 2

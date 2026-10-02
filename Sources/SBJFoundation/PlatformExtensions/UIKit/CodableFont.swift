@@ -3,8 +3,8 @@ import UIKit
 import SwiftUI
 
 @SBJStructure
-public struct CodableFont: Codable, Comparable, Equatable, Hashable, Sendable, CustomDebugStringConvertible {
-	public enum Weight: String, Codable, CaseIterable, Comparable, Sendable {
+public struct CodableFont: SBJFoundationType, Comparable, Hashable, Sendable, CustomDebugStringConvertible {
+	public enum Weight: String, SBJFoundationType, CaseIterable, Comparable, Sendable {
 		case ultraLight
 		case thin
 		case light
@@ -48,7 +48,7 @@ public struct CodableFont: Codable, Comparable, Equatable, Hashable, Sendable, C
 		}
 	}
 
-	public enum Width: String, Codable, CaseIterable, Comparable, Sendable {
+	public enum Width: String, SBJFoundationType, CaseIterable, Comparable, Sendable {
 		case condensed
 		case standard
 		case expanded
@@ -128,3 +128,28 @@ public struct CodableFont: Codable, Comparable, Equatable, Hashable, Sendable, C
 		CodableFontCache.shared.uncachedFont(for: self, scale: scale)
 	}
 }
+
+#if !os(tvOS) && !os(watchOS)
+public extension CodableFont {
+    @MainActor
+    static func sbjEditorFieldIsVisuallyIneffective<Value>(
+        _ keyPath: WritableKeyPath<CodableFont, Value>,
+        in root: CodableFont
+    ) -> Bool {
+        let capabilities = CodableFontCache.shared.capabilities(forFamily: root.name)
+        let erasedKeyPath = keyPath as AnyKeyPath
+
+        if erasedKeyPath == (\CodableFont.weight as AnyKeyPath) {
+            return !capabilities.weightIsEffective
+        }
+        if erasedKeyPath == (\CodableFont.italic as AnyKeyPath) {
+            return !capabilities.italicIsEffective
+        }
+        if erasedKeyPath == (\CodableFont.width as AnyKeyPath) {
+            return !capabilities.widthIsEffective
+        }
+        return false
+    }
+}
+#endif
+

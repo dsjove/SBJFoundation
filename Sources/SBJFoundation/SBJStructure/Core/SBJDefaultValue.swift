@@ -23,6 +23,9 @@ public protocol SBJDefaultValueCreatable {
 /// falls back to this context-free factory.
 public enum SBJDefaultValue {
     public static func value<T>(for type: T.Type) -> T? {
+        // Intentional built-in defaults for Swift/Foundation primitives. Custom
+        // SBJ/application types provide construction through
+        // `SBJDefaultValueCreatable` or `SBJStructured.sbjDefaultValue()`.
         switch type {
         case is String.Type: return "" as? T
         case is Int.Type: return 0 as? T
@@ -44,7 +47,6 @@ public enum SBJDefaultValue {
         case is URL.Type: return URL(string: "https://") as? T
         case is UUID.Type: return UUID() as? T
         case is Data.Type: return Data() as? T
-        case is CodableColor.Type: return CodableColor() as? T
         default: break
         }
 

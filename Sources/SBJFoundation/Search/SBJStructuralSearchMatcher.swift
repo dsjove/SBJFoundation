@@ -39,10 +39,9 @@ private struct SBJStructuralSearchMatcher {
             return matches(child.value, depth: depth + 1)
         }
 
-        // Foundation/scalar editor values are atomic even when their Mirror
-        // representation happens to be a struct. Do not descend into their
-        // implementation details.
-        if isAtomicValue(value) {
+        // Search-leaf types own this boundary. The matcher depends on the
+        // capability rather than maintaining knowledge of concrete value types.
+        if value is any SBJStructuralSearchLeaf {
             if let description = SBJValueDescription.describe(value) {
                 return matchesText(description)
             }
@@ -84,18 +83,7 @@ private struct SBJStructuralSearchMatcher {
         }
     }
 
-    private func isAtomicValue(_ value: Any) -> Bool {
-        switch value {
-        case is String, is Character, is Bool,
-             is Int, is Int8, is Int16, is Int32, is Int64,
-             is UInt, is UInt8, is UInt16, is UInt32, is UInt64,
-             is Float, is Double, is Decimal,
-             is Date, is URL, is UUID, is Data:
-            return true
-        default:
-            return false
-        }
-    }
+
 }
 
 // MARK: - Internal structural/editor matching

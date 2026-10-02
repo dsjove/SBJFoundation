@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 /// are materialized to a temporary file because Quick Look, sharing, and
 /// OS opening operate on file URLs.
 @SBJStructure
-public struct URLAttachment: Identifiable, Sendable, Codable {
+public struct URLAttachment: Identifiable, SBJFoundationType, Sendable {
 	@SBJUUID(nonzero: true)
 	public let id: UUID
 	@SBJURL(allowed: [.file])

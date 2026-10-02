@@ -2,7 +2,7 @@ import CoreLocation
 import ImageIO
 import UniformTypeIdentifiers
 
-public struct LocationJSON: Codable {
+public struct LocationJSON: SBJFoundationType {
 	public var latitude: CLLocationDegrees
 	public var longitude: CLLocationDegrees
 	public var altitude: CLLocationDistance

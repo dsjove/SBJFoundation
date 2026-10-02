@@ -14,7 +14,7 @@ import UIKit
 /// Use ``automatic`` for the normal facade behavior, or select a concrete
 /// implementation when an app specifically wants one of the available camera
 /// experiences on the current platform.
-public enum CameraImplementation: String, CaseIterable, Codable, Sendable {
+public enum CameraImplementation: String, SBJFoundationType, CaseIterable, Sendable {
     /// Select the package's preferred available implementation for this platform.
     case automatic
 
