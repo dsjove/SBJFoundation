@@ -19,6 +19,28 @@ enum SBJEditorRootValidationResult {
 }
 
 
+private func sbjFontAttributeIsVisuallyIneffective<Root, Value>(
+    root: Root,
+    keyPath: WritableKeyPath<Root, Value>
+) -> Bool {
+    guard let font = root as? CodableFont else { return false }
+
+    let capabilities = CodableFontCache.shared.capabilities(forFamily: font.name)
+    let erasedKeyPath = keyPath as AnyKeyPath
+
+    if erasedKeyPath == (\CodableFont.weight as AnyKeyPath) {
+        return !capabilities.weightIsEffective
+    }
+    if erasedKeyPath == (\CodableFont.italic as AnyKeyPath) {
+        return !capabilities.italicIsEffective
+    }
+    if erasedKeyPath == (\CodableFont.width as AnyKeyPath) {
+        return !capabilities.widthIsEffective
+    }
+    return false
+}
+
+
 /// Type-erased metadata for one writable property on `Root`.
 ///
 /// Editor fields are UI metadata: they hold SwiftUI bindings and view factories,
@@ -130,12 +152,17 @@ public struct SBJEditorField<Root: SBJStructured> {
                 binding: value,
                 defaultContent: defaultContent
             ) ?? defaultContent
+            let visuallyIneffective = sbjFontAttributeIsVisuallyIneffective(
+                root: root.wrappedValue,
+                keyPath: keyPath
+            )
             return AnyView(
                 SBJEditorPropertyInfoContainer(content: content, propertyName: name, info: propertyInfo)
                     .sbjTextInputPolicies(
                         autocorrection: textAutocorrection,
                         capitalization: textCapitalization
                     )
+                    .environment(\.sbjEditorVisuallyIneffective, visuallyIneffective)
                     .sbjEditorNavigationAnchor(for: context.navigationPath)
             )
         }

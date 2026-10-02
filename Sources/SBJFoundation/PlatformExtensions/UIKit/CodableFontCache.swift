@@ -7,6 +7,15 @@ import UIKit
 /// enumerated once and retained for the process lifetime. Realized fonts are also
 /// retained indefinitely for now.
 public final class CodableFontCache: @unchecked Sendable {
+	public struct FamilyCapabilities: Sendable {
+		/// `true` when choosing a different requested weight can select a different face.
+		public let weightIsEffective: Bool
+		/// `true` when the family contains both upright and italic faces.
+		public let italicIsEffective: Bool
+		/// `true` when choosing a different requested width can select a different face.
+		public let widthIsEffective: Bool
+	}
+
 	public static let shared: CodableFontCache = {
 		let cache = CodableFontCache()
 		cache.preflightInBackground()
@@ -57,6 +66,87 @@ public final class CodableFontCache: @unchecked Sendable {
 	/// `System` is intentionally not included; editors represent it with nil.
 	public var availableFontFamilies: [String] {
 		catalog().families
+	}
+
+	/// Describes which variation controls can have an effect for a font family.
+	///
+	/// This is presentation metadata only. A caller should keep the requested
+	/// weight, italic, and width values even when the selected family does not
+	/// currently provide a meaningful variation on that axis.
+	public func capabilities(forFamily family: String?) -> FamilyCapabilities {
+		guard let family else {
+			// The system font supports all three requested variation axes.
+			return FamilyCapabilities(
+				weightIsEffective: true,
+				italicIsEffective: true,
+				widthIsEffective: true
+			)
+		}
+
+		guard let faces = catalog().facesByFamily[family], !faces.isEmpty else {
+			// Be conservative for an unknown/stale family name: do not make a
+			// perfectly valid requested attribute look unavailable.
+			return FamilyCapabilities(
+				weightIsEffective: true,
+				italicIsEffective: true,
+				widthIsEffective: true
+			)
+		}
+
+		// Do not infer editor capability from the metadata attached to the named
+		// faces. Some installed families (Arial is a common example) expose real
+		// bold/italic faces while reporting incomplete or identical descriptor-trait
+		// metadata for those faces. What matters to the editor is whether the same
+		// UIFontDescriptor matching path used by `makeFont` actually resolves a
+		// different face when an attribute is requested.
+		let base = UIFontDescriptor(fontAttributes: [.family: family])
+
+		func matchedFontName(_ traits: [UIFontDescriptor.TraitKey: Any]) -> String {
+			let descriptor = traits.isEmpty
+				? base
+				: base.addingAttributes([.traits: traits])
+			return UIFont(descriptor: descriptor, size: 12).fontName
+		}
+
+		let weightNames = Set([
+			matchedFontName([.weight: UIFont.Weight.ultraLight.rawValue]),
+			matchedFontName([.weight: UIFont.Weight.regular.rawValue]),
+			matchedFontName([.weight: UIFont.Weight.black.rawValue])
+		])
+
+		let italicNames = Set([
+			matchedFontName([:]),
+			matchedFontName([.slant: 0.2])
+		])
+
+		let widthNames = Set([
+			matchedFontName([.width: -0.5]),
+			matchedFontName([:]),
+			matchedFontName([.width: 0.5])
+		])
+
+		return FamilyCapabilities(
+			weightIsEffective: weightNames.count > 1,
+			italicIsEffective: italicNames.count > 1,
+			widthIsEffective: widthNames.count > 1
+		)
+	}
+
+	/// Returns the family's basic/default face for use as a visual specimen.
+	/// No requested CodableFont weight, italic, or width traits are applied.
+	public func basicFont(forFamily family: String, size: CGFloat) -> UIFont {
+		let descriptor = UIFontDescriptor(fontAttributes: [.family: family])
+		let matched = UIFont(descriptor: descriptor, size: size)
+		if matched.familyName.caseInsensitiveCompare(family) == .orderedSame {
+			return matched
+		}
+
+		if let firstFace = catalog().facesByFamily[family]?.first,
+		   let fallback = UIFont(name: firstFace.postScriptName, size: size) {
+			return fallback
+		}
+
+		return matched
 	}
 
 	/// Returns a cached `UIFont` for the supplied description and scale.
