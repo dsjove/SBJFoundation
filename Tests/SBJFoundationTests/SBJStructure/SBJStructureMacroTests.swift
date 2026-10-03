@@ -128,7 +128,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
 
                     ]
@@ -196,9 +196,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "displayName".uncamelCased, \\.displayName)
+                        SBJEditorPropertyDescriptor<Self>(name: "displayName".uncamelCased, \\.displayName)
                     ]
                 }
 
@@ -271,10 +271,10 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "stored".uncamelCased, \\.stored),
-                        SBJEditorField<Self>(editorOnlyName: "image".uncamelCased, \\.image)
+                        SBJEditorPropertyDescriptor<Self>(name: "stored".uncamelCased, \\.stored),
+                        SBJEditorPropertyDescriptor<Self>(editorOnlyName: "image".uncamelCased, \\.image)
                     ]
                 }
 
@@ -353,9 +353,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "value".uncamelCased, \\.value)
+                        SBJEditorPropertyDescriptor<Self>(name: "value".uncamelCased, \\.value)
                     ]
                 }
 
@@ -409,7 +409,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
 
                     ]
@@ -473,9 +473,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "items".uncamelCased, \\.items)
+                        SBJEditorPropertyDescriptor<Self>(name: "items".uncamelCased, \\.items)
                     ]
                 }
 
@@ -538,9 +538,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "items".uncamelCased, \\.items)
+                        SBJEditorPropertyDescriptor<Self>(name: "items".uncamelCased, \\.items)
                     ]
                 }
 
@@ -609,7 +609,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
 
                     ]
@@ -687,10 +687,10 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "name".uncamelCased, \\.name),
-                        SBJEditorField<Self>(name: "website".uncamelCased, \\.website)
+                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name),
+                        SBJEditorPropertyDescriptor<Self>(name: "website".uncamelCased, \\.website)
                     ]
                 }
 
@@ -770,12 +770,12 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "identifier".uncamelCased, \\.identifier),
-                        SBJEditorField<Self>(name: "created".uncamelCased, \\.created),
-                        SBJEditorField<Self>(name: "website".uncamelCased, \\.website),
-                        SBJEditorField<Self>(name: "color".uncamelCased, \\.color)
+                        SBJEditorPropertyDescriptor<Self>(name: "identifier".uncamelCased, \\.identifier),
+                        SBJEditorPropertyDescriptor<Self>(name: "created".uncamelCased, \\.created),
+                        SBJEditorPropertyDescriptor<Self>(name: "website".uncamelCased, \\.website),
+                        SBJEditorPropertyDescriptor<Self>(name: "color".uncamelCased, \\.color)
                     ]
                 }
 
@@ -848,9 +848,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "name".uncamelCased, \\.name)
+                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name)
                     ]
                 }
 
@@ -919,9 +919,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "name".uncamelCased, \\.name)
+                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name)
                     ]
                 }
 
@@ -987,9 +987,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "payload".uncamelCased, \\.payload)
+                        SBJEditorPropertyDescriptor<Self>(name: "payload".uncamelCased, \\.payload)
                     ]
                 }
 
@@ -1059,9 +1059,9 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
 
                 @MainActor
-                static var sbjEditorFields: [SBJEditorField<Self>] {
+                static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorField<Self>(name: "payload".uncamelCased, \\.payload)
+                        SBJEditorPropertyDescriptor<Self>(name: "payload".uncamelCased, \\.payload)
                     ]
                 }
 

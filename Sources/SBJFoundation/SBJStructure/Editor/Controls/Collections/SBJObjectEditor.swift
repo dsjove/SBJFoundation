@@ -49,7 +49,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
         )
     }
 
-    private func bodySnapshot(criteria: SBJEditSearchCriteria) -> [SBJEditorSnapshotItem<SBJEditorField<Value>>] {
+    private func bodySnapshot(criteria: SBJEditSearchCriteria) -> [SBJEditorSnapshotItem<SBJEditorPropertyDescriptor<Value>>] {
         bodyFields.enumerated().compactMap { offset, field in
             let navigationPath = context.navigationPath + [field.name]
             guard navigationTarget?.contains(navigationPath) == true || field.isIncluded(
@@ -66,14 +66,14 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
         }
     }
 
-    private var promotedTitleField: SBJEditorField<Value>? {
+    private var promotedTitleField: SBJEditorPropertyDescriptor<Value>? {
         guard let promotedTitlePropertyName else { return nil }
         return Value.sbjEditorFields.first { field in
             field.editableField.structuralMetadata?.sourceName == promotedTitlePropertyName
         }
     }
 
-    private func isPromotedTitleField(_ field: SBJEditorField<Value>) -> Bool {
+    private func isPromotedTitleField(_ field: SBJEditorPropertyDescriptor<Value>) -> Bool {
         guard let promotedTitlePropertyName else { return false }
         return field.editableField.structuralMetadata?.sourceName == promotedTitlePropertyName
     }
@@ -82,7 +82,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
         resolvedIsExpanded
     }
 
-    private var bodyFields: [SBJEditorField<Value>] {
+    private var bodyFields: [SBJEditorPropertyDescriptor<Value>] {
         Value.sbjEditorFields.filter { !isPromotedTitleField($0) }
     }
 

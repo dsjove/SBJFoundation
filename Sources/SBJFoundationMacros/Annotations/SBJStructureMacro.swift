@@ -93,7 +93,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                             "SBJEditableField<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
                         entries.append(
-                            "SBJEditorField<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
+                            "SBJEditorPropertyDescriptor<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
                     }
                     continue
@@ -268,7 +268,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                     "SBJEditableField<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
                 )
                 entries.append(
-                    "SBJEditorField<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
+                    "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
                 )
             }
         }
@@ -293,7 +293,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
             """),
             DeclSyntax(stringLiteral: """
             @MainActor
-            \(access)static var sbjEditorFields: [SBJEditorField<Self>] {
+            \(access)static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                 [
                     \(body)
                 ]

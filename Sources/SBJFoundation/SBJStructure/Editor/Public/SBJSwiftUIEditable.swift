@@ -7,7 +7,7 @@ import SwiftUI
 /// `@SBJStructure` synthesizes this conformance together with `SBJEditable`.
 public protocol SBJSwiftUIEditable: SBJEditable {
     @MainActor
-    static var sbjEditorFields: [SBJEditorField<Self>] { get }
+    static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] { get }
 
     /// Returns whether an editor field should be presented with an inactive
     /// appearance while remaining fully interactive.

@@ -52,7 +52,7 @@ public struct SBJEditorView<Value: SBJSwiftUIEditable>: View {
         self._originalValue = State(initialValue: value.wrappedValue.sbjCodableCopy())
     }
 
-    private var rootSnapshot: [SBJEditorSnapshotItem<SBJEditorField<Value>>] {
+    private var rootSnapshot: [SBJEditorSnapshotItem<SBJEditorPropertyDescriptor<Value>>] {
         Value.sbjEditorFields.enumerated().compactMap { offset, field in
             let navigationPath = [field.name]
             guard state.navigationTarget?.contains(navigationPath) == true || field.isIncluded(

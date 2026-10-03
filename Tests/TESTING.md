@@ -6,11 +6,12 @@ details.
 
 ## Two complementary coverage mechanisms
 
-### SubjectEditor Preview compile coverage
+### SBJStructure sample compile coverage
 
-`SBJStructuredEditorPreview` declares every SBJStructure annotation and intentionally pulls the
-editor dependency graph into one living sample. Its contract is documented in
-[SBJStructure/SAMPLE_COVERAGE.md](SBJStructure/SAMPLE_COVERAGE.md).
+`SBJStructureSampleModel` is the canonical integration fixture used by both editor previews and
+by focused integration tests. It declares every SBJStructure annotation and intentionally pulls
+the editor dependency graph into one living sample. Its contract is documented in
+[`SAMPLE_COVERAGE.md`](../Sources/SBJFoundation/SBJStructure/Documentation/SAMPLE_COVERAGE.md).
 
 This is compile dependency coverage: if a type on that path is removed, the Preview should no
 longer build. It is not runtime branch coverage.

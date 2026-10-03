@@ -5,13 +5,13 @@ import Foundation
 /// not provide the SwiftUI structured editor UI.
 public protocol SBJSwiftUIEditable: SBJEditable {
     @MainActor
-    static var sbjEditorFields: [SBJEditorField<Self>] { get }
+    static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] { get }
 }
 
 /// Metadata-only shell used by `@SBJStructure` on tvOS/watchOS. There is intentionally
 /// no rendering API here: structured editing is not a tvOS/watchOS feature.
 @MainActor
-public struct SBJEditorField<Root: SBJStructured> {
+public struct SBJEditorPropertyDescriptor<Root: SBJStructured> {
     public let name: String
     public let editableField: SBJEditableField<Root>
 

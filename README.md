@@ -41,7 +41,7 @@ See [Framework Ownership and Dependency Boundaries](Documentation/ARCHITECTURE.m
 
 Directory placement communicates ownership; it does not create separate modules.
 
-- `Sources/SBJFoundation/SBJStructure/` — structural metadata, annotations, validation/diagnostics, resource-reference discovery, SubjectEditor, source export, and preview fixtures.
+- `Sources/SBJFoundation/SBJStructure/` — functionality-first subsystem with explicit `Public/` entry surfaces, automatic/editor implementation areas, source export, documentation, and one canonical sample fixture.
 - `Sources/SBJFoundation/Image/` — reusable image references and image-resource UI, including `ImageReference`, `PhotoMenu`, and thumbnail/display controls.
 - `Sources/SBJFoundation/UIVocabulary/` — shared SwiftUI visual vocabulary: semantic appearance, field chrome, active/focus/validation/search decoration, alerts, buttons, and reusable controls.
 - `Sources/SBJFoundation/Search/` — general search values, matching, and `SearchField`.
@@ -67,11 +67,12 @@ See [Help System](Documentation/HELP.md).
 
 SBJStructure describes the structure of Codable models independently from business semantics. Generated metadata supports validation, comparison, content inspection, diagnostics, resource-reference discovery, source export, accessibility, and SubjectEditor.
 
-`SBJStructuredEditorPreview` is the kitchen-sink compile/sample fixture. Every SBJStructure annotation must be represented there. See:
+`SBJStructureSampleModel` is the kitchen-sink compile/sample fixture shared by `SBJStructuredEditorPreview`, `SBJEditFieldPreview`, and integration tests. Every SBJStructure annotation must be represented in that model. For hand-built SwiftUI forms, `SBJEditField` exposes the same one-value editor selection used by the automatic editor, so an application can bind a `String`, `Date`, `Data`, collection, nested structured value, or other supported type without hosting an auto-generated form. For `SBJSwiftUIEditable` models, `SBJEditField(root:keyPath:)` also reuses generated property metadata and key-path registry customizations; the automatic editor renders its properties through that same field component. `SBJEditFieldPreview` demonstrates each supported editor category independently. See:
 
-- [SBJStructure design and rationale](Documentation/SBJStructure/README.md)
-- [SubjectEditor preview coverage](Documentation/SBJStructure/SAMPLE_COVERAGE.md)
-- [Accessibility regression checklist](Documentation/SBJStructure/ACCESSIBILITY_REGRESSION.md)
+- [SBJStructure design and rationale](Sources/SBJFoundation/SBJStructure/Documentation/README.md)
+- [SBJStructure source organization](Sources/SBJFoundation/SBJStructure/Documentation/ORGANIZATION.md)
+- [SBJStructure sample coverage](Sources/SBJFoundation/SBJStructure/Documentation/SAMPLE_COVERAGE.md)
+- [Accessibility regression checklist](Sources/SBJFoundation/SBJStructure/Documentation/ACCESSIBILITY_REGRESSION.md)
 
 ## Resource identity, content, and images
 
