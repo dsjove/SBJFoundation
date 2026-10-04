@@ -2,10 +2,11 @@ import SwiftUI
 
 private struct SBJActiveSearchModifier: ViewModifier {
     let isActive: Bool
+    let padding: CGFloat
 
     func body(content: Content) -> some View {
         content
-            .padding(8)
+            .padding(padding)
             .overlay {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(
@@ -28,7 +29,7 @@ public extension View {
     /// decoration so the decorated region has consistent geometry wherever it
     /// is used. Callers decide what constitutes an active search and which
     /// region of UI belongs to the search criteria.
-    func sbjActiveSearch(_ isActive: Bool = true) -> some View {
-        modifier(SBJActiveSearchModifier(isActive: isActive))
+    func sbjActiveSearch(_ isActive: Bool = true, padding: CGFloat = 8) -> some View {
+        modifier(SBJActiveSearchModifier(isActive: isActive, padding: padding))
     }
 }
