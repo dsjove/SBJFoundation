@@ -56,7 +56,9 @@ Important requirements:
 - `markModified(at:)` updates domain modification metadata;
 - `makeNewDocument()` and `makeDuplicate(of:named:)` own app policy;
 - `prepareImport` / `finalizedImport` own identity policy for imports and copies;
-- `fileWrapper(for:)` and `snapshot(from:)` define the package format.
+- `fileWrapper(for:)` defines the complete detached/export package representation;
+- `persist(_:to:)` defines active-save behavior and may update a coordinated package incrementally;
+- `snapshot(from:)` / `catalogSnapshot(at:)` define package loading and discovery.
 
 ### `PackageDocumentLibrary`
 
@@ -100,7 +102,7 @@ These helpers are public because apps may export data other than a complete `Pac
 
 ## iCloud behavior
 
-`PackageStorageLocation` prefers the configured ubiquitous Documents directory when available and falls back to local Documents storage when it is not.
+`PackageStorageLocation` uses an explicit storage policy. `.local` always uses the app Documents directory; `.iCloudPreferred(...)` uses the configured ubiquitous Documents directory when available and otherwise pins that library instance to local Documents storage.
 
 This is document-based iCloud storage, not CloudKit database synchronization. File coordination and file versions matter. `PackageSession` and the directory monitor intentionally hide platform-specific details from clients.
 

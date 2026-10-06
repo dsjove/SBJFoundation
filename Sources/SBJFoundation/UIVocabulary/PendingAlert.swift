@@ -1,13 +1,21 @@
 import SwiftUI
 
 public struct PendingAlert: Identifiable {
-	public let id = UUID()
+	public let id: UUID
 	public let alertable: any Alertable
 	public let action: () -> Void
+	public let dismissAction: () -> Void
 
-	public init(_ alertable: any Alertable, action: @escaping () -> Void) {
+	public init(
+		_ alertable: any Alertable,
+		id: UUID = UUID(),
+		action: @escaping () -> Void = {},
+		dismissAction: @escaping () -> Void = {}
+	) {
+		self.id = id
 		self.alertable = alertable
 		self.action = action
+		self.dismissAction = dismissAction
 	}
 }
 

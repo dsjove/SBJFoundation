@@ -9,13 +9,46 @@ import UIKit
 /// API and do not need to know that UIKit is the backend.
 final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Sendable {
 	typealias Snapshot = Document.Snapshot
+
+	private struct SaveContext: Sendable {
+		let change: Int
+		let operation: PackagePersistenceOperation
+	}
+
+	private final class SavePayload: NSObject {
+		let context: SaveContext
+		let snapshot: Snapshot
+
+		init(context: SaveContext, snapshot: Snapshot) {
+			self.context = context
+			self.snapshot = snapshot
+		}
+	}
+
 	private let stateLock = NSLock()
 	private var storedState: Snapshot
 	private var suppressNextLoadedEvent = false
+	private var changeSequence = 0
+	private var persistedChangeSequence = 0
+	private var requestedSaveOperation: PackagePersistenceOperation?
+	private var activeSaveContext: SaveContext?
+	private var recentSaveFailure: (domain: String, code: Int, message: String, at: Date)?
+	private let eventLock = NSLock()
+	private var eventDeliveryTask: Task<Void, Never>?
+	@MainActor private var explicitSaveTask: Task<Void, Error>?
+	@MainActor private var explicitSaveRequestedAgain = false
 	private let onEvent: @MainActor @Sendable (PackageSessionEvent<Snapshot>) async -> Void
 
 	var state: Snapshot {
 		stateLock.withLock { storedState }
+	}
+
+	var currentChange: Int {
+		stateLock.withLock { changeSequence }
+	}
+
+	var lastPersistedChange: Int {
+		stateLock.withLock { persistedChangeSequence }
 	}
 
 	init(
@@ -41,7 +74,48 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 	}
 
 	override func contents(forType typeName: String) throws -> Any {
-		try Document.fileWrapper(for: state)
+		let (context, snapshot) = stateLock.withLock { () -> (SaveContext, Snapshot) in
+			let context = SaveContext(
+				change: changeSequence,
+				operation: requestedSaveOperation ?? .autosave
+			)
+			requestedSaveOperation = nil
+			activeSaveContext = context
+			return (context, storedState)
+		}
+		emit(.saveStarted(change: context.change, operation: context.operation))
+		return SavePayload(context: context, snapshot: snapshot)
+	}
+
+	override func writeContents(
+		_ contents: Any,
+		to url: URL,
+		for saveOperation: UIDocument.SaveOperation,
+		originalContentsURL: URL?
+	) throws {
+		guard let payload = contents as? SavePayload else {
+			throw CocoaError(.fileWriteUnknown)
+		}
+		do {
+			let warnings = try Document.persist(payload.snapshot, to: url)
+			for warning in warnings { emit(.warning(warning)) }
+		} catch {
+			recordSaveFailure(error, context: payload.context)
+			throw error
+		}
+
+		let context = stateLock.withLock { () -> SaveContext? in
+			defer { activeSaveContext = nil }
+			if activeSaveContext?.change == payload.context.change,
+				activeSaveContext?.operation == payload.context.operation {
+				persistedChangeSequence = max(persistedChangeSequence, payload.context.change)
+				return activeSaveContext
+			}
+			return nil
+		}
+		if let context {
+			emit(.saveSucceeded(change: context.change, operation: context.operation, at: .now))
+		}
 	}
 
 	override func load(fromContents contents: Any, ofType typeName: String?) throws {
@@ -71,18 +145,68 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 	}
 
 	override func handleError(_ error: any Error, userInteractionPermitted: Bool) {
-		emit(.error(error))
+		if let context = stateLock.withLock({ activeSaveContext }) {
+			recordSaveFailure(error, context: context)
+		} else if !consumeMatchingRecentSaveFailure(error) {
+			emit(.error(error))
+		}
 		super.handleError(error, userInteractionPermitted: userInteractionPermitted)
 	}
 
+	private func consumeMatchingRecentSaveFailure(_ error: Error) -> Bool {
+		let nsError = error as NSError
+		return stateLock.withLock {
+			guard let recentSaveFailure,
+				Date().timeIntervalSince(recentSaveFailure.at) < 2,
+				recentSaveFailure.domain == nsError.domain,
+				recentSaveFailure.code == nsError.code,
+				recentSaveFailure.message == error.localizedDescription
+			else { return false }
+			self.recentSaveFailure = nil
+			return true
+		}
+	}
+
+	private func recordSaveFailure(_ error: Error, context: SaveContext) {
+		let shouldEmit = stateLock.withLock { () -> Bool in
+			guard activeSaveContext?.change == context.change,
+				activeSaveContext?.operation == context.operation
+			else { return false }
+			activeSaveContext = nil
+			return true
+		}
+		guard shouldEmit else { return }
+		let failure = PackagePersistenceFailure(error: error, operation: context.operation, fileURL: fileURL)
+		let nsError = error as NSError
+		stateLock.withLock {
+			recentSaveFailure = (nsError.domain, nsError.code, error.localizedDescription, .now)
+		}
+		emit(.saveFailed(change: context.change, failure: failure))
+	}
+
 	private func emit(_ event: PackageSessionEvent<Snapshot>) {
-		Task { @MainActor [onEvent] in await onEvent(event) }
+		let task = eventLock.withLock { () -> Task<Void, Never> in
+			let previous = eventDeliveryTask
+			let task = Task { @MainActor [onEvent] in
+				if let previous { await previous.value }
+				await onEvent(event)
+			}
+			eventDeliveryTask = task
+			return task
+		}
+		_ = task
 	}
 
 	@MainActor
-	func replaceState(_ state: Snapshot) {
-		stateLock.withLock { storedState = state }
+	@discardableResult
+	func replaceState(_ state: Snapshot) -> Int {
+		let change = stateLock.withLock { () -> Int in
+			storedState = state
+			changeSequence &+= 1
+			return changeSequence
+		}
 		updateChangeCount(.done)
+		return change
 	}
 
 	@MainActor
@@ -108,22 +232,73 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 
 	@MainActor
 	func createSession() async throws {
-		try await withCheckedThrowingContinuation { continuation in
-			save(to: fileURL, for: .forCreating) { success in
-				if success { continuation.resume() }
-				else { continuation.resume(throwing: CocoaError(.fileWriteUnknown)) }
+		stateLock.withLock { requestedSaveOperation = .create }
+		do {
+			try await withCheckedThrowingContinuation { continuation in
+				save(to: fileURL, for: .forCreating) { success in
+					if success { continuation.resume() }
+					else { continuation.resume(throwing: CocoaError(.fileWriteUnknown)) }
+				}
 			}
+		} catch {
+			failPendingSaveIfNeeded(error, fallbackOperation: .create)
+			throw error
 		}
 	}
 
 	@MainActor
-	func saveNow() async throws {
-		try await withCheckedThrowingContinuation { continuation in
-			autosave { success in
-				if success { continuation.resume() }
-				else { continuation.resume(throwing: CocoaError(.fileWriteUnknown)) }
-			}
+	func saveNow(operation: PackagePersistenceOperation = .explicitSave) async throws {
+		if let explicitSaveTask {
+			explicitSaveRequestedAgain = true
+			try await explicitSaveTask.value
+			return
 		}
+		guard hasUnsavedChanges else { return }
+
+		let task = Task { @MainActor [weak self] in
+			guard let self else { return }
+			repeat {
+				self.explicitSaveRequestedAgain = false
+				try await self.performSaveNow(operation: operation)
+			} while self.explicitSaveRequestedAgain && self.hasUnsavedChanges
+		}
+		explicitSaveTask = task
+		defer {
+			explicitSaveTask = nil
+			explicitSaveRequestedAgain = false
+		}
+		try await task.value
+	}
+
+	@MainActor
+	private func performSaveNow(operation: PackagePersistenceOperation) async throws {
+		guard hasUnsavedChanges else { return }
+		stateLock.withLock { requestedSaveOperation = operation }
+		do {
+			try await withCheckedThrowingContinuation { continuation in
+				autosave { success in
+					if success { continuation.resume() }
+					else { continuation.resume(throwing: CocoaError(.fileWriteUnknown)) }
+				}
+			}
+		} catch {
+			failPendingSaveIfNeeded(error, fallbackOperation: operation)
+			throw error
+		}
+	}
+
+	@MainActor
+	private func failPendingSaveIfNeeded(_ error: Error, fallbackOperation: PackagePersistenceOperation) {
+		let context = stateLock.withLock { () -> SaveContext? in
+			if let activeSaveContext { return activeSaveContext }
+			guard requestedSaveOperation != nil else { return nil }
+			requestedSaveOperation = nil
+			return SaveContext(change: changeSequence, operation: fallbackOperation)
+		}
+		guard let context else { return }
+		let failure = PackagePersistenceFailure(error: error, operation: context.operation, fileURL: fileURL)
+		stateLock.withLock { activeSaveContext = nil }
+		emit(.saveFailed(change: context.change, failure: failure))
 	}
 
 	@MainActor
@@ -139,7 +314,7 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 	@MainActor
 	func resolveContentConflict(keepingCurrent: Bool) async throws {
 		if keepingCurrent {
-			try await saveNow()
+			try await saveNow(operation: .conflictResolution)
 			try resolvePackageFileVersions(at: fileURL, keepingCurrent: true)
 		} else {
 			discardUnsavedChanges()
@@ -149,14 +324,26 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 	}
 
 	@MainActor
-	func closeSession() async {
-		NotificationCenter.default.removeObserver(
-			self,
-			name: UIDocument.stateChangedNotification,
-			object: self
-		)
-		await withCheckedContinuation { continuation in
-			close { _ in continuation.resume() }
+	func closeSession() async throws {
+		if let explicitSaveTask { try await explicitSaveTask.value }
+		if hasUnsavedChanges {
+			stateLock.withLock { requestedSaveOperation = .close }
+		}
+		do {
+			try await withCheckedThrowingContinuation { continuation in
+				close { success in
+					if success { continuation.resume() }
+					else { continuation.resume(throwing: CocoaError(.fileWriteUnknown)) }
+				}
+			}
+			NotificationCenter.default.removeObserver(
+				self,
+				name: UIDocument.stateChangedNotification,
+				object: self
+			)
+		} catch {
+			failPendingSaveIfNeeded(error, fallbackOperation: .close)
+			throw error
 		}
 	}
 }

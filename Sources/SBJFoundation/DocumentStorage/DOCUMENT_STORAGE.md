@@ -9,8 +9,9 @@ Applications use these types directly:
 - `PackageDocumentSnapshot` — immutable, sendable persisted state with a stable ID.
 - `PackageDocument` — live-document contract for snapshot/restore, display name and role, creation/duplication, storage configuration, import policy, deep-link routing, and `FileWrapper` serialization.
 - `DocumentRole` and `DocumentURLRouting` — document policy used by `PackageDocument` conformers.
-- `PackageStorageLocation` — construction-time storage configuration returned by a document type. Its URL-calculation details are implementation state, not client API.
-- `PackageDocumentLibrary<Document>` — the application-facing library for discovery, canonical live objects, open/create/duplicate/delete/import/export, change notification, package URLs, and conflict resolution.
+- `PackageStorageLocation` and `PackageStoragePolicy` — explicit construction-time storage configuration returned by a document type. Generic document IDs can provide their own storage-name mapping.
+- `PackageDocumentLibrary<Document>` — the application-facing library for discovery, canonical live objects, open/create/duplicate/delete/import/export, persistence state, semantic notices, package URLs, and conflict resolution.
+- `PackageDocumentNotice` — queued semantic informational notices. Apps may present these themselves or opt into the standard `.packageDocumentAlerts(...)` SwiftUI adapter.
 - `PackageImportConflict`, `PackageImportConflictResolution`, `PackageExternalConflict`, `PackageExternalConflictKind`, and `PackageExternalConflictResolution` — conflict information and choices surfaced by the library.
 - `ExportArtifactWriter` — staging helper for app-owned export artifacts.
 - `ExportDestinationService` — copies staged exports to a user-selected directory and reports replacement collisions before overwrite.
@@ -31,7 +32,7 @@ These types exist to implement `PackageDocumentLibrary`; applications should not
 
 ## Storage lifetime
 
-A document type returns a `PackageStorageLocation` from `storageLocation(fileManager:)`. The library resolves its active root once during initialization (or accepts an injected root for tests) and uses that root for its lifetime. This prevents the package catalog and active sessions from diverging if iCloud availability changes while the library is alive.
+A document type returns a `PackageStorageLocation` from `storageLocation(fileManager:)` with an explicit `.local` or `.iCloudPreferred(...)` policy. The library resolves its active root once during initialization (or accepts an injected root for tests) and uses that root for its lifetime. This prevents the package catalog and active sessions from diverging if iCloud availability changes while the library is alive.
 
 Canonical package names are based on stable document IDs rather than user-facing names. Display-name-based export naming is a client/export policy, not canonical storage identity.
 
@@ -42,3 +43,10 @@ Import conflicts are detected by stable document ID before adoption. The client 
 For an open package, Foundation `NSFileVersion` is used under coordinated access for content conflicts. Keeping local changes saves the current state and resolves competing versions. Choosing the external version promotes the selected external file version and reloads the session. External move/delete conflicts discard a pending stale save before closing; choosing to keep local changes then recreates only the canonical package location.
 
 Clients receive conflict descriptions and submit a resolution through `PackageDocumentLibrary`; the file-version/session mechanics remain internal.
+
+
+## Opening and write compatibility
+
+`document(id:)` is lookup only. `open(_:)` and `open(id:)` establish an active persistence session for user documents before returning them. A user document that cannot be backed by its persisted package fails to open rather than appearing editable without a save path.
+
+A document format may declare a decoded snapshot readable but not writable through `PackageDocument.isSnapshotWritable(_:)`. This supports forward-compatible viewing without silently rewriting a newer schema through an older encoder. Mutation, duplication, import adoption, and package export reject non-writable snapshots; clients can use the document model's corresponding editability state to disable those actions in advance.

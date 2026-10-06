@@ -33,6 +33,46 @@ public protocol PackageDocumentSnapshot: Sendable, Equatable {
 /// The conforming document owns model semantics and package-format policy.
 /// The library owns discovery, canonical identity, sessions, saving, imports,
 /// external-change handling, URL opening, package export, and platform differences.
+
+public struct PackageDocumentNotice: Identifiable, Sendable, Equatable {
+	public enum Kind: Sendable, Equatable {
+		case persistenceFailure
+		case resourceWarning
+		case identityRepair
+		case storageChange
+		case catalogIssue
+	}
+
+	public let id: UUID
+	public let kind: Kind
+	public let title: String
+	public let message: String
+
+	public init(id: UUID = UUID(), kind: Kind, title: String, message: String) {
+		self.id = id
+		self.kind = kind
+		self.title = title
+		self.message = message
+	}
+}
+
+public struct PackageDocumentWriteWarning: LocalizedError, Sendable, Equatable {
+	public let message: String
+
+	public init(_ message: String) { self.message = message }
+	public var errorDescription: String? { message }
+}
+
+public struct PackageDocumentWriteResult {
+	public let wrapper: FileWrapper
+	public let warnings: [PackageDocumentWriteWarning]
+
+	public init(wrapper: FileWrapper, warnings: [PackageDocumentWriteWarning] = []) {
+		self.wrapper = wrapper
+		self.warnings = warnings
+	}
+}
+
 public protocol PackageDocument: AnyObject, Comparable, SendableMetatype, DocumentURLRouting
 where DocumentID == Snapshot.ID {
 	associatedtype Snapshot: PackageDocumentSnapshot
@@ -54,14 +94,25 @@ where DocumentID == Snapshot.ID {
 
 	static func makeNewDocument() -> Self
 	static func makeDuplicate(of source: Self, named name: String) -> Self
+	static func makeDocumentID() -> Snapshot.ID
+	static func isValidUserDocumentID(_ id: Snapshot.ID) -> Bool
+	static func replacingID(in snapshot: Snapshot, with id: Snapshot.ID) -> Snapshot
 
 	static func storageLocation(fileManager: FileManager) -> PackageStorageLocation<Snapshot.ID>
 	static func validateImportURL(_ url: URL) throws
 	static func prepareImport(_ snapshot: Snapshot) -> Snapshot
 	static func finalizedImport(_ snapshot: Snapshot, asCopy: Bool) -> Snapshot
 	static func snapshotForExport(_ snapshot: Snapshot) -> Snapshot
+	static func isSnapshotWritable(_ snapshot: Snapshot) -> Bool
 
+	/// Complete package representation used for export and detached copies.
 	static func fileWrapper(for snapshot: Snapshot) throws -> FileWrapper
+	static func writeResult(for snapshot: Snapshot) throws -> PackageDocumentWriteResult
+	/// Persists an active document at its coordinated package URL. The default
+	/// implementation replaces the complete package. Document formats with
+	/// secondary resources may override this to update primary data independently
+	/// and leave unchanged resources physically untouched.
+	static func persist(_ snapshot: Snapshot, to url: URL) throws -> [PackageDocumentWriteWarning]
 	static func snapshot(from wrapper: FileWrapper) throws -> Snapshot
 	/// Opens a persisted package when its URL is available. Document types may
 	/// use the URL as lazy backing storage instead of materializing package resources.
@@ -80,6 +131,23 @@ public extension PackageDocument {
 	func restoreCatalog(from snapshot: Snapshot) { restore(from: snapshot) }
 
 	static func snapshotForExport(_ snapshot: Snapshot) -> Snapshot { snapshot }
+	static func isSnapshotWritable(_ snapshot: Snapshot) -> Bool { true }
+	static func writeResult(for snapshot: Snapshot) throws -> PackageDocumentWriteResult {
+		.init(wrapper: try fileWrapper(for: snapshot))
+	}
+	static func persist(_ snapshot: Snapshot, to url: URL) throws -> [PackageDocumentWriteWarning] {
+		let result = try writeResult(for: snapshot)
+		try FileManager.default.createDirectory(
+			at: url.deletingLastPathComponent(),
+			withIntermediateDirectories: true
+		)
+		try result.wrapper.write(
+			to: url,
+			options: .atomic,
+			originalContentsURL: FileManager.default.fileExists(atPath: url.path) ? url : nil
+		)
+		return result.warnings
+	}
 	static func snapshot(from wrapper: FileWrapper, at url: URL) throws -> Snapshot {
 		try snapshot(from: wrapper)
 	}

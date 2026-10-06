@@ -11,9 +11,15 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 	private let stateLock = NSLock()
 	private var storedState: Snapshot
 	private var dirty = false
+	private var changeSequence = 0
+	private var persistedChangeSequence = 0
 	private var currentURL: URL
 	private var presenterRegistered = false
-		private let onEvent: @MainActor @Sendable (PackageSessionEvent<Snapshot>) async -> Void
+	private let eventLock = NSLock()
+	private var eventDeliveryTask: Task<Void, Never>?
+	@MainActor private var explicitSaveTask: Task<Void, Error>?
+	@MainActor private var explicitSaveRequestedAgain = false
+	private let onEvent: @MainActor @Sendable (PackageSessionEvent<Snapshot>) async -> Void
 	private let presenterQueue: OperationQueue = {
 		let queue = OperationQueue()
 		queue.name = "SBJFoundation.PackageSession.NSFilePresenter"
@@ -31,6 +37,14 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 
 	var hasUnsavedChanges: Bool {
 		stateLock.withLock { dirty }
+	}
+
+	var currentChange: Int {
+		stateLock.withLock { changeSequence }
+	}
+
+	var lastPersistedChange: Int {
+		stateLock.withLock { persistedChangeSequence }
 	}
 
 	var presentedItemURL: URL? { fileURL }
@@ -81,15 +95,28 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 	}
 
 	private func emit(_ event: PackageSessionEvent<Snapshot>) {
-		Task { @MainActor [onEvent] in await onEvent(event) }
+		let task = eventLock.withLock { () -> Task<Void, Never> in
+			let previous = eventDeliveryTask
+			let task = Task { @MainActor [onEvent] in
+				if let previous { await previous.value }
+				await onEvent(event)
+			}
+			eventDeliveryTask = task
+			return task
+		}
+		_ = task
 	}
 
 	@MainActor
-	func replaceState(_ state: Snapshot) {
-		stateLock.withLock {
+	@discardableResult
+	func replaceState(_ state: Snapshot) -> Int {
+		let change = stateLock.withLock { () -> Int in
 			storedState = state
 			dirty = true
+			changeSequence &+= 1
+			return changeSequence
 		}
+		return change
 	}
 
 	@MainActor
@@ -114,26 +141,62 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 
 	@MainActor
 	func createSession() async throws {
+		let change = currentChange
+		emit(.saveStarted(change: change, operation: .create))
 		do {
 			try writeState()
-			stateLock.withLock { dirty = false }
+			stateLock.withLock {
+				dirty = false
+				persistedChangeSequence = max(persistedChangeSequence, change)
+			}
 			registerPresenterIfNeeded()
+			emit(.saveSucceeded(change: change, operation: .create, at: .now))
 		} catch {
-			emit(.error(error))
+			emit(.saveFailed(change: change, failure: .init(error: error, operation: .create, fileURL: fileURL)))
 			throw error
 		}
 	}
 
 	@MainActor
-	func saveNow() async throws {
+	func saveNow(operation: PackagePersistenceOperation = .explicitSave) async throws {
+		if let explicitSaveTask {
+			explicitSaveRequestedAgain = true
+			try await explicitSaveTask.value
+			return
+		}
 		guard hasUnsavedChanges else { return }
+
+		let task = Task { @MainActor [weak self] in
+			guard let self else { return }
+			repeat {
+				self.explicitSaveRequestedAgain = false
+				try await self.performSaveNow(operation: operation)
+			} while self.explicitSaveRequestedAgain && self.hasUnsavedChanges
+		}
+		explicitSaveTask = task
+		defer {
+			explicitSaveTask = nil
+			explicitSaveRequestedAgain = false
+		}
+		try await task.value
+	}
+
+	@MainActor
+	private func performSaveNow(operation: PackagePersistenceOperation) async throws {
+		guard hasUnsavedChanges else { return }
+		let change = currentChange
+		emit(.saveStarted(change: change, operation: operation))
 		do {
 			let wasRegistered = removePresenterIfRegistered()
 			defer { if wasRegistered { registerPresenterIfNeeded() } }
 			try writeState()
-			stateLock.withLock { dirty = false }
+			stateLock.withLock {
+				dirty = false
+				persistedChangeSequence = max(persistedChangeSequence, change)
+			}
+			emit(.saveSucceeded(change: change, operation: operation, at: .now))
 		} catch {
-			emit(.error(error))
+			emit(.saveFailed(change: change, failure: .init(error: error, operation: operation, fileURL: fileURL)))
 			throw error
 		}
 	}
@@ -157,7 +220,7 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 	@MainActor
 	func resolveContentConflict(keepingCurrent: Bool) async throws {
 		if keepingCurrent {
-			try await saveNow()
+			try await saveNow(operation: .conflictResolution)
 			try resolvePackageFileVersions(at: fileURL, keepingCurrent: true)
 		} else {
 			discardUnsavedChanges()
@@ -167,8 +230,8 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 	}
 
 	@MainActor
-	func closeSession() async {
-		try? await saveNow()
+	func closeSession() async throws {
+		try await saveNow(operation: .close)
 		removePresenterIfRegistered()
 	}
 
@@ -210,33 +273,24 @@ final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter
 	}
 
 	private func writeState() throws {
-		let wrapper = try Document.fileWrapper(for: state)
+		let snapshot = state
 		let url = fileURL
 		try FileManager.default.createDirectory(
 			at: url.deletingLastPathComponent(),
 			withIntermediateDirectories: true
 		)
 		var coordinationError: NSError?
-		var operationError: Error?
+		var operationResult: Result<[PackageDocumentWriteWarning], Error>?
 		NSFileCoordinator(filePresenter: nil).coordinate(
 			writingItemAt: url,
 			options: .forReplacing,
 			error: &coordinationError
 		) { coordinatedURL in
-			do {
-				try wrapper.write(
-					to: coordinatedURL,
-					options: .atomic,
-					originalContentsURL: FileManager.default.fileExists(atPath: coordinatedURL.path)
-						? coordinatedURL
-						: nil
-				)
-			} catch {
-				operationError = error
-			}
+			operationResult = Result { try Document.persist(snapshot, to: coordinatedURL) }
 		}
 		if let coordinationError { throw coordinationError }
-		if let operationError { throw operationError }
+		guard let operationResult else { throw CocoaError(.fileWriteUnknown) }
+		for warning in try operationResult.get() { emit(.warning(warning)) }
 	}
 
 	@discardableResult

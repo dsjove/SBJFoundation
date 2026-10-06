@@ -5,6 +5,16 @@ import Testing
 
 @Suite("Package document library")
 struct PackageDocumentLibraryTests {
+	private final class PersistProbe: @unchecked Sendable {
+		private let lock = NSLock()
+		private var _count = 0
+
+		var count: Int { lock.withLock { _count } }
+
+		func reset() { lock.withLock { _count = 0 } }
+		func record() { lock.withLock { _count += 1 } }
+	}
+
 	private struct Snapshot: PackageDocumentSnapshot, Codable, Equatable, Sendable {
 		let id: String
 		var name: String
@@ -14,6 +24,7 @@ struct PackageDocumentLibraryTests {
 	}
 
 	private final class TestDocument: PackageDocument, @unchecked Sendable {
+		static let persistProbe = PersistProbe()
 		var snapshot: Snapshot
 
 		var id: String { snapshot.id }
@@ -39,6 +50,14 @@ struct PackageDocumentLibraryTests {
 
 		static func == (lhs: TestDocument, rhs: TestDocument) -> Bool {
 			lhs === rhs
+		}
+
+		static func makeDocumentID() -> String { UUID().uuidString }
+
+		static func isValidUserDocumentID(_ id: String) -> Bool { !id.isEmpty && id != "built-in" }
+
+		static func replacingID(in snapshot: Snapshot, with id: String) -> Snapshot {
+			.init(id: id, name: snapshot.name, role: snapshot.role, modifiedAt: snapshot.modifiedAt, value: snapshot.value)
 		}
 
 		static func makeNewDocument() -> TestDocument {
@@ -101,6 +120,21 @@ struct PackageDocumentLibraryTests {
 			])
 		}
 
+		static func persist(_ snapshot: Snapshot, to url: URL) throws -> [PackageDocumentWriteWarning] {
+			persistProbe.record()
+			let wrapper = try fileWrapper(for: snapshot)
+			try FileManager.default.createDirectory(
+				at: url.deletingLastPathComponent(),
+				withIntermediateDirectories: true
+			)
+			try wrapper.write(
+				to: url,
+				options: .atomic,
+				originalContentsURL: FileManager.default.fileExists(atPath: url.path) ? url : nil
+			)
+			return []
+		}
+
 		static func snapshot(from wrapper: FileWrapper) throws -> Snapshot {
 			guard let data = wrapper.fileWrappers?["state.json"]?.regularFileContents else {
 				throw CocoaError(.fileReadCorruptFile)
@@ -133,10 +167,10 @@ struct PackageDocumentLibraryTests {
 		let url = try #require(library.packageURL(for: document))
 		#expect(url.deletingLastPathComponent() == root)
 		#expect(FileManager.default.fileExists(atPath: url.path))
-		#expect(library.open(id: document.id) === document)
+		#expect(library.document(id: document.id) === document)
 
 		try await library.delete(document)
-		#expect(library.open(id: document.id) == nil)
+		#expect(library.document(id: document.id) == nil)
 		#expect(!FileManager.default.fileExists(atPath: url.path))
 	}
 
@@ -180,7 +214,7 @@ struct PackageDocumentLibraryTests {
 
 		#expect(library.packageURL(for: builtIn) == nil)
 		try await library.delete(builtIn)
-		#expect(library.open(id: builtIn.id) === builtIn)
+		#expect(library.document(id: builtIn.id) === builtIn)
 		#expect(library.availableDocuments.contains { $0 === builtIn })
 	}
 
@@ -199,13 +233,154 @@ struct PackageDocumentLibraryTests {
 		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
 
 		try await library.load()
-		let first = try #require(library.open(id: snapshot.id))
-		let second = try #require(library.open(id: snapshot.id))
+		let first = try #require(try await library.open(id: snapshot.id))
+		let second = try #require(try await library.open(id: snapshot.id))
 		#expect(first === second)
 		#expect(first.snapshot == snapshot)
-		#expect(library.open(first) === first)
+		#expect(try await library.open(first) === first)
 
 		try await library.delete(first)
+	}
+
+	@MainActor @Test("Loaded documents must be activated before edits can save")
+	func loadedDocumentRequiresActivation() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let snapshot = Snapshot(
+			id: "loaded-edit",
+			name: "Loaded Edit",
+			role: .user,
+			modifiedAt: .distantPast,
+			value: "disk"
+		)
+		let url = try write(snapshot, root: root)
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		try await library.load()
+		let document = try #require(library.document(id: snapshot.id))
+
+		var inactiveError: Error?
+		document.snapshot.value = "would-be-lost"
+		library.documentDidChange(document) { error in inactiveError = error }
+		#expect(inactiveError != nil)
+
+		let active = try await library.open(document)
+		#expect(active === document)
+		document.snapshot.value = "persisted"
+		library.documentDidChange(document) { _ in }
+		#expect(library.persistenceState(for: document.id)?.status == .dirty)
+		await library.flushAll()
+		#expect(library.persistenceState(for: document.id)?.status == .saved)
+
+		let wrapper = try FileWrapper(url: url, options: .immediate)
+		let reloaded = try TestDocument.snapshot(from: wrapper)
+		#expect(reloaded.value == "persisted")
+	}
+
+	@MainActor @Test("Persistence state advances from dirty to saved after an explicit flush")
+	func persistenceStateTracksFlush() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let document = try await library.createDocument()
+		let initial = try #require(library.persistenceState(for: document.id))
+		#expect(initial.status == .saved)
+		#expect(initial.currentChange == initial.persistedChange)
+
+		document.snapshot.value = "changed"
+		library.documentDidChange(document) { _ in }
+		let dirty = try #require(library.persistenceState(for: document.id))
+		#expect(dirty.status == .dirty)
+		#expect(dirty.currentChange > dirty.persistedChange)
+
+		await library.flushAll()
+		let saved = try #require(library.persistenceState(for: document.id))
+		#expect(saved.status == .saved)
+		#expect(saved.currentChange == saved.persistedChange)
+		#expect(saved.lastSuccessfulSaveAt != nil)
+	}
+
+	@MainActor @Test("Single-document save persists the requested document")
+	func singleDocumentSavePersistsRequestedDocument() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let first = try await library.createDocument()
+		let second = try await library.createDocument()
+		TestDocument.persistProbe.reset()
+
+		first.snapshot.value = "first changed"
+		library.documentDidChange(first)
+		second.snapshot.value = "second changed"
+		library.documentDidChange(second)
+
+		try await library.save(first, operation: .documentSwitch)
+
+		#expect(library.persistenceState(for: first.id)?.status == .saved)
+		#expect(library.persistenceState(for: second.id)?.status == .dirty)
+		#expect(TestDocument.persistProbe.count == 1)
+	}
+
+	@MainActor @Test("All-document save barrier persists every dirty active document")
+	func allDocumentSaveBarrierPersistsEveryDirtyDocument() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let first = try await library.createDocument()
+		let second = try await library.createDocument()
+		TestDocument.persistProbe.reset()
+
+		first.snapshot.value = "first changed"
+		library.documentDidChange(first)
+		second.snapshot.value = "second changed"
+		library.documentDidChange(second)
+
+		try await library.flushAllRequiringSuccess(operation: .applicationTermination)
+
+		#expect(library.persistenceState(for: first.id)?.status == .saved)
+		#expect(library.persistenceState(for: second.id)?.status == .saved)
+		#expect(TestDocument.persistProbe.count == 2)
+	}
+
+	@MainActor @Test("Concurrent flush requests coalesce and leave the document saved")
+	func concurrentFlushesCoalesce() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let document = try await library.createDocument()
+		TestDocument.persistProbe.reset()
+
+		document.snapshot.value = "changed once"
+		library.documentDidChange(document)
+
+		async let first: Void = library.flushAll(operation: .lifecycleFlush)
+		async let second: Void = library.flushAll(operation: .lifecycleFlush)
+		_ = await (first, second)
+
+		let state = try #require(library.persistenceState(for: document.id))
+		#expect(state.status == .saved)
+		#expect(state.currentChange == state.persistedChange)
+		#expect(TestDocument.persistProbe.count == 1)
+	}
+
+	@MainActor @Test("A user document that is not persisted cannot be activated for editing")
+	func activationRequiresPersistedBacking() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let document = TestDocument(restoring: .init(
+			id: "not-persisted",
+			name: "Not Persisted",
+			role: .user,
+			modifiedAt: .now,
+			value: "memory only"
+		))
+
+		do {
+			_ = try await library.open(document)
+			Issue.record("Expected activation to fail for a user document with no persisted backing package")
+		} catch {
+			#expect(error.localizedDescription.contains("Document not found"))
+		}
 	}
 
 	@MainActor @Test("Adopting persisted state restores an existing live object in place")
@@ -287,6 +462,98 @@ struct PackageDocumentLibraryTests {
 
 		try await library.delete(canonical)
 		try await library.delete(copy)
+	}
+
+	@MainActor @Test("Import replaces invalid or built-in identities instead of rejecting user data")
+	func importRepairsInvalidAndBuiltInIDs() async throws {
+		let root = temporaryDirectory()
+		let externalRoot = temporaryDirectory()
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: externalRoot)
+		}
+
+		let builtIn = TestDocument(restoring: .init(
+			id: "built-in", name: "Built In", role: .builtIn, modifiedAt: .distantPast, value: "fixture"
+		))
+		let library = PackageDocumentLibrary<TestDocument>(builtInDocuments: [builtIn], rootDirectory: root)
+
+		let importedURL = try write(.init(
+			id: "built-in", name: "User Data", role: .user, modifiedAt: .now, value: "preserve-me"
+		), root: externalRoot)
+		let imported = try #require(try await library.importDocument(.success(importedURL)))
+
+		#expect(imported.id != "built-in")
+		#expect(TestDocument.isValidUserDocumentID(imported.id))
+		#expect(imported.snapshot.value == "preserve-me")
+		#expect(library.document(id: "built-in") === builtIn)
+		let notice = try #require(library.notices.first)
+		#expect(notice.kind == .identityRepair)
+		library.dismissNotice(id: notice.id)
+		#expect(library.notices.isEmpty)
+		try await library.delete(imported)
+	}
+
+	@MainActor @Test("Import avoids a canonical package-path collision even when it is not cataloged")
+	func importAvoidsUncatalogedStorageCollision() async throws {
+		let root = temporaryDirectory()
+		let externalRoot = temporaryDirectory()
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: externalRoot)
+		}
+
+		let collisionID = "uncataloged-collision"
+		let location = TestDocument.storageLocation(fileManager: .default)
+		let occupiedURL = location.packageURL(for: collisionID, root: root)
+		try FileManager.default.createDirectory(at: occupiedURL, withIntermediateDirectories: true)
+
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let importedURL = try write(.init(
+			id: collisionID, name: "Incoming", role: .user, modifiedAt: .now, value: "safe"
+		), root: externalRoot)
+		let imported = try #require(try await library.importDocument(.success(importedURL)))
+
+		#expect(imported.id != collisionID)
+		#expect(FileManager.default.fileExists(atPath: occupiedURL.path))
+		#expect(imported.snapshot.value == "safe")
+		try await library.delete(imported)
+	}
+
+	@MainActor @Test("Import avoids an ID embedded in a misnamed catalog package")
+	func importAvoidsIdentityReservedByMisnamedPackage() async throws {
+		let root = temporaryDirectory()
+		let externalRoot = temporaryDirectory()
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: externalRoot)
+		}
+
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let reservedID = "reserved-inside-misnamed-package"
+		let misnamedURL = root.appendingPathComponent("wrong-name.testpkg", isDirectory: true)
+		let misnamedSnapshot = Snapshot(
+			id: reservedID,
+			name: "Misnamed",
+			role: .user,
+			modifiedAt: .now,
+			value: "existing"
+		)
+		try TestDocument.fileWrapper(for: misnamedSnapshot).write(to: misnamedURL, options: .atomic, originalContentsURL: nil)
+
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		try await library.load()
+		#expect(library.catalogIssues.map(\.packageURL).contains(misnamedURL))
+
+		let importedURL = try write(.init(
+			id: reservedID, name: "Incoming", role: .user, modifiedAt: .now, value: "preserve"
+		), root: externalRoot)
+		let imported = try #require(try await library.importDocument(.success(importedURL)))
+
+		#expect(imported.id != reservedID)
+		#expect(imported.snapshot.value == "preserve")
+		#expect(FileManager.default.fileExists(atPath: misnamedURL.path))
+		try await library.delete(imported)
 	}
 
 	@MainActor @Test("Document URLs route to the canonical live document")

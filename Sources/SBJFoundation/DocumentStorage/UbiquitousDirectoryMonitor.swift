@@ -1,27 +1,39 @@
 import Foundation
 
-/// RAII owner for an `NSMetadataQuery` watching one iCloud Documents subtree.
-/// Creating the monitor starts observation when iCloud is available; releasing it
-/// stops the query, removes observers, and cancels pending callbacks.
+/// Owns the metadata query for one iCloud Documents subtree.
+///
+/// The metadata query is the authoritative source for which cloud packages
+/// exist. File-system enumeration is deliberately not used for the iCloud
+/// catalog because metadata can arrive before package contents are downloaded.
 @MainActor
 final class UbiquitousDirectoryMonitor {
 	enum Change {
-		case all
-		case urls(Set<URL>)
+		case snapshot(Set<URL>)
 	}
 
 	private let query = NSMetadataQuery()
 	private var observers: [NSObjectProtocol] = []
 	private let directoryURL: () -> URL
+	private let packageExtension: String
 	private let onChange: (Change) -> Void
+	private let onIdentityChange: () -> Void
 	private var queryStarted = false
 	private var pendingChange: DispatchWorkItem?
-	private var pendingURLs: Set<URL> = []
-	private var pendingFullRefresh = false
+	private var initialURLs: Set<URL>?
+	private var initialWaiters: [CheckedContinuation<Set<URL>, Never>] = []
+	private var identityFingerprint: Data?
 
-	init(directoryURL: @escaping () -> URL, onChange: @escaping (Change) -> Void) {
+	init(
+		directoryURL: @escaping () -> URL,
+		packageExtension: String,
+		onIdentityChange: @escaping () -> Void,
+		onChange: @escaping (Change) -> Void
+	) {
 		self.directoryURL = directoryURL
+		self.packageExtension = packageExtension
+		self.onIdentityChange = onIdentityChange
 		self.onChange = onChange
+		self.identityFingerprint = Self.currentIdentityFingerprint()
 
 		let center = NotificationCenter.default
 		observers.append(center.addObserver(
@@ -30,65 +42,72 @@ final class UbiquitousDirectoryMonitor {
 			queue: .main
 		) { [weak self] _ in
 			MainActor.assumeIsolated {
-				self?.restartQuery()
-				self?.schedule(.all)
+				guard let self else { return }
+				let fingerprint = Self.currentIdentityFingerprint()
+				if fingerprint != self.identityFingerprint {
+					self.identityFingerprint = fingerprint
+					self.onIdentityChange()
+				}
+				self.restartQuery()
 			}
 		})
 
-		// Finishing the initial gather establishes the baseline. The library has
-		// already performed its initial catalog load, so refreshing here would
-		// immediately repeat that work.
+		observers.append(center.addObserver(
+			forName: .NSMetadataQueryDidFinishGathering,
+			object: query,
+			queue: .main
+		) { [weak self] _ in
+			MainActor.assumeIsolated {
+				guard let self else { return }
+				let urls = self.currentTopLevelPackageURLs()
+				self.finishInitialGather(with: urls)
+				self.schedule(urls)
+			}
+		})
+
 		observers.append(center.addObserver(
 			forName: .NSMetadataQueryDidUpdate,
 			object: query,
 			queue: .main
-		) { [weak self] notification in
-			// Notification is not Sendable. Consume it in the observer callback
-			// before entering MainActor isolation, and carry only Sendable URLs
-			// across the boundary.
-			let itemURLs = Self.changedItemURLs(from: notification)
+		) { [weak self] _ in
 			MainActor.assumeIsolated {
 				guard let self else { return }
-				let urls = self.changedTopLevelURLs(from: itemURLs)
-				guard !urls.isEmpty else { return }
-				self.schedule(.urls(urls))
+				self.schedule(self.currentTopLevelPackageURLs())
 			}
 		})
+
 		startQueryIfAvailable()
 	}
 
+	func initialPackageURLs() async -> Set<URL> {
+		if let initialURLs { return initialURLs }
+		guard queryStarted else { return [] }
+		return await withCheckedContinuation { continuation in
+			initialWaiters.append(continuation)
+		}
+	}
+
+	func currentPackageURLs() -> Set<URL> {
+		currentTopLevelPackageURLs()
+	}
+
 	private func startQueryIfAvailable() {
-		guard !queryStarted, FileManager.default.url(forUbiquityContainerIdentifier: nil) != nil else { return }
+		guard !queryStarted else { return }
 		query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
 		query.predicate = NSPredicate(format: "%K BEGINSWITH %@", NSMetadataItemPathKey, directoryURL().path)
 		query.notificationBatchingInterval = 0.5
 		queryStarted = query.start()
+		if !queryStarted { finishInitialGather(with: []) }
 	}
 
-	nonisolated private static func changedItemURLs(from notification: Notification) -> [URL] {
-		let keys = [
-			NSMetadataQueryUpdateAddedItemsKey,
-			NSMetadataQueryUpdateChangedItemsKey,
-			NSMetadataQueryUpdateRemovedItemsKey
-		]
-		var result: [URL] = []
-
-		for key in keys {
-			guard let items = notification.userInfo?[key] as? [NSMetadataItem] else { continue }
-			for item in items {
-				guard let itemURL = item.value(forAttribute: NSMetadataItemURLKey) as? URL else { continue }
-				result.append(itemURL)
-			}
-		}
-		return result
-	}
-
-	private func changedTopLevelURLs(from itemURLs: [URL]) -> Set<URL> {
+	private func currentTopLevelPackageURLs() -> Set<URL> {
 		let root = directoryURL().standardizedFileURL
 		var result: Set<URL> = []
-
-		for itemURL in itemURLs {
-			guard let topLevel = topLevelURL(containing: itemURL, under: root) else { continue }
+		for case let item as NSMetadataItem in query.results {
+			guard let itemURL = item.value(forAttribute: NSMetadataItemURLKey) as? URL,
+				let topLevel = topLevelURL(containing: itemURL, under: root),
+				topLevel.pathExtension.caseInsensitiveCompare(packageExtension) == .orderedSame
+			else { continue }
 			result.insert(topLevel)
 		}
 		return result
@@ -103,30 +122,19 @@ final class UbiquitousDirectoryMonitor {
 		return root.appendingPathComponent(itemComponents[rootComponents.count], isDirectory: true)
 	}
 
-	private func schedule(_ change: Change) {
-		switch change {
-		case .all:
-			pendingFullRefresh = true
-			pendingURLs.removeAll()
-		case .urls(let urls):
-			guard !pendingFullRefresh else { break }
-			pendingURLs.formUnion(urls)
-		}
+	private func finishInitialGather(with urls: Set<URL>) {
+		if initialURLs == nil { initialURLs = urls }
+		let waiters = initialWaiters
+		initialWaiters.removeAll()
+		for waiter in waiters { waiter.resume(returning: urls) }
+	}
 
+	private func schedule(_ urls: Set<URL>) {
 		pendingChange?.cancel()
 		let work = DispatchWorkItem { [weak self] in
 			MainActor.assumeIsolated {
 				guard let self else { return }
-				if self.pendingFullRefresh {
-					self.pendingFullRefresh = false
-					self.pendingURLs.removeAll()
-					self.onChange(.all)
-				} else {
-					let urls = self.pendingURLs
-					self.pendingURLs.removeAll()
-					guard !urls.isEmpty else { return }
-					self.onChange(.urls(urls))
-				}
+				self.onChange(.snapshot(urls))
 			}
 		}
 		pendingChange = work
@@ -136,12 +144,18 @@ final class UbiquitousDirectoryMonitor {
 	private func restartQuery() {
 		if queryStarted { query.stop() }
 		queryStarted = false
+		initialURLs = nil
 		startQueryIfAvailable()
 	}
 
 	isolated deinit {
 		pendingChange?.cancel()
 		if queryStarted { query.stop() }
+		for waiter in initialWaiters { waiter.resume(returning: []) }
 		observers.forEach(NotificationCenter.default.removeObserver)
+	}
+	private static func currentIdentityFingerprint() -> Data? {
+		guard let token = FileManager.default.ubiquityIdentityToken else { return nil }
+		return try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: false)
 	}
 }
