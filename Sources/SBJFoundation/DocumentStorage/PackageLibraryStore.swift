@@ -36,6 +36,7 @@ struct PackageCatalogScan<State: Sendable>: Sendable {
 
 struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable>: @unchecked Sendable {
 	let directory: URL
+	let trashDirectory: URL
 	let packageURL: @Sendable (ID) -> URL
 	let identifier: @Sendable (State) -> ID
 	let loadPackage: @Sendable (URL) throws -> State
@@ -46,6 +47,7 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 
 	init(
 		directory: URL,
+		trashDirectory: URL,
 		packageURL: @escaping @Sendable (ID) -> URL,
 		identifier: @escaping @Sendable (State) -> ID,
 		loadPackage: @escaping @Sendable (URL) throws -> State,
@@ -54,6 +56,7 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 		fileManager: FileManager = .default
 	) {
 		self.directory = directory
+		self.trashDirectory = trashDirectory
 		self.packageURL = packageURL
 		self.identifier = identifier
 		self.loadPackage = loadPackage
@@ -178,12 +181,42 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 		try fileAccess.readSecurityScoped(at: url) { try loadPackage($0) }
 	}
 
-	func delete(id: ID) throws {
+	/// Atomically removes a package from live discovery by moving the complete
+	/// package into the library's private trash directory. Physical deletion is
+	/// intentionally separate so catalog scans never observe a half-deleted package.
+	func moveToTrash(id: ID) throws {
 		try prepareDirectory()
-		try fileAccess.removeItem(at: packageURL(id))
+		try prepareTrashDirectory()
+		let sourceURL = packageURL(id)
+		guard fileManager.fileExists(atPath: sourceURL.path) else { return }
+
+		let destinationURL = trashDirectory.appendingPathComponent(
+			"\(sourceURL.lastPathComponent).\(UUID().uuidString)",
+			isDirectory: true
+		)
+		try fileAccess.moveItem(at: sourceURL, to: destinationURL)
+	}
+
+	/// Best-effort housekeeping entry point for packages or other rogue files left
+	/// in trash by an interrupted cleanup. The caller decides whether failures are
+	/// user-visible; normal app-launch cleanup deliberately ignores them.
+	func emptyTrash() throws {
+		try prepareTrashDirectory()
+		let entries = try fileManager.contentsOfDirectory(
+			at: trashDirectory,
+			includingPropertiesForKeys: nil,
+			options: []
+		)
+		for entry in entries {
+			try fileAccess.removeItem(at: entry)
+		}
 	}
 
 	private func prepareDirectory() throws {
 		try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+	}
+
+	private func prepareTrashDirectory() throws {
+		try fileManager.createDirectory(at: trashDirectory, withIntermediateDirectories: true)
 	}
 }

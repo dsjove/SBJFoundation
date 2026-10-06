@@ -33,6 +33,32 @@ struct CoordinatedFileAccess: @unchecked Sendable {
 		}
 	}
 
+
+	func moveItem(at sourceURL: URL, to destinationURL: URL) throws {
+		guard fileManager.fileExists(atPath: sourceURL.path) else { return }
+		try fileManager.createDirectory(
+			at: destinationURL.deletingLastPathComponent(),
+			withIntermediateDirectories: true
+		)
+
+		var coordinationError: NSError?
+		var operationError: Error?
+		NSFileCoordinator().coordinate(
+			writingItemAt: sourceURL,
+			options: .forMoving,
+			error: &coordinationError
+		) { coordinatedSourceURL in
+			do {
+				guard fileManager.fileExists(atPath: coordinatedSourceURL.path) else { return }
+				try fileManager.moveItem(at: coordinatedSourceURL, to: destinationURL)
+			} catch {
+				operationError = error
+			}
+		}
+		if let coordinationError { throw coordinationError }
+		if let operationError { throw operationError }
+	}
+
 	func removeItem(at url: URL) throws {
 		guard fileManager.fileExists(atPath: url.path) else { return }
 		var coordinationError: NSError?

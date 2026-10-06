@@ -96,6 +96,9 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	private var persistenceStates: [ID: PackageDocumentPersistenceState] = [:]
 	private var libraryMonitor: UbiquitousDirectoryMonitor?
 	private var pendingImport: Snapshot?
+	/// User documents disappear from discovery as soon as deletion is requested,
+	/// before session close and coordinated filesystem removal finish.
+	private var deletionRequestedIDs: Set<ID> = []
 	private var persistedIDs: Set<ID> = []
 	/// Package filenames known to exist in the resolved storage universe, including
 	/// metadata-visible iCloud items whose contents cannot currently be decoded.
@@ -126,12 +129,17 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		let location = Document.storageLocation(fileManager: fileManager)
 		let resolution = location.resolve(rootOverride: rootDirectory)
 		let resolvedRoot = resolution.directory
+		let trashRoot = resolvedRoot.deletingLastPathComponent().appendingPathComponent(
+			".\(resolvedRoot.lastPathComponent)-Trash",
+			isDirectory: true
+		)
 		self.location = location
 		self.rootDirectory = resolvedRoot
 		self.storageKind = resolution.kind
 		self.usesUbiquitousCatalog = resolution.isUbiquitous
 		self.catalog = PackageLibraryStore(
 			directory: resolvedRoot,
+			trashDirectory: trashRoot,
 			packageURL: { id in location.packageURL(for: id, root: resolvedRoot) },
 			identifier: { $0.id },
 			loadPackage: { url in
@@ -159,7 +167,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			startLibraryMonitorIfNeeded()
 			let packageURLs = await libraryMonitor?.initialPackageURLs() ?? []
 			let catalog = self.catalog
-			let openIDs = Set(sessions.keys)
+			let openIDs = Set(sessions.keys).union(deletionRequestedIDs)
 			let scan = await Task.detached(priority: .utility) {
 				catalog.scanCatalog(packageURLs: packageURLs, excludingIDs: openIDs)
 			}.value
@@ -188,7 +196,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			task = existing
 		} else {
 			let catalog = self.catalog
-			let openIDs = Set(sessions.keys)
+			let openIDs = Set(sessions.keys).union(deletionRequestedIDs)
 			let created = Task.detached(priority: .utility) {
 				try catalog.scanCatalog(excludingIDs: openIDs)
 			}
@@ -502,6 +510,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	func createPersisted(_ document: Document) async throws -> Document {
 		try prepareRootDirectory()
 		let id = document.id
+		deletionRequestedIDs.remove(id)
 		let session = makeSession(id: id, initial: document.snapshot)
 		liveDocuments[id] = document
 		sessions[id] = session
@@ -523,13 +532,39 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	public func delete(_ document: Document) async throws {
 		guard document.role == .user else { return }
 		let id = document.id
-		if let session = sessions[id] {
-			session.discardUnsavedChanges()
-			try await session.closeSession()
+
+		// Deletion is user intent. Hide the document immediately, then close any
+		// live session and atomically move the intact package out of the discovery
+		// root. Physical removal from trash is asynchronous housekeeping.
+		deletionRequestedIDs.insert(id)
+		rebuildAvailableDocuments()
+
+		do {
+			if let session = sessions[id] {
+				session.discardUnsavedChanges()
+				try await session.closeSession()
+			}
+			let catalog = self.catalog
+			try await Task.detached(priority: .userInitiated) { try catalog.moveToTrash(id: id) }.value
+			removeFromCatalog(id: id)
+
+			// Deletion is complete from the application's point of view once the
+			// move succeeds. Cleanup failure is nonfatal and retried at next launch.
+			Task.detached(priority: .utility) { try? catalog.emptyTrash() }
+		} catch {
+			// A failed move means the package is still live. Restore discovery and
+			// preserve the original error for the caller.
+			deletionRequestedIDs.remove(id)
+			rebuildAvailableDocuments()
+			throw error
 		}
+	}
+
+	/// Removes any packages or rogue files left in the private trash directory.
+	/// Intended for nonblocking housekeeping such as app launch.
+	public func emptyTrash() async {
 		let catalog = self.catalog
-		try await Task.detached(priority: .userInitiated) { try catalog.delete(id: id) }.value
-		removeFromCatalog(id: id)
+		await Task.detached(priority: .utility) { try? catalog.emptyTrash() }.value
 	}
 
 	public func documentDidChange(
@@ -639,7 +674,8 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		_ scan: PackageCatalogScan<Snapshot>,
 		reportUnavailable: Bool = true
 	) {
-		catalogIssues = scan.issues
+		let deletionPackageNames = Set(deletionRequestedIDs.map { location.packageName(for: $0) })
+		catalogIssues = scan.issues.filter { !deletionPackageNames.contains($0.packageName) }
 		presentPackageNames = scan.presentPackageNames
 		catalogOccupiedPackageNames = scan.occupiedPackageNames
 		// A metadata-visible iCloud package can be temporarily unreadable for reasons
@@ -682,7 +718,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 
 	private func refreshCatalog() async throws {
 		let catalog = self.catalog
-		let openIDs = Set(sessions.keys)
+		let openIDs = Set(sessions.keys).union(deletionRequestedIDs)
 		if usesUbiquitousCatalog {
 			let packageURLs = libraryMonitor?.currentPackageURLs() ?? []
 			let scan = await Task.detached(priority: .utility) {
@@ -699,7 +735,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 
 	private func refreshCatalog(fromMetadata packageURLs: Set<URL>) async {
 		let catalog = self.catalog
-		let openIDs = Set(sessions.keys)
+		let openIDs = Set(sessions.keys).union(deletionRequestedIDs)
 		let scan = await Task.detached(priority: .utility) {
 			catalog.scanCatalog(packageURLs: packageURLs, excludingIDs: openIDs)
 		}.value
@@ -709,7 +745,8 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	private func refreshCatalog(at packageURLs: Set<URL>) async throws {
 		guard !packageURLs.isEmpty else { return }
 		let catalog = self.catalog
-		let openPackageNames = Set(sessions.keys.map { location.packageURL(for: $0, root: rootDirectory).lastPathComponent })
+		let excludedIDs = Set(sessions.keys).union(deletionRequestedIDs)
+		let openPackageNames = Set(excludedIDs.map { location.packageURL(for: $0, root: rootDirectory).lastPathComponent })
 		let urls = packageURLs.filter { !openPackageNames.contains($0.lastPathComponent) }
 		guard !urls.isEmpty else { return }
 
@@ -996,9 +1033,9 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	}
 
 	private func rebuildAvailableDocuments() {
-		availableDocuments = Array(liveDocuments.values).sorted { lhs, rhs in
-			lhs < rhs
-		}
+		availableDocuments = liveDocuments.values
+			.filter { !deletionRequestedIDs.contains($0.id) }
+			.sorted { lhs, rhs in lhs < rhs }
 		didChange()
 	}
 
@@ -1006,6 +1043,10 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		let id = document.id
 		liveDocuments[id] = document
 		availableDocuments.removeAll { $0.id == id }
+		guard !deletionRequestedIDs.contains(id) else {
+			didChange()
+			return
+		}
 		availableDocuments.append(document)
 		availableDocuments.sort { lhs, rhs in
 			lhs < rhs

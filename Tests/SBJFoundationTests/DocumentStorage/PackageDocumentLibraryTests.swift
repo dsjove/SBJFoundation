@@ -174,6 +174,42 @@ struct PackageDocumentLibraryTests {
 		#expect(!FileManager.default.fileExists(atPath: url.path))
 	}
 
+	@MainActor @Test("Deletion request removes document from discovery immediately")
+	func deleteImmediatelyFiltersDiscovery() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let document = try await library.createDocument()
+		#expect(library.availableDocuments.contains { $0.id == document.id })
+
+		let deletion = Task { @MainActor in
+			try await library.delete(document)
+		}
+		await Task.yield()
+
+		#expect(!library.availableDocuments.contains { $0.id == document.id })
+		try await deletion.value
+	}
+
+
+	@MainActor @Test("Empty trash removes rogue launch leftovers")
+	func emptyTrashRemovesRogueFiles() async throws {
+		let root = temporaryDirectory()
+		let trash = root.deletingLastPathComponent().appendingPathComponent(".\(root.lastPathComponent)-Trash", isDirectory: true)
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: trash)
+		}
+		try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
+		try Data("leftover".utf8).write(to: trash.appendingPathComponent("rogue.tmp"))
+
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		await library.emptyTrash()
+
+		#expect(try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil).isEmpty)
+	}
+
+
 	@MainActor @Test("Duplication creates a new persisted user identity")
 	func duplicateCreatesNewIdentity() async throws {
 		let root = temporaryDirectory()

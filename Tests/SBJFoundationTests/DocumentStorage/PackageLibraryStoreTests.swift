@@ -108,9 +108,48 @@ struct PackageLibraryStoreTests {
 	}
 
 
+	@Test("Move to trash removes intact package from live catalog")
+	func moveToTrashRemovesPackageFromCatalog() throws {
+		let root = temporaryDirectory()
+		let trash = root.deletingLastPathComponent().appendingPathComponent(".\(root.lastPathComponent)-Trash", isDirectory: true)
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: trash)
+		}
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		try write(.init(id: "one", value: "First"), root: root)
+
+		let store = makeStore(root: root)
+		store.moveToTrash(id: "one")
+
+		#expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("one.pkg").path))
+		#expect(try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil).count == 1)
+		#expect(try store.scanCatalog().states.isEmpty)
+	}
+
+	@Test("Empty trash removes packages and rogue hidden files")
+	func emptyTrashRemovesEverything() throws {
+		let root = temporaryDirectory()
+		let trash = root.deletingLastPathComponent().appendingPathComponent(".\(root.lastPathComponent)-Trash", isDirectory: true)
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: trash)
+		}
+		try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
+		try Data("rogue".utf8).write(to: trash.appendingPathComponent(".rogue"))
+		try FileManager.default.createDirectory(at: trash.appendingPathComponent("leftover.pkg"), withIntermediateDirectories: true)
+
+		let store = makeStore(root: root)
+		try store.emptyTrash()
+
+		#expect(try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil).isEmpty)
+	}
+
+
 	private func makeStore(root: URL) -> PackageLibraryStore<String, Fixture> {
 		PackageLibraryStore(
 			directory: root,
+			trashDirectory: root.deletingLastPathComponent().appendingPathComponent(".\(root.lastPathComponent)-Trash", isDirectory: true),
 			packageURL: { root.appendingPathComponent("\($0).pkg", isDirectory: true) },
 			identifier: { $0.id },
 			loadPackage: { directory in
