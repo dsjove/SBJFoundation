@@ -120,7 +120,7 @@ struct PackageLibraryStoreTests {
 		try write(.init(id: "one", value: "First"), root: root)
 
 		let store = makeStore(root: root)
-		store.moveToTrash(id: "one")
+		try? store.moveToTrash(id: "one")
 
 		#expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("one.pkg").path))
 		#expect(try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil).count == 1)

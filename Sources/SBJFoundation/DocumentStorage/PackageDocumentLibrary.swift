@@ -152,6 +152,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			isPackageCandidate: { url in
 				url.pathExtension.caseInsensitiveCompare(location.packageExtension) == .orderedSame
 			},
+			issueDisplayName: { url in Document.catalogIssueDisplayName(at: url) },
 			fileManager: location.fileManager
 		)
 		self.availableDocuments = builtInDocuments.sorted { lhs, rhs in
@@ -263,7 +264,17 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	}
 
 	public func open(url: URL) async throws -> Document? {
-		if url.isFileURL { return try await importDocument(.success(url)) }
+		if url.isFileURL {
+			try await load()
+			let incomingURL = url.standardizedFileURL
+			if let existing = availableDocuments.first(where: { document in
+				guard let packageURL = packageURL(for: document) else { return false }
+				return packageURL.standardizedFileURL == incomingURL
+			}) {
+				return try await open(existing)
+			}
+			return try await importDocument(.success(url))
+		}
 		guard let id = Document.documentID(from: url) else { return nil }
 		guard let document = try await open(id: id) else {
 			throw PackageDocumentLibraryError.documentNotFound(String(describing: id))
@@ -467,7 +478,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			repeat {
 				self.flushAgainRequested = false
 				await self.performFlushAll(operation: operation)
-			} while self.flushAgainRequested && self.sessions.values.contains { $0.hasUnsavedChanges }
+			} while self.flushAgainRequested && self.sessions.values.contains { $0.currentChange > $0.lastPersistedChange }
 		}
 		activeFlushTask = task
 		defer {
@@ -478,7 +489,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 	}
 
 	private func performFlushAll(operation: PackagePersistenceOperation) async {
-		for (id, session) in sessions where session.hasUnsavedChanges {
+		for (id, session) in sessions where session.currentChange > session.lastPersistedChange {
 			do {
 				try await session.saveNow(operation: operation)
 				reconcilePersistenceState(id: id, session: session, savedAt: .now)
@@ -556,6 +567,28 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			// preserve the original error for the caller.
 			deletionRequestedIDs.remove(id)
 			rebuildAvailableDocuments()
+			throw error
+		}
+	}
+
+
+	/// Deletes a package that is present in the catalog but could not be decoded.
+	/// The URL comes from the catalog scan itself; `PackageLibraryStore` revalidates
+	/// that it belongs to this library before moving it to private trash.
+	public func deleteCatalogIssue(_ issue: PackageCatalogIssue) async throws {
+		let catalog = self.catalog
+		let url = issue.packageURL
+		catalogIssues.removeAll { $0.id == issue.id }
+		do {
+			try await Task.detached(priority: .userInitiated) {
+				try catalog.moveToTrash(packageURL: url)
+			}.value
+			presentPackageNames.remove(url.lastPathComponent)
+			catalogOccupiedPackageNames.remove(url.lastPathComponent)
+			didChange()
+			Task.detached(priority: .utility) { try? catalog.emptyTrash() }
+		} catch {
+			try? await refreshCatalog()
 			throw error
 		}
 	}
@@ -887,7 +920,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 
 	private func handleExternalRemoval(id: ID, kind: PackageExternalConflictKind) async {
 		guard let session = sessions[id], let document = liveDocuments[id] else { return }
-		if session.hasUnsavedChanges {
+		if session.currentChange > session.lastPersistedChange {
 			externalConflicts[id] = .init(
 				id: id,
 				documentName: document.name,

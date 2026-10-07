@@ -248,19 +248,21 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 
 	@MainActor
 	func saveNow(operation: PackagePersistenceOperation = .explicitSave) async throws {
+		let targetChange = currentChange
+		guard targetChange > lastPersistedChange else { return }
+
 		if let explicitSaveTask {
 			explicitSaveRequestedAgain = true
 			try await explicitSaveTask.value
-			return
+			if lastPersistedChange >= targetChange { return }
 		}
-		guard hasUnsavedChanges else { return }
 
 		let task = Task { @MainActor [weak self] in
 			guard let self else { return }
 			repeat {
 				self.explicitSaveRequestedAgain = false
 				try await self.performSaveNow(operation: operation)
-			} while self.explicitSaveRequestedAgain && self.hasUnsavedChanges
+			} while self.explicitSaveRequestedAgain && self.currentChange > self.lastPersistedChange
 		}
 		explicitSaveTask = task
 		defer {
@@ -268,11 +270,23 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 			explicitSaveRequestedAgain = false
 		}
 		try await task.value
+
+		guard lastPersistedChange >= targetChange else {
+			throw CocoaError(.fileWriteUnknown)
+		}
 	}
 
 	@MainActor
 	private func performSaveNow(operation: PackagePersistenceOperation) async throws {
-		guard hasUnsavedChanges else { return }
+		guard currentChange > lastPersistedChange else { return }
+
+		// `UIDocument.hasUnsavedChanges` can become false while an autosave is
+		// already being committed. Our revision counters are the authoritative
+		// barrier state, so make sure UIKit has a change to flush whenever the
+		// requested revision is not yet known to be durable.
+		if !hasUnsavedChanges {
+			updateChangeCount(.done)
+		}
 		stateLock.withLock { requestedSaveOperation = operation }
 		do {
 			try await withCheckedThrowingContinuation { continuation in
@@ -326,8 +340,8 @@ final class PackageSession<Document: PackageDocument>: UIDocument, @unchecked Se
 	@MainActor
 	func closeSession() async throws {
 		if let explicitSaveTask { try await explicitSaveTask.value }
-		if hasUnsavedChanges {
-			stateLock.withLock { requestedSaveOperation = .close }
+		if currentChange > lastPersistedChange {
+			try await saveNow(operation: .close)
 		}
 		do {
 			try await withCheckedThrowingContinuation { continuation in

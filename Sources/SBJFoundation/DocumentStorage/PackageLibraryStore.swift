@@ -7,17 +7,21 @@ import Foundation
 public struct PackageCatalogIssue: Identifiable, Equatable, Sendable {
 	public let packageURL: URL
 	public let errorDescription: String
+	public let displayName: String?
 
 	public var id: URL { packageURL }
 	public var packageName: String { packageURL.lastPathComponent }
+	public var userFacingName: String { displayName ?? packageName }
 
-	init(packageURL: URL, error: Error) {
+	init(packageURL: URL, displayName: String? = nil, error: Error) {
 		self.packageURL = packageURL
+		self.displayName = displayName
 		self.errorDescription = error.localizedDescription
 	}
 
-	init(packageURL: URL, errorDescription: String) {
+	init(packageURL: URL, displayName: String? = nil, errorDescription: String) {
 		self.packageURL = packageURL
+		self.displayName = displayName
 		self.errorDescription = errorDescription
 	}
 }
@@ -44,6 +48,7 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 	let fileAccess: CoordinatedFileAccess
 	let fileManager: FileManager
 	let isPackageCandidate: @Sendable (URL) -> Bool
+	let issueDisplayName: @Sendable (URL) -> String?
 
 	init(
 		directory: URL,
@@ -53,6 +58,7 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 		loadPackage: @escaping @Sendable (URL) throws -> State,
 		loadCatalogPackage: (@Sendable (URL) throws -> State)? = nil,
 		isPackageCandidate: @escaping @Sendable (URL) -> Bool = { _ in true },
+		issueDisplayName: @escaping @Sendable (URL) -> String? = { _ in nil },
 		fileManager: FileManager = .default
 	) {
 		self.directory = directory
@@ -64,6 +70,7 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 		self.fileAccess = CoordinatedFileAccess(fileManager: fileManager)
 		self.fileManager = fileManager
 		self.isPackageCandidate = isPackageCandidate
+		self.issueDisplayName = issueDisplayName
 	}
 
 	func scanCatalog(excludingIDs: Set<ID> = []) throws -> PackageCatalogScan<State> {
@@ -90,6 +97,7 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 				guard try candidateURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
 					issues.append(.init(
 						packageURL: candidateURL,
+						displayName: issueDisplayName(candidateURL),
 						errorDescription: "Expected a document package directory, but this item is not a directory."
 					))
 					continue
@@ -98,12 +106,12 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 				let id = identifier(state)
 				occupiedPackageNames.insert(packageURL(id).lastPathComponent)
 				guard candidateURL.lastPathComponent == packageURL(id).lastPathComponent else {
-					issues.append(.init(packageURL: candidateURL, errorDescription: "The package filename does not match the document ID stored inside it."))
+					issues.append(.init(packageURL: candidateURL, displayName: issueDisplayName(candidateURL), errorDescription: "The package filename does not match the document ID stored inside it."))
 					continue
 				}
 				states.append(state)
 			} catch {
-				issues.append(.init(packageURL: candidateURL, error: error))
+				issues.append(.init(packageURL: candidateURL, displayName: issueDisplayName(candidateURL), error: error))
 			}
 		}
 		return .init(
@@ -140,13 +148,13 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 				let id = identifier(state)
 				occupiedPackageNames.insert(packageURL(id).lastPathComponent)
 				guard candidateURL.lastPathComponent == packageURL(id).lastPathComponent else {
-					issues.append(.init(packageURL: candidateURL, errorDescription: "The package filename does not match the document ID stored inside it."))
+					issues.append(.init(packageURL: candidateURL, displayName: issueDisplayName(candidateURL), errorDescription: "The package filename does not match the document ID stored inside it."))
 					continue
 				}
 				states.append(state)
 			} catch {
 				unavailablePackageURLs.insert(candidateURL)
-				issues.append(.init(packageURL: candidateURL, error: error))
+				issues.append(.init(packageURL: candidateURL, displayName: issueDisplayName(candidateURL), error: error))
 				if fileManager.isUbiquitousItem(at: candidateURL) {
 					try? fileManager.startDownloadingUbiquitousItem(at: candidateURL)
 				}
@@ -185,16 +193,23 @@ struct PackageLibraryStore<ID: Hashable & Comparable & Sendable, State: Sendable
 	/// package into the library's private trash directory. Physical deletion is
 	/// intentionally separate so catalog scans never observe a half-deleted package.
 	func moveToTrash(id: ID) throws {
+		try moveToTrash(packageURL: packageURL(id))
+	}
+
+	func moveToTrash(packageURL sourceURL: URL) throws {
 		try prepareDirectory()
 		try prepareTrashDirectory()
-		let sourceURL = packageURL(id)
-		guard fileManager.fileExists(atPath: sourceURL.path) else { return }
+		let source = sourceURL.standardizedFileURL
+		guard source.deletingLastPathComponent() == directory.standardizedFileURL,
+			isPackageCandidate(source)
+		else { throw CocoaError(.fileWriteNoPermission) }
+		guard fileManager.fileExists(atPath: source.path) else { return }
 
 		let destinationURL = trashDirectory.appendingPathComponent(
-			"\(sourceURL.lastPathComponent).\(UUID().uuidString)",
+			"\(source.lastPathComponent).\(UUID().uuidString)",
 			isDirectory: true
 		)
-		try fileAccess.moveItem(at: sourceURL, to: destinationURL)
+		try fileAccess.moveItem(at: source, to: destinationURL)
 	}
 
 	/// Best-effort housekeeping entry point for packages or other rogue files left

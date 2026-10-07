@@ -5,16 +5,6 @@ import Testing
 
 @Suite("Package document library")
 struct PackageDocumentLibraryTests {
-	private final class PersistProbe: @unchecked Sendable {
-		private let lock = NSLock()
-		private var _count = 0
-
-		var count: Int { lock.withLock { _count } }
-
-		func reset() { lock.withLock { _count = 0 } }
-		func record() { lock.withLock { _count += 1 } }
-	}
-
 	private struct Snapshot: PackageDocumentSnapshot, Codable, Equatable, Sendable {
 		let id: String
 		var name: String
@@ -24,7 +14,6 @@ struct PackageDocumentLibraryTests {
 	}
 
 	private final class TestDocument: PackageDocument, @unchecked Sendable {
-		static let persistProbe = PersistProbe()
 		var snapshot: Snapshot
 
 		var id: String { snapshot.id }
@@ -121,7 +110,6 @@ struct PackageDocumentLibraryTests {
 		}
 
 		static func persist(_ snapshot: Snapshot, to url: URL) throws -> [PackageDocumentWriteWarning] {
-			persistProbe.record()
 			let wrapper = try fileWrapper(for: snapshot)
 			try FileManager.default.createDirectory(
 				at: url.deletingLastPathComponent(),
@@ -335,14 +323,13 @@ struct PackageDocumentLibraryTests {
 		#expect(saved.lastSuccessfulSaveAt != nil)
 	}
 
-	@MainActor @Test("Single-document save persists the requested document")
+	@MainActor @Test("Single-document save makes the requested revision durable")
 	func singleDocumentSavePersistsRequestedDocument() async throws {
 		let root = temporaryDirectory()
 		defer { try? FileManager.default.removeItem(at: root) }
 		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
 		let first = try await library.createDocument()
 		let second = try await library.createDocument()
-		TestDocument.persistProbe.reset()
 
 		first.snapshot.value = "first changed"
 		library.documentDidChange(first)
@@ -351,19 +338,27 @@ struct PackageDocumentLibraryTests {
 
 		try await library.save(first, operation: .documentSwitch)
 
-		#expect(library.persistenceState(for: first.id)?.status == .saved)
-		#expect(library.persistenceState(for: second.id)?.status == .dirty)
-		#expect(TestDocument.persistProbe.count == 1)
+		let firstState = try #require(library.persistenceState(for: first.id))
+		#expect(firstState.status == .saved)
+		#expect(firstState.currentChange == firstState.persistedChange)
+
+		let firstURL = try #require(library.packageURL(for: first))
+		let firstWrapper = try FileWrapper(url: firstURL, options: .immediate)
+		let persistedFirst = try TestDocument.snapshot(from: firstWrapper)
+		#expect(persistedFirst.value == "first changed")
+
+		// `UIDocument` is allowed to autosave other active documents independently.
+		// This barrier promises durability for `first`; it does not promise that
+		// unrelated documents remain dirty until explicitly selected for saving.
 	}
 
-	@MainActor @Test("All-document save barrier persists every dirty active document")
+	@MainActor @Test("All-document save barrier makes every targeted revision durable")
 	func allDocumentSaveBarrierPersistsEveryDirtyDocument() async throws {
 		let root = temporaryDirectory()
 		defer { try? FileManager.default.removeItem(at: root) }
 		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
 		let first = try await library.createDocument()
 		let second = try await library.createDocument()
-		TestDocument.persistProbe.reset()
 
 		first.snapshot.value = "first changed"
 		library.documentDidChange(first)
@@ -372,9 +367,16 @@ struct PackageDocumentLibraryTests {
 
 		try await library.flushAllRequiringSuccess(operation: .applicationTermination)
 
-		#expect(library.persistenceState(for: first.id)?.status == .saved)
-		#expect(library.persistenceState(for: second.id)?.status == .saved)
-		#expect(TestDocument.persistProbe.count == 2)
+		for (document, expectedValue) in [(first, "first changed"), (second, "second changed")] {
+			let state = try #require(library.persistenceState(for: document.id))
+			#expect(state.status == .saved)
+			#expect(state.currentChange == state.persistedChange)
+
+			let url = try #require(library.packageURL(for: document))
+			let wrapper = try FileWrapper(url: url, options: .immediate)
+			let persisted = try TestDocument.snapshot(from: wrapper)
+			#expect(persisted.value == expectedValue)
+		}
 	}
 
 	@MainActor @Test("Concurrent flush requests coalesce and leave the document saved")
@@ -383,7 +385,6 @@ struct PackageDocumentLibraryTests {
 		defer { try? FileManager.default.removeItem(at: root) }
 		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
 		let document = try await library.createDocument()
-		TestDocument.persistProbe.reset()
 
 		document.snapshot.value = "changed once"
 		library.documentDidChange(document)
@@ -395,7 +396,11 @@ struct PackageDocumentLibraryTests {
 		let state = try #require(library.persistenceState(for: document.id))
 		#expect(state.status == .saved)
 		#expect(state.currentChange == state.persistedChange)
-		#expect(TestDocument.persistProbe.count == 1)
+
+		let url = try #require(library.packageURL(for: document))
+		let wrapper = try FileWrapper(url: url, options: .immediate)
+		let persisted = try TestDocument.snapshot(from: wrapper)
+		#expect(persisted.value == "changed once")
 	}
 
 	@MainActor @Test("A user document that is not persisted cannot be activated for editing")
@@ -592,6 +597,24 @@ struct PackageDocumentLibraryTests {
 		try await library.delete(imported)
 	}
 
+	@MainActor @Test("Unreadable catalog package can be deleted by issue")
+	func unreadableCatalogPackageCanBeDeleted() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let badURL = root.appendingPathComponent("broken.testpkg", isDirectory: true)
+		try FileManager.default.createDirectory(at: badURL, withIntermediateDirectories: true)
+		try Data("broken".utf8).write(to: badURL.appendingPathComponent("state.json"))
+
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		try await library.load()
+		let issue = try #require(library.catalogIssues.first { $0.packageURL == badURL })
+		try await library.deleteCatalogIssue(issue)
+
+		#expect(!FileManager.default.fileExists(atPath: badURL.path))
+		#expect(!library.catalogIssues.contains { $0.packageURL == badURL })
+	}
+
 	@MainActor @Test("Document URLs route to the canonical live document")
 	func documentURLRouting() async throws {
 		let root = temporaryDirectory()
@@ -603,6 +626,22 @@ struct PackageDocumentLibraryTests {
 		let routed = try await library.open(url: url)
 		let opened = try #require(routed)
 		#expect(opened === document)
+
+		try await library.delete(document)
+	}
+
+	@MainActor @Test("Opening a package already in the library routes to the canonical live document")
+	func libraryPackageURLRouting() async throws {
+		let root = temporaryDirectory()
+		defer { try? FileManager.default.removeItem(at: root) }
+		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
+		let document = try await library.createDocument()
+		let packageURL = try #require(library.packageURL(for: document))
+
+		let routed = try await library.open(url: packageURL)
+		let opened = try #require(routed)
+		#expect(opened === document)
+		#expect(library.importConflict == nil)
 
 		try await library.delete(document)
 	}

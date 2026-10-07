@@ -121,6 +121,9 @@ where DocumentID == Snapshot.ID {
 	/// document types read only the files needed for catalog UI without first
 	/// materializing the package tree as a `FileWrapper`.
 	static func catalogSnapshot(at url: URL) throws -> Snapshot
+	/// Best-effort user-facing identity for a package whose primary document data cannot be decoded.
+	/// This must be independently readable from the primary payload; failures return nil.
+	static func catalogIssueDisplayName(at url: URL) -> String?
 }
 
 public extension PackageDocument {
@@ -154,5 +157,6 @@ public extension PackageDocument {
 	static func catalogSnapshot(at url: URL) throws -> Snapshot {
 		try snapshot(from: FileWrapper(url: url, options: .immediate))
 	}
+	static func catalogIssueDisplayName(at url: URL) -> String? { nil }
 }
 #endif
