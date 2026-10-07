@@ -7,6 +7,7 @@ public enum PackagePersistenceOperation: String, Equatable, Sendable {
 	case explicitSave
 	case editorDismissal
 	case documentSwitch
+	case duplication
 	case lifecycleFlush
 	case applicationTermination
 	case close

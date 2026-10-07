@@ -310,7 +310,19 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			enqueueNotice(kind: .identityRepair, title: "Document Identity Repaired", message: "The duplicate's generated document ID was unavailable. The copy was saved with a different ID so no existing document could be overwritten.")
 		}
 		let document = id == candidate.id ? candidate : Document(restoring: Document.replacingID(in: candidate.snapshot, with: id))
-		return try await createPersisted(document)
+
+		do {
+			return try await createPersisted(document)
+		} catch {
+			// A failed create can still leave a partial package behind. The failed
+			// duplicate must never become discoverable on the next catalog scan.
+			let catalog = self.catalog
+			try? await Task.detached(priority: .userInitiated) {
+				try catalog.moveToTrash(id: id)
+			}.value
+			removeFromCatalog(id: id)
+			throw error
+		}
 	}
 
 	public func importDocument(_ result: Result<URL, Error>) async throws -> Document? {
