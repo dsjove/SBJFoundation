@@ -5,10 +5,10 @@ public enum PackagePersistenceOperation: String, Equatable, Sendable {
 	case create
 	case autosave
 	case explicitSave
-	case editorDismissal
+	case editCompleted
 	case documentSwitch
 	case duplication
-	case lifecycleFlush
+	case appSceneChange
 	case applicationTermination
 	case close
 	case conflictResolution

@@ -389,8 +389,8 @@ struct PackageDocumentLibraryTests {
 		document.snapshot.value = "changed once"
 		library.documentDidChange(document)
 
-		async let first: Void = library.flushAll(operation: .lifecycleFlush)
-		async let second: Void = library.flushAll(operation: .lifecycleFlush)
+		async let first: Void = library.flushAll(operation: .appSceneChange)
+		async let second: Void = library.flushAll(operation: .appSceneChange)
 		_ = await (first, second)
 
 		let state = try #require(library.persistenceState(for: document.id))
