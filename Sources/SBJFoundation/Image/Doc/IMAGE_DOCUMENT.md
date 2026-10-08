@@ -22,7 +22,7 @@ Example.sbjimage/
         geometry.json
         color.json
         markup.data            # optional
-    Rendered/
+    rendered/
         thumbnail.<image-ext>  # optional bounded thumbnail cache
         full.<image-ext>       # optional full rendered cache
 ```

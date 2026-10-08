@@ -47,6 +47,13 @@ public struct SBJImageDocument: Sendable, Equatable {
     private var source: SBJResourceContent
     public var location: CLLocation?
     private var edits: PhotoEditResult
+
+    /// User-facing name stored in the image document manifest.
+    /// Changing the name does not invalidate rendered image caches.
+    public var displayName: String {
+        get { edits.displayName }
+        set { edits.displayName = newValue }
+    }
     private var renderCache: RenderCache
     private var thumbnail: SBJResourceContent?
     private var rendered: SBJResourceContent?
@@ -483,10 +490,10 @@ public struct SBJImageDocument: Sendable, Equatable {
         let persistedThumbnail = thumbnailForPersistence()
         let persistedRendered = renderedForPersistence()
         let thumbnailPath = persistedThumbnail.map {
-            "Rendered/thumbnail.\($0.contentType.preferredFilenameExtension ?? "data")"
+            "rendered/thumbnail.\($0.contentType.preferredFilenameExtension ?? "data")"
         }
         let renderedPath = persistedRendered.map {
-            "Rendered/full.\($0.contentType.preferredFilenameExtension ?? "data")"
+            "rendered/full.\($0.contentType.preferredFilenameExtension ?? "data")"
         }
 
         let manifest = Manifest(
@@ -565,7 +572,7 @@ public struct SBJImageDocument: Sendable, Equatable {
                 .init(regularFileWithContents: persistedRendered.data)
         }
         if !renderedChildren.isEmpty {
-            root["Rendered"] = .init(directoryWithFileWrappers: renderedChildren)
+            root["rendered"] = .init(directoryWithFileWrappers: renderedChildren)
         }
 
         return .init(directoryWithFileWrappers: root)
