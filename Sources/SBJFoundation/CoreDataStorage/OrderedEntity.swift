@@ -14,7 +14,7 @@ public enum MoveRelativeTo<Element> {
 
 /// Describes a hierarchical insertion/reparenting position without imposing a
 /// particular persistence technology on the element.
-public enum Relationship<Element> {
+public enum OrderedRelationship<Element> {
     case child(Element)
     case before(Element)
     case after(Element)
