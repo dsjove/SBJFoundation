@@ -1,6 +1,13 @@
 import Foundation
 import UIKit
 
+public extension CodableFont {
+	/// Shared cached font lookup, with a caller-supplied theme scale.
+	func uiFont(scale: Double = 1) -> UIFont {
+		CodableFontCache.shared.font(for: self, scale: scale)
+	}
+}
+
 /// A process-wide cache for installed font metadata and realized `UIFont` objects.
 ///
 /// The cache is synchronous and actor-neutral. Installed font families/faces are

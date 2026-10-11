@@ -175,9 +175,13 @@ public protocol SBJEditableAssociatedEnum: Codable, HasContentCheckable, SBJDefa
 }
 
 public extension SBJEditableAssociatedEnum {
-    /// Associated-value enums are atomic selections by default. A domain type
-    /// can override this when one of its cases represents an empty/default value.
-    var hasContent: Bool { true }
+    /// An enum case with associated values aggregates its payload like a struct.
+    /// A case without payload is an atomic selection and always has content.
+    var hasContent: Bool {
+        let mirror = Mirror(reflecting: self)
+        guard let payload = mirror.children.first?.value else { return true }
+        return SBJContentCheck.hasContent(payload)
+    }
 
     /// Compatibility alias for the former editor-owned creation API.
     @available(*, deprecated, renamed: "sbjCreateDefaultValueIfPossible()")

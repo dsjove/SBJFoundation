@@ -152,22 +152,22 @@ private struct TestGeneratedContent: Codable {
 }
 
 extension SBJStructureUsageTests {
-    @Test func generatedHasContentIgnoresDirectNonCheckableScalars() {
-        #expect(!TestGeneratedContent().hasContent)
-        #expect(!TestGeneratedContent(scalar: 99).hasContent)
+    @Test func generatedHasContentIncludesDirectScalars() {
+        #expect(TestGeneratedContent().hasContent)
+        #expect(TestGeneratedContent(scalar: 99).hasContent)
         #expect(TestGeneratedContent(text: "x").hasContent)
-        #expect(!TestGeneratedContent(optionalText: "").hasContent)
+        #expect(TestGeneratedContent(optionalText: "").hasContent)
         #expect(TestGeneratedContent(optionalText: "x").hasContent)
         #expect(TestGeneratedContent(nested: TestContentLeaf(text: "x")).hasContent)
-        #expect(!TestGeneratedContent(nestedItems: [TestContentLeaf()]).hasContent)
+        #expect(TestGeneratedContent(nestedItems: [TestContentLeaf()]).hasContent)
         #expect(TestGeneratedContent(nestedItems: [TestContentLeaf(text: "x")]).hasContent)
     }
 
-    @Test func contentCheckKeepsScalarEditorContentStateNeutral() {
-        #expect(!SBJContentCheck.hasContent(0))
-        #expect(!SBJContentCheck.hasContent(99))
-        #expect(!SBJContentCheck.hasContent(false))
-        #expect(!SBJContentCheck.hasContent(TestPlainScalarEnum.first))
+    @Test func contentCheckRecognizesAtomicScalars() {
+        #expect(SBJContentCheck.hasContent(0))
+        #expect(SBJContentCheck.hasContent(99))
+        #expect(SBJContentCheck.hasContent(false))
+        #expect(SBJContentCheck.hasContent(TestPlainScalarEnum.first))
         #expect(((0 as Any) as? any HasContentCheckable) == nil)
         #expect(((false as Any) as? any HasContentCheckable) == nil)
         #expect(((TestPlainScalarEnum.first as Any) as? any HasContentCheckable) == nil)
@@ -181,6 +181,35 @@ extension SBJStructureUsageTests {
         #expect(SBJContentCheck.hasContent(integer))
         #expect(!SBJContentCheck.hasContent([Int]()))
         #expect(SBJContentCheck.hasContent([0]))
+    }
+}
+
+private struct TestPlainAggregate {
+    var name: String = ""
+    var children: [String] = []
+}
+
+private enum TestPayloadEnum {
+    case empty
+    case text(String)
+    case pair(String, Int?)
+}
+
+extension SBJStructureUsageTests {
+    @Test func structuralContentRulesForPlainValues() {
+        #expect(SBJContentCheck.hasContent(0.0))
+        #expect(SBJContentCheck.hasContent(false))
+        #expect(SBJContentCheck.hasContent(TestPlainScalarEnum.second))
+        #expect(!SBJContentCheck.hasContent(TestPlainAggregate()))
+        #expect(SBJContentCheck.hasContent(TestPlainAggregate(name: "hello")))
+        #expect(!SBJContentCheck.hasContent(TestPayloadEnum.text("")))
+        #expect(SBJContentCheck.hasContent(TestPayloadEnum.empty))
+        #expect(!SBJContentCheck.hasContent(TestPayloadEnum.pair("", nil)))
+        #expect(SBJContentCheck.hasContent(TestPayloadEnum.pair("", 0)))
+        #expect(!SBJContentCheck.hasContent(["": ""]))
+        #expect(SBJContentCheck.hasContent(["key": "value"]))
+        #expect(!SBJContentCheck.hasContent(["": [String]()]))
+        #expect(SBJContentCheck.hasContent(["key": [0]]))
     }
 }
 

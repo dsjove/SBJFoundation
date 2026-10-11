@@ -1205,3 +1205,19 @@ For the complete release checklist, including VoiceOver, Full Keyboard Access, S
 ## Localization and presentation resource design
 
 The shared presentation-resource direction for localization, text fitting, symbology/images, semantic color, accessibility, Structure metadata, UIVocabulary, SBJLayout integration, and vendor/document/server overrides is documented in [Localization and Presentation Resources](../LOCALIZATION_AND_PRESENTATION_RESOURCES.md).
+
+### Content semantics and future empty-value annotations
+
+`hasContent` represents meaningful stored content, not whether a scalar is nonzero
+or truthy. Strings and collections aggregate their contents; optionals are empty
+when `nil` and otherwise follow their wrapped value; structs aggregate members;
+plain enum cases and scalar values always have content; associated-value enum
+cases aggregate their associated values. Explicit `HasContentCheckable` behavior
+takes precedence over these defaults. Dictionary values, rather than just the
+presence of keys, determine dictionary content.
+
+**Future feature (not implemented):** consider an `@SBJEmptyValue(...)`
+annotation for individual scalar/POD properties when a domain-specific sentinel
+(e.g. `0`, `false`, or a particular enum case) intentionally means *empty*.
+This would be opt-in, scoped to a property, and must not change the default
+semantics for scalar values throughout the framework.

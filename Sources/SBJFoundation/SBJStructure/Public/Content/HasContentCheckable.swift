@@ -87,7 +87,9 @@ extension Set: HasContentCheckable {
 }
 
 extension Dictionary: HasContentCheckable {
-    public var hasContent: Bool { !isEmpty }
+    public var hasContent: Bool {
+        values.contains { SBJContentCheck.hasContent($0) }
+    }
 
     public func invariant(at keyPath: SBJValidationKeyPath) throws {
         for (key, value) in self {
@@ -115,7 +117,40 @@ public extension Sequence {
 
 public enum SBJContentCheck {
     public static func hasContent<T>(_ value: T) -> Bool {
-        (value as? any HasContentCheckable)?.hasContent ?? false
+        hasContent(value as Any)
+    }
+
+    /// Resolve explicit content behavior first, then use the structural shape.
+    /// Scalars, plain enum cases, and other atomic values always have content.
+    /// Structs aggregate their stored members, just like collections.
+    static func hasContent(_ value: Any) -> Bool {
+        if let checkable = value as? any HasContentCheckable {
+            return checkable.hasContent
+        }
+
+        let mirror = Mirror(reflecting: value)
+        switch mirror.displayStyle {
+        case .optional:
+            guard let wrapped = mirror.children.first?.value else { return false }
+            return hasContent(wrapped)
+        case .collection, .set:
+            return mirror.children.contains { hasContent($0.value) }
+        case .dictionary:
+            return mirror.children.contains { entry in
+                let pair = Mirror(reflecting: entry.value)
+                guard let member = Array(pair.children).dropFirst().first else { return false }
+                return hasContent(member.value)
+            }
+        case .struct, .tuple:
+            // Value structs behave as aggregates, including empty structs.
+            return mirror.children.contains { hasContent($0.value) }
+        case .enum:
+            // A case without associated values is an atomic selection.
+            guard let payload = mirror.children.first?.value else { return true }
+            return hasContent(payload)
+        default:
+            return true
+        }
     }
 
     /// Returns `true` when `value` or one of its recursively inspectable children
