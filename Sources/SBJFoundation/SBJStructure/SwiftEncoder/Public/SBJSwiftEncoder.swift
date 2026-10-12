@@ -213,7 +213,14 @@ public struct SBJSwiftEncoder {
     }
 
     private func collectionExpression(_ mirror: Mirror) -> String {
-        let values = mirror.children.map { expression(forAny: $0.value, nested: true) }
+        let values = mirror.children.map { child -> String in
+            let elementExpression = expression(forAny: child.value, nested: true)
+            // An unqualified `.init()` inside an array can also be interpreted as
+            // an empty collection initializer. Use the concrete element type to
+            // remove that ambiguity without changing ordinary nested expressions.
+            guard elementExpression == ".init()" else { return elementExpression }
+            return expression(forAny: child.value, nested: false)
+        }
         guard !values.isEmpty else { return "[]" }
         let body = values.joined(separator: ",\n")
         return "[\n\(indent(body))\n]"

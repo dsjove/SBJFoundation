@@ -42,6 +42,16 @@ struct SBJSwiftEncoderTests {
     }
 
 
+    @Test func qualifiesEmptyInitializersInsideCollections() {
+        let encoder = SBJSwiftEncoder()
+        let values = [SwiftExportFixture(), SwiftExportFixture(name: "named")]
+        let source = encoder.expression(for: values)
+
+        #expect(source.contains("SwiftExportFixture()"))
+        #expect(source.contains(".init(\n"))
+        #expect(source.contains("name: \"named\""))
+    }
+
     @Test func exportsUnitValueUsingItsDesignatedInitializerLabels() {
         let source = SBJSwiftEncoder().expression(
             for: UnitValue<LengthUnit>(68, unit: .inch)
