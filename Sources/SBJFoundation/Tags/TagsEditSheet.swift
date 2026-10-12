@@ -174,7 +174,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 	#endif
 			.alert(item: $deletionRequest) { request in
 				Alert(
-					title: Text("Delete Tag" + (request.tags.count > 1 ? "s" : "")),
+					title: Text(request.tags.count == 1 ? "Delete Tag" : "Delete Tags"),
 					message: {
 						if request.tags.count == 1, let name = request.tags.first?.name {
 							Text("Are you sure you want to delete \"\(name)\"?")

@@ -140,7 +140,7 @@ extension DefaultsStorage {
 }
 
 // MARK: - Conversion types
-// NOTE: Codeable is not supported because that is a misuse of user defaults
+// NOTE: Codable support is intentionally outside the scope of this UserDefaults wrapper.
 
 extension UUID: DefaultsStorageValue {
 	public static func read(from defaults: UserDefaults, key: String) -> UUID? {

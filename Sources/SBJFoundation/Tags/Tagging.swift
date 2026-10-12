@@ -149,7 +149,7 @@ public extension TagUser {
 				summary: "Tags assigned to this item.",
 				details: "Toggling a tag adds or removes its relationship to the current item.",
 				accessibilityLabel: "Assigned tag",
-				accessibilityHint: "Adds or removes this tag from the current item."
+				accessibilityHint: "Assigns or removes this tag from the current item."
 			)
 		case \Self.__primaryTagID:
 			return SBJPropertyInfo(
@@ -157,7 +157,7 @@ public extension TagUser {
 				summary: "Identifier of the item's primary tag.",
 				details: "Selecting an already-primary tag clears the primary designation.",
 				accessibilityLabel: "Primary tag",
-				accessibilityHint: "Toggles whether this is the primary tag."
+				accessibilityHint: "Sets or removes this tag as the primary tag."
 			)
 		default:
 			return nil

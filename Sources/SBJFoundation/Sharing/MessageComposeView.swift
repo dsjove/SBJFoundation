@@ -57,9 +57,9 @@ public enum MessageComposeError: LocalizedError, Sendable {
 		case .cannotSendAttachments:
 			"This device cannot send message attachments."
 		case .unsupportedAttachmentType(let type):
-			"Messages does not support attachments of type \(type)."
+			"The Messages app does not support attachments of type \(type)."
 		case .attachmentRejected(let filename):
-			"Messages could not attach \(filename)."
+			"The Messages app could not attach ‘\(filename)’."
 		}
 	}
 }

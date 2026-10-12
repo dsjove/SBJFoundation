@@ -21,7 +21,7 @@ public struct ExportDestinationService: @unchecked Sendable {
 		var errorDescription: String? {
 			switch self {
 			case .duplicateSourceName(let name):
-				return "The export contains more than one item named ‘\(name)’."
+				return "The export contains multiple items named ‘\(name)’."
 			case .inaccessibleDestination:
 				return "The selected export folder could not be accessed."
 			case .destinationExists(let name):

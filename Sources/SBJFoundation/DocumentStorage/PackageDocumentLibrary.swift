@@ -37,9 +37,9 @@ public enum PackageDocumentLibraryError: LocalizedError, Sendable {
 
 	public var errorDescription: String? {
 		switch self {
-		case .documentNotFound(let id): return "Document not found: \(id)"
-		case .documentNotActive(let id): return "Document is not active for saving: \(id). Reopen the document and try again."
-		case .documentReadOnly(let id): return "Document \(id) uses a newer readable format and is read-only in this version of the app."
+		case .documentNotFound(let id): return "The document could not be found (ID: \(id))."
+		case .documentNotActive(let id): return "The document (ID: \(id)) is no longer open for saving. Reopen it and try again."
+		case .documentReadOnly(let id): return "The document (ID: \(id)) uses a newer format. This version of the app can open it but cannot edit it."
 		}
 	}
 }
@@ -188,7 +188,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 			enqueueNotice(
 				kind: .storageChange,
 				title: "Document Storage",
-				message: "iCloud storage is not currently available. This window is using local document storage and will not silently switch libraries if iCloud becomes available later."
+				message: "iCloud storage is currently unavailable. This window will continue using its local document library, even if iCloud becomes available later."
 			)
 		}
 
@@ -1067,7 +1067,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 				self.enqueueNotice(
 					kind: .storageChange,
 					title: "Document Storage Changed",
-					message: "The iCloud account or iCloud Drive availability changed. This window will keep using the document library it opened with rather than silently switching storage. Close and reopen the window to use the newly available storage."
+					message: "Your iCloud account or iCloud Drive availability has changed. This window will continue using its current document library. Close and reopen the window to use the newly available storage."
 				)
 			},
 			onChange: { [weak self] change in

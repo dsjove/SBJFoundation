@@ -1,7 +1,7 @@
 import Foundation
 
-/// A first-class search value. Conforming types can expose more searchable text
-/// than is obvious from their normal display representation.
+/// A value that exposes text for searching. Conforming types provide searchable
+/// text and indicate whether that text is empty.
 public protocol SearchProtocol {
     var text: String { get set }
     var isEmpty: Bool { get }
@@ -32,14 +32,14 @@ extension String: Predicated {
 		self.lowercased().filter { $0.isLetter || $0.isNumber }
 	}
 
-    /// Original query interface: trimmed text, or nil when blank.
+    /// Returns the text without leading or trailing whitespace, or `nil` if empty.
     public var querify: String? {
         let query = trimmed
         return query.isEmpty ? nil : query
     }
 
-    /// Search matching is deliberately forgiving about case, whitespace, and
-    /// punctuation while retaining the original `Predicated` API.
+    /// Matches text without regard to letter case or punctuation. Whitespace-only
+    /// queries and queries with no letters or digits match every value.
     public func predicated(search: String) -> Bool {
         guard let query = search.querify else { return true }
         let normalizedQuery = query.normalizedSearchText

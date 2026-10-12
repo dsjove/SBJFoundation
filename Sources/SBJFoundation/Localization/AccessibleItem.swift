@@ -5,13 +5,13 @@ import Foundation
 /// This is intentionally presentation-independent. SwiftUI support is supplied by
 /// the `View.accessibility(_:)` adapter in `UIVocabulary`.
 public protocol Accessible {
-    /// What the thing is. A text field's placeholder commonly becomes this.
+    /// A concise name identifying the accessible element, independent of its current value.
     var accessibilityLabel: String? { get }
 
-    /// Consequences or additional explanation of an action.
+    /// Additional guidance about the element or the result of activating it.
     var accessibilityHint: String? { get }
 
-    /// The current value represented by the accessible item.
+    /// The element's current state or value, distinct from its label.
     var accessibilityValue: String? { get }
 }
 
@@ -21,7 +21,7 @@ public extension Accessible {
     var accessibilityValue: String? { nil }
 }
 
-/// Concrete accessibility metadata retaining the framework's original API.
+/// Concrete accessibility metadata for labels, hints, and values.
 public struct AccessibleItem: Accessible, Sendable, Equatable, Hashable {
     public let accessibilityLabel: String?
     public let accessibilityHint: String?

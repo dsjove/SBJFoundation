@@ -80,7 +80,7 @@ enum SBJEditorStatusKind {
     var accessibilityLabel: String {
         switch self {
         case .changed:
-            return "Changed from original value"
+            return "Value differs from the original"
         case .empty:
             return "No content"
         }

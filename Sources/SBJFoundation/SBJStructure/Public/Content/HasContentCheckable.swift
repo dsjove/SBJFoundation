@@ -1,7 +1,7 @@
 import Foundation
 
-/// A value that can report whether it contains meaningful content and validate
-/// its own domain invariants when explicitly requested.
+/// A value that reports whether it has content according to its type-specific rules
+/// and can validate its domain invariants on request.
 public protocol HasContentCheckable {
     var hasContent: Bool { get }
     func invariant(at keyPath: SBJValidationKeyPath) throws

@@ -98,13 +98,13 @@ public struct SBJHelpSheet: View {
             ContentUnavailableView {
                 Label("Help Unavailable", image: SBJSemanticImageReference.helpUnavailable)
             } description: {
-                Text("We could not find help for this part of the application.")
+                Text("Help is unavailable for this part of the app.")
             }
         } else {
             ContentUnavailableView {
                 Label("Unsupported Help Format", image: SBJSemanticImageReference.unsupportedHelp)
             } description: {
-                Text("No presenter is available for \(asset.contentType?.identifier ?? "unknown") help.")
+                Text("This help format cannot be displayed.")
             }
         }
     }

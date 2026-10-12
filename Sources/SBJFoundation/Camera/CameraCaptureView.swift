@@ -127,7 +127,7 @@ private struct CameraCaptureAvailableView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .accessibilityLabel("Change Flash Mode")
+                    .accessibilityLabel("Change flash mode")
                 }
 
                 if camera.hasCameraOptions {
@@ -139,7 +139,7 @@ private struct CameraCaptureAvailableView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .accessibilityLabel("Switch Camera")
+                    .accessibilityLabel("Switch camera")
                 }
             }
             .padding()
@@ -162,7 +162,7 @@ private struct CameraCaptureAvailableView: View {
                 .buttonStyle(.plain)
                 .disabled(isStarting || isCapturing)
                 .opacity((isStarting || isCapturing) ? 0.45 : 1)
-                .accessibilityLabel("Take Photo")
+                .accessibilityLabel("Take photo")
                 .padding(.bottom, 28)
             }
         }

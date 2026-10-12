@@ -5,8 +5,8 @@ import Foundation
 /// are distinct presentation candidates, not merely formatting conveniences;
 /// preserve that distinction when the shared text model is introduced.
 ///
-/// The exhaustive migration classification lives in
-/// `Character/Documentation/StringPresentableAudit.md`.
+/// See the Character package’s `Documentation/StringPresentableAudit.md` for
+/// migration notes; review that document against current implementations.
 ///
 /// TODO(Localization): replace this protocol only after the shared SBJ text
 /// representation can express localized/default text, compact alternatives,

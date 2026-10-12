@@ -23,19 +23,19 @@ public enum CameraError: LocalizedError, Sendable {
         case .noCameraAvailable:
             "No camera is available."
         case .cannotAddCameraInput:
-            "Cannot add the camera input."
+            "The camera could not be initialized."
         case .cannotAddPhotoOutput:
-            "Cannot add the photo output."
+            "Photo capture could not be initialized."
         case .sessionStartFailed:
-            "Failed to start the camera session."
+            "The camera could not be started."
         case .captureAlreadyInProgress:
             "A photo capture is already in progress."
         case .jpegDataCreationFailed:
-            "Failed to create JPEG data."
+            "The captured photo could not be saved as a JPEG image."
         case .torchUnavailable:
-            "The torch is unavailable for the current camera."
+            "The light is unavailable on the selected camera."
         case .torchConfigurationFailed:
-            "Failed to configure the torch."
+            "The camera light could not be configured."
         case .unsupportedPlatform:
             "Camera capture is not available on this platform."
         }

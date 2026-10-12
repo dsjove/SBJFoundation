@@ -1,5 +1,6 @@
 import Foundation
 
+/// An image reference with optional visible and spoken descriptions.
 public protocol AccessibleImage: Accessible {
     var image: ImageReference { get }
     var labeled: Bool { get }
@@ -10,6 +11,7 @@ public extension AccessibleImage {
     var labeled: Bool { false }
 }
 
+/// Image metadata that supplies a spoken label when its visible label is enabled.
 public struct AccessibleImageItem: AccessibleImage {
     public let image: ImageReference
     public let labeled: Bool

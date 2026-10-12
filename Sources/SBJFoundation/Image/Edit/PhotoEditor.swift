@@ -516,9 +516,9 @@ public struct PhotoEditor: View {
 
                 Slider(value: fineRotationBinding, in: -15...15)
                     .accessibility(straightenInfo)
-                    .accessibilityValue(String(format: "%.1f degrees", model.geometry.rotation.fineDegrees))
+                    .accessibilityValue("\(model.geometry.rotation.fineDegrees.formatted(.number.precision(.fractionLength(1)))) degrees")
 
-                Text("\(model.geometry.rotation.degrees, specifier: "%.1f")°")
+                Text("\(model.geometry.rotation.degrees.formatted(.number.precision(.fractionLength(1))))°")
                     .font(.caption)
                     .monospacedDigit()
                     .frame(width: 54, alignment: .trailing)

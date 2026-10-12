@@ -58,8 +58,7 @@ struct SBJDataEditor: View {
 
     private var byteCountDescription: String {
         let count = value.count.formatted(.number.locale(locale))
-        // The numeric portion is locale-aware now. The noun itself moves to the
-        // framework localization resources in the localization pass.
+        // Format the count for the current locale; the unit uses singular or plural wording.
         return value.count == 1 ? "\(count) byte" : "\(count) bytes"
     }
 }

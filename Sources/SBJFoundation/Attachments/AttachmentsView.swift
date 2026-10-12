@@ -108,7 +108,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                         Image(SBJAttachmentSemanticImageReference.attachments)
                     }
                 } description: {
-                    Text("Use Add Attachment to attach an item.")
+                    Text("Select Add Attachment to add a file.")
             }
         } else {
         List {

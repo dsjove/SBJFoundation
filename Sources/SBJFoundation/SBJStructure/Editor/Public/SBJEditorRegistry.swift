@@ -3,10 +3,9 @@ import SwiftUI
 
 /// Application-supplied custom editors and value factories.
 ///
-/// The registry intentionally matches exact Swift types. SBJStructure's built-in
-/// renderer handles its generic categories first-class; applications use this
-/// registry for domain values such as dice expressions, money, coordinates, or
-/// application-specific identifiers.
+/// The registry matches exact Swift types. SBJStructure provides built-in editors
+/// for supported value categories; applications register editors for domain-specific
+/// types such as dice expressions, money, coordinates, or application identifiers.
 public struct SBJEditorRegistry {
     private var editors: [ObjectIdentifier: Any] = [:]
     private var lineItems: [SBJEditorLineItemKey: Any] = [:]

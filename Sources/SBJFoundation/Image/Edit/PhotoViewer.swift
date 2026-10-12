@@ -65,7 +65,7 @@ public struct PhotoViewer: View {
                             )
                             .accessibility(AccessibleItem(
                                 label: "Photo",
-                                hint: "Pinch to magnify, drag to pan, or double tap to reset"
+                                hint: "Pinch to zoom, drag to move the photo, or double-tap to reset its position."
                             ))
                     }
                     .clipped()
@@ -99,7 +99,7 @@ public struct PhotoViewer: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         SBJImageButton(
                             SBJImageSemanticImageReference.resetPanZoom,
-                            accessibilityLabel: "Reset Magnification and Position",
+                            accessibilityLabel: "Reset zoom and position",
                             accessibilityHint: "Returns the image to its fitted size and centered position.",
                             action: resetPosition
                         )

@@ -32,7 +32,7 @@ public enum ImageReference: Sendable, Hashable {
     /// Convenience for an ordinary bundled image file such as `ThumbnailDocument.png`.
     ///
     /// A path component is treated as an authored resource subdirectory. Resource lookup
-    /// automatically falls back to the bundle root when processing flattened that directory.
+    /// automatically falls back to the bundle root when resource processing flattens that directory.
     public static func resource(
         _ fileName: String,
         bundle: Bundle? = nil
