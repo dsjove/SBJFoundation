@@ -161,7 +161,7 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                SBJEditorLevelExitDivider()
+                SBJEditorLevelExitDivider(level: context.treeLevel)
             }
         }
         .onAppear {

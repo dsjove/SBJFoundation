@@ -1,19 +1,15 @@
 <section class="sbj-structure-editor-core-help">
-  <h2>Using structured editors</h2>
-  <p>Open a group to see its fields, then change values directly. Changes appear as you work.</p>
-
-  <h3>Value state</h3>
-  <p>UI_changed\ marks a value that differs from the value present when the editor opened. UI_empty\ indicates a field with no content.</p>
-
-  <h3>Optional values</h3>
-  <p>An optional value can be unset rather than empty. UI_setOptional\ creates and sets the value so it can be edited. UI_clearOptional\ clears it and returns the field to its unset state.</p>
-
-  <h3>Field information</h3>
-  <p>UI_information\ beside a field opens a short explanation of that field and the kind of value to enter.</p>
-
-  <h3>Opening groups</h3>
-  <p>UI_disclosureClosed\ opens a collapsed group. UI_disclosureOpened\ closes an expanded group.</p>
-
-  <h3>Lists and collections</h3>
-  <p>UI_add\ adds an item. UI_remove\ removes an item. When ordering is available, UI_moveUp\ and UI_moveDown\ move an item one position, while UI_moveToFirst\ and UI_moveToLast\ move it to the beginning or end of the list.</p>
+<h2>Using structured editors</h2>
+<p>Open a group to see its fields, then change values directly. Changes appear as you work.</p>
+<h3>Value state</h3>
+<ul><li>UI_changed\ marks a value changed since the editor opened.</li><li>UI_empty\ indicates a field with no content.</li></ul>
+<h3>Optional values</h3>
+<p>An optional value can be unset rather than empty.</p>
+<ul><li>UI_setOptional\ creates and sets a value so it can be edited.</li><li>UI_clearOptional\ clears the value and returns the field to its unset state.</li></ul>
+<h3>Field information</h3>
+<ul><li>UI_information\ opens a description of the field and the value to enter.</li></ul>
+<h3>Opening groups</h3>
+<ul><li>UI_disclosureClosed\ opens a collapsed group.</li><li>UI_disclosureOpened\ closes an expanded group.</li></ul>
+<h3>Lists and collections</h3>
+<ul><li>UI_add\ adds an item.</li><li>UI_remove\ removes an item.</li><li>UI_moveUp\ / UI_moveDown\ move an item one position.</li><li>UI_moveToFirst\ / UI_moveToLast\ move an item to the beginning or end.</li></ul>
 </section>

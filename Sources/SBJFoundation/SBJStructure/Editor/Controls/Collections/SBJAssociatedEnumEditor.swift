@@ -82,7 +82,7 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
                 .environment(\.sbjEditorSearchCriteria, childSearchCriteria)
                 .frame(maxWidth: .infinity)
 
-                SBJEditorLevelExitDivider()
+                SBJEditorLevelExitDivider(level: context.treeLevel)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

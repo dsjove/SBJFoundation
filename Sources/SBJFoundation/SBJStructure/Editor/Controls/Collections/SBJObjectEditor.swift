@@ -184,7 +184,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                         .environment(\.sbjEditorSearchCriteria, childSearchCriteria)
                         .frame(maxWidth: .infinity)
 
-                        SBJEditorLevelExitDivider()
+                        SBJEditorLevelExitDivider(level: context.treeLevel)
                     }
                 }
             }

@@ -101,7 +101,10 @@ public struct SBJHelpTemplateRenderer {
 #if !os(watchOS)
             guard
                 let reference = configuration.semanticImages[name],
-                let encoded = encodeImage(reference.image, alt: name)
+                let encoded = encodeImage(
+                    reference.image?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)),
+                    alt: name
+                )
             else { continue }
             results["UI_" + name + "\\"] = encoded
 #endif

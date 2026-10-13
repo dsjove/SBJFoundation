@@ -218,9 +218,11 @@ struct SBJEditorRow<Content: View>: View {
 
 @MainActor
 struct SBJEditorLevelExitDivider: View {
+    let level: Int
+
     var body: some View {
         Divider()
-            .padding(.leading, SBJEditorRowMetrics.statusLaneWidth + SBJEditorRowMetrics.statusToContentSpacing)
+            .padding(.leading, SBJEditorRowMetrics.statusLaneWidth + SBJEditorRowMetrics.statusToContentSpacing + CGFloat(max(0, level)) * SBJEditorRowMetrics.indentIncrement)
     }
 }
 

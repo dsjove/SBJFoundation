@@ -200,7 +200,7 @@ struct SBJArrayEditor<Element: Codable>: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                SBJEditorLevelExitDivider()
+                SBJEditorLevelExitDivider(level: context.treeLevel)
             }
         }
         .onAppear {

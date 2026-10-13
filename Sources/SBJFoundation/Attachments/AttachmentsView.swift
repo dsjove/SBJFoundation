@@ -18,7 +18,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
     private let attachmentPreview: (Attachment) throws -> URLAttachment
     private let validateAttachmentURL: (URL) throws -> Void
     private let removeAttachment: ((Attachment) -> Void)?
-    private let allowsDismissal: Bool
+    private let hasDoneButton: Bool
 
     @State private var preview: URLAttachment?
     @State private var isImporterPresented = false
@@ -43,14 +43,14 @@ public struct AttachmentsView<Attachment: Attaching>: View {
         attachmentPreview: @escaping (Attachment) throws -> URLAttachment,
         validateAttachmentURL: @escaping (URL) throws -> Void = { _ in },
         removeAttachment: ((Attachment) -> Void)? = nil,
-        allowsDismissal: Bool = true
+        hasDoneButton: Bool = true
     ) {
         self._attachments = attachments
         self.createAttachment = createAttachment
         self.attachmentPreview = attachmentPreview
         self.validateAttachmentURL = validateAttachmentURL
         self.removeAttachment = removeAttachment
-        self.allowsDismissal = allowsDismissal
+        self.hasDoneButton = hasDoneButton
     }
 
     /// Convenience for attachments whose preview is already represented by a URL.
@@ -60,7 +60,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
         attachmentURL: @escaping (Attachment) throws -> URL,
         validateAttachmentURL: @escaping (URL) throws -> Void = { _ in },
         removeAttachment: ((Attachment) -> Void)? = nil,
-        allowsDismissal: Bool = true
+        hasDoneButton: Bool = true
     ) {
         self.init(
             attachments: attachments,
@@ -73,13 +73,13 @@ public struct AttachmentsView<Attachment: Attaching>: View {
             },
             validateAttachmentURL: validateAttachmentURL,
             removeAttachment: removeAttachment,
-            allowsDismissal: allowsDismissal
+            hasDoneButton: hasDoneButton
         )
     }
 
     public init<Owner: AttachmentOwner & Observable>(
         owner: Owner,
-        allowsDismissal: Bool = true
+        hasDoneButton: Bool = true
     ) where Owner.Attachment == Attachment {
         self.init(
             attachments: Binding(
@@ -94,7 +94,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                 )
             },
             removeAttachment: owner.__removeAttachment,
-            allowsDismissal: allowsDismissal
+            hasDoneButton: hasDoneButton
         )
     }
 
@@ -160,7 +160,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
 #endif
         .navigationTitle("Attachments")
         .toolbar {
-            if allowsDismissal {
+            if hasDoneButton {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
