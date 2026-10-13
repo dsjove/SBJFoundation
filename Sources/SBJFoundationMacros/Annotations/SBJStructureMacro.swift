@@ -87,8 +87,18 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 // Writable computed properties are normally outside the model
                 // structure. @SBJEditorProperty explicitly opts one into editor
                 // generation only. It does not become structural metadata.
-                if binding.accessorBlock != nil {
-                    if hasAttribute(named: "SBJEditorProperty", on: variable) {
+                if let accessorBlock = binding.accessorBlock {
+                    let isStoredWithObservers: Bool
+                    switch accessorBlock.accessors {
+                    case .accessors(let list):
+                        isStoredWithObservers = list.allSatisfy {
+                            $0.accessorSpecifier.text == "willSet" || $0.accessorSpecifier.text == "didSet"
+                        }
+                    case .getter:
+                        isStoredWithObservers = false
+                    }
+                    if !isStoredWithObservers {
+                        if hasAttribute(named: "SBJEditorProperty", on: variable) {
                         editableEntries.append(
                             "SBJEditableField<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
@@ -96,7 +106,8 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                             "SBJEditorPropertyDescriptor<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
                     }
-                    continue
+                        continue
+                    }
                 }
 
                 if let codedNames, !codedNames.contains(name) { continue }
@@ -268,7 +279,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                     "SBJEditableField<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
                 )
                 entries.append(
-                    "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
+                    "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name), disclosureMode: \(editorDisclosure(on: variable) ?? ".closed"))"
                 )
             }
         }
@@ -719,6 +730,19 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
     }
 
 
+
+    private static func editorDisclosure(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJEditorDisclosure",
+                  let arguments = attribute.arguments,
+                  case .argumentList(let list) = arguments,
+                  let first = list.first else { continue }
+            let mode = first.expression.trimmedDescription
+            if mode == ".closed" || mode == ".autoOpen" || mode == ".alwaysOpen" { return mode }
+        }
+        return nil
+    }
 
     private static func propertyPresentation(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {

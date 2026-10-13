@@ -14,6 +14,7 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
     private let label: Label
     private let control: Control
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.sbjEditorFormattingOptions) private var formatting
 
     init(
         spacing: CGFloat = 8,
@@ -35,11 +36,15 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
             switch controlWidth {
             case .intrinsic:
                 ViewThatFits(in: .horizontal) {
-                    intrinsicHorizontal
-                        .fixedSize(horizontal: true, vertical: false)
+                    if formatting.contains(.trailingAlignedFields) {
+                        trailingHorizontal
+                    } else {
+                        intrinsicHorizontal
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
                     vertical
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: formatting.contains(.trailingAlignedFields) ? .trailing : .leading)
 
             case .fillAvailable:
                 // A free-form field has no meaningful preferred text width.
@@ -65,6 +70,14 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
         }
     }
 
+    private var trailingHorizontal: some View {
+        HStack(alignment: .center, spacing: spacing) {
+            fixedLabel
+            Spacer(minLength: 0)
+            control.fixedSize(horizontal: true, vertical: false)
+        }
+    }
+
     @ViewBuilder
     private var fillHorizontal: some View {
         switch controlWidth {
@@ -74,6 +87,7 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
         case .fillAvailable(let minimum):
             HStack(alignment: .center, spacing: spacing) {
                 fixedLabel
+                if formatting.contains(.trailingAlignedFields) { Spacer(minLength: 0) }
                 control
                     .frame(minWidth: minimum, maxWidth: .infinity, alignment: .leading)
             }

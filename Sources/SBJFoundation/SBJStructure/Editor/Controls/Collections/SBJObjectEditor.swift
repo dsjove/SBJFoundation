@@ -13,6 +13,8 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     let promotedTitlePrefix: String?
     let context: SBJEditTraversalContext
     @State private var disclosureState = SBJEditorDisclosureState()
+    @State private var disclosureInitialized = false
+    @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
     @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
     @Environment(\.sbjEditorHasContent) private var hasContent
@@ -36,7 +38,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureState.resolved(
+        disclosureMode == .alwaysOpen || disclosureState.resolved(
             searchIsExpanded: searchIsExpanded,
             navigationIsExpanded: navigationIsExpanded
         )
@@ -195,6 +197,12 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
             transaction.disablesAnimations = true
         }
         .onAppear {
+            if !disclosureInitialized {
+                disclosureInitialized = true
+                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
+                    disclosureState.userIsExpanded = true
+                }
+            }
             if focusRequest != nil {
                 disclosureState.userIsExpanded = true
             }

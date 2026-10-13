@@ -38,7 +38,8 @@
 
     public init<Value: Codable>(
       name: String,
-      _ keyPath: WritableKeyPath<Root, Value>
+      _ keyPath: WritableKeyPath<Root, Value>,
+      disclosureMode: SBJEditorDisclosureMode = .closed
     ) {
       self.name = name
       let editableField = SBJEditableField<Root>(name: name, keyPath)
@@ -60,6 +61,7 @@
             labelIsUnknown: labelIsUnknown,
             context: context
           )
+          .environment(\.sbjEditorDisclosureMode, disclosureMode)
         )
       }
       self.collectIssues = { root, path, registry in

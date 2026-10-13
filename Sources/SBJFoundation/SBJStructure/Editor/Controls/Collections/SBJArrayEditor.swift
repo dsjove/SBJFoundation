@@ -17,6 +17,8 @@ struct SBJArrayEditor<Element: Codable>: View {
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
     @State private var disclosureState = SBJEditorDisclosureState()
+    @State private var disclosureInitialized = false
+    @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @State private var focusIndex: Int?
     @State private var pendingFocus: SBJEditorFocusRequest?
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
@@ -42,7 +44,7 @@ struct SBJArrayEditor<Element: Codable>: View {
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureState.resolved(
+        disclosureMode == .alwaysOpen || disclosureState.resolved(
             searchIsExpanded: searchIsExpanded,
             navigationIsExpanded: navigationIsExpanded
         )
@@ -204,6 +206,12 @@ struct SBJArrayEditor<Element: Codable>: View {
             }
         }
         .onAppear {
+            if !disclosureInitialized {
+                disclosureInitialized = true
+                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
+                    disclosureState.userIsExpanded = true
+                }
+            }
             commitNavigationExpansionIfNeeded()
         }
         .onChange(of: navigationTarget) { _, _ in

@@ -15,6 +15,8 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
     @State private var disclosureState = SBJEditorDisclosureState()
+    @State private var disclosureInitialized = false
+    @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
     @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
     @Environment(\.sbjEditorHasContent) private var hasContent
@@ -38,7 +40,7 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureState.resolved(
+        disclosureMode == .alwaysOpen || disclosureState.resolved(
             searchIsExpanded: searchIsExpanded,
             navigationIsExpanded: navigationIsExpanded
         )
@@ -149,6 +151,12 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
             }
         }
         .onAppear {
+            if !disclosureInitialized {
+                disclosureInitialized = true
+                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
+                    disclosureState.userIsExpanded = true
+                }
+            }
             commitNavigationExpansionIfNeeded()
         }
         .onChange(of: navigationTarget) { _, _ in

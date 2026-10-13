@@ -198,7 +198,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "displayName".uncamelCased, \\.displayName)
+                        SBJEditorPropertyDescriptor<Self>(name: "displayName".uncamelCased, \\.displayName, disclosureMode: .closed)
                     ]
                 }
 
@@ -273,7 +273,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "stored".uncamelCased, \\.stored),
+                        SBJEditorPropertyDescriptor<Self>(name: "stored".uncamelCased, \\.stored, disclosureMode: .closed),
                         SBJEditorPropertyDescriptor<Self>(editorOnlyName: "image".uncamelCased, \\.image)
                     ]
                 }
@@ -355,7 +355,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "value".uncamelCased, \\.value)
+                        SBJEditorPropertyDescriptor<Self>(name: "value".uncamelCased, \\.value, disclosureMode: .closed)
                     ]
                 }
 
@@ -475,7 +475,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "items".uncamelCased, \\.items)
+                        SBJEditorPropertyDescriptor<Self>(name: "items".uncamelCased, \\.items, disclosureMode: .closed)
                     ]
                 }
 
@@ -540,7 +540,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "items".uncamelCased, \\.items)
+                        SBJEditorPropertyDescriptor<Self>(name: "items".uncamelCased, \\.items, disclosureMode: .closed)
                     ]
                 }
 
@@ -689,8 +689,8 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name),
-                        SBJEditorPropertyDescriptor<Self>(name: "website".uncamelCased, \\.website)
+                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name, disclosureMode: .closed),
+                        SBJEditorPropertyDescriptor<Self>(name: "website".uncamelCased, \\.website, disclosureMode: .closed)
                     ]
                 }
 
@@ -772,10 +772,10 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "identifier".uncamelCased, \\.identifier),
-                        SBJEditorPropertyDescriptor<Self>(name: "created".uncamelCased, \\.created),
-                        SBJEditorPropertyDescriptor<Self>(name: "website".uncamelCased, \\.website),
-                        SBJEditorPropertyDescriptor<Self>(name: "color".uncamelCased, \\.color)
+                        SBJEditorPropertyDescriptor<Self>(name: "identifier".uncamelCased, \\.identifier, disclosureMode: .closed),
+                        SBJEditorPropertyDescriptor<Self>(name: "created".uncamelCased, \\.created, disclosureMode: .closed),
+                        SBJEditorPropertyDescriptor<Self>(name: "website".uncamelCased, \\.website, disclosureMode: .closed),
+                        SBJEditorPropertyDescriptor<Self>(name: "color".uncamelCased, \\.color, disclosureMode: .closed)
                     ]
                 }
 
@@ -850,7 +850,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name)
+                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name, disclosureMode: .closed)
                     ]
                 }
 
@@ -921,7 +921,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name)
+                        SBJEditorPropertyDescriptor<Self>(name: "name".uncamelCased, \\.name, disclosureMode: .closed)
                     ]
                 }
 
@@ -989,7 +989,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "payload".uncamelCased, \\.payload)
+                        SBJEditorPropertyDescriptor<Self>(name: "payload".uncamelCased, \\.payload, disclosureMode: .closed)
                     ]
                 }
 
@@ -1061,7 +1061,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 @MainActor
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
-                        SBJEditorPropertyDescriptor<Self>(name: "payload".uncamelCased, \\.payload)
+                        SBJEditorPropertyDescriptor<Self>(name: "payload".uncamelCased, \\.payload, disclosureMode: .closed)
                     ]
                 }
 

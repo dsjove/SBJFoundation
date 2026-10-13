@@ -18,6 +18,7 @@ struct SBJEditorDisclosureHeader: View {
     let titleIsUnknown: Bool
     let titleContent: AnyView?
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
@@ -45,7 +46,7 @@ struct SBJEditorDisclosureHeader: View {
     var body: some View {
         SBJEditorRow(
             treeLevel: treeLevel,
-            disclosureControl: AnyView(
+            disclosureControl: disclosureMode == .alwaysOpen ? nil : AnyView(
                 SBJDisclosureButton(title, isExpanded: $isExpanded)
                     .accessibilityHidden(titleContent == nil)
             ),
@@ -61,6 +62,10 @@ struct SBJEditorDisclosureHeader: View {
                         minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
                         alignment: .leading
                     )
+            } else if disclosureMode == .alwaysOpen {
+                Text(title)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity, minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .leading)
             } else {
                 Button {
                     isExpanded.toggle()
