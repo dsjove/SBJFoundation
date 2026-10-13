@@ -51,7 +51,10 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
                         .disabled(!enumCase.canCreate)
                     }
                 } label: {
-                    SBJCompactMenuLabel(text: selectedCase?.name ?? "Unknown")
+                    SBJCompactMenuLabel(
+                        text: selectedCase?.name ?? "Unknown",
+                        options: Value.sbjEditorEnumCases.map(\.name)
+                    )
                 }
                 .controlSize(.mini)
                 .fixedSize()

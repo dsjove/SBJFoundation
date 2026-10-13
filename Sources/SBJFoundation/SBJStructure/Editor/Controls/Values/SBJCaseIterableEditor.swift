@@ -22,7 +22,10 @@ struct SBJCaseIterableEditor<Value>: View {
                     }
                 }
             } label: {
-                SBJCompactMenuLabel(text: sbjCaseIterablePresentation(value))
+                SBJCompactMenuLabel(
+                    text: sbjCaseIterablePresentation(value),
+                    options: options.map(sbjCaseIterablePresentation)
+                )
             }
             .controlSize(.mini)
             .fixedSize()

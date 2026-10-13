@@ -75,7 +75,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
                 }
                 .labelStyle(.titleAndIcon)
             } label: {
-                SBJCompactMenuLabel(text: value.unit.symbol)
+                SBJCompactMenuLabel(text: value.unit.symbol, options: units.map(\.symbol))
             }
             .controlSize(.mini)
             .fixedSize()

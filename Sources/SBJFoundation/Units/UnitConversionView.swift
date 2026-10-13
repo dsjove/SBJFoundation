@@ -69,7 +69,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
                         }
                     }
                 } label: {
-                    SBJCompactMenuLabel(text: model.destinationUnit.symbol)
+                    SBJCompactMenuLabel(text: model.destinationUnit.symbol, options: units.map(\.symbol))
                 }
                 .accessibilityLabel(UnitConversionModel<Unit>.propertyInfo(for: \UnitConversionModel<Unit>.destinationUnit)?.accessibilityLabel ?? "To unit")
                 .accessibilityValue(model.destinationUnit.displayName)
