@@ -16,8 +16,8 @@ struct SBJArrayEditor<Element: Codable>: View {
     let itemActions: SBJEditorItemActions?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
-    @State private var disclosureState = SBJEditorDisclosureState()
-    @State private var disclosureInitialized = false
+    var headerOnly: Bool = false
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel
     @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @State private var focusIndex: Int?
     @State private var pendingFocus: SBJEditorFocusRequest?
@@ -37,23 +37,26 @@ struct SBJArrayEditor<Element: Codable>: View {
     }
 
     private func commitNavigationExpansionIfNeeded() {
-        disclosureState.commitNavigationExpansion(
+        presentationModel.commitNavigationExpansion(
             target: navigationTarget,
-            path: context.navigationPath
+            path: context.navigationPath,
+            id: context.itemIdentifier
         )
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureMode == .alwaysOpen || disclosureState.resolved(
-            searchIsExpanded: searchIsExpanded,
-            navigationIsExpanded: navigationIsExpanded
+        presentationModel.resolved(
+            context.itemIdentifier,
+            mode: disclosureMode,
+            search: searchIsExpanded,
+            navigation: navigationIsExpanded
         )
     }
 
     private var disclosureBinding: Binding<Bool> {
         Binding(
             get: { resolvedIsExpanded },
-            set: { disclosureState.setUserExpansion($0, searchIsExpanded: searchIsExpanded) }
+            set: { presentationModel.setUserExpansion($0, for: context.itemIdentifier, search: searchIsExpanded) }
         )
     }
 
@@ -100,6 +103,26 @@ struct SBJArrayEditor<Element: Codable>: View {
         }
     }
 
+    // Collection entries use the same render-independent descriptor boundary as
+    // root and object properties. The current renderer remains recursive.
+    private var presentationRows: [SBJEditorPresentationRow<Int>] {
+        displayItems.map { item in
+            let index = item.content
+            let title = SBJCollectionItemIdentification.arrayTitle(
+                for: value[index], index: index, itemTitleKey: itemTitleKey
+            )
+            return SBJEditorPresentationRow(
+                context: SBJEditTraversalContext(
+                    treeLevel: context.treeLevel + 1,
+                    itemIdentifier: item.itemIdentifier,
+                    indexPath: item.indexPath,
+                    navigationPath: context.navigationPath + [title]
+                ),
+                content: index
+            )
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             SBJEditorDisclosureHeader(
@@ -119,7 +142,7 @@ struct SBJArrayEditor<Element: Codable>: View {
                                 value.append(newValue)
                                 focusIndex = value.index(before: value.endIndex)
                                 pendingFocus = SBJEditorFocusRequest()
-                                disclosureState.userIsExpanded = true
+                                presentationModel.open(context.itemIdentifier)
                             }
                         }
                         .disabled(registry.createArrayElement(Element.self, existing: value) == nil)
@@ -134,7 +157,7 @@ struct SBJArrayEditor<Element: Codable>: View {
                 )
             )
 
-            if resolvedIsExpanded {
+            if resolvedIsExpanded && !headerOnly {
                 VStack(alignment: .leading, spacing: 8) {
                     if displayIndices.isEmpty {
                         SBJEditorEmptyDisclosureContent(
@@ -144,19 +167,9 @@ struct SBJArrayEditor<Element: Codable>: View {
                         )
                     }
 
-                    ForEach(displayItems) { item in
-                        let index = item.content
-                        let navigationTitle = SBJCollectionItemIdentification.arrayTitle(
-                            for: value[index],
-                            index: index,
-                            itemTitleKey: itemTitleKey
-                        )
-                        let itemContext = SBJEditTraversalContext(
-                            treeLevel: context.treeLevel + 1,
-                            itemIdentifier: item.itemIdentifier,
-                            indexPath: item.indexPath,
-                            navigationPath: context.navigationPath + [navigationTitle]
-                        )
+                    ForEach(presentationRows) { row in
+                        let index = row.content
+                        let itemContext = row.context
                         let itemLabel = itemTitle(for: value[index], index: index)
                         let itemSearchCriteria = searchCriteria.descendingPastMatchedLabels(label, itemLabel.text)
                         let itemInvalid = SBJInvariantCheck.validationError(
@@ -197,7 +210,7 @@ struct SBJArrayEditor<Element: Codable>: View {
                         .environment(\.sbjEditorHasContent, (value[index] as? any HasContentCheckable)?.hasContent)
                         .environment(\.sbjEditorIsInvalid, itemInvalid)
                         .sbjEditorNavigationAnchor(for: itemContext.navigationPath)
-                        .accessibilityIdentifier(item.itemIdentifier.description)
+                        .accessibilityIdentifier(itemContext.itemIdentifier.description)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -206,12 +219,6 @@ struct SBJArrayEditor<Element: Codable>: View {
             }
         }
         .onAppear {
-            if !disclosureInitialized {
-                disclosureInitialized = true
-                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
-                    disclosureState.userIsExpanded = true
-                }
-            }
             commitNavigationExpansionIfNeeded()
         }
         .onChange(of: navigationTarget) { _, _ in

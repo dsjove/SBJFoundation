@@ -28,6 +28,8 @@ extension EnvironmentValues {
 
 @MainActor
 struct SBJEditorPropertyInfoContainer: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let content: AnyView
     let propertyName: String
     let info: SBJPropertyInfo?
@@ -45,14 +47,14 @@ struct SBJEditorPropertyInfoContainer: View {
                     content
                 }
             } else if propertyInfoInline, let info {
-                HStack(spacing: SBJEditorRowMetrics.laneSpacing) {
+                HStack(spacing: sbjFormatting.laneSpacing) {
                     accessible(content, using: info)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
 
                     SBJEditorPropertyInfoButton(propertyName: propertyName, info: info)
-                        .frame(width: SBJEditorRowMetrics.infoLaneWidth, alignment: .center)
-                        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+                        .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
+                        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                         .fixedSize(horizontal: true, vertical: false)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -71,11 +73,11 @@ struct SBJEditorPropertyInfoContainer: View {
                 .overlay(alignment: .topTrailing) {
                     if let info {
                         SBJEditorPropertyInfoButton(propertyName: propertyName, info: info)
-                            .frame(width: SBJEditorRowMetrics.infoLaneWidth, alignment: .center)
-                            .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+                            .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
+                            .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                             .offset(
                                 x: (rowLayoutSuppressed || rowEmbedded)
-                                    ? SBJEditorRowMetrics.infoLaneWidth + SBJEditorRowMetrics.laneSpacing
+                                    ? sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing
                                     : 0
                             )
                     }

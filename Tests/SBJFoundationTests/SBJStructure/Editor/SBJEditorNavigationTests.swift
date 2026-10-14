@@ -28,8 +28,8 @@ struct SBJEditorNavigationTests {
         #expect(!target.isDescendant(of: ["Steps"]))
     }
 
-    @Test func navigationRequestsCanRepeatForTheSameProperty() {
-        var state = SBJEditorViewState()
+    @MainActor @Test func navigationRequestsCanRepeatForTheSameProperty() {
+        let state = SBJEditorPresentationModel()
         let target = SBJEditorNavigationTarget(issuePath: "Nutrition › Protein Grams")
 
         state.navigate(to: target)

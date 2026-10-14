@@ -3,6 +3,8 @@ import Foundation
 import SwiftUI
 
 struct SBJOptionalEditor<Wrapped: Codable>: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let label: String
     @Binding var value: Wrapped?
     let originalValue: Wrapped??
@@ -18,8 +20,8 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     let itemActions: SBJEditorItemActions?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
-    @State private var disclosureState = SBJEditorDisclosureState()
-    @State private var disclosureInitialized = false
+    var headerOnly: Bool = false
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel
     @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @State private var pendingFocus: SBJEditorFocusRequest?
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
@@ -49,23 +51,26 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     }
 
     private func commitNavigationExpansionIfNeeded() {
-        disclosureState.commitNavigationExpansion(
+        presentationModel.commitNavigationExpansion(
             target: navigationTarget,
-            path: context.navigationPath
+            path: context.navigationPath,
+            id: context.itemIdentifier
         )
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureMode == .alwaysOpen || disclosureState.resolved(
-            searchIsExpanded: searchIsExpanded,
-            navigationIsExpanded: navigationIsExpanded
+        presentationModel.resolved(
+            context.itemIdentifier,
+            mode: disclosureMode,
+            search: searchIsExpanded,
+            navigation: navigationIsExpanded
         )
     }
 
     private var disclosureBinding: Binding<Bool> {
         Binding(
             get: { resolvedIsExpanded },
-            set: { disclosureState.setUserExpansion($0, searchIsExpanded: searchIsExpanded) }
+            set: { presentationModel.setUserExpansion($0, for: context.itemIdentifier, search: searchIsExpanded) }
         )
     }
 
@@ -128,7 +133,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                             trailingActions: itemActions?.trailingView ?? AnyView(EmptyView())
                         )
 
-                        if resolvedIsExpanded {
+                        if resolvedIsExpanded && !headerOnly {
                             let childSearchCriteria = searchCriteria.descendingPastMatchedLabel(label)
                             editable._sbjMakeEditorContents(
                                 binding: SBJAnyBinding(unwrapped),
@@ -187,12 +192,6 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
         }
         }
         .onAppear {
-            if !disclosureInitialized {
-                disclosureInitialized = true
-                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
-                    disclosureState.userIsExpanded = true
-                }
-            }
             commitNavigationExpansionIfNeeded()
         }
         .onChange(of: navigationTarget) { _, _ in
@@ -214,7 +213,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
             value = nil
             pendingFocus = nil
         }
-        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
     }
 
     private var setButton: some View {
@@ -225,12 +224,12 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
         ) {
             value = registry.create(Wrapped.self)
             if value != nil {
-                disclosureState.userIsExpanded = true
+                presentationModel.open(context.itemIdentifier)
                 pendingFocus = SBJEditorFocusRequest()
             }
         }
         .disabled(registry.create(Wrapped.self) == nil)
-        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
     }
 }
 #endif

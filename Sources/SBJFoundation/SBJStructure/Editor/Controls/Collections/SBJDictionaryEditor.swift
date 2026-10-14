@@ -18,8 +18,8 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
     let itemActions: SBJEditorItemActions?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
-    @State private var disclosureState = SBJEditorDisclosureState()
-    @State private var disclosureInitialized = false
+    var headerOnly: Bool = false
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel
     @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
     @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
@@ -37,23 +37,26 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
     }
 
     private func commitNavigationExpansionIfNeeded() {
-        disclosureState.commitNavigationExpansion(
+        presentationModel.commitNavigationExpansion(
             target: navigationTarget,
-            path: context.navigationPath
+            path: context.navigationPath,
+            id: context.itemIdentifier
         )
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureMode == .alwaysOpen || disclosureState.resolved(
-            searchIsExpanded: searchIsExpanded,
-            navigationIsExpanded: navigationIsExpanded
+        presentationModel.resolved(
+            context.itemIdentifier,
+            mode: disclosureMode,
+            search: searchIsExpanded,
+            navigation: navigationIsExpanded
         )
     }
 
     private var disclosureBinding: Binding<Bool> {
         Binding(
             get: { resolvedIsExpanded },
-            set: { disclosureState.setUserExpansion($0, searchIsExpanded: searchIsExpanded) }
+            set: { presentationModel.setUserExpansion($0, for: context.itemIdentifier, search: searchIsExpanded) }
         )
     }
 
@@ -92,6 +95,21 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
         return (key, entryValue)
     }
 
+    private var presentationRows: [SBJEditorPresentationRow<DisplayEntry>] {
+        displayEntries.map { entry in
+            let keyText = String(reflecting: entry.key)
+            return SBJEditorPresentationRow(
+                context: SBJEditTraversalContext(
+                    treeLevel: context.treeLevel + 1,
+                    itemIdentifier: context.itemIdentifier.appending("key:\(keyText)"),
+                    indexPath: context.indexPath.appending("key:\(keyText)"),
+                    navigationPath: context.navigationPath + [String(describing: entry.key)]
+                ),
+                content: entry
+            )
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             SBJEditorDisclosureHeader(
@@ -104,7 +122,7 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
                         SBJAddButton(label) {
                             guard let (key, entryValue) = addCandidate else { return }
                             value.updateValue(entryValue, forKey: key)
-                            disclosureState.userIsExpanded = true
+                            presentationModel.open(context.itemIdentifier)
                         }
                         .disabled(addCandidate == nil)
                     }
@@ -116,7 +134,7 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
                 )
             )
 
-            if resolvedIsExpanded {
+            if resolvedIsExpanded && !headerOnly {
                 VStack(alignment: .leading, spacing: 10) {
                     if displayEntries.isEmpty {
                         SBJEditorEmptyDisclosureContent(
@@ -126,16 +144,12 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
                         )
                     }
 
-                    ForEach(displayEntries) { entry in
+                    ForEach(presentationRows) { row in
+                        let entry = row.content
                         let key = entry.key
                         let entryValue = entry.value
                         let keyLabel = String(describing: key)
-                        let itemContext = SBJEditTraversalContext(
-                            treeLevel: context.treeLevel + 1,
-                            itemIdentifier: context.itemIdentifier.appending("key:\(String(reflecting: key))"),
-                            indexPath: context.indexPath.appending("key:\(String(reflecting: key))"),
-                            navigationPath: context.navigationPath + [keyLabel]
-                        )
+                        let itemContext = row.context
                         let entryChanged = entryHasChanged(key: key, value: entryValue)
                         let entrySearchCriteria = searchCriteria.descendingPastMatchedLabels(label, keyLabel)
                         SBJDictionaryEntryEditor(
@@ -167,12 +181,6 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
             }
         }
         .onAppear {
-            if !disclosureInitialized {
-                disclosureInitialized = true
-                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
-                    disclosureState.userIsExpanded = true
-                }
-            }
             commitNavigationExpansionIfNeeded()
         }
         .onChange(of: navigationTarget) { _, _ in

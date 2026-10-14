@@ -10,6 +10,7 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
     let focusRequest: SBJEditorFocusRequest?
     let labelIsUnknown: Bool
     let context: SBJEditTraversalContext
+    var headerOnly: Bool = false
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
 
     private var selectedCase: SBJEditorEnumCase<Value>? {
@@ -34,6 +35,17 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
                 content: field
             )
         }
+    }
+
+    private func associatedValueRows(
+        _ selectedCase: SBJEditorEnumCase<Value>
+    ) -> [SBJEditorPresentationRow<SBJEditorAssociatedValue<Value>>] {
+        sbjEditorPresentationRows(
+            from: associatedValueSnapshot(selectedCase),
+            parent: context,
+            navigationPath: { $0.name },
+            depthIncrement: 1
+        )
     }
 
     var body: some View {
@@ -63,22 +75,17 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
                 Spacer(minLength: 0)
             }
 
-            if let selectedCase, !selectedCase.associatedValues.isEmpty {
+            if !headerOnly, let selectedCase, !selectedCase.associatedValues.isEmpty {
                 let childSearchCriteria = searchCriteria.descendingPastMatchedLabels(label, selectedCase.name)
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(associatedValueSnapshot(selectedCase)) { item in
-                        let field = item.content
+                    ForEach(associatedValueRows(selectedCase)) { row in
+                        let field = row.content
                         field.view(
                             root: $value,
                             originalRoot: originalForSelectedCase,
                             registry: registry,
                             focusRequest: focusRequest,
-                            context: SBJEditTraversalContext(
-                                treeLevel: context.treeLevel + 1,
-                                itemIdentifier: item.itemIdentifier,
-                                indexPath: item.indexPath,
-                                navigationPath: context.navigationPath + [field.name]
-                            )
+                            context: row.context
                         )
                     }
                 }

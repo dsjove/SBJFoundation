@@ -13,6 +13,8 @@ public struct SBJEditorAssociatedValue<Root> {
     private let hasContent: (Root) -> Bool?
     private let containsEmptyContent: (Root, SBJEditorRegistry) -> Bool
     private let isInvalid: (Root) -> Bool
+    private let makeTraversalNode: (Binding<Root>, Root?, SBJEditorRegistry, SBJEditTraversalContext) -> SBJEditorTraversalNode
+    private let makeSnapshotNode: (Root, SBJEditTraversalContext) -> SBJEditorTraversalNode
 
     public init<Value: Codable>(
         name: String,
@@ -20,6 +22,22 @@ public struct SBJEditorAssociatedValue<Root> {
         set: @escaping (inout Root, Value) -> Void
     ) {
         self.name = name
+        self.makeTraversalNode = { root, originalRoot, registry, context in
+            let binding = Binding<Value>(
+                get: { get(root.wrappedValue) },
+                set: { newValue in
+                    var current = root.wrappedValue
+                    set(&current, newValue)
+                    root.wrappedValue = current
+                }
+            )
+            return SBJEditorValueTraversal.boundNode(
+                named: name, binding: binding, originalValue: originalRoot.map(get), context: context, registry: registry
+            )
+        }
+        self.makeSnapshotNode = { root, context in
+            SBJEditorValueTraversal.node(named: name, value: get(root), context: context)
+        }
         self.makeView = { root, originalRoot, registry, focusRequest, context in
             let binding = Binding<Value>(
                 get: { get(root.wrappedValue) },
@@ -72,6 +90,17 @@ public struct SBJEditorAssociatedValue<Root> {
                 at: SBJValidationKeyPath(\Value.self)
             ) != nil
         }
+    }
+
+    func traversalNode(root: Root, context: SBJEditTraversalContext) -> SBJEditorTraversalNode {
+        makeSnapshotNode(root, context)
+    }
+
+    func boundTraversalNode(
+        root: Binding<Root>, originalRoot: Root? = nil, registry: SBJEditorRegistry,
+        context: SBJEditTraversalContext
+    ) -> SBJEditorTraversalNode {
+        makeTraversalNode(root, originalRoot, registry, context)
     }
 
     func view(
@@ -199,6 +228,48 @@ public extension SBJEditableAssociatedEnum {
     }
 
     @MainActor
+    internal static func _sbjAssociatedTraversalNodes(
+        value: Any, context: SBJEditTraversalContext
+    ) -> [SBJEditorTraversalNode] {
+        guard let value = value as? Self,
+              let selected = sbjEditorEnumCases.first(where: { $0.matches(value) }) else { return [] }
+        return selected.associatedValues.enumerated().map { offset, field in
+            let childContext = SBJEditTraversalContext(
+                treeLevel: context.treeLevel + 1,
+                itemIdentifier: context.itemIdentifier
+                    .appending("case:\(selected.name)")
+                    .appending("property:\(field.name)"),
+                indexPath: context.indexPath.appending("field:\(offset)"),
+                navigationPath: context.navigationPath + [field.name]
+            )
+            return field.traversalNode(root: value, context: childContext)
+        }
+    }
+
+    @MainActor
+    internal static func _sbjBoundAssociatedTraversalNodes(
+        binding: SBJAnyBinding, originalValue: Any? = nil, registry: SBJEditorRegistry,
+        context: SBJEditTraversalContext
+    ) -> [SBJEditorTraversalNode] {
+        let root = binding.binding(as: Self.self)
+        guard let selected = sbjEditorEnumCases.first(where: { $0.matches(root.wrappedValue) }) else {
+            return []
+        }
+        let originalRoot = (originalValue as? Self).flatMap { selected.matches($0) ? $0 : nil }
+        return selected.associatedValues.enumerated().map { offset, field in
+            let childContext = SBJEditTraversalContext(
+                treeLevel: context.treeLevel + 1,
+                itemIdentifier: context.itemIdentifier
+                    .appending("case:\(selected.name)")
+                    .appending("property:\(field.name)"),
+                indexPath: context.indexPath.appending("field:\(offset)"),
+                navigationPath: context.navigationPath + [field.name]
+            )
+            return field.boundTraversalNode(root: root, originalRoot: originalRoot, registry: registry, context: childContext)
+        }
+    }
+
+    @MainActor
     internal static func _sbjMakeAssociatedEnumEditor(
         label: String,
         binding: SBJAnyBinding,
@@ -206,7 +277,8 @@ public extension SBJEditableAssociatedEnum {
         registry: SBJEditorRegistry,
         focusRequest: SBJEditorFocusRequest? = nil,
         labelIsUnknown: Bool = false,
-        context: SBJEditTraversalContext = .root
+        context: SBJEditTraversalContext = .root,
+        headerOnly: Bool = false
     ) -> AnyView {
         let typedBinding = binding.binding(as: Self.self)
         return AnyView(
@@ -217,7 +289,8 @@ public extension SBJEditableAssociatedEnum {
                 registry: registry,
                 focusRequest: focusRequest,
                 labelIsUnknown: labelIsUnknown,
-                context: context
+                context: context,
+                headerOnly: headerOnly
             )
         )
     }

@@ -34,6 +34,7 @@ struct SBJEditorLabeledField<Control: View>: View {
         SBJAdaptiveFieldLayout {
             SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
                 .accessibilityHidden(true)
+                .allowsHitTesting(false)
         } control: {
             control
         }

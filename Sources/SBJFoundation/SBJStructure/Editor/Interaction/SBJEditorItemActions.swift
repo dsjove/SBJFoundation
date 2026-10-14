@@ -3,6 +3,21 @@ import Foundation
 import SwiftUI
 
 @MainActor
+private struct SBJEditorActionHeight<Content: View>: View {
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .frame(minHeight: presentationModel?.formattingOptions.firstLineMinimumHeight ?? 28, alignment: .center)
+    }
+}
+
+@MainActor
 struct SBJEditorItemActions {
     let remove: () -> Void
     let moveUp: (() -> Void)?
@@ -10,12 +25,14 @@ struct SBJEditorItemActions {
 
     var leadingView: AnyView {
         AnyView(
-            SBJRemoveButton(
-                accessibilityLabel: "Remove item",
-                accessibilityHint: "Removes this item from the collection",
-                action: remove
-            )
-            .frame(minWidth: 22, minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+            SBJEditorActionHeight {
+                SBJRemoveButton(
+                    accessibilityLabel: "Remove item",
+                    accessibilityHint: "Removes this item from the collection",
+                    action: remove
+                )
+            }
+            .frame(minWidth: 22, alignment: .center)
         )
     }
 
@@ -24,8 +41,9 @@ struct SBJEditorItemActions {
             return AnyView(EmptyView())
         }
         return AnyView(
-            HStack(spacing: 6) {
-                SBJMoveButton(
+            SBJEditorActionHeight {
+                HStack(spacing: 6) {
+                    SBJMoveButton(
                     .up,
                     accessibilityLabel: "Move item up",
                     accessibilityHint: "Moves this item one position earlier",
@@ -39,7 +57,7 @@ struct SBJEditorItemActions {
                     action: moveDown
                 )
             }
-            .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+            }
         )
     }
 }

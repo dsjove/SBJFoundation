@@ -2,6 +2,8 @@
 import SwiftUI
 
 struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let title: String
     @Binding var value: Value
     let originalValue: Value?
@@ -12,8 +14,9 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     let promotedTitlePropertyName: String?
     let promotedTitlePrefix: String?
     let context: SBJEditTraversalContext
-    @State private var disclosureState = SBJEditorDisclosureState()
-    @State private var disclosureInitialized = false
+    /// Renders only the object disclosure row; descendants belong to the flat renderer.
+    var headerOnly: Bool = false
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel
     @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
     @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
@@ -31,23 +34,26 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     }
 
     private func commitNavigationExpansionIfNeeded() {
-        disclosureState.commitNavigationExpansion(
+        presentationModel.commitNavigationExpansion(
             target: navigationTarget,
-            path: context.navigationPath
+            path: context.navigationPath,
+            id: context.itemIdentifier
         )
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureMode == .alwaysOpen || disclosureState.resolved(
-            searchIsExpanded: searchIsExpanded,
-            navigationIsExpanded: navigationIsExpanded
+        presentationModel.resolved(
+            context.itemIdentifier,
+            mode: disclosureMode,
+            search: searchIsExpanded,
+            navigation: navigationIsExpanded
         )
     }
 
     private var disclosureBinding: Binding<Bool> {
         Binding(
             get: { resolvedIsExpanded },
-            set: { disclosureState.setUserExpansion($0, searchIsExpanded: searchIsExpanded) }
+            set: { presentationModel.setUserExpansion($0, for: context.itemIdentifier, search: searchIsExpanded) }
         )
     }
 
@@ -66,6 +72,15 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                 content: field
             )
         }
+    }
+
+    private func bodyRows(criteria: SBJEditSearchCriteria) -> [SBJEditorPresentationRow<SBJEditorPropertyDescriptor<Value>>] {
+        sbjEditorPresentationRows(
+            from: bodySnapshot(criteria: criteria),
+            parent: context,
+            navigationPath: { $0.name },
+            depthIncrement: 1
+        )
     }
 
     private var promotedTitleField: SBJEditorPropertyDescriptor<Value>? {
@@ -98,7 +113,20 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
         )
 
         Group {
-            if searchCriteria.showEmptyContentOnly && hasContent == false && navigationIsExpanded == false {
+            if headerOnly {
+                // The projected children are rendered separately. This path must
+                // never instantiate bodyRows or a nested VStack of descendants.
+                SBJEditorDisclosureHeader(
+                    title,
+                    treeLevel: context.treeLevel,
+                    isExpanded: disclosureBinding,
+                    leadingActions: itemActions?.leadingView ?? AnyView(EmptyView()),
+                    trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
+                    infoAction: promotedTitleInfoAction,
+                    titleIsUnknown: titleIsUnknown,
+                    titleContent: promotedHeaderContent(rootValidation: rootValidation)
+                )
+            } else if searchCriteria.showEmptyContentOnly && hasContent == false && navigationIsExpanded == false {
                 SBJEditorRow(
                     treeLevel: context.treeLevel,
                     elementAction: itemActions?.leadingView,
@@ -112,7 +140,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                         }
                         Spacer(minLength: 0)
                     }
-                    .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .leading)
+                    .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .leading)
                 }
                 .padding(.vertical, 2)
                         .background(SBJUIAppearance.filteredEmptyFillColor)
@@ -165,19 +193,14 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                                 )
                             }
 
-                            ForEach(bodySnapshot(criteria: childSearchCriteria)) { item in
-                                let field = item.content
+                            ForEach(bodyRows(criteria: childSearchCriteria)) { row in
+                                let field = row.content
                                 field.view(
                                     root: $value,
                                     originalRoot: originalValue,
                                     registry: registry,
                                     focusRequest: focusRequest,
-                                    context: SBJEditTraversalContext(
-                                        treeLevel: context.treeLevel + 1,
-                                        itemIdentifier: item.itemIdentifier,
-                                        indexPath: item.indexPath,
-                                        navigationPath: context.navigationPath + [field.name]
-                                    ),
+                                    context: row.context,
                                     rootValidation: rootValidation,
                                     applyFiltering: false
                                 )
@@ -197,14 +220,8 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
             transaction.disablesAnimations = true
         }
         .onAppear {
-            if !disclosureInitialized {
-                disclosureInitialized = true
-                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
-                    disclosureState.userIsExpanded = true
-                }
-            }
             if focusRequest != nil {
-                disclosureState.userIsExpanded = true
+                presentationModel.open(context.itemIdentifier)
             }
             commitNavigationExpansionIfNeeded()
         }

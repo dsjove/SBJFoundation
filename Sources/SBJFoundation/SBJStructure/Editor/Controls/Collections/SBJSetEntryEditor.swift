@@ -3,14 +3,18 @@ import Foundation
 import SwiftUI
 
 struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
+    struct Configuration {
+        var textStyle: SBJStringStyle? = nil
+        var integerRange: ClosedRange<Int>? = nil
+        var numberRange: ClosedRange<Double>? = nil
+        var focusRequest: SBJEditorFocusRequest? = nil
+    }
+
     let element: Element
     let originalElement: Element?
     let title: String
     let registry: SBJEditorRegistry
-    let textStyle: SBJStringStyle?
-    let integerRange: ClosedRange<Int>?
-    let numberRange: ClosedRange<Double>?
-    let focusRequest: SBJEditorFocusRequest?
+    let configuration: Configuration
     let context: SBJEditTraversalContext
     let replace: (Element, Element) -> Bool
     let remove: () -> Void
@@ -19,14 +23,11 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
 
     init(
         element: Element,
-        originalElement: Element?,
+        originalElement: Element? = nil,
         title: String,
         registry: SBJEditorRegistry,
-        textStyle: SBJStringStyle?,
-        integerRange: ClosedRange<Int>?,
-        numberRange: ClosedRange<Double>?,
-        focusRequest: SBJEditorFocusRequest?,
         context: SBJEditTraversalContext,
+        configuration: Configuration = .init(),
         replace: @escaping (Element, Element) -> Bool,
         remove: @escaping () -> Void
     ) {
@@ -34,10 +35,7 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
         self.originalElement = originalElement
         self.title = title
         self.registry = registry
-        self.textStyle = textStyle
-        self.integerRange = integerRange
-        self.numberRange = numberRange
-        self.focusRequest = focusRequest
+        self.configuration = configuration
         self.context = context
         self.replace = replace
         self.remove = remove
@@ -66,10 +64,10 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
                     value: $draft,
                     originalValue: originalElement.map { SBJEditorOriginalValue($0) },
                     registry: registry,
-                    textStyle: textStyle,
-                    integerRange: integerRange,
-                    numberRange: numberRange,
-                    focusRequest: focusRequest,
+                    textStyle: configuration.textStyle,
+                    integerRange: configuration.integerRange,
+                    numberRange: configuration.numberRange,
+                    focusRequest: configuration.focusRequest,
                     context: context
                 )
 

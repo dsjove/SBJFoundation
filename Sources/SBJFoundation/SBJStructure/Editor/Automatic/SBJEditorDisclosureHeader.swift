@@ -8,6 +8,8 @@ import SwiftUI
 /// row, so expanding a multiline/compound value never shifts their vertical
 /// position.
 struct SBJEditorDisclosureHeader: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let title: String
     let treeLevel: Int
     @Binding var isExpanded: Bool
@@ -59,13 +61,13 @@ struct SBJEditorDisclosureHeader: View {
                 titleContent
                     .frame(
                         maxWidth: .infinity,
-                        minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
+                        minHeight: sbjFormatting.firstLineMinimumHeight,
                         alignment: .leading
                     )
             } else if disclosureMode == .alwaysOpen {
                 Text(title)
                     .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity, minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .leading)
             } else {
                 Button {
                     isExpanded.toggle()
@@ -83,7 +85,7 @@ struct SBJEditorDisclosureHeader: View {
                     }
                     .frame(
                         maxWidth: .infinity,
-                        minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
+                        minHeight: sbjFormatting.firstLineMinimumHeight,
                         alignment: .leading
                     )
                     .contentShape(Rectangle())

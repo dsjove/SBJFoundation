@@ -14,7 +14,8 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
     private let label: Label
     private let control: Control
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Environment(\.sbjEditorFormattingOptions) private var formatting
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
+    private var formatting: SBJEditorFormattingOptions { presentationModel?.formattingOptions ?? .init() }
 
     init(
         spacing: CGFloat = 8,
@@ -36,7 +37,7 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
             switch controlWidth {
             case .intrinsic:
                 ViewThatFits(in: .horizontal) {
-                    if formatting.contains(.trailingAlignedFields) {
+                    if formatting.trailingAlignedFields {
                         trailingHorizontal
                     } else {
                         intrinsicHorizontal
@@ -44,7 +45,7 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
                     }
                     vertical
                 }
-                .frame(maxWidth: .infinity, alignment: formatting.contains(.trailingAlignedFields) ? .trailing : .leading)
+                .frame(maxWidth: .infinity, alignment: formatting.trailingAlignedFields ? .trailing : .leading)
 
             case .fillAvailable:
                 // A free-form field has no meaningful preferred text width.
@@ -87,7 +88,7 @@ struct SBJAdaptiveFieldLayout<Label: View, Control: View>: View {
         case .fillAvailable(let minimum):
             HStack(alignment: .center, spacing: spacing) {
                 fixedLabel
-                if formatting.contains(.trailingAlignedFields) { Spacer(minLength: 0) }
+                if formatting.trailingAlignedFields { Spacer(minLength: 0) }
                 control
                     .frame(minWidth: minimum, maxWidth: .infinity, alignment: .leading)
             }

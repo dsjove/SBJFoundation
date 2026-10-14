@@ -186,7 +186,8 @@
       configuration: SBJEditFieldConfiguration,
       focusRequest: SBJEditorFocusRequest?,
       labelIsUnknown: Bool,
-      context: SBJEditTraversalContext
+      context: SBJEditTraversalContext,
+      headerOnly: Bool = false
     ) {
       render = {
         let defaultValue = Binding<Value>(
@@ -211,7 +212,8 @@
           collectionItemIdentifierKey: configuration.collectionItemIdentifierKey,
           focusRequest: focusRequest,
           labelIsUnknown: labelIsUnknown,
-          context: context
+          context: context,
+          headerOnly: headerOnly
         )
         let content =
           registry.customLineItem(
@@ -248,7 +250,8 @@
       registry: SBJEditorRegistry,
       focusRequest: SBJEditorFocusRequest?,
       labelIsUnknown: Bool,
-      context: SBJEditTraversalContext
+      context: SBJEditTraversalContext,
+      headerOnly: Bool = false
     ) {
       render = {
         let defaultValue = Binding<Value>(
@@ -263,7 +266,8 @@
           registry: registry,
           focusRequest: focusRequest,
           labelIsUnknown: labelIsUnknown,
-          context: context
+          context: context,
+          headerOnly: headerOnly
         )
         let content =
           registry.customLineItem(

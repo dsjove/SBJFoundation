@@ -8,7 +8,7 @@
     @MainActor
     private struct SBJStructuredEditorPreviewHost: View {
       @State private var value: SBJStructureSampleModel
-      @State private var editorState = SBJEditorViewState()
+      @State private var editorState = SBJEditorPresentationModel()
       @State private var hasAppliedRegressionMutation = false
       private let regressionMutation: ((inout SBJStructureSampleModel) -> Void)?
 
@@ -51,10 +51,10 @@
             .foregroundStyle(.secondary)
           }
 
-          SBJEditorSearchView(value: value, state: $editorState, registry: registry)
+          SBJEditorSearchView(value: value, presentationModel: editorState, registry: registry)
 
-          SBJEditorScrollView(state: $editorState) {
-            SBJEditorView(value: $value, state: $editorState, registry: registry)
+          SBJEditorScrollView(presentationModel: editorState) {
+            SBJEditorView(value: $value, presentationModel: editorState, registry: registry)
               .frame(maxWidth: .infinity, alignment: .leading)
               .padding(.vertical, 8)
           }

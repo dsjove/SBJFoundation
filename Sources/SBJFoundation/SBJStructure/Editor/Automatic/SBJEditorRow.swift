@@ -3,7 +3,7 @@ import SwiftUI
 
 private enum SBJEditorFirstLineCenterID: AlignmentID {
     static func defaultValue(in dimensions: ViewDimensions) -> CGFloat {
-        min(dimensions.height, SBJEditorRowMetrics.firstLineMinimumHeight) / 2
+        min(dimensions.height, 28) / 2
     }
 }
 
@@ -42,6 +42,8 @@ extension EnvironmentValues {
 /// receives all remaining width.
 @MainActor
 struct SBJEditorRow<Content: View>: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     private let treeLevel: Int
     private let disclosureControl: AnyView?
     private let elementAction: AnyView?
@@ -50,6 +52,8 @@ struct SBJEditorRow<Content: View>: View {
     private let trailingActions: AnyView?
     private let infoAction: AnyView?
     private let content: Content
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
+    private var indentationWidth: CGFloat { presentationModel?.formattingOptions.indentationWidth ?? sbjFormatting.indentationWidth }
     @Environment(\.sbjEditorRowLayoutSuppressed) private var rowLayoutSuppressed
     @Environment(\.sbjEditorRowEmbedded) private var rowEmbedded
     @Environment(\.sbjEditorIsChanged) private var isChanged
@@ -85,30 +89,31 @@ struct SBJEditorRow<Content: View>: View {
             content
                 .frame(
                     maxWidth: .infinity,
-                    minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
+                    minHeight: sbjFormatting.firstLineMinimumHeight,
                     alignment: .leading
                 )
         } else if rowEmbedded {
             localRowControlsAndContent
         } else {
             ZStack(alignment: .topLeading) {
-                HStack(alignment: .sbjEditorFirstLineCenter, spacing: SBJEditorRowMetrics.laneSpacing) {
+                HStack(alignment: .sbjEditorFirstLineCenter, spacing: sbjFormatting.laneSpacing) {
                     if treeLevel > 0 {
                         SBJEditorIndentationBullets(level: treeLevel)
+                            .allowsHitTesting(false)
                     }
 
                     localRowControlsAndContent
                 }
-                .padding(.leading, SBJEditorRowMetrics.statusLaneWidth + SBJEditorRowMetrics.statusToContentSpacing)
+                .padding(.leading, sbjFormatting.statusLaneWidth + sbjFormatting.statusToContentSpacing)
                 // Every row reserves the same single global info gutter. The
                 // property-info container overlays into this space, so nesting
                 // never compounds the width cost.
-                .padding(.trailing, SBJEditorRowMetrics.infoLaneWidth + SBJEditorRowMetrics.laneSpacing)
+                .padding(.trailing, sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing)
 
                 if let infoAction {
                     infoAction
-                        .frame(width: SBJEditorRowMetrics.infoLaneWidth, alignment: .center)
-                        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+                        .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
+                        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
@@ -119,7 +124,7 @@ struct SBJEditorRow<Content: View>: View {
                 if isInvalid && !reduceTransparency {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(SBJUIAppearance.invalidFillColor(colorSchemeContrast))
-                        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight)
+                        .frame(minHeight: sbjFormatting.firstLineMinimumHeight)
                         .allowsHitTesting(false)
                 }
             }
@@ -148,15 +153,15 @@ struct SBJEditorRow<Content: View>: View {
                                 .foregroundStyle(SBJUIAppearance.changedColor)
                         }
                     }
-                    .frame(width: SBJEditorRowMetrics.statusLaneWidth, alignment: .center)
-                    .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+                    .frame(width: sbjFormatting.statusLaneWidth, alignment: .center)
+                    .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                     .allowsHitTesting(false)
                     .zIndex(2)
                 }
             }
             .frame(
                 maxWidth: .infinity,
-                minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
+                minHeight: sbjFormatting.firstLineMinimumHeight,
                 alignment: .topLeading
             )
         }
@@ -167,7 +172,8 @@ struct SBJEditorRow<Content: View>: View {
     }
 
     private var localRowControlsAndContent: some View {
-        HStack(alignment: .sbjEditorFirstLineCenter, spacing: SBJEditorRowMetrics.laneSpacing) {
+        let firstLineMinimumHeight = sbjFormatting.firstLineMinimumHeight
+        return HStack(alignment: .sbjEditorFirstLineCenter, spacing: sbjFormatting.laneSpacing) {
             if let disclosureControl {
                 compactControl(disclosureControl)
             }
@@ -181,11 +187,11 @@ struct SBJEditorRow<Content: View>: View {
             content
                 .frame(
                     maxWidth: .infinity,
-                    minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
+                    minHeight: sbjFormatting.firstLineMinimumHeight,
                     alignment: .leading
                 )
                 .alignmentGuide(.sbjEditorFirstLineCenter) { dimensions in
-                    min(dimensions.height, SBJEditorRowMetrics.firstLineMinimumHeight) / 2
+                    min(dimensions.height, firstLineMinimumHeight) / 2
                 }
                 .layoutPriority(1)
 
@@ -194,83 +200,90 @@ struct SBJEditorRow<Content: View>: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .leading)
     }
 
     private func compactControl(_ view: AnyView) -> some View {
-        view
-            .frame(width: SBJEditorRowMetrics.controlLaneWidth, alignment: .center)
-            .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+        let firstLineMinimumHeight = sbjFormatting.firstLineMinimumHeight
+        return view
+            .frame(width: sbjFormatting.controlLaneWidth, alignment: .center)
+            .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
             .alignmentGuide(.sbjEditorFirstLineCenter) { dimensions in
-                min(dimensions.height, SBJEditorRowMetrics.firstLineMinimumHeight) / 2
+                min(dimensions.height, firstLineMinimumHeight) / 2
             }
             .fixedSize(horizontal: true, vertical: false)
     }
 
     private func firstLine(_ view: AnyView) -> some View {
-        view
-            .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+        let firstLineMinimumHeight = sbjFormatting.firstLineMinimumHeight
+        return view
+            .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
             .alignmentGuide(.sbjEditorFirstLineCenter) { dimensions in
-                min(dimensions.height, SBJEditorRowMetrics.firstLineMinimumHeight) / 2
+                min(dimensions.height, firstLineMinimumHeight) / 2
             }
     }
 }
 
 @MainActor
 struct SBJEditorLevelExitDivider: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let level: Int
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
+    private var indentationWidth: CGFloat { presentationModel?.formattingOptions.indentationWidth ?? sbjFormatting.indentationWidth }
 
     var body: some View {
         Divider()
-            .padding(.leading, SBJEditorRowMetrics.statusLaneWidth + SBJEditorRowMetrics.statusToContentSpacing + CGFloat(max(0, level)) * SBJEditorRowMetrics.indentIncrement)
+            .allowsHitTesting(false)
+            .padding(.leading, sbjFormatting.statusLaneWidth + sbjFormatting.statusToContentSpacing + CGFloat(max(0, level)) * indentationWidth)
     }
 }
 
 @MainActor
 struct SBJEditorStatusLane: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     var body: some View {
         ZStack {
             SBJEditorEmptyContentIndicator()
             SBJEditorChangeIndicator()
         }
+        .allowsHitTesting(false)
     }
 }
 
 @MainActor
 struct SBJEditorIndentationBullets: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let level: Int
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
+    private var indentationWidth: CGFloat { presentationModel?.formattingOptions.indentationWidth ?? sbjFormatting.indentationWidth }
 
     var body: some View {
-        HStack(spacing: 0) {
+        let firstLineMinimumHeight = sbjFormatting.firstLineMinimumHeight
+        return HStack(spacing: 0) {
             ForEach(0..<level, id: \.self) { _ in
                 Circle()
                     .fill(SBJUIAppearance.hierarchyCueColor(colorSchemeContrast))
                     .frame(
-                        width: SBJEditorRowMetrics.indentBulletDiameter,
-                        height: SBJEditorRowMetrics.indentBulletDiameter
+                        width: sbjFormatting.indentBulletDiameter,
+                        height: sbjFormatting.indentBulletDiameter
                     )
-                    .frame(width: SBJEditorRowMetrics.indentIncrement)
+                    .frame(width: indentationWidth)
                     .accessibilityHidden(true)
             }
         }
-        .frame(width: CGFloat(level) * SBJEditorRowMetrics.indentIncrement, alignment: .leading)
-        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .leading)
+        .frame(width: CGFloat(level) * indentationWidth, alignment: .leading)
+        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .leading)
         .alignmentGuide(.sbjEditorFirstLineCenter) { dimensions in
-            min(dimensions.height, SBJEditorRowMetrics.firstLineMinimumHeight) / 2
+            min(dimensions.height, firstLineMinimumHeight) / 2
         }
         .fixedSize(horizontal: true, vertical: false)
+        .allowsHitTesting(false)
     }
 }
 
-public enum SBJEditorRowMetrics {
-    public static let firstLineMinimumHeight: CGFloat = 28
-    public static let controlLaneWidth: CGFloat = 22
-    public static let statusLaneWidth: CGFloat = 16
-    public static let infoLaneWidth: CGFloat = 24
-    public static let statusToContentSpacing: CGFloat = 3
-    public static let laneSpacing: CGFloat = 5
-    public static let indentIncrement: CGFloat = 6
-    public static let indentBulletDiameter: CGFloat = 3
-}
+
 #endif

@@ -8,6 +8,8 @@ import SwiftUI
 /// not part of the field name, and are owned by `SBJEditorRow` so they occupy
 /// stable semantic lanes.
 struct SBJEditorFieldName: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let text: String
     let isUnknown: Bool
 
@@ -21,7 +23,8 @@ struct SBJEditorFieldName: View {
                 Text(text)
             }
         }
-        .frame(minHeight: SBJEditorRowMetrics.firstLineMinimumHeight, alignment: .center)
+        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
+        .allowsHitTesting(false)
     }
 }
 #endif

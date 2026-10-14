@@ -19,7 +19,8 @@ private protocol _SBJOptionalValue {
         collectionItemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
-        context: SBJEditTraversalContext
+        context: SBJEditTraversalContext,
+        headerOnly: Bool
     ) -> AnyView
 }
 
@@ -38,7 +39,8 @@ private protocol _SBJCollectionValue {
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
-        context: SBJEditTraversalContext
+        context: SBJEditTraversalContext,
+        headerOnly: Bool
     ) -> AnyView
 }
 
@@ -161,7 +163,8 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
         collectionItemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
-        context: SBJEditTraversalContext
+        context: SBJEditTraversalContext,
+        headerOnly: Bool
     ) -> AnyView {
         let typed = binding.binding(as: Wrapped?.self)
         return AnyView(
@@ -180,7 +183,8 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
                 collectionItemIdentifierKey: collectionItemIdentifierKey,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context
+                context: context,
+                headerOnly: headerOnly
             )
         )
     }
@@ -201,7 +205,8 @@ extension Array: _SBJCollectionValue where Element: Codable {
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
-        context: SBJEditTraversalContext
+        context: SBJEditTraversalContext,
+        headerOnly: Bool
     ) -> AnyView {
         let typed = binding.binding(as: [Element].self)
         return AnyView(
@@ -218,7 +223,8 @@ extension Array: _SBJCollectionValue where Element: Codable {
                 itemIdentifierKey: itemIdentifierKey,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context
+                context: context,
+                headerOnly: headerOnly
             )
         )
     }
@@ -240,7 +246,8 @@ extension Set: _SBJCollectionValue where Element: Codable {
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
-        context: SBJEditTraversalContext
+        context: SBJEditTraversalContext,
+        headerOnly: Bool
     ) -> AnyView {
         let typed = binding.binding(as: Set<Element>.self)
         return AnyView(
@@ -276,7 +283,8 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
-        context: SBJEditTraversalContext
+        context: SBJEditTraversalContext,
+        headerOnly: Bool
     ) -> AnyView {
         let typed = binding.binding(as: [Key: Value].self)
         return AnyView(
@@ -290,7 +298,8 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
                 numberRange: numberRange,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context
+                context: context,
+                headerOnly: headerOnly
             )
         )
     }
@@ -318,7 +327,8 @@ enum SBJValueEditor {
         itemActions: SBJEditorItemActions? = nil,
         focusRequest: SBJEditorFocusRequest? = nil,
         labelIsUnknown: Bool = false,
-        context: SBJEditTraversalContext = .root
+        context: SBJEditTraversalContext = .root,
+        headerOnly: Bool = false
     ) -> AnyView {
         // Intentional built-in editor composition point. Concrete standard value
         // editors are selected here so the generic traversal/property layers do
@@ -451,7 +461,8 @@ enum SBJValueEditor {
                 collectionItemIdentifierKey: collectionItemIdentifierKey,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context
+                context: context,
+                headerOnly: headerOnly
             )
         }
         if let collection = Value.self as? any _SBJCollectionValue.Type {
@@ -468,7 +479,8 @@ enum SBJValueEditor {
                 itemIdentifierKey: collectionItemIdentifierKey,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context
+                context: context,
+                headerOnly: headerOnly
             )
         }
         if let associatedEnum = Value.self as? any SBJEditableAssociatedEnum.Type {
@@ -480,7 +492,8 @@ enum SBJValueEditor {
                     registry: registry,
                     focusRequest: focusRequest,
                     labelIsUnknown: labelIsUnknown,
-                    context: context
+                    context: context,
+                    headerOnly: headerOnly
                 ),
                 itemActions: itemActions,
                 treeLevel: context.treeLevel
@@ -497,7 +510,8 @@ enum SBJValueEditor {
                 titleIsUnknown: labelIsUnknown,
                 promotedTitlePropertyName: promotedTitlePropertyName,
                 promotedTitlePrefix: promotedTitlePrefix,
-                context: context
+                context: context,
+                    headerOnly: headerOnly
             )
         }
         if let options = caseIterableOptions(for: Value.self) {

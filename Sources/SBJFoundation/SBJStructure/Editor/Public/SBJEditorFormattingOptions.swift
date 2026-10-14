@@ -1,26 +1,39 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
-public struct SBJEditorFormattingOptions: OptionSet, Sendable {
-    public let rawValue: UInt
-    public init(rawValue: UInt) { self.rawValue = rawValue }
-    public static let trailingAlignedFields = Self(rawValue: 1 << 0)
-}
+/// Layout configuration for a structured editor tree.
+/// Stored on `SBJEditorPresentationModel` and observed by editor rows.
+public struct SBJEditorFormattingOptions: Sendable, Equatable {
+    public var trailingAlignedFields: Bool
+    public var firstLineMinimumHeight: CGFloat
+    public var controlLaneWidth: CGFloat
+    public var statusLaneWidth: CGFloat
+    public var infoLaneWidth: CGFloat
+    public var statusToContentSpacing: CGFloat
+    public var laneSpacing: CGFloat
+    public var indentationWidth: CGFloat
+    public var indentBulletDiameter: CGFloat
 
-private struct SBJEditorFormattingKey: EnvironmentKey {
-    static let defaultValue: SBJEditorFormattingOptions = []
-}
-
-extension EnvironmentValues {
-    var sbjEditorFormattingOptions: SBJEditorFormattingOptions {
-        get { self[SBJEditorFormattingKey.self] }
-        set { self[SBJEditorFormattingKey.self] = newValue }
-    }
-}
-
-public extension View {
-    func sbjEditorFormatting(_ options: SBJEditorFormattingOptions) -> some View {
-        environment(\.sbjEditorFormattingOptions, options)
+    public init(
+        trailingAlignedFields: Bool = false,
+        firstLineMinimumHeight: CGFloat = 28,
+        controlLaneWidth: CGFloat = 22,
+        statusLaneWidth: CGFloat = 16,
+        infoLaneWidth: CGFloat = 24,
+        statusToContentSpacing: CGFloat = 3,
+        laneSpacing: CGFloat = 5,
+        indentationWidth: CGFloat = 8,
+        indentBulletDiameter: CGFloat = 3
+    ) {
+        self.trailingAlignedFields = trailingAlignedFields
+        self.firstLineMinimumHeight = firstLineMinimumHeight
+        self.controlLaneWidth = controlLaneWidth
+        self.statusLaneWidth = statusLaneWidth
+        self.infoLaneWidth = infoLaneWidth
+        self.statusToContentSpacing = statusToContentSpacing
+        self.laneSpacing = laneSpacing
+        self.indentationWidth = max(0, indentationWidth)
+        self.indentBulletDiameter = indentBulletDiameter
     }
 }
 #endif

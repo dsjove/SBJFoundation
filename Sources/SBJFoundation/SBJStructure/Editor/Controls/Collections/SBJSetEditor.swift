@@ -14,8 +14,7 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
     let itemActions: SBJEditorItemActions?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
-    @State private var disclosureState = SBJEditorDisclosureState()
-    @State private var disclosureInitialized = false
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel
     @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
     @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
     @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
@@ -33,23 +32,26 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
     }
 
     private func commitNavigationExpansionIfNeeded() {
-        disclosureState.commitNavigationExpansion(
+        presentationModel.commitNavigationExpansion(
             target: navigationTarget,
-            path: context.navigationPath
+            path: context.navigationPath,
+            id: context.itemIdentifier
         )
     }
 
     private var resolvedIsExpanded: Bool {
-        disclosureMode == .alwaysOpen || disclosureState.resolved(
-            searchIsExpanded: searchIsExpanded,
-            navigationIsExpanded: navigationIsExpanded
+        presentationModel.resolved(
+            context.itemIdentifier,
+            mode: disclosureMode,
+            search: searchIsExpanded,
+            navigation: navigationIsExpanded
         )
     }
 
     private var disclosureBinding: Binding<Bool> {
         Binding(
             get: { resolvedIsExpanded },
-            set: { disclosureState.setUserExpansion($0, searchIsExpanded: searchIsExpanded) }
+            set: { presentationModel.setUserExpansion($0, for: context.itemIdentifier, search: searchIsExpanded) }
         )
     }
 
@@ -82,6 +84,22 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
         return candidate
     }
 
+    private var presentationRows: [SBJEditorPresentationRow<Element>] {
+        displayElements.map { element in
+            let stable = "\(String(reflecting: type(of: element))):\(String(reflecting: element))"
+            let title = SBJCollectionItemIdentification.title(for: element, itemTitleKey: itemTitleKey)
+            return SBJEditorPresentationRow(
+                context: SBJEditTraversalContext(
+                    treeLevel: context.treeLevel + 1,
+                    itemIdentifier: context.itemIdentifier.appending("item:\(stable)"),
+                    indexPath: context.indexPath.appending("item:\(stable)"),
+                    navigationPath: context.navigationPath + [title]
+                ),
+                content: element
+            )
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             SBJEditorDisclosureHeader(
@@ -94,7 +112,7 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
                         SBJAddButton(label) {
                             guard let candidate = addCandidate else { return }
                             value.insert(candidate)
-                            disclosureState.userIsExpanded = true
+                            presentationModel.open(context.itemIdentifier)
                         }
                         .disabled(addCandidate == nil)
                     }
@@ -116,26 +134,23 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
                         )
                     }
 
-                    ForEach(displayElements, id: \.self) { element in
-                        let stableIdentifier = "\(String(reflecting: type(of: element))):\(String(reflecting: element))"
+                    ForEach(presentationRows) { row in
+                        let element = row.content
                         let itemTitle = SBJCollectionItemIdentification.title(for: element, itemTitleKey: itemTitleKey)
-                        let itemContext = SBJEditTraversalContext(
-                            treeLevel: context.treeLevel + 1,
-                            itemIdentifier: context.itemIdentifier.appending("item:\(stableIdentifier)"),
-                            indexPath: context.indexPath.appending("item:\(stableIdentifier)"),
-                            navigationPath: context.navigationPath + [itemTitle]
-                        )
+                        let itemContext = row.context
                         let itemSearchCriteria = searchCriteria.descendingPastMatchedLabels(label, itemTitle)
                         SBJSetEntryEditor(
                             element: element,
                             originalElement: originalValue?.contains(element) == true ? element : nil,
                             title: itemTitle,
                             registry: registry,
-                            textStyle: textStyle,
-                            integerRange: integerRange,
-                            numberRange: numberRange,
-                            focusRequest: focusRequest,
                             context: itemContext,
+                            configuration: .init(
+                                textStyle: textStyle,
+                                integerRange: integerRange,
+                                numberRange: numberRange,
+                                focusRequest: focusRequest
+                            ),
                             replace: { old, replacement in
                                 value.sbjReplace(old, with: replacement)
                             },
@@ -151,12 +166,6 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
             }
         }
         .onAppear {
-            if !disclosureInitialized {
-                disclosureInitialized = true
-                if disclosureMode == .autoOpen || disclosureMode == .alwaysOpen {
-                    disclosureState.userIsExpanded = true
-                }
-            }
             commitNavigationExpansionIfNeeded()
         }
         .onChange(of: navigationTarget) { _, _ in

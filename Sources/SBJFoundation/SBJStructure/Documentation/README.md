@@ -627,19 +627,19 @@ The editor is generated from the same structural declarations. It is intended to
 The current API separates editor content from search/filter controls and from scrolling/layout ownership:
 
 ```swift
-@State private var editorState = SBJEditorViewState()
+@State private var editorState = SBJEditorPresentationModel()
 
 VStack(spacing: 0) {
     SBJEditorSearchView(
         value: recipe,
-        state: $editorState,
+        presentationModel: editorState,
         registry: registry
     )
 
-    SBJEditorScrollView(state: $editorState) {
+    SBJEditorScrollView(presentationModel: editorState) {
         SBJEditorView(
             value: $recipe,
-            state: $editorState,
+            presentationModel: editorState,
             registry: registry
         )
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -648,9 +648,9 @@ VStack(spacing: 0) {
 }
 ```
 
-The host still owns margins, toolbars, inspectors, sheets, and surrounding chrome. `SBJEditorScrollView` is the stock scrolling policy: it observes `SBJEditorViewState.navigationTarget`, lets the editor expand the target's ancestor disclosures, and scrolls the requested property into view. This is what lets the issue viewer's trailing chevron dismiss the sheet and jump directly to the affected property.
+The host still owns margins, toolbars, inspectors, sheets, and surrounding chrome. `SBJEditorScrollView` is the stock scrolling policy: it observes `SBJEditorPresentationModel.navigationTarget`, lets the editor expand the target's ancestor disclosures, and scrolls the requested property into view. This is what lets the issue viewer's trailing chevron dismiss the sheet and jump directly to the affected property.
 
-Clients with a specialized scrolling container may continue to host `SBJEditorView` directly. In that case they own the final scroll operation and can observe `SBJEditorViewState.navigationTarget`; the editor still uses the target to reveal collapsed ancestors. `SBJCodableEditor` / `SBJCodableEditorCore` use `SBJEditorScrollView` automatically.
+Clients with a specialized scrolling container may continue to host `SBJEditorView` directly. In that case they own the final scroll operation and can observe `SBJEditorPresentationModel.navigationTarget`; the editor still uses the target to reveal collapsed ancestors. `SBJCodableEditor` / `SBJCodableEditorCore` use `SBJEditorScrollView` automatically.
 
 For deeply nested, dynamically sized content, `SBJEditorScrollView` (or an equivalent `ScrollView`/stack host) is generally preferable to a list-backed `Form`, because the editor contains rows whose heights can change substantially during search, disclosure expansion, and issue navigation.
 

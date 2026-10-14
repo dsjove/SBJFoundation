@@ -4,6 +4,8 @@ import SwiftUI
 /// Understated explanatory content for a disclosure that is open but has no
 /// visible editor rows beneath its header.
 struct SBJEditorEmptyDisclosureContent: View {
+    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let message: String
 
     var body: some View {
@@ -12,7 +14,7 @@ struct SBJEditorEmptyDisclosureContent: View {
             .foregroundStyle(.secondary)
             .frame(
                 maxWidth: .infinity,
-                minHeight: SBJEditorRowMetrics.firstLineMinimumHeight,
+                minHeight: sbjFormatting.firstLineMinimumHeight,
                 alignment: .leading
             )
     }

@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// Paths use the same human-readable components shown by editor diagnostics.
 /// Applications that host ``SBJEditorView`` in ``SBJEditorScrollView`` can call
-/// ``SBJEditorViewState/navigate(to:)`` to navigate programmatically.
+/// ``SBJEditorPresentationModel/navigate(to:)`` to navigate programmatically.
 public struct SBJEditorNavigationTarget: Equatable, Hashable, Sendable {
     public let components: [String]
 
@@ -108,19 +108,19 @@ extension EnvironmentValues {
 
 /// Stock scrolling container for ``SBJEditorView``.
 ///
-/// It listens to ``SBJEditorViewState/navigationTarget`` so issue navigation can
+/// It listens to ``SBJEditorPresentationModel/navigationTarget`` so issue navigation can
 /// reveal the requested property and then scroll it into view. Clients that need
 /// custom scrolling can continue to host ``SBJEditorView`` directly and observe
 /// the same navigation target themselves.
 public struct SBJEditorScrollView<Content: View>: View {
-    @Binding private var state: SBJEditorViewState
+    private let presentationModel: SBJEditorPresentationModel
     private let content: Content
 
     public init(
-        state: Binding<SBJEditorViewState>,
+        presentationModel: SBJEditorPresentationModel,
         @ViewBuilder content: () -> Content
     ) {
-        self._state = state
+        self.presentationModel = presentationModel
         self.content = content()
     }
 
@@ -129,8 +129,8 @@ public struct SBJEditorScrollView<Content: View>: View {
             ScrollView {
                 content
             }
-            .task(id: state.navigationRevision) {
-                guard let target = state.navigationTarget else { return }
+            .task(id: presentationModel.navigationRevision) {
+                guard let target = presentationModel.navigationTarget else { return }
 
                 // Navigation can expand several disclosure ancestors. Those
                 // descendants are materialized over more than one SwiftUI layout
@@ -138,7 +138,7 @@ public struct SBJEditorScrollView<Content: View>: View {
                 // height and leave the destination clipped near an edge.
                 await Task.yield()
                 await Task.yield()
-                guard !Task.isCancelled, state.navigationTarget == target else { return }
+                guard !Task.isCancelled, presentationModel.navigationTarget == target else { return }
 
                 // First pass makes the newly materialized destination visible.
                 proxy.scrollTo(target.anchor, anchor: .center)
@@ -150,11 +150,11 @@ public struct SBJEditorScrollView<Content: View>: View {
                 } catch {
                     return
                 }
-                guard !Task.isCancelled, state.navigationTarget == target else { return }
+                guard !Task.isCancelled, presentationModel.navigationTarget == target else { return }
                 proxy.scrollTo(target.anchor, anchor: .center)
 
-                if state.navigationTarget == target {
-                    state.navigationTarget = nil
+                if presentationModel.navigationTarget == target {
+                    presentationModel.navigationTarget = nil
                 }
             }
         }
