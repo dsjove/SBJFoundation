@@ -18,6 +18,10 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "Packages/SBJShared"),
+        .package(path: "Packages/SBJDocuments"),
+        .package(path: "Packages/SBJSubject"),
+        .package(path: "Packages/SBJSubjectEditor"),
         .package(
             url: "https://github.com/swiftlang/swift-syntax.git",
             exact: "604.0.0-prerelease-2026-06-05"
@@ -36,7 +40,10 @@ let package = Package(
         ),
         .target(
             name: "SBJFoundation",
-            dependencies: ["SBJFoundationMacros"],
+            dependencies: [
+                "SBJFoundationMacros",
+                .product(name: "SBJShared", package: "SBJShared"),
+            ],
             resources: [
                 .process("Resources"),
             ],

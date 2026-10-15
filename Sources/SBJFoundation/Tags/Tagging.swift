@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import SBJDocuments //Teardownable
 
 public protocol Tagging:
 	AnyObject,
