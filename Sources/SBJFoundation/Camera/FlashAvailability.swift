@@ -1,7 +1,7 @@
 #if os(iOS) || os(macOS)
 import AVFoundation
 #endif
-import SBJShared
+import SBJSubject
 
 struct FlashAvailability {
     let present: Set<CameraFlashMode>

@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import SBJShared
+import SBJSubject
 
 @SBJStructure
 public enum PhotoCropOption: SBJFoundationType, Hashable, Sendable, Identifiable {

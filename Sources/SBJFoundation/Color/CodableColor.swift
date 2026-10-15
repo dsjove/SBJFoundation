@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import SBJShared
+import SBJSubject
 
 #if canImport(UIKit)
 import UIKit

@@ -1,5 +1,5 @@
 import Foundation
-import SBJShared
+import SBJSubject
 
 /// Broad measurement-system classification for reusable units.
 ///

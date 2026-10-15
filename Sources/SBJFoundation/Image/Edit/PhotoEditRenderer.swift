@@ -5,6 +5,7 @@ import UIKit
 #if canImport(PencilKit)
 import PencilKit
 #endif
+import SBJSubject
 import SBJShared
 
 enum PhotoEditRenderer {

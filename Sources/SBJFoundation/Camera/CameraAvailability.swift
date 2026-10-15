@@ -2,7 +2,7 @@ import Foundation
 #if os(iOS) || os(macOS)
 import AVFoundation
 #endif
-import SBJShared
+import SBJSubject
 
 struct CameraAvailability {
     let present: Set<CameraPosition>

@@ -1,7 +1,7 @@
 import CoreLocation
 import ImageIO
 import UniformTypeIdentifiers
-import SBJShared
+import SBJSubject
 
 public struct LocationJSON: SBJFoundationType {
 	public var latitude: CLLocationDegrees

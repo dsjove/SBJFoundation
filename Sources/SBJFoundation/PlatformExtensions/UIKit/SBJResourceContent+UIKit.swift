@@ -1,6 +1,7 @@
 #if canImport(UIKit)
 import UIKit
 import UniformTypeIdentifiers
+import SBJSubject
 import SBJShared
 
 public extension SBJResourceContent {

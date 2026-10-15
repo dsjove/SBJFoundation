@@ -1,5 +1,5 @@
 import Foundation
-import SBJShared
+import SBJSubject
 
 /// Codable value representation of the generic, user-visible portion of a tag.
 ///

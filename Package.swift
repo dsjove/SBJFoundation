@@ -43,6 +43,8 @@ let package = Package(
             dependencies: [
                 "SBJFoundationMacros",
                 .product(name: "SBJShared", package: "SBJShared"),
+                .product(name: "SBJSubject", package: "SBJSubject"),
+                .product(name: "SBJDocuments", package: "SBJDocuments"),
             ],
             resources: [
                 .process("Resources"),

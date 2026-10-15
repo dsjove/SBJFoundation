@@ -7,6 +7,7 @@ import UIKit
 import PencilKit
 #endif
 
+import SBJSubject
 import SBJShared
 import SBJDocuments
 

@@ -1,5 +1,5 @@
 import Foundation
-import SBJShared
+import SBJSubject
 
 /// Current non-destructive edit state. This is deliberately not an edit history.
 public struct PhotoEditResult: SBJFoundationType, Sendable {

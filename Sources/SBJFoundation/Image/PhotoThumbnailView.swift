@@ -1,6 +1,7 @@
 #if !os(watchOS) && canImport(UIKit)
 import SwiftUI
 import SBJShared
+import SBJSubject
 
 /// Compact image-resource control suitable for lists, inspectors, and editor rows.
 ///
