@@ -92,17 +92,6 @@ public enum SBJEditorDiagnostics {
 
 import SwiftUI
 
-private struct SBJEditorShowIssuesKey: EnvironmentKey {
-    static let defaultValue: @MainActor () -> Void = {}
-}
-
-extension EnvironmentValues {
-    var sbjEditorShowIssues: @MainActor () -> Void {
-        get { self[SBJEditorShowIssuesKey.self] }
-        set { self[SBJEditorShowIssuesKey.self] = newValue }
-    }
-}
-
 public struct SBJEditorIssueList: View {
     public let issues: [SBJEditorIssue]
     private let navigate: ((SBJEditorIssue) -> Void)?

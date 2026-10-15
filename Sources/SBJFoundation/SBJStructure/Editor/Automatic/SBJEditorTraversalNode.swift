@@ -6,170 +6,107 @@ import SwiftUI
 /// do not build descendant nodes.
 @MainActor
 struct SBJEditorTraversalNode: Identifiable {
-    let context: SBJEditTraversalContext
+    var context: SBJEditTraversalContext
     let name: String
-    let disclosureMode: SBJEditorDisclosureMode
-    private let descend: () -> [SBJEditorTraversalNode]
-    private let renderRow: (() -> AnyView)?
+    /// True for compound disclosures, including currently empty collections.
+    let isDisclosure: Bool
+    private let descend: (SBJEditTraversalContext) -> [SBJEditorTraversalNode]
+    private let renderRow: ((SBJEditTraversalContext) -> AnyView)?
+    /// Footer decorations assigned by ancestor groups, deepest first.
+    /// A divider is part of the final visible row, not a separate hierarchy node.
+    var endDividerLevels: [Int] = []
     private let includeRow: (SBJEditSearchCriteria) -> Bool
-
-    /// Whether the current row factory renders only this row, or still renders
-    /// a recursive subtree. Build 3 must provide a header-only adapter before
-    /// independently projecting children of a recursive container.
-    enum RenderingScope: Equatable {
-        case recursive
-        case atomic
-    }
-    let renderingScope: RenderingScope
 
     var id: SBJEditorItemIdentifier { context.itemIdentifier }
     var depth: Int { context.treeLevel }
+    var disclosureMode: SBJEditorDisclosureMode { context.branch.disclosureMode }
 
     init(
         context: SBJEditTraversalContext,
         name: String,
-        disclosureMode: SBJEditorDisclosureMode = .closed,
-        render: (() -> AnyView)? = nil,
-        renderingScope: RenderingScope = .recursive,
+        disclosureMode: SBJEditorDisclosureMode? = nil,
+        isDisclosure: Bool = false,
+        render: ((SBJEditTraversalContext) -> AnyView)? = nil,
         isIncluded: @escaping (SBJEditSearchCriteria) -> Bool = { _ in true },
-        children: @escaping () -> [SBJEditorTraversalNode] = { [] }
+        children: @escaping (SBJEditTraversalContext) -> [SBJEditorTraversalNode] = { _ in [] }
     ) {
-        self.context = context
+        self.context = context.withBranch(context.branch.withDisclosureMode(disclosureMode ?? context.branch.disclosureMode))
         self.name = name
-        self.disclosureMode = disclosureMode
+        self.isDisclosure = isDisclosure
         self.descend = children
         self.renderRow = render
-        self.renderingScope = renderingScope
         self.includeRow = isIncluded
     }
 
-    func children() -> [SBJEditorTraversalNode] { descend() }
+    func children() -> [SBJEditorTraversalNode] { descend(context) }
 
-    /// Only binding-backed nodes can render independently. Snapshot traversal
-    /// nodes intentionally do not manufacture read-only bindings.
-    var isIndependentlyRenderable: Bool { renderRow != nil }
-
-    func renderedRow() -> AnyView? { renderRow?() }
-
-    /// A node may be traversable without being flat-renderable. In particular,
-    /// a recursive editor cannot coexist with independently rendered children.
-    var canRenderWithProjectedChildren: Bool {
-        isIndependentlyRenderable && renderingScope == .atomic
-    }
+    func renderedRow() -> AnyView? { renderRow?(context) }
 
     func isIncluded(in criteria: SBJEditSearchCriteria) -> Bool { includeRow(criteria) }
 
-    /// Preorder traversal. The expansion predicate is evaluated before
-    /// visiting descendants, so a collapsed node never realizes its subtree.
-    func appendExposedRows(
-        to rows: inout [SBJEditorTraversalNode],
-        isExpanded: (SBJEditorTraversalNode) -> Bool
-    ) {
-        rows.append(self)
-        guard isExpanded(self) else { return }
-        for child in children() {
-            child.appendExposedRows(to: &rows, isExpanded: isExpanded)
-        }
-    }
+
 }
 
 /// Projects the currently exposed hierarchy without constructing descendant views.
 /// Disclosure preferences remain separate from transient search/navigation expansion.
-///
-/// Property-backed nodes use the same inclusion predicate as the recursive editor.
-/// Other compound-node filtering and presentation special cases still require
-/// reconciliation before the flat renderer can replace recursive views.
 @MainActor
-func sbjEditorFlatRows(
+func sbjEditorRows(
     roots: [SBJEditorTraversalNode],
     presentationModel: SBJEditorPresentationModel,
     temporarilyExpanded: (SBJEditorTraversalNode) -> Bool = { _ in false }
 ) -> [SBJEditorTraversalNode] {
-    var rows: [SBJEditorTraversalNode] = []
-
-    func append(_ node: SBJEditorTraversalNode, criteria: SBJEditSearchCriteria) {
+    // Filtering is a property of the complete model subtree, not merely of
+    // currently exposed rows. In particular, a changed descendant must not be
+    // discarded because its parent does not independently match the filter.
+    func project(
+        _ candidate: SBJEditorTraversalNode,
+        criteria: SBJEditSearchCriteria,
+        expectedLevel: Int
+    ) -> [SBJEditorTraversalNode] {
+        var node = candidate
+        node.context = node.context.atTreeLevel(expectedLevel)
         let navigationMatch = presentationModel.navigationTarget?.contains(node.context.navigationPath) == true
-        guard navigationMatch || node.isIncluded(in: criteria) else { return }
-        rows.append(node)
-        // Existing collection/object editors force open during an active text
-        // or changed-only search. They also force open for empty-content-only
-        // when the subtree is not known to be empty. Traversal descriptors do
-        // not yet track hasContent, so nil matches that conservative behavior.
+        let directlyIncluded = navigationMatch || node.isIncluded(in: criteria)
         let searchExpansion = criteria.forcesExpansion(hasContent: nil)
-        let navigationExpansion = presentationModel.navigationTarget?.contains(node.context.navigationPath) == true
-        guard presentationModel.resolved(
+        let navigationExpansion = navigationMatch
+        let isExpanded = presentationModel.resolved(
             node.id,
             mode: node.disclosureMode,
             search: searchExpansion || temporarilyExpanded(node),
             navigation: navigationExpansion
-        ) else { return }
+        )
 
-        // Once a parent label satisfies the search, its descendants need not
-        // match the text independently; other filters continue to apply.
-        let childCriteria = criteria.descendingPastMatchedLabel(node.name)
-        for child in node.children() {
-            append(child, criteria: childCriteria)
-        }
-    }
-
-    for root in roots {
-        append(root, criteria: presentationModel.searchCriteria)
-    }
-    return rows
-}
-
-/// Diagnoses the descriptor output *without* manufacturing views. This is a
-/// preflight for the Build 3 rendering migration, not a compilation substitute.
-@MainActor
-struct SBJEditorProjectionAudit {
-    let duplicateIdentifiers: [SBJEditorItemIdentifier]
-    let nonRenderableIdentifiers: [SBJEditorItemIdentifier]
-    let recursivelyRenderedParents: [SBJEditorItemIdentifier]
-
-    var canUseIndependentFlatRenderer: Bool {
-        duplicateIdentifiers.isEmpty && nonRenderableIdentifiers.isEmpty && recursivelyRenderedParents.isEmpty
-    }
-}
-
-@MainActor
-func sbjAuditFlatRows(_ rows: [SBJEditorTraversalNode]) -> SBJEditorProjectionAudit {
-    var seen = Set<SBJEditorItemIdentifier>()
-    var duplicates: [SBJEditorItemIdentifier] = []
-    var missing: [SBJEditorItemIdentifier] = []
-    var recursiveParents: [SBJEditorItemIdentifier] = []
-
-    // Projected rows are depth-first. A node's descendants, if any, appear
-    // immediately after it, so the next row suffices to detect recursion.
-    // This makes the audit O(n) instead of scanning the remaining rows for
-    // every recursive parent.
-    for (offset, row) in rows.enumerated() {
-        if !seen.insert(row.id).inserted { duplicates.append(row.id) }
-        if !row.isIndependentlyRenderable { missing.append(row.id) }
-        if row.renderingScope == .recursive && row.isIndependentlyRenderable,
-           offset + 1 < rows.count {
-            let path = row.context.navigationPath
-            let nextPath = rows[offset + 1].context.navigationPath
-            if nextPath.count > path.count && nextPath.starts(with: path) {
-                recursiveParents.append(row.id)
+        var descendants: [SBJEditorTraversalNode] = []
+        var hadChildren = false
+        if isExpanded {
+            let childCriteria = criteria.descendingPastMatchedLabel(node.name)
+            let children = node.children()
+            hadChildren = !children.isEmpty
+            for child in children {
+                descendants.append(contentsOf: project(
+                    child, criteria: childCriteria,
+                    expectedLevel: node.context.treeLevel + 1
+                ))
             }
         }
+
+        // Neither a mismatching ancestor nor a matching descendant can be
+        // decided upon in isolation. Preserve the ancestor as the path to any
+        // matching descendants; no extra SwiftUI view hierarchy is constructed.
+        guard directlyIncluded || !descendants.isEmpty else { return [] }
+        node.context = node.context.withBranch(node.context.branch.withSearchCriteria(criteria))
+        var result = [node]
+        result.append(contentsOf: descendants)
+        if isExpanded && (node.isDisclosure || hadChildren) {
+            result[result.count - 1].endDividerLevels.append(node.context.treeLevel + 1)
+        }
+        return result
     }
-    return SBJEditorProjectionAudit(
-        duplicateIdentifiers: duplicates,
-        nonRenderableIdentifiers: missing,
-        recursivelyRenderedParents: recursiveParents
-    )
+
+    return roots.flatMap { root in
+        project(root, criteria: presentationModel.searchCriteria,
+                expectedLevel: root.context.treeLevel)
+    }
 }
 
-@MainActor
-func sbjExposedTraversalRows(
-    roots: [SBJEditorTraversalNode],
-    isExpanded: (SBJEditorTraversalNode) -> Bool
-) -> [SBJEditorTraversalNode] {
-    var rows: [SBJEditorTraversalNode] = []
-    for root in roots {
-        root.appendExposedRows(to: &rows, isExpanded: isExpanded)
-    }
-    return rows
-}
 #endif

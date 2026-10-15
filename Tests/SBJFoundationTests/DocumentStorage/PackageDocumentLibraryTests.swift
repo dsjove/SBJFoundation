@@ -419,8 +419,15 @@ struct PackageDocumentLibraryTests {
 		do {
 			_ = try await library.open(document)
 			Issue.record("Expected activation to fail for a user document with no persisted backing package")
+		} catch let libraryError as PackageDocumentLibraryError {
+			switch libraryError {
+			case .documentNotFound(let id):
+				#expect(id == "not-persisted")
+			default:
+				Issue.record("Expected documentNotFound, got \(libraryError)")
+			}
 		} catch {
-			#expect(error.localizedDescription.contains("Document not found"))
+			Issue.record("Expected PackageDocumentLibraryError, got \(type(of: error))")
 		}
 	}
 

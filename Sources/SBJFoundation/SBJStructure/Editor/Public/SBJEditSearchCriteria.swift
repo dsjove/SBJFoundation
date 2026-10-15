@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Keeping the criteria together lets editors add new filters without threading
 /// additional independent flags through every recursive editor view.
-public struct SBJEditSearchCriteria: Equatable, Sendable {
+public struct SBJEditSearchCriteria: Hashable, Sendable {
     public var searchQuery: String
     public var showChangedOnly: Bool
     public var showEmptyContentOnly: Bool

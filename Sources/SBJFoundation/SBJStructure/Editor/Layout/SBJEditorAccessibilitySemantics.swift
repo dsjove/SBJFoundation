@@ -23,17 +23,15 @@ struct SBJEditorAccessibilitySemantics {
 
 private struct SBJEditorAccessibleControlModifier: ViewModifier {
     let label: String
-    @Environment(\.sbjEditorIsChanged) private var isChanged
-    @Environment(\.sbjEditorHasContent) private var hasContent
-    @Environment(\.sbjEditorIsInvalid) private var isInvalid
+    let status: SBJEditorRowStatus
 
     func body(content: Content) -> some View {
         content.accessibilityLabel(
             SBJEditorAccessibilitySemantics.spokenLabel(
                 label: label,
-                isChanged: isChanged,
-                hasContent: hasContent,
-                isInvalid: isInvalid
+                isChanged: status.isChanged,
+                hasContent: status.hasContent,
+                isInvalid: status.isInvalid
             )
         )
     }
@@ -43,8 +41,8 @@ extension View {
     /// Gives the interactive editor control ownership of the visible field name
     /// and structural state. The separately rendered visual label should be
     /// hidden from accessibility when this modifier is used.
-    func sbjEditorAccessibleControl(label: String) -> some View {
-        modifier(SBJEditorAccessibleControlModifier(label: label))
+    func sbjEditorAccessibleControl(label: String, status: SBJEditorRowStatus = .init()) -> some View {
+        modifier(SBJEditorAccessibleControlModifier(label: label, status: status))
     }
 }
 #endif

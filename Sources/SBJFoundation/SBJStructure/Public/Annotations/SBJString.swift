@@ -12,13 +12,13 @@ public enum SBJStringStyle: Sendable, Equatable {
 
 
 
-public enum SBJTextAutocorrection: Sendable, Equatable {
+public enum SBJTextAutocorrection: Sendable, Hashable {
     case automatic
     case enabled
     case disabled
 }
 
-public enum SBJTextCapitalization: Sendable, Equatable {
+public enum SBJTextCapitalization: Sendable, Hashable {
     case automatic
     case never
     case words

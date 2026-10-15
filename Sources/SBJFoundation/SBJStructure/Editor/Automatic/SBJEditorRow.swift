@@ -11,29 +11,6 @@ private extension VerticalAlignment {
     static let sbjEditorFirstLineCenter = VerticalAlignment(SBJEditorFirstLineCenterID.self)
 }
 
-private struct SBJEditorRowLayoutSuppressedKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-private struct SBJEditorRowEmbeddedKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    var sbjEditorRowLayoutSuppressed: Bool {
-        get { self[SBJEditorRowLayoutSuppressedKey.self] }
-        set { self[SBJEditorRowLayoutSuppressedKey.self] = newValue }
-    }
-
-    /// Renders a child editor inside a row that already owns the global status,
-    /// hierarchy indentation and trailing info gutter. The child keeps only its
-    /// local controls (for example an optional clear button) and its content.
-    var sbjEditorRowEmbedded: Bool {
-        get { self[SBJEditorRowEmbeddedKey.self] }
-        set { self[SBJEditorRowEmbeddedKey.self] = newValue }
-    }
-}
-
 /// Shared visual grammar for one editor row.
 ///
 /// The status marker is a single, fixed leading gutter and never participates in
@@ -44,7 +21,8 @@ extension EnvironmentValues {
 struct SBJEditorRow<Content: View>: View {
     @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
     private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
-    private let treeLevel: Int
+    private let context: SBJEditTraversalContext
+    private var treeLevel: Int { context.treeLevel }
     private let disclosureControl: AnyView?
     private let elementAction: AnyView?
     private let optionalControl: AnyView?
@@ -52,19 +30,19 @@ struct SBJEditorRow<Content: View>: View {
     private let trailingActions: AnyView?
     private let infoAction: AnyView?
     private let content: Content
-    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
-    private var indentationWidth: CGFloat { presentationModel?.formattingOptions.indentationWidth ?? sbjFormatting.indentationWidth }
-    @Environment(\.sbjEditorRowLayoutSuppressed) private var rowLayoutSuppressed
-    @Environment(\.sbjEditorRowEmbedded) private var rowEmbedded
-    @Environment(\.sbjEditorIsChanged) private var isChanged
-    @Environment(\.sbjEditorHasContent) private var hasContent
-    @Environment(\.sbjEditorIsInvalid) private var isInvalid
-    @Environment(\.sbjEditorValidationStateChanged) private var validationStateChanged
+    private var indentationWidth: CGFloat { sbjFormatting.indentationWidth }
+    private let branch: SBJEditorBranchContext
+    private var rowLayoutSuppressed: Bool { branch.placement == .contentOnly }
+    private var rowEmbedded: Bool { branch.placement == .embedded }
+    private var isChanged: Bool { branch.status.isChanged }
+    private var hasContent: Bool? { branch.status.hasContent }
+    private var isInvalid: Bool { branch.status.isInvalid }
+
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
-        treeLevel: Int = 0,
+        context: SBJEditTraversalContext,
         disclosureControl: AnyView? = nil,
         elementAction: AnyView? = nil,
         optionalControl: AnyView? = nil,
@@ -73,7 +51,8 @@ struct SBJEditorRow<Content: View>: View {
         infoAction: AnyView? = nil,
         @ViewBuilder content: () -> Content
     ) {
-        self.treeLevel = treeLevel
+        self.context = context
+        self.branch = context.branch
         self.disclosureControl = disclosureControl
         self.elementAction = elementAction
         self.optionalControl = optionalControl
@@ -167,7 +146,7 @@ struct SBJEditorRow<Content: View>: View {
         }
         }
         .onChange(of: isInvalid) { _, newValue in
-            validationStateChanged(newValue)
+            sbjFormattingModel?.reportValidationState(newValue)
         }
     }
 
@@ -224,18 +203,23 @@ struct SBJEditorRow<Content: View>: View {
     }
 }
 
+/// Closing rule for an expanded disclosure group. The line begins at the
+/// center of the final bullet slot belonging to that group's children.
+/// The supplied context points to the disclosure's child indentation slot.
 @MainActor
-struct SBJEditorLevelExitDivider: View {
-    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
-    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
-    let level: Int
+struct SBJEditorGroupEnd: View {
     @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
-    private var indentationWidth: CGFloat { presentationModel?.formattingOptions.indentationWidth ?? sbjFormatting.indentationWidth }
+    let indentLevel: Int
+
+    init(indentLevel: Int) { self.indentLevel = indentLevel }
+    init(context: SBJEditTraversalContext) { self.indentLevel = context.treeLevel }
 
     var body: some View {
+        let formatting = presentationModel?.formattingOptions ?? .init()
         Divider()
+            .padding(.leading, formatting.indentBulletCenter(forLevel: indentLevel))
+            .frame(maxWidth: .infinity)
             .allowsHitTesting(false)
-            .padding(.leading, sbjFormatting.statusLaneWidth + sbjFormatting.statusToContentSpacing + CGFloat(max(0, level)) * indentationWidth)
     }
 }
 
@@ -245,8 +229,8 @@ struct SBJEditorStatusLane: View {
     private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     var body: some View {
         ZStack {
-            SBJEditorEmptyContentIndicator()
-            SBJEditorChangeIndicator()
+            SBJEditorEmptyContentIndicator(hasContent: nil)
+            SBJEditorChangeIndicator(isChanged: false)
         }
         .allowsHitTesting(false)
     }
@@ -258,8 +242,7 @@ struct SBJEditorIndentationBullets: View {
     private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let level: Int
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
-    private var indentationWidth: CGFloat { presentationModel?.formattingOptions.indentationWidth ?? sbjFormatting.indentationWidth }
+    private var indentationWidth: CGFloat { sbjFormatting.indentationWidth }
 
     var body: some View {
         let firstLineMinimumHeight = sbjFormatting.firstLineMinimumHeight

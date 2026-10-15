@@ -10,6 +10,10 @@ struct SBJSingleLineTextEditor: View {
     let labelIsUnknown: Bool
     @FocusState private var isFocused: Bool
 
+    var rowStatus: SBJEditorRowStatus = .init()
+    var textAutocorrection: SBJTextAutocorrection = .automatic
+    var textCapitalization: SBJTextCapitalization = .automatic
+
     var body: some View {
         SBJAdaptiveFieldLayout(
             controlWidth: .singleLineText(maximumLength: maximumLength)
@@ -26,8 +30,11 @@ struct SBJSingleLineTextEditor: View {
     private var field: some View {
         let base = TextField("", text: $value)
             .oneLiner(isFocused: $isFocused)
-            .sbjApplyTextInputPolicies()
-            .sbjEditorAccessibleControl(label: label)
+            .sbjApplyTextInputPolicies(
+                autocorrection: textAutocorrection,
+                capitalization: textCapitalization
+            )
+            .sbjEditorAccessibleControl(label: label, status: rowStatus)
 
         if let sizing = SBJTextFieldWidth.singleLine(maximumLength: maximumLength) {
             base.sbjPreferredFieldWidth(sizing)

@@ -74,38 +74,6 @@ extension View {
 }
 
 
-struct SBJEditorDisclosureState {
-    var userIsExpanded = false
-
-    func resolved(searchIsExpanded: Bool, navigationIsExpanded: Bool) -> Bool {
-        userIsExpanded || searchIsExpanded || navigationIsExpanded
-    }
-
-    mutating func setUserExpansion(_ isExpanded: Bool, searchIsExpanded: Bool) {
-        guard !searchIsExpanded else { return }
-        userIsExpanded = isExpanded
-    }
-
-    mutating func commitNavigationExpansion(
-        target: SBJEditorNavigationTarget?,
-        path: [String]
-    ) {
-        guard target?.isDescendant(of: path) == true else { return }
-        userIsExpanded = true
-    }
-}
-
-private struct SBJEditorNavigationTargetKey: EnvironmentKey {
-    static let defaultValue: SBJEditorNavigationTarget? = nil
-}
-
-extension EnvironmentValues {
-    var sbjEditorNavigationTarget: SBJEditorNavigationTarget? {
-        get { self[SBJEditorNavigationTargetKey.self] }
-        set { self[SBJEditorNavigationTargetKey.self] = newValue }
-    }
-}
-
 /// Stock scrolling container for ``SBJEditorView``.
 ///
 /// It listens to ``SBJEditorPresentationModel/navigationTarget`` so issue navigation can

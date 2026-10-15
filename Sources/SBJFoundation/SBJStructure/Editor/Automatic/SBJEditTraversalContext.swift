@@ -61,6 +61,89 @@ public struct SBJEditorSnapshotItem<Content>: Identifiable {
     }
 }
 
+/// Explicit, immutable state for a single editor branch/row.
+/// This is intentionally not an EnvironmentValue: consumers receive it through
+/// their initializers, while descendants inherit search criteria but not status.
+public enum SBJEditorRowPlacement: Hashable, Sendable {
+    case normal
+    case embedded
+    case contentOnly
+}
+
+public struct SBJEditorRowStatus: Hashable, Sendable {
+    public var isChanged: Bool
+    public var hasContent: Bool?
+    public var isInvalid: Bool
+
+    public init(isChanged: Bool = false, hasContent: Bool? = nil, isInvalid: Bool = false) {
+        self.isChanged = isChanged
+        self.hasContent = hasContent
+        self.isInvalid = isInvalid
+    }
+}
+
+public enum SBJEditorPropertyInfoPlacement: Hashable, Sendable {
+    case overlay
+    case inline
+    case hidden
+}
+
+public struct SBJEditorBranchContext: Hashable, Sendable {
+    public var searchCriteria: SBJEditSearchCriteria
+    public var placement: SBJEditorRowPlacement
+    public var status: SBJEditorRowStatus
+    public var disclosureMode: SBJEditorDisclosureMode
+    public var propertyInfoPlacement: SBJEditorPropertyInfoPlacement
+
+    public init(
+        searchCriteria: SBJEditSearchCriteria = .init(),
+        placement: SBJEditorRowPlacement = .normal,
+        status: SBJEditorRowStatus = .init(),
+        disclosureMode: SBJEditorDisclosureMode = .closed,
+        propertyInfoPlacement: SBJEditorPropertyInfoPlacement = .overlay
+    ) {
+        self.searchCriteria = searchCriteria
+        self.placement = placement
+        self.status = status
+        self.disclosureMode = disclosureMode
+        self.propertyInfoPlacement = propertyInfoPlacement
+    }
+
+    public func withSearchCriteria(_ criteria: SBJEditSearchCriteria) -> Self {
+        var result = self
+        result.searchCriteria = criteria
+        return result
+    }
+
+    public func withPlacement(_ placement: SBJEditorRowPlacement) -> Self {
+        var result = self
+        result.placement = placement
+        return result
+    }
+
+    public func withStatus(_ status: SBJEditorRowStatus) -> Self {
+        var result = self
+        result.status = status
+        return result
+    }
+
+    public func withDisclosureMode(_ mode: SBJEditorDisclosureMode) -> Self {
+        var result = self
+        result.disclosureMode = mode
+        return result
+    }
+
+    public func withPropertyInfoPlacement(_ placement: SBJEditorPropertyInfoPlacement) -> Self {
+        var result = self
+        result.propertyInfoPlacement = placement
+        return result
+    }
+
+    public var child: Self {
+        .init(searchCriteria: searchCriteria)
+    }
+}
+
 /// UI-independent position within a recursively edited value tree.
 ///
 /// In addition to indentation depth, traversal carries collection-view-style
@@ -71,18 +154,21 @@ public struct SBJEditTraversalContext: Hashable, Sendable {
     public let itemIdentifier: SBJEditorItemIdentifier
     public let indexPath: SBJEditorIndexPath
     public let navigationPath: [String]
+    public let branch: SBJEditorBranchContext
 
     public init(
         treeLevel: Int = 0,
         itemIdentifier: SBJEditorItemIdentifier = .root,
         indexPath: SBJEditorIndexPath = .root,
-        navigationPath: [String] = []
+        navigationPath: [String] = [],
+        branch: SBJEditorBranchContext = .init()
     ) {
         precondition(treeLevel >= 0, "treeLevel cannot be negative")
         self.treeLevel = treeLevel
         self.itemIdentifier = itemIdentifier
         self.indexPath = indexPath
         self.navigationPath = navigationPath
+        self.branch = branch
     }
 
     public static let root = SBJEditTraversalContext()
@@ -93,7 +179,8 @@ public struct SBJEditTraversalContext: Hashable, Sendable {
             treeLevel: treeLevel,
             itemIdentifier: itemIdentifier.appending("property:\(name)"),
             indexPath: indexPath.appending("property:\(name)"),
-            navigationPath: navigationPath + [name]
+            navigationPath: navigationPath + [name],
+            branch: branch.child
         )
     }
 
@@ -109,7 +196,8 @@ public struct SBJEditTraversalContext: Hashable, Sendable {
             treeLevel: treeLevel + 1,
             itemIdentifier: itemIdentifier.appending("item:\(stableIdentifier)"),
             indexPath: indexPath.appending("index:\(index)"),
-            navigationPath: navigationPath + ["[\(index)]"]
+            navigationPath: navigationPath + ["[\(index)]"],
+            branch: branch.child
         )
     }
 
@@ -118,7 +206,8 @@ public struct SBJEditTraversalContext: Hashable, Sendable {
             treeLevel: treeLevel + 1,
             itemIdentifier: itemIdentifier.appending("key:\(key)"),
             indexPath: indexPath.appending("key:\(key)"),
-            navigationPath: navigationPath + [key]
+            navigationPath: navigationPath + [key],
+            branch: branch.child
         )
     }
 
@@ -127,8 +216,21 @@ public struct SBJEditTraversalContext: Hashable, Sendable {
             treeLevel: treeLevel + 1,
             itemIdentifier: itemIdentifier.appending("level:\(treeLevel + 1)"),
             indexPath: indexPath.appending("level:\(treeLevel + 1)"),
-            navigationPath: navigationPath
+            navigationPath: navigationPath,
+            branch: branch.child
         )
+    }
+
+    /// Rebase a projected node onto its parent-assigned visual level.
+    /// The tree projection owns hierarchy depth; identity and navigation paths
+    /// are unchanged by this visual normalization.
+    public func atTreeLevel(_ level: Int) -> Self {
+        .init(treeLevel: level, itemIdentifier: itemIdentifier,
+              indexPath: indexPath, navigationPath: navigationPath, branch: branch)
+    }
+
+    public func withBranch(_ updated: SBJEditorBranchContext) -> Self {
+        .init(treeLevel: treeLevel, itemIdentifier: itemIdentifier, indexPath: indexPath, navigationPath: navigationPath, branch: updated)
     }
 
 }

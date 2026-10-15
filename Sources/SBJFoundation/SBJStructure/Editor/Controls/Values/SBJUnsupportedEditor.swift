@@ -7,7 +7,7 @@ struct SBJUnsupportedEditor<Value>: View {
     let type: Value.Type
     let value: Value
     let labelIsUnknown: Bool
-    @Environment(\.sbjEditorShowIssues) private var showIssues
+    @Environment(SBJEditorPresentationModel.self) private var presentationModel: SBJEditorPresentationModel?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -21,7 +21,7 @@ struct SBJUnsupportedEditor<Value>: View {
             SBJIssueButton(
                 hasIssues: true,
                 accessibilityLabel: "Show issues",
-                action: showIssues
+                action: { presentationModel?.showIssues() }
             )
         }
     }

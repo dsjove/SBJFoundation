@@ -1,45 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
-private struct SBJEditorIsChangedKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-private struct SBJEditorHasContentKey: EnvironmentKey {
-    static let defaultValue: Bool? = nil
-}
-
-private struct SBJEditorIsInvalidKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-private struct SBJEditorValidationStateChangedKey: EnvironmentKey {
-    static let defaultValue: @MainActor (Bool) -> Void = { _ in }
-}
-
-extension EnvironmentValues {
-    var sbjEditorIsChanged: Bool {
-        get { self[SBJEditorIsChangedKey.self] }
-        set { self[SBJEditorIsChangedKey.self] = newValue }
-    }
-
-    var sbjEditorHasContent: Bool? {
-        get { self[SBJEditorHasContentKey.self] }
-        set { self[SBJEditorHasContentKey.self] = newValue }
-    }
-
-    var sbjEditorIsInvalid: Bool {
-        get { self[SBJEditorIsInvalidKey.self] }
-        set { self[SBJEditorIsInvalidKey.self] = newValue }
-    }
-
-    var sbjEditorValidationStateChanged: @MainActor (Bool) -> Void {
-        get { self[SBJEditorValidationStateChangedKey.self] }
-        set { self[SBJEditorValidationStateChangedKey.self] = newValue }
-    }
-}
-
-
 struct SBJEditorOriginalValue {
     let valueType: Any.Type
     private let storage: Any
@@ -112,7 +73,7 @@ struct SBJEditorStatusSymbol: View {
 }
 
 struct SBJEditorChangeIndicator: View {
-    @Environment(\.sbjEditorIsChanged) private var isChanged
+    let isChanged: Bool
 
     var body: some View {
         if isChanged {
@@ -125,7 +86,7 @@ struct SBJEditorChangeIndicator: View {
 /// Marker for editor values whose domain-level `hasContent` is false.
 /// Values that do not implement `HasContentCheckable` have no marker.
 struct SBJEditorEmptyContentIndicator: View {
-    @Environment(\.sbjEditorHasContent) private var hasContent
+    let hasContent: Bool?
 
     var body: some View {
         if hasContent == false {

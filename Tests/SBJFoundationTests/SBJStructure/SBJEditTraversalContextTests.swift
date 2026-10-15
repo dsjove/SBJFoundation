@@ -42,3 +42,38 @@ struct SBJEditorSnapshotIdentityTests {
         #expect(traits.itemIdentifier != ideals.itemIdentifier)
     }
 }
+
+@Suite("Explicit editor branch context")
+struct SBJEditorBranchContextTests {
+    @Test("child retains search while resetting row status and placement")
+    func childResetsTransientRowState() {
+        let criteria = SBJEditSearchCriteria(searchQuery: "backstory", showChangedOnly: true)
+        let branch = SBJEditorBranchContext(searchCriteria: criteria)
+            .withStatus(.init(isChanged: true, hasContent: false, isInvalid: true))
+            .withPlacement(.embedded)
+            .withDisclosureMode(.alwaysOpen)
+        let parent = SBJEditTraversalContext.root.withBranch(branch)
+        let child = parent.descended(property: "name")
+
+        #expect(parent.branch.status.isChanged)
+        #expect(child.branch.searchCriteria == criteria)
+        #expect(child.branch.status == .init())
+        #expect(child.branch.placement == .normal)
+        #expect(child.branch.disclosureMode == .closed)
+        #expect(parent.branch.disclosureMode == .alwaysOpen)
+    }
+
+    @Test("branch mutators do not mutate the source")
+    func valueCopySemantics() {
+        let source = SBJEditorBranchContext()
+        let updated = source.withSearchCriteria(.init(searchQuery: "test"))
+            .withPropertyInfoPlacement(.hidden)
+            .withStatus(.init(isChanged: true))
+        #expect(source.searchCriteria.searchQuery.isEmpty)
+        #expect(source.propertyInfoPlacement == .overlay)
+        #expect(!source.status.isChanged)
+        #expect(updated.searchCriteria.searchQuery == "test")
+        #expect(updated.propertyInfoPlacement == .hidden)
+        #expect(updated.status.isChanged)
+    }
+}

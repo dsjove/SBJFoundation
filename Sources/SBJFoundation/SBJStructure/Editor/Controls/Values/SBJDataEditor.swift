@@ -12,6 +12,8 @@ struct SBJDataEditor: View {
     @Environment(\.locale) private var locale
     @FocusState private var isFocused: Bool
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -36,7 +38,7 @@ struct SBJDataEditor: View {
             ))
             .font(.system(.body, design: .monospaced))
             .sbjMultilineField(isFocused: $isFocused, minHeight: 90)
-            .sbjEditorAccessibleControl(label: label)
+            .sbjEditorAccessibleControl(label: label, status: rowStatus)
             .invalidDecoration(errorMessage != nil)
             if let errorMessage {
                 Text(errorMessage)

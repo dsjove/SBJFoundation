@@ -7,12 +7,14 @@ struct SBJSheetTextEditor: View {
     let focusRequest: SBJEditorFocusRequest?
     let labelIsUnknown: Bool
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
                 .accessibilityHidden(true)
             PlaceholderMultilineTextField(label, text: $value)
-                .sbjEditorAccessibleControl(label: label)
+                .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
     }
 }

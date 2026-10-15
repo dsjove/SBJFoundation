@@ -2,8 +2,7 @@
 import SwiftUI
 
 struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
-    @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
-    private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
+    private var sbjFormatting: SBJEditorFormattingOptions { presentationModel.formattingOptions }
     let title: String
     @Binding var value: Value
     let originalValue: Value?
@@ -17,70 +16,20 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     /// Renders only the object disclosure row; descendants belong to the flat renderer.
     var headerOnly: Bool = false
     @Environment(SBJEditorPresentationModel.self) private var presentationModel
-    @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
-    @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
-    @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
-    @Environment(\.sbjEditorHasContent) private var hasContent
-
-    /// Expansion has independent user, search, and navigation sources. The user's disclosure choice is
-    /// persistent editor state; filtering/search may temporarily require this
-    /// node to be open. Search never mutates the user's choice.
-    private var searchIsExpanded: Bool {
-        searchCriteria.forcesExpansion(hasContent: hasContent)
-    }
+    private var searchCriteria: SBJEditSearchCriteria { context.branch.searchCriteria }
+    private var navigationTarget: SBJEditorNavigationTarget? { presentationModel.navigationTarget }
+    private var hasContent: Bool? { context.branch.status.hasContent }
 
     private var navigationIsExpanded: Bool {
-        navigationTarget?.contains(context.navigationPath) == true
-    }
-
-    private func commitNavigationExpansionIfNeeded() {
-        presentationModel.commitNavigationExpansion(
-            target: navigationTarget,
-            path: context.navigationPath,
-            id: context.itemIdentifier
-        )
+        presentationModel.navigationIncludes(context)
     }
 
     private var resolvedIsExpanded: Bool {
-        presentationModel.resolved(
-            context.itemIdentifier,
-            mode: disclosureMode,
-            search: searchIsExpanded,
-            navigation: navigationIsExpanded
-        )
+        presentationModel.isExpanded(for: context)
     }
 
     private var disclosureBinding: Binding<Bool> {
-        Binding(
-            get: { resolvedIsExpanded },
-            set: { presentationModel.setUserExpansion($0, for: context.itemIdentifier, search: searchIsExpanded) }
-        )
-    }
-
-    private func bodySnapshot(criteria: SBJEditSearchCriteria) -> [SBJEditorSnapshotItem<SBJEditorPropertyDescriptor<Value>>] {
-        bodyFields.enumerated().compactMap { offset, field in
-            let navigationPath = context.navigationPath + [field.name]
-            guard navigationTarget?.contains(navigationPath) == true || field.isIncluded(
-                root: value,
-                originalRoot: originalValue,
-                registry: registry,
-                criteria: criteria
-            ) else { return nil }
-            return SBJEditorSnapshotItem(
-                itemIdentifier: context.itemIdentifier.appending("property:\(field.name)"),
-                indexPath: context.indexPath.appending("field:\(offset)"),
-                content: field
-            )
-        }
-    }
-
-    private func bodyRows(criteria: SBJEditSearchCriteria) -> [SBJEditorPresentationRow<SBJEditorPropertyDescriptor<Value>>] {
-        sbjEditorPresentationRows(
-            from: bodySnapshot(criteria: criteria),
-            parent: context,
-            navigationPath: { $0.name },
-            depthIncrement: 1
-        )
+        presentationModel.disclosureBinding(for: context)
     }
 
     private var promotedTitleField: SBJEditorPropertyDescriptor<Value>? {
@@ -99,11 +48,6 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
         resolvedIsExpanded
     }
 
-    private var bodyFields: [SBJEditorPropertyDescriptor<Value>] {
-        Value.sbjEditorFields.filter { !isPromotedTitleField($0) }
-    }
-
-
     var body: some View {
         let rootValidation = SBJEditorRootValidationResult.computed(
             SBJInvariantCheck.validationError(
@@ -113,22 +57,9 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
         )
 
         Group {
-            if headerOnly {
-                // The projected children are rendered separately. This path must
-                // never instantiate bodyRows or a nested VStack of descendants.
-                SBJEditorDisclosureHeader(
-                    title,
-                    treeLevel: context.treeLevel,
-                    isExpanded: disclosureBinding,
-                    leadingActions: itemActions?.leadingView ?? AnyView(EmptyView()),
-                    trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
-                    infoAction: promotedTitleInfoAction,
-                    titleIsUnknown: titleIsUnknown,
-                    titleContent: promotedHeaderContent(rootValidation: rootValidation)
-                )
-            } else if searchCriteria.showEmptyContentOnly && hasContent == false && navigationIsExpanded == false {
+            if !headerOnly && searchCriteria.showEmptyContentOnly && hasContent == false && navigationIsExpanded == false {
                 SBJEditorRow(
-                    treeLevel: context.treeLevel,
+                    context: context,
                     elementAction: itemActions?.leadingView,
                     trailingActions: itemActions?.trailingView
                 ) {
@@ -145,14 +76,14 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                 .padding(.vertical, 2)
                         .background(SBJUIAppearance.filteredEmptyFillColor)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else if Value.sbjEditorFields.count == 1, let field = Value.sbjEditorFields.first {
+            } else if !headerOnly && Value.sbjEditorFields.count == 1, let field = Value.sbjEditorFields.first {
                 // A one-field object is visually one row. The outer row owns the
                 // item's status/indent/remove/reorder lanes; the field keeps only
                 // its local controls (for example Optional's clear/set button).
                 // This avoids recursively paying for a second hierarchy/status
                 // grammar between the item action and its title.
                 SBJEditorRow(
-                    treeLevel: context.treeLevel,
+                    context: context,
                     elementAction: itemActions?.leadingView,
                     trailingActions: itemActions?.trailingView
                 ) {
@@ -163,55 +94,23 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                         nameOverride: "\(title) • \(field.name)",
                         focusRequest: focusRequest,
                         labelIsUnknown: titleIsUnknown,
-                        context: context.descended(property: field.name),
+                        context: context.descended(property: field.name).withBranch(context.branch.child.withPlacement(.embedded)),
                         rootValidation: rootValidation
                     )
-                    .environment(\.sbjEditorRowEmbedded, true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    SBJEditorDisclosureHeader(
-                        title,
-                        treeLevel: context.treeLevel,
-                        isExpanded: disclosureBinding,
-                        leadingActions: itemActions?.leadingView ?? AnyView(EmptyView()),
-                        trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
-                        infoAction: promotedTitleInfoAction,
-                        titleIsUnknown: titleIsUnknown,
-                        titleContent: promotedHeaderContent(rootValidation: rootValidation)
-                    )
-
-                    if isShowingContents {
-                        let childSearchCriteria = searchCriteria.descendingPastMatchedLabel(title)
-                        VStack(alignment: .leading, spacing: 8) {
-                            if bodyFields.isEmpty {
-                                SBJEditorEmptyDisclosureContent(
-                                    message: promotedTitleField == nil
-                                        ? "No editable properties."
-                                        : "No additional editable properties."
-                                )
-                            }
-
-                            ForEach(bodyRows(criteria: childSearchCriteria)) { row in
-                                let field = row.content
-                                field.view(
-                                    root: $value,
-                                    originalRoot: originalValue,
-                                    registry: registry,
-                                    focusRequest: focusRequest,
-                                    context: row.context,
-                                    rootValidation: rootValidation,
-                                    applyFiltering: false
-                                )
-                            }
-                        }
-                        .environment(\.sbjEditorSearchCriteria, childSearchCriteria)
-                        .frame(maxWidth: .infinity)
-
-                        SBJEditorLevelExitDivider(level: context.treeLevel)
-                    }
-                }
+                // The flat projection owns all descendants and their end dividers.
+                SBJEditorDisclosureHeader(
+                    title,
+                    context: context,
+                    isExpanded: disclosureBinding,
+                    leadingActions: itemActions?.leadingView ?? AnyView(EmptyView()),
+                    trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
+                    infoAction: promotedTitleInfoAction,
+                    titleIsUnknown: titleIsUnknown,
+                    titleContent: promotedHeaderContent(rootValidation: rootValidation)
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -219,15 +118,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
             transaction.animation = nil
             transaction.disablesAnimations = true
         }
-        .onAppear {
-            if focusRequest != nil {
-                presentationModel.open(context.itemIdentifier)
-            }
-            commitNavigationExpansionIfNeeded()
-        }
-        .onChange(of: navigationTarget) { _, _ in
-            commitNavigationExpansionIfNeeded()
-        }
+
     }
 
     private var promotedTitleInfoAction: AnyView? {
@@ -255,21 +146,20 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                 nameOverride: prefix + field.name,
                 focusRequest: focusRequest,
                 labelIsUnknown: titleIsUnknown,
-                context: context.descended(property: field.name),
+                context: context.descended(property: field.name)
+                    .withBranch(context.branch.child.withPlacement(.contentOnly)
+                        .withSearchCriteria(.init()).withPropertyInfoPlacement(.hidden)),
                 rootValidation: rootValidation
             )
             // The disclosure header already owns the row's disclosure/action/status
             // lanes. Keep the title property's actual editor, but suppress its own
             // nested row grammar so it can live directly in the header content lane.
-            .environment(\.sbjEditorRowLayoutSuppressed, true)
             // The parent disclosure row owns the shared trailing info gutter.
             // Suppress the promoted property's local button so it appears exactly
             // once, pinned at the row's trailing edge.
-            .environment(\.sbjEditorPropertyInfoHidden, true)
             // The element may be visible because another descendant matched the
             // active search. The promoted title must remain visible as its header
             // even when that title field itself does not match the filter.
-            .environment(\.sbjEditorSearchCriteria, SBJEditSearchCriteria())
         )
     }
 }

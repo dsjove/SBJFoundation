@@ -35,5 +35,12 @@ public struct SBJEditorFormattingOptions: Sendable, Equatable {
         self.indentationWidth = max(0, indentationWidth)
         self.indentBulletDiameter = indentBulletDiameter
     }
+
+    /// X-coordinate of a hierarchy cue center relative to the editor row edge.
+    /// A level-1 cue is centered in the first fixed-width indentation slot.
+    func indentBulletCenter(forLevel level: Int) -> CGFloat {
+        statusLaneWidth + statusToContentSpacing
+            + (CGFloat(max(1, level)) - 0.5) * indentationWidth
+    }
 }
 #endif

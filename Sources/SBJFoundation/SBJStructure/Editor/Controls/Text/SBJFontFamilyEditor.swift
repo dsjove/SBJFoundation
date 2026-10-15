@@ -15,6 +15,8 @@ struct SBJFontFamilyEditor: View {
         return [current] + available
     }
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             Menu {
@@ -28,7 +30,7 @@ struct SBJFontFamilyEditor: View {
             .controlSize(.mini)
             .fixedSize()
             .sbjActiveControl(horizontalPadding: 4, verticalPadding: 0)
-            .sbjEditorAccessibleControl(label: label)
+            .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
     }
 }

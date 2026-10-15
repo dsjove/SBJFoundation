@@ -1,31 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
-private struct SBJEditorPropertyInfoInlineKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-private struct SBJEditorPropertyInfoHiddenKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    /// Places a property info button in normal layout flow rather than overlaying
-    /// the property content. Used when a promoted title editor shares its parent
-    /// row with trailing element actions such as reorder buttons.
-    var sbjEditorPropertyInfoInline: Bool {
-        get { self[SBJEditorPropertyInfoInlineKey.self] }
-        set { self[SBJEditorPropertyInfoInlineKey.self] = newValue }
-    }
-
-    /// Suppresses the property's own info button when a parent row promotes that
-    /// button into the row's shared trailing info gutter.
-    var sbjEditorPropertyInfoHidden: Bool {
-        get { self[SBJEditorPropertyInfoHiddenKey.self] }
-        set { self[SBJEditorPropertyInfoHiddenKey.self] = newValue }
-    }
-}
-
 @MainActor
 struct SBJEditorPropertyInfoContainer: View {
     @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
@@ -33,10 +8,11 @@ struct SBJEditorPropertyInfoContainer: View {
     let content: AnyView
     let propertyName: String
     let info: SBJPropertyInfo?
-    @Environment(\.sbjEditorRowLayoutSuppressed) private var rowLayoutSuppressed
-    @Environment(\.sbjEditorRowEmbedded) private var rowEmbedded
-    @Environment(\.sbjEditorPropertyInfoInline) private var propertyInfoInline
-    @Environment(\.sbjEditorPropertyInfoHidden) private var propertyInfoHidden
+    var branch: SBJEditorBranchContext = .init()
+    private var rowLayoutSuppressed: Bool { branch.placement == .contentOnly }
+    private var rowEmbedded: Bool { branch.placement == .embedded }
+    private var propertyInfoInline: Bool { branch.propertyInfoPlacement == .inline }
+    private var propertyInfoHidden: Bool { branch.propertyInfoPlacement == .hidden }
 
     var body: some View {
         Group {

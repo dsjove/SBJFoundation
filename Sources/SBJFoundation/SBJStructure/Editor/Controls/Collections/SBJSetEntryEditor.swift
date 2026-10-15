@@ -68,7 +68,11 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
                     integerRange: configuration.integerRange,
                     numberRange: configuration.numberRange,
                     focusRequest: configuration.focusRequest,
-                    context: context
+                    context: context.withBranch(context.branch.withStatus(
+                        .init(isChanged: isChanged,
+                              hasContent: (draft as? any HasContentCheckable)?.hasContent,
+                              isInvalid: isInvalid)
+                    ))
                 )
 
                 if draft != element {
@@ -83,9 +87,6 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .environment(\.sbjEditorIsChanged, isChanged)
-        .environment(\.sbjEditorHasContent, (draft as? any HasContentCheckable)?.hasContent)
-        .environment(\.sbjEditorIsInvalid, isInvalid)
         .onChange(of: element) { _, newValue in
             draft = newValue
             collision = false

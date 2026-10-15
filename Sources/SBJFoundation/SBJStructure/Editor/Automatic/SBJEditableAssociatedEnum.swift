@@ -113,20 +113,21 @@ public struct SBJEditorAssociatedValue<Root> {
         let changed = hasChanged(root.wrappedValue, originalRoot)
         let contentState = hasContent(root.wrappedValue)
         let invalid = isInvalid(root.wrappedValue)
+        let rowContext = context.withBranch(context.branch.withStatus(
+            .init(isChanged: changed, hasContent: contentState, isInvalid: invalid)
+        ))
         return AnyView(
             SBJEditorFilteredView(
                 content: {
                     AnyView(
-                        makeView(root, originalRoot, registry, focusRequest, context)
-                            .environment(\.sbjEditorIsChanged, changed)
-                            .environment(\.sbjEditorHasContent, contentState)
-                            .environment(\.sbjEditorIsInvalid, invalid)
+                        makeView(root, originalRoot, registry, focusRequest, rowContext)
                     )
                 },
                 isChanged: changed,
                 matchesSearch: { query in matchesSearch(root.wrappedValue, query, registry) },
                 containsEmptyContent: { containsEmptyContent(root.wrappedValue, registry) },
-                navigationPath: context.navigationPath
+                navigationPath: context.navigationPath,
+                searchCriteria: context.branch.searchCriteria
             )
             .id(context.itemIdentifier)
         )
@@ -240,7 +241,8 @@ public extension SBJEditableAssociatedEnum {
                     .appending("case:\(selected.name)")
                     .appending("property:\(field.name)"),
                 indexPath: context.indexPath.appending("field:\(offset)"),
-                navigationPath: context.navigationPath + [field.name]
+                navigationPath: context.navigationPath + [field.name],
+                branch: context.branch.child
             )
             return field.traversalNode(root: value, context: childContext)
         }
@@ -263,7 +265,8 @@ public extension SBJEditableAssociatedEnum {
                     .appending("case:\(selected.name)")
                     .appending("property:\(field.name)"),
                 indexPath: context.indexPath.appending("field:\(offset)"),
-                navigationPath: context.navigationPath + [field.name]
+                navigationPath: context.navigationPath + [field.name],
+                branch: context.branch.child
             )
             return field.boundTraversalNode(root: root, originalRoot: originalRoot, registry: registry, context: childContext)
         }
@@ -290,7 +293,7 @@ public extension SBJEditableAssociatedEnum {
                 focusRequest: focusRequest,
                 labelIsUnknown: labelIsUnknown,
                 context: context,
-                headerOnly: headerOnly
+                rowStatus: context.branch.status
             )
         )
     }

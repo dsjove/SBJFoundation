@@ -2,7 +2,7 @@
 import SwiftUI
 
 /// Describes compound descendants without constructing any SwiftUI views.
-/// The current renderer does not consume these nodes yet.
+/// The flat editor projection consumes these descriptors without nested views.
 @MainActor
 protocol SBJEditorTraversableValue {
     static func sbjTraversalChildren(
@@ -79,16 +79,19 @@ enum SBJEditorValueTraversal {
     ) -> SBJEditorTraversalNode {
         SBJEditorTraversalNode(
             context: context, name: name,
-            render: {
+            isDisclosure: Value.self is any SBJSwiftUIEditable.Type
+                || Value.self is any SBJEditorTraversableValue.Type
+                || Value.self is any SBJEditableAssociatedEnum.Type,
+            render: { renderedContext in
                 SBJValueEditor.makeView(
-                    label: name, value: binding, registry: registry, context: context,
+                    label: name, value: binding, registry: registry,
+                    context: renderedContext,
                     headerOnly: true
                 )
             },
             // Reuse the same content check as the recursive collection editors.
             // Changed-only comparison still needs the original collection value;
             // keeping entries included avoids incorrectly hiding edited rows.
-            renderingScope: .atomic,
             isIncluded: { criteria in
                 criteria.includes(
                     isChanged: originalValue.map { !SBJStructuralCompare.equals(binding.wrappedValue, $0) } ?? true,
@@ -101,8 +104,8 @@ enum SBJEditorValueTraversal {
                     }
                 )
             },
-            children: {
-                boundChildren(of: binding, originalValue: originalValue, context: context, registry: registry)
+            children: { projectedContext in
+                boundChildren(of: binding, originalValue: originalValue, context: projectedContext, registry: registry)
             }
         )
     }
@@ -115,8 +118,11 @@ enum SBJEditorValueTraversal {
         SBJEditorTraversalNode(
             context: context,
             name: name,
-            children: {
-                children(of: value, context: context)
+            isDisclosure: Value.self is any SBJSwiftUIEditable.Type
+                || Value.self is any SBJEditorTraversableValue.Type
+                || Value.self is any SBJEditableAssociatedEnum.Type,
+            children: { projectedContext in
+                children(of: value, context: projectedContext)
             }
         )
     }
@@ -145,9 +151,19 @@ extension Array: SBJEditorTraversableValue {
     ) -> [SBJEditorTraversalNode] {
         guard let elements = value as? [Element] else { return [] }
         return elements.enumerated().map { index, element in
-            let stable = SBJCollectionItemIdentification.stableIdentifier(
+            let configuredID = SBJCollectionItemIdentification.stableIdentifier(
                 for: element, itemIdentifierKey: itemIdentifierKey
-            ) ?? "slot:\(index)"
+            )
+            let stable: String
+            if let configuredID, let itemIdentifierKey,
+               SBJCollectionItemIdentification.uniqueIndex(
+                   in: elements, identifier: configuredID, itemIdentifierKey: itemIdentifierKey
+               ) != nil {
+                stable = configuredID
+            } else {
+                // Missing/duplicate identifiers cannot safely represent logical identity.
+                stable = "slot:\(index)"
+            }
             let title = SBJCollectionItemIdentification.arrayTitle(
                 for: element, index: index, itemTitleKey: itemTitleKey
             )
@@ -155,7 +171,8 @@ extension Array: SBJEditorTraversableValue {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("item:\(stable)"),
                 indexPath: context.indexPath.appending("index:\(index)"),
-                navigationPath: context.navigationPath + [title]
+                navigationPath: context.navigationPath + [title],
+                branch: context.branch.child
             )
             return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
         }
@@ -177,7 +194,8 @@ extension Set: SBJEditorTraversableValue {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("item:\(stable)"),
                 indexPath: context.indexPath.appending("item:\(stable)"),
-                navigationPath: context.navigationPath + [title]
+                navigationPath: context.navigationPath + [title],
+                branch: context.branch.child
             )
             return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
         }
@@ -199,7 +217,8 @@ extension Dictionary: SBJEditorTraversableValue {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("key:\(keyText)"),
                 indexPath: context.indexPath.appending("key:\(keyText)"),
-                navigationPath: context.navigationPath + [title]
+                navigationPath: context.navigationPath + [title],
+                branch: context.branch.child
             )
             return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
         }
@@ -234,10 +253,21 @@ extension Array: SBJEditorBoundTraversableValue {
         registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: [Element].self)
-        return parent.wrappedValue.enumerated().map { index, element in
-            let stable = SBJCollectionItemIdentification.stableIdentifier(
+        let snapshot = parent.wrappedValue
+        return snapshot.enumerated().map { index, element in
+            let configuredID = SBJCollectionItemIdentification.stableIdentifier(
                 for: element, itemIdentifierKey: itemIdentifierKey
-            ) ?? "slot:\(index)"
+            )
+            let stable: String
+            if let configuredID, let itemIdentifierKey,
+               SBJCollectionItemIdentification.uniqueIndex(
+                   in: snapshot, identifier: configuredID, itemIdentifierKey: itemIdentifierKey
+               ) != nil {
+                stable = configuredID
+            } else {
+                // Missing/duplicate identifiers cannot safely represent logical identity.
+                stable = "slot:\(index)"
+            }
             let title = SBJCollectionItemIdentification.arrayTitle(
                 for: element, index: index, itemTitleKey: itemTitleKey
             )
@@ -245,7 +275,8 @@ extension Array: SBJEditorBoundTraversableValue {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("item:\(stable)"),
                 indexPath: context.indexPath.appending("index:\(index)"),
-                navigationPath: context.navigationPath + [title]
+                navigationPath: context.navigationPath + [title],
+                branch: context.branch.child
             )
             // A configured item identifier denotes logical identity, not the
             // position occupied when this descriptor was created. Resolve its
@@ -253,15 +284,13 @@ extension Array: SBJEditorBoundTraversableValue {
             // redirect edits to an unrelated item.
             let resolvedIndex: () -> Int? = {
                 let values = parent.wrappedValue
-                if itemIdentifierKey != nil,
-                   let identifier = SBJCollectionItemIdentification.stableIdentifier(
-                       for: element, itemIdentifierKey: itemIdentifierKey
-                   ) {
-                    return values.firstIndex { candidate in
-                        SBJCollectionItemIdentification.stableIdentifier(
-                            for: candidate, itemIdentifierKey: itemIdentifierKey
-                        ) == identifier
-                    }
+                if let itemIdentifierKey {
+                    guard let identifier = SBJCollectionItemIdentification.stableIdentifier(
+                        for: element, itemIdentifierKey: itemIdentifierKey
+                    ) else { return nil }
+                    return SBJCollectionItemIdentification.uniqueIndex(
+                        in: values, identifier: identifier, itemIdentifierKey: itemIdentifierKey
+                    )
                 }
                 return values.indices.contains(index) ? index : nil
             }
@@ -281,15 +310,14 @@ extension Array: SBJEditorBoundTraversableValue {
             let originalElements = originalValue as? [Element]
             let originalElement: Element? = {
                 guard let originalElements else { return nil }
-                if itemIdentifierKey != nil,
+                if let itemIdentifierKey,
                    let identifier = SBJCollectionItemIdentification.stableIdentifier(
                        for: element, itemIdentifierKey: itemIdentifierKey
                    ) {
-                    return originalElements.first { candidate in
-                        SBJCollectionItemIdentification.stableIdentifier(
-                            for: candidate, itemIdentifierKey: itemIdentifierKey
-                        ) == identifier
-                    }
+                    guard let originalIndex = SBJCollectionItemIdentification.uniqueIndex(
+                        in: originalElements, identifier: identifier, itemIdentifierKey: itemIdentifierKey
+                    ) else { return nil }
+                    return originalElements[originalIndex]
                 }
                 return originalElements.indices.contains(index) ? originalElements[index] : nil
             }()
@@ -318,17 +346,18 @@ extension Set: SBJEditorBoundTraversableValue where Element: Codable {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("item:\(stable)"),
                 indexPath: context.indexPath.appending("item:\(stable)"),
-                navigationPath: context.navigationPath + [title]
+                navigationPath: context.navigationPath + [title],
+                branch: context.branch.child
             )
             return SBJEditorTraversalNode(
                 context: childContext, name: title,
-                render: {
+                render: { renderedContext in
                     AnyView(SBJSetEntryEditor(
                         element: element,
                         originalElement: (originalValue as? Set<Element>)?.contains(element) == true ? element : nil,
                         title: title,
                         registry: registry,
-                        context: childContext,
+                        context: renderedContext,
                         replace: { old, replacement in
                             var values = parent.wrappedValue
                             let replaced = values.sbjReplace(old, with: replacement)
@@ -342,8 +371,7 @@ extension Set: SBJEditorBoundTraversableValue where Element: Codable {
                         }
                     ))
                 },
-                renderingScope: .atomic,
-                isIncluded: { criteria in
+                    isIncluded: { criteria in
                     criteria.includes(
                         isChanged: (originalValue as? Set<Element>)?.contains(element) != true,
                         containsEmptyContent: SBJContentCheck.containsEmptyContent(
@@ -373,7 +401,8 @@ extension Dictionary: SBJEditorBoundTraversableValue {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("key:\(keyText)"),
                 indexPath: context.indexPath.appending("key:\(keyText)"),
-                navigationPath: context.navigationPath + [title]
+                navigationPath: context.navigationPath + [title],
+                branch: context.branch.child
             )
             let valueBinding = Binding<Value>(
                 get: { parent.wrappedValue[key] ?? entryValue },

@@ -88,13 +88,14 @@ struct SBJDictionaryEntryEditor<Key: Codable & Hashable, Value: Codable>: View {
                 textStyle: textStyle,
                 integerRange: integerRange,
                 numberRange: numberRange,
-                context: context
+                context: context.withBranch(context.branch.withStatus(
+                    .init(isChanged: entryIsChanged,
+                          hasContent: (entryValue as? any HasContentCheckable)?.hasContent,
+                          isInvalid: isInvalid)
+                ))
             )
             .frame(maxWidth: .infinity)
         }
-        .environment(\.sbjEditorIsChanged, entryIsChanged)
-        .environment(\.sbjEditorHasContent, (entryValue as? any HasContentCheckable)?.hasContent)
-        .environment(\.sbjEditorIsInvalid, isInvalid)
         .onChange(of: key) { _, newValue in
             draftKey = newValue
             collision = false

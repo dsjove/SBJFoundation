@@ -53,6 +53,23 @@ public enum SBJCollectionItemIdentification {
         return "\(String(reflecting: type(of: raw))):\(String(reflecting: raw))"
     }
 
+    /// Locate exactly one item with this configured identifier. If an identifier
+    /// is missing or duplicated, there is no safe target for an editor binding.
+    /// Returning nil is intentional: never redirect an edit to the first match.
+    static func uniqueIndex<Element>(
+        in elements: [Element],
+        identifier: String,
+        itemIdentifierKey: String
+    ) -> Int? {
+        var match: Int?
+        for (index, element) in elements.enumerated() {
+            guard stableIdentifier(for: element, itemIdentifierKey: itemIdentifierKey) == identifier else { continue }
+            guard match == nil else { return nil }
+            match = index
+        }
+        return match
+    }
+
     private static func propertyValue(named key: String, in value: Any) -> Any? {
         var mirror: Mirror? = Mirror(reflecting: value)
         while let current = mirror {

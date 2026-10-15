@@ -20,6 +20,8 @@ struct SBJURLEditor: View {
         return parsedURL
     }
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", text: Binding(
@@ -35,7 +37,7 @@ struct SBJURLEditor: View {
                 }
             ))
             .oneLiner(isFocused: $isFocused)
-                .sbjEditorAccessibleControl(label: label)
+                .sbjEditorAccessibleControl(label: label, status: rowStatus)
             .invalidDecoration(!isValid)
 #if os(iOS)
             .keyboardType(.URL)
@@ -47,6 +49,14 @@ struct SBJURLEditor: View {
         .onAppear {
             text = value.absoluteString
             focusRequest?.claim($isFocused)
+        }
+        .onChange(of: value) { _, newValue in
+            // An external model update must not leave an unfocused field stale.
+            // Preserve the user's draft while the control has focus.
+            if !isFocused {
+                text = newValue.absoluteString
+                isValid = true
+            }
         }
         .onChange(of: isFocused) { _, focused in
             if !focused {

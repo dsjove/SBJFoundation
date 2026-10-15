@@ -1,17 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
-private struct SBJEditorSearchCriteriaKey: EnvironmentKey {
-    static let defaultValue = SBJEditSearchCriteria()
-}
-
-extension EnvironmentValues {
-    var sbjEditorSearchCriteria: SBJEditSearchCriteria {
-        get { self[SBJEditorSearchCriteriaKey.self] }
-        set { self[SBJEditorSearchCriteriaKey.self] = newValue }
-    }
-}
-
 @MainActor
 struct SBJEditorSearchBar: View {
     @Binding var searchText: String

@@ -11,11 +11,13 @@ struct SBJDoubleEditor: View {
     @Environment(\.locale) private var locale
     @FocusState private var isFocused: Bool
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", value: $value, format: .number)
                 .oneLiner(isFocused: $isFocused)
-                .sbjEditorAccessibleControl(label: label)
+                .sbjEditorAccessibleControl(label: label, status: rowStatus)
                 .sbjPreferredFieldWidth(SBJNumericFieldSizing.number(range: range, locale: locale))
                 .invalidDecoration(range.map { !$0.contains(value) } ?? false)
 #if os(iOS)

@@ -202,6 +202,8 @@
           registry: registry,
           presentation: configuration.presentation,
           textStyle: configuration.textStyle,
+          textAutocorrection: configuration.textAutocorrection,
+          textCapitalization: configuration.textCapitalization,
           textMaximumLength: configuration.textMaximumLength,
           integerRange: configuration.integerRange,
           numberRange: configuration.numberRange,
@@ -228,15 +230,11 @@
         )
         return AnyView(
           SBJEditorPropertyInfoContainer(
-            content: content,
+            content: AnyView(content.opacity(visuallyIneffective ? 0.5 : 1.0)),
             propertyName: propertyName,
-            info: configuration.propertyInfo
+            info: configuration.propertyInfo,
+            branch: context.branch
           )
-          .sbjTextInputPolicies(
-            autocorrection: configuration.textAutocorrection,
-            capitalization: configuration.textCapitalization
-          )
-          .environment(\.sbjEditorVisuallyIneffective, visuallyIneffective)
           .sbjEditorNavigationAnchor(for: context.navigationPath)
         )
       }
@@ -277,7 +275,7 @@
             defaultContent: defaultContent
           ) ?? defaultContent
         return AnyView(
-          SBJEditorPropertyInfoContainer(content: content, propertyName: label, info: nil)
+          SBJEditorPropertyInfoContainer(content: content, propertyName: label, info: nil, branch: context.branch)
             .sbjEditorNavigationAnchor(for: context.navigationPath)
         )
       }

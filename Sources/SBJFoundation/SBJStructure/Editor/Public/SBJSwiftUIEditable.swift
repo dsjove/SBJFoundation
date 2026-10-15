@@ -43,7 +43,8 @@ public extension SBJSwiftUIEditable {
                 treeLevel: context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("property:\(field.name)"),
                 indexPath: context.indexPath.appending("field:\(offset)"),
-                navigationPath: context.navigationPath + [field.name]
+                navigationPath: context.navigationPath + [field.name],
+                branch: context.branch.child
             )
             return field.traversalNode(root: root, context: childContext)
         }
@@ -63,7 +64,8 @@ public extension SBJSwiftUIEditable {
                 treeLevel: context.itemIdentifier == .root ? context.treeLevel : context.treeLevel + 1,
                 itemIdentifier: context.itemIdentifier.appending("property:\(field.name)"),
                 indexPath: context.indexPath.appending("field:\(offset)"),
-                navigationPath: context.navigationPath + [field.name]
+                navigationPath: context.navigationPath + [field.name],
+                branch: context.branch.child
             )
             return field.boundTraversalNode(
                 root: binding,
@@ -174,47 +176,5 @@ public extension SBJSwiftUIEditable {
         )
     }
 
-    @MainActor
-    internal static func _sbjMakeEditorContents(
-        binding: SBJAnyBinding,
-        originalValue: SBJEditorOriginalValue? = nil,
-        registry: SBJEditorRegistry,
-        focusRequest: SBJEditorFocusRequest? = nil,
-        context: SBJEditTraversalContext = .root
-    ) -> AnyView {
-        let typedBinding = binding.binding(as: Self.self)
-        let rootValidation = SBJEditorRootValidationResult.computed(
-            SBJInvariantCheck.validationError(
-                typedBinding.wrappedValue,
-                at: SBJValidationKeyPath(\Self.self)
-            )
-        )
-        return AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(Self.sbjEditorFields.enumerated().map { offset, field in
-                    SBJEditorSnapshotItem(
-                        itemIdentifier: context.itemIdentifier.appending("property:\(field.name)"),
-                        indexPath: context.indexPath.appending("field:\(offset)"),
-                        content: field
-                    )
-                }) { item in
-                    let field = item.content
-                    field.view(
-                        root: typedBinding,
-                        originalRoot: originalValue.map { $0.value(as: Self.self) },
-                        registry: registry,
-                        focusRequest: focusRequest,
-                        context: SBJEditTraversalContext(
-                            treeLevel: context.treeLevel + 1,
-                            itemIdentifier: item.itemIdentifier,
-                            indexPath: item.indexPath,
-                            navigationPath: context.navigationPath + [field.name]
-                        ),
-                        rootValidation: rootValidation
-                    )
-                }
-            }
-        )
-    }
 }
 #endif

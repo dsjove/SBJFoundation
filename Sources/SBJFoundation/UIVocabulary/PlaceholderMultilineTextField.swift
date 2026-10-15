@@ -39,7 +39,7 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $text)
                 .sbjMultilineField(isFocused: $isFocused, minHeight: estimatedHeight)
-                .sbjApplyTextInputPolicies()
+                .sbjApplyTextInputPolicies(autocorrection: .automatic, capitalization: .automatic)
                 .padding(.trailing, 32)
 
             if text.isEmpty {
@@ -66,7 +66,7 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
             NavigationStack {
                 TextEditor(text: $text)
                     .sbjMultilineField(isFocused: $sheetIsFocused, minHeight: 220)
-                    .sbjApplyTextInputPolicies()
+                    .sbjApplyTextInputPolicies(autocorrection: .automatic, capitalization: .automatic)
                     .padding()
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {

@@ -34,6 +34,31 @@ struct SBJCollectionUtilitiesTests {
         #expect(first == second)
     }
 
+    @Test func uniqueIdentifierFollowsReorderingAndInsertion() {
+        let original = [CollectionUtilityItem(name: "Alpha", rank: 1),
+                        CollectionUtilityItem(name: "Beta", rank: 2)]
+        let id = SBJCollectionItemIdentification.stableIdentifier(
+            for: original[1], itemIdentifierKey: "name"
+        )!
+        #expect(SBJCollectionItemIdentification.uniqueIndex(
+            in: original, identifier: id, itemIdentifierKey: "name") == 1)
+        let reordered = [original[1], CollectionUtilityItem(name: "New", rank: 3), original[0]]
+        #expect(SBJCollectionItemIdentification.uniqueIndex(
+            in: reordered, identifier: id, itemIdentifierKey: "name") == 0)
+        #expect(SBJCollectionItemIdentification.uniqueIndex(
+            in: [original[0]], identifier: id, itemIdentifierKey: "name") == nil)
+    }
+
+    @Test func ambiguousIdentifierNeverSelectsFirstMatchingElement() {
+        let elements = [CollectionUtilityItem(name: "Duplicate", rank: 1),
+                        CollectionUtilityItem(name: "Duplicate", rank: 2)]
+        let id = SBJCollectionItemIdentification.stableIdentifier(
+            for: elements[0], itemIdentifierKey: "name"
+        )!
+        #expect(SBJCollectionItemIdentification.uniqueIndex(
+            in: elements, identifier: id, itemIdentifierKey: "name") == nil)
+    }
+
     @Test func configuredItemTitleUsesNamedProperty() {
         let item = CollectionUtilityItem(name: "Beta", rank: 7)
         #expect(

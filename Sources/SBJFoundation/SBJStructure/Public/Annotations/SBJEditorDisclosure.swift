@@ -1,7 +1,7 @@
 /// Default disclosure behavior for a structured editor property.
 /// `.closed` starts collapsed; `.autoOpen` starts expanded but remains collapsible; `.alwaysOpen` is permanently
 /// expanded and displays no disclosure button.
-public enum SBJEditorDisclosureMode: Sendable, Equatable {
+public enum SBJEditorDisclosureMode: Sendable, Hashable {
     case closed
     case autoOpen
     case alwaysOpen

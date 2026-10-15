@@ -19,12 +19,14 @@ struct SBJColorEditor: View {
         )
     }
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             ColorPicker("", selection: colorBinding, supportsOpacity: supportsAlpha)
                 .labelsHidden()
                 .fixedSize()
-                .sbjEditorAccessibleControl(label: label)
+                .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
         .accessibilityValue(accessibilityValue)
     }

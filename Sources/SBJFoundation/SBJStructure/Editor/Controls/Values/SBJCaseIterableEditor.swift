@@ -13,6 +13,8 @@ struct SBJCaseIterableEditor<Value>: View {
         return options.firstIndex { ($0 as? AnyHashable) == current } ?? 0
     }
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             Menu {
@@ -30,7 +32,7 @@ struct SBJCaseIterableEditor<Value>: View {
             .controlSize(.mini)
             .fixedSize()
             .sbjActiveControl(horizontalPadding: 4, verticalPadding: 0)
-            .sbjEditorAccessibleControl(label: label)
+            .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
     }
 }

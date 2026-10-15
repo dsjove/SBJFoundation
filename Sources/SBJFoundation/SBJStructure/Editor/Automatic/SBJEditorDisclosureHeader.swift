@@ -11,7 +11,8 @@ struct SBJEditorDisclosureHeader: View {
     @Environment(SBJEditorPresentationModel.self) private var sbjFormattingModel: SBJEditorPresentationModel?
     private var sbjFormatting: SBJEditorFormattingOptions { sbjFormattingModel?.formattingOptions ?? .init() }
     let title: String
-    let treeLevel: Int
+    let context: SBJEditTraversalContext
+    private var branch: SBJEditorBranchContext { context.branch }
     @Binding var isExpanded: Bool
     let leadingActions: AnyView
     let optionalControl: AnyView?
@@ -20,12 +21,12 @@ struct SBJEditorDisclosureHeader: View {
     let titleIsUnknown: Bool
     let titleContent: AnyView?
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-    @Environment(\.sbjEditorDisclosureMode) private var disclosureMode
+    private var disclosureMode: SBJEditorDisclosureMode { branch.disclosureMode }
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         _ title: String,
-        treeLevel: Int = 0,
+        context: SBJEditTraversalContext,
         isExpanded: Binding<Bool>,
         leadingActions: AnyView = AnyView(EmptyView()),
         optionalControl: AnyView? = nil,
@@ -35,7 +36,7 @@ struct SBJEditorDisclosureHeader: View {
         titleContent: AnyView? = nil
     ) {
         self.title = title
-        self.treeLevel = treeLevel
+        self.context = context
         self._isExpanded = isExpanded
         self.leadingActions = leadingActions
         self.optionalControl = optionalControl
@@ -47,7 +48,7 @@ struct SBJEditorDisclosureHeader: View {
 
     var body: some View {
         SBJEditorRow(
-            treeLevel: treeLevel,
+            context: context,
             disclosureControl: disclosureMode == .alwaysOpen ? nil : AnyView(
                 SBJDisclosureButton(title, isExpanded: $isExpanded)
                     .accessibilityHidden(titleContent == nil)
@@ -104,12 +105,6 @@ struct SBJEditorDisclosureHeader: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .contentShape(Rectangle())
-        .onAppear {
-            if isExpanded { isExpanded = true }
-        }
-        .onChange(of: isExpanded) { _, expanded in
-            if expanded { isExpanded = true }
-        }
     }
 
 }

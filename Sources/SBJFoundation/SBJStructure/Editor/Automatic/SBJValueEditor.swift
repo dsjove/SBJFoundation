@@ -183,8 +183,7 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
                 collectionItemIdentifierKey: collectionItemIdentifierKey,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context,
-                headerOnly: headerOnly
+                context: context
             )
         )
     }
@@ -223,8 +222,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
                 itemIdentifierKey: itemIdentifierKey,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context,
-                headerOnly: headerOnly
+                context: context
             )
         )
     }
@@ -298,8 +296,7 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
                 numberRange: numberRange,
                 itemActions: itemActions,
                 focusRequest: focusRequest,
-                context: context,
-                headerOnly: headerOnly
+                context: context
             )
         )
     }
@@ -314,6 +311,8 @@ enum SBJValueEditor {
         registry: SBJEditorRegistry,
         presentation: SBJPropertyPresentation? = nil,
         textStyle: SBJStringStyle? = nil,
+        textAutocorrection: SBJTextAutocorrection = .automatic,
+        textCapitalization: SBJTextCapitalization = .automatic,
         textMaximumLength: Int? = nil,
         integerRange: ClosedRange<Int>? = nil,
         numberRange: ClosedRange<Double>? = nil,
@@ -338,15 +337,16 @@ enum SBJValueEditor {
                 SBJFontFamilyEditor(
                     label: label,
                     value: value.sbjBinding(as: String?.self),
-                    labelIsUnknown: labelIsUnknown
+                    labelIsUnknown: labelIsUnknown,
+                    rowStatus: context.branch.status
                 ),
                 itemActions: itemActions,
-                treeLevel: context.treeLevel
+                context: context
             )
         }
 
         if let custom = registry.customEditor(label: label, binding: value) {
-            return wrapLeaf(custom, itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(custom, itemActions: itemActions, context: context)
         }
 
         if Value.self == String.self {
@@ -354,40 +354,40 @@ enum SBJValueEditor {
             switch textStyle ?? .singleLine {
             case .singleLine:
                 return wrapLeaf(
-                    SBJSingleLineTextEditor(label: label, value: binding, maximumLength: textMaximumLength, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown),
+                    SBJSingleLineTextEditor(label: label, value: binding, maximumLength: textMaximumLength, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, textAutocorrection: textAutocorrection, textCapitalization: textCapitalization),
                     itemActions: itemActions,
-                    treeLevel: context.treeLevel
+                    context: context
                 )
             case .multiline:
                 return wrapLeaf(
-                    SBJMultilineTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown),
+                    SBJMultilineTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, textAutocorrection: textAutocorrection, textCapitalization: textCapitalization),
                     itemActions: itemActions,
-                    treeLevel: context.treeLevel
+                    context: context
                 )
             case .sheetEdit:
                 return wrapLeaf(
-                    SBJSheetTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown),
+                    SBJSheetTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
                     itemActions: itemActions,
-                    treeLevel: context.treeLevel
+                    context: context
                 )
             }
         }
         if Value.self == Bool.self {
             let binding = value.sbjBinding(as: Bool.self)
-            return wrapLeaf(SBJBooleanEditor(label: label, value: binding, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJBooleanEditor(label: label, value: binding, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == Int.self {
             return wrapLeaf(
-                SBJIntegerEditor(label: label, value: value.sbjBinding(as: Int.self), range: integerRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown),
+                SBJIntegerEditor(label: label, value: value.sbjBinding(as: Int.self), range: integerRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
                 itemActions: itemActions,
-                treeLevel: context.treeLevel
+                context: context
             )
         }
         if Value.self == Double.self {
             return wrapLeaf(
-                SBJDoubleEditor(label: label, value: value.sbjBinding(as: Double.self), range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown),
+                SBJDoubleEditor(label: label, value: value.sbjBinding(as: Double.self), range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
                 itemActions: itemActions,
-                treeLevel: context.treeLevel
+                context: context
             )
         }
         if Value.self == Float.self {
@@ -395,41 +395,41 @@ enum SBJValueEditor {
                 get: { Double(value.sbjBinding(as: Float.self).wrappedValue) },
                 set: { value.sbjBinding(as: Float.self).wrappedValue = Float($0) }
             )
-            return wrapLeaf(SBJDoubleEditor(label: label, value: double, range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJDoubleEditor(label: label, value: double, range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == CGFloat.self {
             let double = Binding<Double>(
                 get: { Double(value.sbjBinding(as: CGFloat.self).wrappedValue) },
                 set: { value.sbjBinding(as: CGFloat.self).wrappedValue = CGFloat($0) }
             )
-            return wrapLeaf(SBJDoubleEditor(label: label, value: double, range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJDoubleEditor(label: label, value: double, range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == Decimal.self {
-            return wrapLeaf(SBJDecimalEditor(label: label, value: value.sbjBinding(as: Decimal.self), range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJDecimalEditor(label: label, value: value.sbjBinding(as: Decimal.self), range: numberRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
-        if Value.self == Int8.self { return numericTextView(label: label, value: value.sbjBinding(as: Int8.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == Int16.self { return numericTextView(label: label, value: value.sbjBinding(as: Int16.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == Int32.self { return numericTextView(label: label, value: value.sbjBinding(as: Int32.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == Int64.self { return numericTextView(label: label, value: value.sbjBinding(as: Int64.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == UInt.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == UInt8.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt8.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == UInt16.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt16.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == UInt32.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt32.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
-        if Value.self == UInt64.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt64.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, treeLevel: context.treeLevel) }
+        if Value.self == Int8.self { return numericTextView(label: label, value: value.sbjBinding(as: Int8.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == Int16.self { return numericTextView(label: label, value: value.sbjBinding(as: Int16.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == Int32.self { return numericTextView(label: label, value: value.sbjBinding(as: Int32.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == Int64.self { return numericTextView(label: label, value: value.sbjBinding(as: Int64.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == UInt.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == UInt8.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt8.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == UInt16.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt16.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == UInt32.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt32.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
+        if Value.self == UInt64.self { return numericTextView(label: label, value: value.sbjBinding(as: UInt64.self), itemActions: itemActions, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, context: context) }
         if Value.self == Date.self {
-            return wrapLeaf(SBJDateEditor(label: label, value: value.sbjBinding(as: Date.self), range: dateRange, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJDateEditor(label: label, value: value.sbjBinding(as: Date.self), range: dateRange, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == URL.self {
-            return wrapLeaf(SBJURLEditor(label: label, value: value.sbjBinding(as: URL.self), focusRequest: focusRequest, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJURLEditor(label: label, value: value.sbjBinding(as: URL.self), focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == UUID.self {
-            return wrapLeaf(SBJUUIDEditor(label: label, value: value.sbjBinding(as: UUID.self), focusRequest: focusRequest, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJUUIDEditor(label: label, value: value.sbjBinding(as: UUID.self), focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == Data.self {
-            return wrapLeaf(SBJDataEditor(label: label, value: value.sbjBinding(as: Data.self), focusRequest: focusRequest, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJDataEditor(label: label, value: value.sbjBinding(as: Data.self), focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         if Value.self == CodableColor.self {
-            return wrapLeaf(SBJColorEditor(label: label, value: value.sbjBinding(as: CodableColor.self), supportsAlpha: colorSupportsAlpha, labelIsUnknown: labelIsUnknown), itemActions: itemActions, treeLevel: context.treeLevel)
+            return wrapLeaf(SBJColorEditor(label: label, value: value.sbjBinding(as: CodableColor.self), supportsAlpha: colorSupportsAlpha, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status), itemActions: itemActions, context: context)
         }
         let erased = SBJAnyBinding(value)
 
@@ -441,7 +441,7 @@ enum SBJValueEditor {
                     labelIsUnknown: labelIsUnknown
                 ),
                 itemActions: itemActions,
-                treeLevel: context.treeLevel
+                context: context
             )
         }
 
@@ -496,7 +496,7 @@ enum SBJValueEditor {
                     headerOnly: headerOnly
                 ),
                 itemActions: itemActions,
-                treeLevel: context.treeLevel
+                context: context
             )
         }
         if let editable = Value.self as? any SBJSwiftUIEditable.Type {
@@ -516,9 +516,9 @@ enum SBJValueEditor {
         }
         if let options = caseIterableOptions(for: Value.self) {
             return wrapLeaf(
-                SBJCaseIterableEditor(label: label, value: value, options: options, labelIsUnknown: labelIsUnknown),
+                SBJCaseIterableEditor(label: label, value: value, options: options, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
                 itemActions: itemActions,
-                treeLevel: context.treeLevel
+                context: context
             )
         }
 
@@ -527,7 +527,7 @@ enum SBJValueEditor {
         return wrapLeaf(
             SBJUnsupportedEditor(label: label, type: Value.self, value: value.wrappedValue, labelIsUnknown: labelIsUnknown),
             itemActions: itemActions,
-            treeLevel: context.treeLevel
+            context: context
         )
     }
 
@@ -581,20 +581,20 @@ enum SBJValueEditor {
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
         labelIsUnknown: Bool,
-        treeLevel: Int
+        context: SBJEditTraversalContext
     ) -> AnyView {
         wrapLeaf(
-            SBJLosslessNumericEditor(label: label, value: value, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown),
+            SBJLosslessNumericEditor(label: label, value: value, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
             itemActions: itemActions,
-            treeLevel: treeLevel
+            context: context
         )
     }
 
     @MainActor
-    private static func wrapLeaf<Content: View>(_ view: Content, itemActions: SBJEditorItemActions?, treeLevel: Int) -> AnyView {
+    private static func wrapLeaf<Content: View>(_ view: Content, itemActions: SBJEditorItemActions?, context: SBJEditTraversalContext) -> AnyView {
         AnyView(
             SBJEditorRow(
-                treeLevel: treeLevel,
+                context: context,
                 elementAction: itemActions?.leadingView,
                 trailingActions: itemActions?.trailingView
             ) {

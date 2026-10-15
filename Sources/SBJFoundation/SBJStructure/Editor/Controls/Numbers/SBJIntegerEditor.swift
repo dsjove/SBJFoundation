@@ -10,10 +10,12 @@ struct SBJIntegerEditor: View {
     let labelIsUnknown: Bool
     @FocusState private var isFocused: Bool
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             NumberTextField("", value: $value, in: range, isFocused: $isFocused)
-                .sbjEditorAccessibleControl(label: label)
+                .sbjEditorAccessibleControl(label: label, status: rowStatus)
             stepper
                 .labelsHidden()
                 .fixedSize()

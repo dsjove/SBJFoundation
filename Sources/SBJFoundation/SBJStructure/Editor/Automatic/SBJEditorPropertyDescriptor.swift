@@ -29,6 +29,7 @@
   public struct SBJEditorPropertyDescriptor<Root: SBJSwiftUIEditable> {
     public let name: String
     let traversalDisclosureMode: SBJEditorDisclosureMode
+    let isTraversalDisclosure: Bool
     public let editableField: SBJEditableField<Root>
     private let makeView:
       (
@@ -46,6 +47,9 @@
     ) {
       self.name = name
       self.traversalDisclosureMode = disclosureMode
+      self.isTraversalDisclosure = Value.self is any SBJSwiftUIEditable.Type
+        || Value.self is any SBJEditorTraversableValue.Type
+        || Value.self is any SBJEditableAssociatedEnum.Type
       let editableField = SBJEditableField<Root>(name: name, keyPath)
       self.editableField = editableField
       let configuration = SBJEditFieldConfiguration(metadata: editableField.structuralMetadata)
@@ -63,10 +67,9 @@
             configuration: configuration,
             focusRequest: focusRequest,
             labelIsUnknown: labelIsUnknown,
-            context: context,
+            context: context.withBranch(context.branch.withDisclosureMode(disclosureMode)),
             headerOnly: headerOnly
           )
-          .environment(\.sbjEditorDisclosureMode, disclosureMode)
         )
       }
       self.traverseChildren = { root, context in
@@ -106,6 +109,7 @@
     ) {
       self.name = name
       self.traversalDisclosureMode = .closed
+      self.isTraversalDisclosure = false
       self.editableField = SBJEditableField<Root>(editorOnlyName: name, keyPath)
       self.makeView = {
         root, originalRoot, registry, overrideName, focusRequest, labelIsUnknown, context, headerOnly in
@@ -135,8 +139,9 @@
         context: context,
         name: name,
         disclosureMode: traversalDisclosureMode,
-        children: { [traverseChildren] in
-          traverseChildren(root, context)
+        isDisclosure: isTraversalDisclosure,
+        children: { [traverseChildren] projectedContext in
+          traverseChildren(root, projectedContext)
         }
       )
     }
@@ -153,17 +158,18 @@
         context: context,
         name: name,
         disclosureMode: traversalDisclosureMode,
-        render: { [self] in
+        isDisclosure: isTraversalDisclosure,
+        render: { [self] renderedContext in
           view(root: root, originalRoot: originalRoot, registry: registry,
-               context: context, applyFiltering: false, headerOnly: true)
+               context: renderedContext,
+               applyFiltering: false, headerOnly: true)
         },
-        renderingScope: .atomic,
         isIncluded: { [self] criteria in
           self.isIncluded(root: root.wrappedValue, originalRoot: originalRoot,
                           registry: registry, criteria: criteria)
         },
-        children: { [traverseBoundChildren] in
-          traverseBoundChildren(root, originalRoot, registry, context)
+        children: { [traverseBoundChildren] projectedContext in
+          traverseBoundChildren(root, originalRoot, registry, projectedContext)
         }
       )
     }
@@ -220,13 +226,11 @@
         editableField.participatesInStructuralValidation
         && (editableField.validationError(in: root.wrappedValue) != nil
           || (rootValidationError?.keyPath.contains(property: editableField.keyPath) == true))
-      let rendered = AnyView(
-        makeView(root, originalRoot, registry, nameOverride, focusRequest, labelIsUnknown, context, headerOnly)
-          .environment(\.sbjEditorIsChanged, changed)
-          .environment(\.sbjEditorHasContent, contentState)
-          .environment(\.sbjEditorIsInvalid, invalid)
-          .accessibilityIdentifier(context.itemIdentifier.description)
-      )
+      let rowContext = context.withBranch(context.branch.withStatus(
+        SBJEditorRowStatus(isChanged: changed, hasContent: contentState, isInvalid: invalid)
+      ))
+      let rendered = makeView(root, originalRoot, registry, nameOverride, focusRequest, labelIsUnknown, rowContext, headerOnly)
+        .accessibilityIdentifier(context.itemIdentifier.description)
 
       if !applyFiltering {
         return AnyView(rendered.id(context.itemIdentifier))
@@ -234,7 +238,7 @@
 
       return AnyView(
         SBJEditorFilteredView(
-          content: { rendered },
+          content: { AnyView(rendered) },
           isChanged: changed,
           matchesSearch: { query in
             editableField.matchesSearch(in: root.wrappedValue, query: query)
@@ -242,7 +246,8 @@
           containsEmptyContent: {
             containsEmptyContent(root: root.wrappedValue, registry: registry)
           },
-          navigationPath: context.navigationPath
+          navigationPath: context.navigationPath,
+          searchCriteria: context.branch.searchCriteria
         )
         .id(context.itemIdentifier)
       )
@@ -256,8 +261,9 @@
     let matchesSearch: (String) -> Bool
     let containsEmptyContent: () -> Bool
     let navigationPath: [String]
-    @Environment(\.sbjEditorSearchCriteria) private var searchCriteria
-    @Environment(\.sbjEditorNavigationTarget) private var navigationTarget
+    let searchCriteria: SBJEditSearchCriteria
+    @Environment(SBJEditorPresentationModel.self) private var sbjNavigationModel: SBJEditorPresentationModel?
+    private var navigationTarget: SBJEditorNavigationTarget? { sbjNavigationModel?.navigationTarget }
 
     @ViewBuilder
     var body: some View {

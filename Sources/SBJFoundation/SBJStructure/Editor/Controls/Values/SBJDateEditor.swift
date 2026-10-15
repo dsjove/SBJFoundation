@@ -8,12 +8,14 @@ struct SBJDateEditor: View {
     let range: ClosedRange<Date>?
     let labelIsUnknown: Bool
 
+    var rowStatus: SBJEditorRowStatus = .init()
+
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             DatePicker("", selection: $value)
                 .labelsHidden()
                 .fixedSize()
-                .sbjEditorAccessibleControl(label: label)
+                .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
     }
 }
