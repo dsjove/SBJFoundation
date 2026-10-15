@@ -25,16 +25,16 @@ public enum PackageDocumentPersistenceStatus: String, Equatable, Sendable, Custo
 		self.rawValue
 	}
 
-	public var image: ImageReference {
+	public var image: String {
 		switch self {
 		case .saved:
-			.system("checkmark.circle")
+			"checkmark.circle"
 		case .dirty:
-			.system("asterisk.circle")
+			"asterisk.circle"
 		case .saving:
-			.system("arrow.triangle.2.circlepath")
+			"arrow.triangle.2.circlepath"
 		case .failed:
-			.system("exclamationmark.triangle")
+			"exclamationmark.triangle"
 		}
 	}
 }

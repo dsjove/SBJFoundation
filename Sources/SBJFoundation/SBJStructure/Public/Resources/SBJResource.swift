@@ -1,4 +1,5 @@
 import Foundation
+import SBJShared
 
 /// Stable identity for a resource referenced by an SBJStructure model.
 ///

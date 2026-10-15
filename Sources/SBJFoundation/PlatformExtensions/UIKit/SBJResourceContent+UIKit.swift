@@ -1,6 +1,7 @@
 #if canImport(UIKit)
 import UIKit
 import UniformTypeIdentifiers
+import SBJShared
 
 public extension SBJResourceContent {
     /// Decodes ordinary image content, or resolves an SBJ image document to its persisted thumbnail cache.

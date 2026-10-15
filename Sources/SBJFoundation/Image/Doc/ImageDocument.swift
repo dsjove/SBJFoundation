@@ -7,6 +7,9 @@ import UIKit
 import PencilKit
 #endif
 
+import SBJShared
+import SBJDocuments
+
 /// A self-contained non-destructive image package.
 ///
 /// The encoded source and edit recipe are authoritative. Thumbnail and/or fully rendered

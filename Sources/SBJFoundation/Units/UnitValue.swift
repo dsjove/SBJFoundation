@@ -1,4 +1,5 @@
 import Foundation
+import SBJShared
 
 /// Codable pairing of a numeric amount and a strongly typed unit.
 ///

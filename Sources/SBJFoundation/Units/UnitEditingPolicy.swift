@@ -1,4 +1,5 @@
 import Foundation
+import SBJShared
 
 /// Editing increments are presentation/application policy, not intrinsic unit
 /// semantics. Different apps can therefore step the same physical unit in

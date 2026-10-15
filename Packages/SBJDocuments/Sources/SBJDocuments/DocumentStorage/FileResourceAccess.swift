@@ -1,4 +1,5 @@
 import Foundation
+import SBJShared
 
 /// Reusable wrapper around coordinated file operations for documents that can
 /// be changed by file providers, iCloud, or another process.

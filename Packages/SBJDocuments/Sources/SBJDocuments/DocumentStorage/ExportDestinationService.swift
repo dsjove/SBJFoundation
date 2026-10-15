@@ -1,4 +1,5 @@
 import Foundation
+import SBJShared
 
 /// Copies staged export artifacts into a user-selected directory while enforcing
 /// explicit collision handling.

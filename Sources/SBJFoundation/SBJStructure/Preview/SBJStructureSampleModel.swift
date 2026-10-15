@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import SBJShared
 
 /// Canonical integration/sample model for SBJStructure.
 ///

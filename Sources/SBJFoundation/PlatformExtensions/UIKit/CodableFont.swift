@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import SwiftUI
+import SBJShared
 
 @SBJStructure
 public struct CodableFont: SBJFoundationType, Comparable, Hashable, Sendable, CustomDebugStringConvertible {

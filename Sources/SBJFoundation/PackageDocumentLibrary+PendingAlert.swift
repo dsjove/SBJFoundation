@@ -1,5 +1,6 @@
 #if !os(watchOS)
 import SwiftUI
+import SBJDocuments
 
 private struct PackageDocumentInformationalAlert: Alertable {
     let title: String

@@ -6,6 +6,7 @@ import CoreGraphics
 #if canImport(PencilKit)
 import PencilKit
 #endif
+import SBJShared
 
 public struct PhotoMarkupCanvasSize: SBJFoundationType, Sendable {
     public var width: Double

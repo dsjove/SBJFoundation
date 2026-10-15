@@ -2,6 +2,7 @@
 import Observation
 import SwiftUI
 import UIKit
+import SBJShared
 
 /// Mutable interaction state for a photo-editing session.
 ///

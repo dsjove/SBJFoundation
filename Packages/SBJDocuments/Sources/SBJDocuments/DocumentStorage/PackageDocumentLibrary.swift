@@ -1,6 +1,7 @@
 #if !os(watchOS)
 import Foundation
 import Observation
+import SBJShared
 
 public enum PackageExternalConflictKind: Equatable, Sendable {
 	case modified
@@ -672,7 +673,7 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		let writer = ExportArtifactWriter(directoryName: "DocumentExports", fileManager: location.fileManager)
 		let packageExtension = location.packageExtension
 		let preferredName = document.name.sanitizedFilename(removeSpaces: false)
-		let name = preferredName.hasContent ? preferredName : "Document"
+		let name = !preferredName.isEmpty ? preferredName : "Document"
 		return try await Task.detached(priority: .userInitiated) {
 			let wrapper = try Document.fileWrapper(for: snapshot)
 			return try writer.write(wrapper, named: name, extension: packageExtension)

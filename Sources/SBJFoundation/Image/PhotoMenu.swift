@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 #if !os(tvOS)
 import PhotosUI
 #endif
+import SBJShared
 
 public struct _DefaultPhotoMenuLabel: View {
     let isFilled: Bool

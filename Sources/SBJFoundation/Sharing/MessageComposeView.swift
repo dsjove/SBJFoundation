@@ -3,6 +3,7 @@ import Foundation
 import MessageUI
 import SwiftUI
 import UIKit
+import SBJShared
 
 public struct ComposedMessage: Sendable {
 	public struct Attachment: Sendable {

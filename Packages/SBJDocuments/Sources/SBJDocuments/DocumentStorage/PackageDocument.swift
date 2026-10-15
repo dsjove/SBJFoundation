@@ -1,5 +1,6 @@
 #if !os(watchOS)
 import Foundation
+import SBJShared
 
 public enum DocumentRole: Int, SBJFoundationType, Comparable, Sendable {
 	case user

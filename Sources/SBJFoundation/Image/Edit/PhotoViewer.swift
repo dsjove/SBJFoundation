@@ -2,6 +2,7 @@
 import Observation
 import SwiftUI
 import UIKit
+import SBJShared
 
 /// Full-screen presentation for inspecting image resource content.
 ///

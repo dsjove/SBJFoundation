@@ -1,5 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
+import SBJShared
 
 /// A concrete attachment presentation independent of attachment storage.
 ///
