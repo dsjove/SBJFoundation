@@ -28,26 +28,3 @@ public extension StringPresentable {
 		description.replacingOccurrences(of: " ", with: "\n")
 	}
 }
-
-public extension StringPresentable where Self: RawRepresentable, Self.RawValue == String {
-	nonisolated var description: String { rawValue.uncamelCased }
-}
-
-public extension Sequence where Element == String {
-	/// Nonempty values joined as a compact presentation list.
-	var presentationList: String {
-		filter(\.hasContent).joined(separator: ", ")
-	}
-
-	/// Nonempty note strings joined using note punctuation.
-	var presentationNotes: String {
-		filter(\.hasContent).joined(separator: "; ")
-	}
-}
-
-public extension Sequence where Element: StringPresentable {
-	/// Nonempty values joined as a compact presentation list.
-	var presentationList: String {
-		map(\.description).filter(\.hasContent).joined(separator: ", ")
-	}
-}

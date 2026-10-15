@@ -1,4 +1,5 @@
 import Foundation
+import SBJSubject
 
 public extension Array where Element == Optional<String> {
 	func bulleted(_ separator: String = " • ", prefix: String = "") -> String {

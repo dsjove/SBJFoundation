@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJSubject
 
 @MainActor
 struct SBJEditorPropertyInfoContainer: View {

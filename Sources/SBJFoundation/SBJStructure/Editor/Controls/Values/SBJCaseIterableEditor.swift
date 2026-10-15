@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
+import SBJSubject
 
 struct SBJCaseIterableEditor<Value>: View {
     let label: String

@@ -1,4 +1,5 @@
 import Foundation
+import SBJSubject
 
 /// Supplemental documentation and accessibility information about a model property.
 ///

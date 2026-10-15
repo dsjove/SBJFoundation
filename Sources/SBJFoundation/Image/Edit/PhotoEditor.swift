@@ -7,6 +7,7 @@ import PencilKit
 #endif
 import SBJSubject
 import SBJShared
+import SBJSubject
 
 /// Full-screen image editor backed by normalized edit geometry.
 ///
