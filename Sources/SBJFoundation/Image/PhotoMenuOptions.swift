@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import SBJCamera
 
 public struct PhotoMenuOptions: OptionSet, Sendable {
 	public let rawValue: Int

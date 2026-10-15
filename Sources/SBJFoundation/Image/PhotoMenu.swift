@@ -8,6 +8,7 @@ import PhotosUI
 #endif
 import SBJSubject
 import SBJShared
+import SBJCamera
 
 public struct _DefaultPhotoMenuLabel: View {
     let isFilled: Bool

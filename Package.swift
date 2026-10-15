@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "Packages/SBJDocuments"),
         .package(path: "Packages/SBJSubject"),
         .package(path: "Packages/SBJSubjectEditor"),
+        .package(path: "Packages/SBJCamera"),
         .package(
             url: "https://github.com/swiftlang/swift-syntax.git",
             exact: "604.0.0-prerelease-2026-06-05"
@@ -45,6 +46,7 @@ let package = Package(
                 .product(name: "SBJShared", package: "SBJShared"),
                 .product(name: "SBJSubject", package: "SBJSubject"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
+                .product(name: "SBJCamera", package: "SBJCamera"),
             ],
             resources: [
                 .process("Resources"),
