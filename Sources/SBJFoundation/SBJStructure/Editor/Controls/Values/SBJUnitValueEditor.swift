@@ -6,7 +6,8 @@ protocol _SBJUnitValueEditorValue {
     static func _sbjMakeUnitValueEditor(
         label: String,
         binding: SBJAnyBinding,
-        labelIsUnknown: Bool
+        labelIsUnknown: Bool,
+        editor: SBJUnitValueEditorMode
     ) -> AnyView
 }
 
@@ -15,13 +16,15 @@ extension UnitValue: _SBJUnitValueEditorValue {
     static func _sbjMakeUnitValueEditor(
         label: String,
         binding: SBJAnyBinding,
-        labelIsUnknown: Bool
+        labelIsUnknown: Bool,
+        editor: SBJUnitValueEditorMode
     ) -> AnyView {
         AnyView(
             SBJUnitValueEditor(
                 label: label,
                 value: binding.binding(as: Self.self),
-                labelIsUnknown: labelIsUnknown
+                labelIsUnknown: labelIsUnknown,
+                editor: editor
             )
         )
     }
@@ -33,12 +36,14 @@ struct SBJUnitValueEditor<Unit: UnitType>: View {
     let label: String
     @Binding var value: UnitValue<Unit>
     let labelIsUnknown: Bool
+    let editor: SBJUnitValueEditorMode
 
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             UnitValueControl(
                 value: $value,
-                accessibilityLabel: label
+                accessibilityLabel: label,
+                unitEditable: editor == .editable
             )
         }
     }

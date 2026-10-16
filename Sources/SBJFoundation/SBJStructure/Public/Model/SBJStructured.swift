@@ -220,6 +220,7 @@ public enum SBJPropertyHint: Sendable, Equatable {
     case textCapitalization(SBJTextCapitalization)
     case reorderable(Bool)
     case colorSupportsAlpha(Bool)
+    case unitEditor(SBJUnitValueEditorMode)
     /// Human-readable representation of the compiler-checked item-title key path.
     case itemTitle(String)
 }

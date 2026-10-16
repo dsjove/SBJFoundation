@@ -101,7 +101,7 @@ struct SBJStructureSampleModel: Codable {
   var vegetarian = true
   var rating = SBJStructureSampleRating(value: 4)
 
-  @SBJUnitValue(min: 0)
+  @SBJUnitValue(min: 0, editor: .fixedUnit)
   var servingVolume = UnitValue<VolumeUnit>(1.5, unit: .cup)
   var packageWeight = UnitValue<MassUnit>(340, unit: .gram)
   var simmerTime = UnitValue<DurationUnit>(45, unit: .minute)

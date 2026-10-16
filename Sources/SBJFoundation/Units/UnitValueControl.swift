@@ -11,18 +11,21 @@ public struct UnitValueControl<Unit: UnitType>: View {
     private let units: [Unit]
     private let accessibilityLabel: String?
     private let propertyInfo: SBJPropertyInfo?
+    private let unitEditable: Bool
     @FocusState private var isFocused: Bool
 
     public init(
         value: Binding<UnitValue<Unit>>,
         units: [Unit] = Array(Unit.allCases),
         accessibilityLabel: String? = nil,
-        propertyInfo: SBJPropertyInfo? = nil
+        propertyInfo: SBJPropertyInfo? = nil,
+        unitEditable: Bool = true
     ) {
         _value = value
         self.units = units
         self.accessibilityLabel = accessibilityLabel
         self.propertyInfo = propertyInfo
+        self.unitEditable = unitEditable
     }
 
     public var body: some View {
@@ -43,7 +46,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
 
     @ViewBuilder
     private var unitControl: some View {
-        if units.count <= 1 {
+        if !unitEditable || units.count <= 1 {
             Text(value.unit.symbol)
                 .foregroundStyle(.secondary)
                 .fixedSize()

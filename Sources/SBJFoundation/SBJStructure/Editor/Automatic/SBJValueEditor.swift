@@ -318,6 +318,7 @@ enum SBJValueEditor {
         numberRange: ClosedRange<Double>? = nil,
         dateRange: ClosedRange<Date>? = nil,
         colorSupportsAlpha: Bool = true,
+        unitEditor: SBJUnitValueEditorMode = .editable,
         collectionReorderable: Bool = true,
         collectionItemTitleKey: String? = nil,
         collectionItemIdentifierKey: String? = nil,
@@ -438,7 +439,8 @@ enum SBJValueEditor {
                 unitValue._sbjMakeUnitValueEditor(
                     label: label,
                     binding: erased,
-                    labelIsUnknown: labelIsUnknown
+                    labelIsUnknown: labelIsUnknown,
+                    editor: unitEditor
                 ),
                 itemActions: itemActions,
                 context: context

@@ -14,6 +14,7 @@
     let numberRange: ClosedRange<Double>?
     let dateRange: ClosedRange<Date>?
     let colorSupportsAlpha: Bool
+    let unitEditor: SBJUnitValueEditorMode
     let collectionReorderable: Bool
     let collectionItemTitleKey: String?
     let collectionItemIdentifierKey: String?
@@ -71,6 +72,10 @@
           if case .colorSupportsAlpha(let value) = hint { return value }
           return nil
         }.first ?? true
+      unitEditor = metadata?.hints.compactMap { hint -> SBJUnitValueEditorMode? in
+        if case .unitEditor(let mode) = hint { return mode }
+        return nil
+      }.first ?? .editable
       collectionReorderable =
         metadata?.hints.compactMap { hint -> Bool? in
           if case .reorderable(let value) = hint { return value }
@@ -127,6 +132,7 @@
       numberRange: ClosedRange<Double>? = nil,
       dateRange: ClosedRange<Date>? = nil,
       colorSupportsAlpha: Bool = true,
+      unitEditor: SBJUnitValueEditorMode = .editable,
       collectionReorderable: Bool = true
     ) {
       render = {
@@ -141,6 +147,7 @@
           numberRange: numberRange,
           dateRange: dateRange,
           colorSupportsAlpha: colorSupportsAlpha,
+          unitEditor: unitEditor,
           collectionReorderable: collectionReorderable
         )
       }
@@ -209,6 +216,7 @@
           numberRange: configuration.numberRange,
           dateRange: configuration.dateRange,
           colorSupportsAlpha: configuration.colorSupportsAlpha,
+          unitEditor: configuration.unitEditor,
           collectionReorderable: configuration.collectionReorderable,
           collectionItemTitleKey: configuration.collectionItemTitleKey,
           collectionItemIdentifierKey: configuration.collectionItemIdentifierKey,

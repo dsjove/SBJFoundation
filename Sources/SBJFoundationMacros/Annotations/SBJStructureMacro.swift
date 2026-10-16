@@ -179,6 +179,9 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(numberMinimum), at: keyPath.appending(\\Self.\(name)))")
                     constraintMetadata.append(".numberMinimum(\(numberMinimum))")
                 }
+                if let unitEditor = unitValueEditor(on: variable) {
+                    hintMetadata.append(".unitEditor(\(unitEditor))")
+                }
                 if let unitMinimum = unitValueMinimum(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(unitMinimum), at: keyPath.appending(\\Self.\(name)))")
                 }
@@ -842,6 +845,17 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
             }
         }
         return (nil, nil)
+    }
+
+    private static func unitValueEditor(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element else { continue }
+            guard attribute.attributeName.trimmedDescription == "SBJUnitValue" else { continue }
+            guard let rawArguments = attribute.arguments,
+                  case .argumentList(let arguments) = rawArguments else { return nil }
+            return arguments.first(where: { $0.label?.text == "editor" })?.expression.trimmedDescription
+        }
+        return nil
     }
 
     private static func unitValueMinimum(on variable: VariableDeclSyntax) -> String? {
