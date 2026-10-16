@@ -1,5 +1,6 @@
 #if canImport(UIKit)
 import Foundation
+import SBJFileResources
 import CoreLocation
 import UniformTypeIdentifiers
 import UIKit

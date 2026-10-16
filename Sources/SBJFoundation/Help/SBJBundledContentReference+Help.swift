@@ -1,4 +1,5 @@
 import Foundation
+import SBJFileResources
 import UniformTypeIdentifiers
 
 public extension SBJBundledContentReference {

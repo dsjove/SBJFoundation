@@ -1,4 +1,5 @@
 import Foundation
+import SBJDocuments
 import Testing
 @testable import SBJFoundation
 

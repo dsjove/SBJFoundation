@@ -1,5 +1,7 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import Observation
+import SBJDocuments
+import SBJFileResources
 import SwiftUI
 import UIKit
 #if canImport(PencilKit)

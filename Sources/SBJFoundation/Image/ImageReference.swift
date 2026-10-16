@@ -1,3 +1,4 @@
+import SBJFileResources
 import Foundation
 import SwiftUI
 #if canImport(ImageIO)

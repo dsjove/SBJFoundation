@@ -20,6 +20,8 @@ let package = Package(
     dependencies: [
         .package(path: "Packages/SBJLocalization"),
         .package(path: "Packages/SBJCamera"),
+        .package(path: "Packages/SBJDocuments"),
+        .package(path: "Packages/SBJFileResources"),
         .package(
             url: "https://github.com/swiftlang/swift-syntax.git",
             exact: "604.0.0-prerelease-2026-06-05"
@@ -42,6 +44,8 @@ let package = Package(
                 "SBJFoundationMacros",
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJCamera", package: "SBJCamera"),
+                .product(name: "SBJDocuments", package: "SBJDocuments"),
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
             ],
             resources: [
                 .process("Resources"),
@@ -57,6 +61,8 @@ let package = Package(
                 "SBJFoundation",
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJCamera", package: "SBJCamera"),
+                .product(name: "SBJDocuments", package: "SBJDocuments"),
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
                 "SBJFoundationMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ],

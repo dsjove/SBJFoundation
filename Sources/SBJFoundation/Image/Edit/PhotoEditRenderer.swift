@@ -1,5 +1,6 @@
 #if !os(watchOS) && canImport(UIKit)
 import ImageIO
+import SBJFileResources
 import UniformTypeIdentifiers
 import UIKit
 #if canImport(PencilKit)

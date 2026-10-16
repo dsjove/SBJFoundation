@@ -1,4 +1,5 @@
 import Foundation
+import SBJFileResources
 #if canImport(UIKit)
 import UIKit
 #endif

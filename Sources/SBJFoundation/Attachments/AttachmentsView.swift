@@ -1,5 +1,6 @@
 #if !os(watchOS)
 import Foundation
+import SBJFileResources
 import Observation
 import SwiftUI
 import UniformTypeIdentifiers

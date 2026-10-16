@@ -1,5 +1,6 @@
 #if os(iOS)
 import Foundation
+import SBJFileResources
 import Photos
 
 /// A named encoded image resource that can be passed to image destinations

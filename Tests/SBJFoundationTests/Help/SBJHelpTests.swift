@@ -2,6 +2,7 @@
 import XCTest
 import UniformTypeIdentifiers
 @testable import SBJFoundation
+@testable import SBJFileResources
 
 final class SBJHelpTests: XCTestCase {
     func testFilenameExtensionsUseUniformTypeIdentifiers() {

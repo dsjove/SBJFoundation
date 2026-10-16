@@ -1,4 +1,5 @@
 import Foundation
+import SBJFileResources
 import UniformTypeIdentifiers
 import SBJLocalization
 

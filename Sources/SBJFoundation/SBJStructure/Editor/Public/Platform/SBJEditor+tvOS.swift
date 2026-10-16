@@ -17,8 +17,11 @@ public struct SBJEditorPropertyDescriptor<Root: SBJStructured> {
 
     public init<Value: Codable>(
         name: String,
-        _ keyPath: WritableKeyPath<Root, Value>
+        _ keyPath: WritableKeyPath<Root, Value>,
+        disclosureMode: SBJEditorDisclosureMode = .closed
     ) {
+        // Accepted for macro-generated source compatibility; tvOS/watchOS have no editor UI.
+        _ = disclosureMode
         self.name = name
         self.editableField = SBJEditableField<Root>(name: name, keyPath)
     }
