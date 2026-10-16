@@ -1,4 +1,5 @@
 import Testing
+import SBJLocalization
 @testable import SBJFoundation
 
 struct StringUncamelCasedTests {

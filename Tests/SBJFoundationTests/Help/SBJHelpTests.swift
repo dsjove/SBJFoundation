@@ -13,7 +13,7 @@ final class SBJHelpTests: XCTestCase {
 
 	@available(macCatalyst 27.0, iOS 27.0, *)
 	func testExplicitContentTypeOverridesAssetCatalogIdentifier() {
-        let resolved = SBJAssetReference.resolvedContentType(
+        let resolved = SBJBundledContentReference.resolvedContentType(
             override: .markdown,
             assetTypeIdentifier: UTType.html.identifier
         )
@@ -21,7 +21,7 @@ final class SBJHelpTests: XCTestCase {
     }
 
     func testAssetCatalogIdentifierResolvesContentType() {
-        let resolved = SBJAssetReference.resolvedContentType(
+        let resolved = SBJBundledContentReference.resolvedContentType(
             override: nil,
             assetTypeIdentifier: UTType.html.identifier
         )
@@ -29,7 +29,7 @@ final class SBJHelpTests: XCTestCase {
     }
 
     func testBundleResourceNameDefaultsToSanitizedDisplayName() {
-        let asset = SBJAssetReference(
+        let asset = SBJBundledContentReference(
             displayName: "Recipe Details",
             subdirectory: "help"
         )
@@ -38,7 +38,7 @@ final class SBJHelpTests: XCTestCase {
 
 	@available(macCatalyst 27.0, iOS 27.0, *)
 	func testExplicitDataAssetContentTypeOverride() {
-        let asset = SBJAssetReference(displayName: "Recipe Details", dataAsset: "help/RecipeDetails", contentType: .markdown)
+        let asset = SBJBundledContentReference(displayName: "Recipe Details", dataAsset: "help/RecipeDetails", contentType: .markdown)
         XCTAssertEqual(asset.contentTypeOverride, .markdown)
     }
 
@@ -57,19 +57,19 @@ final class SBJHelpTests: XCTestCase {
     }
 
     func testBundledStructureSearchHelpIsAvailable() {
-        let asset = SBJAssetReference.structureEditorSearch
+        let asset = SBJBundledContentReference.structureEditorSearch
         XCTAssertTrue(asset.exists)
         XCTAssertEqual(asset.contentType, .html)
     }
 
     func testBundledResourceContentTypeCanComeFromExtension() {
-        let asset = SBJAssetReference.help("Embedding Fixture", bundle: .module)
+        let asset = SBJBundledContentReference.help("Embedding Fixture", bundle: .module)
         XCTAssertEqual(asset.contentType, .html)
         XCTAssertTrue(asset.exists)
     }
 
     func testEmbeddedFrameworkHelpIsExpandedInsideApplicationHelp() throws {
-        let parent = SBJAssetReference.help("Embedding Fixture", bundle: .module)
+        let parent = SBJBundledContentReference.help("Embedding Fixture", bundle: .module)
         let source = try XCTUnwrap(SBJHelpTemplateRenderer().renderedSource(for: parent))
         XCTAssertFalse(source.contains("SBJ_STRUCTURE_EDITOR_SEARCH_HELP"))
         XCTAssertFalse(source.contains("UI_help\\"))

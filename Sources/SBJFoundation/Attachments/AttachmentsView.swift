@@ -105,7 +105,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                     Label {
                         Text("No Attachments")
                     } icon: {
-                        Image(SBJAttachmentSemanticImageReference.attachments)
+                        Image(symbol: SBJAttachmentSymbology.attachments)
                     }
                 } description: {
                     Text("Select Add Attachment to add a file.")
@@ -142,7 +142,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
 
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
                         SBJImageButton(
-                            SBJAttachmentSemanticImageReference.previewAttachment,
+                            SBJAttachmentSymbology.previewAttachment,
                             accessibilityLabel: "Preview \(attachment.displayName)"
                         ) {
                             openAttachment(attachment)

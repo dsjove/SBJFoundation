@@ -48,7 +48,7 @@ public extension FileWrapper {
 
 /// Encoded resource content with its Foundation content type.
 ///
-/// This is intentionally separate from `SBJResourceID`: the ID is semantic
+/// This is intentionally separate from `SBJReferencedContentID`: the ID is semantic
 /// identity while this value is the transport/storage payload.
 ///
 /// Resources may be either ordinary files or directory/package content. `data` remains the

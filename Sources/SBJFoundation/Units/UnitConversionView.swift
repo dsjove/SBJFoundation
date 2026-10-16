@@ -36,7 +36,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
 #endif
 
                 SBJImageButton(
-                    SBJUnitSemanticImageReference.resetValue,
+                    SBJUnitSymbology.resetValue,
                     propertyInfo: UnitConversionModel<Unit>.resetPropertyInfo
                 ) {
                     model.reset()
@@ -48,7 +48,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
                     .foregroundStyle(.secondary)
 
                 SBJImageButton(
-                    SBJUnitSemanticImageReference.swapUnits,
+                    SBJUnitSymbology.swapUnits,
                     propertyInfo: UnitConversionModel<Unit>.swapPropertyInfo
                 ) {
                     model.swap()
@@ -69,7 +69,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
                         }
                     }
                 } label: {
-                    SBJCompactMenuLabel(text: model.destinationUnit.symbol, options: units.map(\.symbol))
+                    SBJSelectionMenuLabel(text: model.destinationUnit.symbol, options: units.map(\.symbol))
                 }
                 .accessibilityLabel(UnitConversionModel<Unit>.propertyInfo(for: \UnitConversionModel<Unit>.destinationUnit)?.accessibilityLabel ?? "To unit")
                 .accessibilityValue(model.destinationUnit.displayName)
@@ -90,7 +90,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
             ToolbarItem(placement: .primaryAction) {
                 SBJHelpLink(
                     asset: .unitConversionHelp,
-                    configuration: SBJUnitSemanticImageReference.helpConfiguration
+                    configuration: SBJUnitSymbology.helpConfiguration
                 )
             }
         }

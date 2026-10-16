@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 /// A named item presented by the standard attachment editor.
 ///

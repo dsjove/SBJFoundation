@@ -106,7 +106,7 @@ in the fixture. Important examples include:
 - `CodableFont` / `CodableFontCache` through the font-family presentation editor; directory placement does not affect this transitive coverage;
 - `PlaceholderMultilineTextField` and shared multiline chrome through
   `@SBJString(.sheetEdit)`;
-- `SBJCompactMenuLabel`, `SBJUIAppearance`, focus/invalid modifiers,
+- `SBJSelectionMenuLabel`, `SBJUIAppearance`, focus/invalid modifiers,
   `SearchField`, and other UIVocabulary used by editor implementations;
 - Swift-source encoder types referenced by the `SBJStructured` contract and the
   designated-initializer metadata path.
@@ -136,7 +136,7 @@ They should not be inserted into the sample model merely to force compile covera
 - `ImageReference` — **covered transitively by the sample editor** because editor button, status,
   and disclosure imagery now routes through the `ImageReference` boundary. It also remains
   general application-facing UI vocabulary.
-- `CollapsingMenu` — collapse one-or-many actions into the appropriate toolbar/menu
+- `SBJSelectionMenu` — collapse one-or-many actions into the appropriate toolbar/menu
   presentation.
 - `NumberTextField` — **covered transitively by the sample editor** because
   `SBJIntegerEditor` uses it as the canonical reusable integer input. Range validity,

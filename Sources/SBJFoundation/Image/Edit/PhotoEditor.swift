@@ -4,6 +4,7 @@ import SwiftUI
 import UIKit
 #if canImport(PencilKit)
 import PencilKit
+import SBJLocalization
 #endif
 
 /// Full-screen image editor backed by normalized edit geometry.
@@ -274,7 +275,7 @@ public struct PhotoEditor: View {
                           let renderedImageForSharing else { return }
                     _ = sharePresenter.present(SBJSharePayload(renderedImageForSharing))
                 } label: {
-                    Image(SBJSemanticImageReference.share)
+                    Image(symbol: SBJSymbology.share)
                         .accessibility(AccessibleItem(label: "Share Edited Photo"))
                 }
                 .disabled(sharePresenter.isPresenting)
@@ -315,21 +316,21 @@ public struct PhotoEditor: View {
 #if canImport(PencilKit)
                 if options.allowsMarkup, markupActive {
                     SBJImageButton(
-                        SBJImageSemanticImageReference.eraseMarkup,
+                        SBJImageSymbology.eraseMarkup,
                         accessibilityLabel: "Clear Markup",
                         action: markup.clear
                     )
                     .disabled(!markup.hasDrawing)
 
                     SBJImageButton(
-                        SBJImageSemanticImageReference.undoMarkup,
+                        SBJImageSymbology.undoMarkup,
                         accessibilityLabel: "Undo Markup",
                         action: markup.undo
                     )
                     .disabled(!markup.canUndo)
 
                     SBJImageButton(
-                        SBJImageSemanticImageReference.redoMarkup,
+                        SBJImageSymbology.redoMarkup,
                         accessibilityLabel: "Redo Markup",
                         action: markup.redo
                     )
@@ -365,7 +366,7 @@ public struct PhotoEditor: View {
     @ViewBuilder
     private var markupToggleButton: some View {
         SBJImageButton(
-            markupActive ? SBJImageSemanticImageReference.hideMarkup : SBJImageSemanticImageReference.markup,
+            markupActive ? SBJImageSymbology.hideMarkup : SBJImageSymbology.markup,
             accessibilityLabel: markupActive ? "Hide Markup Tools" : "Show Markup Tools"
         ) {
             markupActive.toggle()
@@ -377,21 +378,21 @@ public struct PhotoEditor: View {
     @ViewBuilder
     private var compactMarkupActions: some View {
         SBJImageButton(
-            SBJImageSemanticImageReference.eraseMarkup,
+            SBJImageSymbology.eraseMarkup,
             accessibilityLabel: "Clear Markup",
             action: markup.clear
         )
         .disabled(!markup.hasDrawing)
 
         SBJImageButton(
-            SBJImageSemanticImageReference.undoMarkup,
+            SBJImageSymbology.undoMarkup,
             accessibilityLabel: "Undo Markup",
             action: markup.undo
         )
         .disabled(!markup.canUndo)
 
         SBJImageButton(
-            SBJImageSemanticImageReference.redoMarkup,
+            SBJImageSymbology.redoMarkup,
             accessibilityLabel: "Redo Markup",
             action: markup.redo
         )
@@ -405,10 +406,10 @@ public struct PhotoEditor: View {
             model.resetPlacementAndMagnification()
         } label: {
             if labelIsHidden {
-                Image(SBJImageSemanticImageReference.resetPanZoom)
+                Image(symbol: SBJImageSymbology.resetPanZoom)
                     .accessibilityLabel("Reset Pan and Zoom")
             } else {
-                Label("Reset Pan & Zoom", image: SBJImageSemanticImageReference.resetPanZoom)
+                Label("Reset Pan & Zoom", symbol: SBJImageSymbology.resetPanZoom)
             }
         }
         .disabled(!model.hasPlacementOrMagnificationEdits)
@@ -420,14 +421,14 @@ public struct PhotoEditor: View {
 
     @ViewBuilder
     private var geometryToolbarButtons: some View {
-        CollapsingMenu {
+        SBJSelectionMenu {
             if options.showsCropChoices {
                 ForEach(options.cropOptions) { option in
                     Button {
                         model.selectCrop(option)
                     } label: {
                         if model.geometry.crop.option == option {
-                            Label(cropTitle(for: option), image: SBJSemanticImageReference.selected)
+                            Label(cropTitle(for: option), symbol: SBJSymbology.selected)
                         } else {
                             Text(cropTitle(for: option))
                         }
@@ -440,7 +441,7 @@ public struct PhotoEditor: View {
 
             if options.allowsCropDimensionSwap {
                 Toggle(isOn: cropDimensionsSwappedBinding) {
-                    Label("Swap Width & Height", image: SBJImageSemanticImageReference.swapCropDimensions)
+                    Label("Swap Width & Height", symbol: SBJImageSymbology.swapCropDimensions)
                 }
                 .accessibility(swapDimensionsInfo)
             }
@@ -449,14 +450,14 @@ public struct PhotoEditor: View {
         } collapsedContent: {
             resetPanZoomButton(labelIsHidden: true)
         } label: {
-            Image(SBJImageSemanticImageReference.crop)
+            Image(symbol: SBJImageSymbology.crop)
                 .accessibility(cropOptionInfo)
                 .accessibilityValue(cropTitle(for: model.geometry.crop.option))
         }
 
         if options.availableMirrorAxes.contains(.horizontal) {
             SBJImageButton(
-                SBJImageSemanticImageReference.mirrorHorizontal,
+                SBJImageSymbology.mirrorHorizontal,
                 propertyInfo: horizontalMirrorInfo
             ) {
                 model.toggleMirror(.horizontal)
@@ -466,7 +467,7 @@ public struct PhotoEditor: View {
 
         if options.allowsQuarterTurnRotation {
             SBJImageButton(
-                SBJImageSemanticImageReference.rotateLeft,
+                SBJImageSymbology.rotateLeft,
                 accessibilityLabel: "Rotate Left 90 Degrees",
                 accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
             ) {
@@ -476,7 +477,7 @@ public struct PhotoEditor: View {
 
         if options.availableMirrorAxes.contains(.vertical) {
             SBJImageButton(
-                SBJImageSemanticImageReference.mirrorVertical,
+                SBJImageSymbology.mirrorVertical,
                 propertyInfo: verticalMirrorInfo
             ) {
                 model.toggleMirror(.vertical)
@@ -486,7 +487,7 @@ public struct PhotoEditor: View {
 
         if options.allowsFreeRotation {
             SBJImageButton(
-                SBJImageSemanticImageReference.straighten,
+                SBJImageSymbology.straighten,
                 propertyInfo: straightenInfo
             ) {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -506,7 +507,7 @@ public struct PhotoEditor: View {
 
                 if options.allowsQuarterTurnRotation {
                     SBJImageButton(
-                        SBJImageSemanticImageReference.rotateLeft,
+                        SBJImageSymbology.rotateLeft,
                         accessibilityLabel: "Rotate Left 90 Degrees",
                         accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
                     ) {
@@ -525,7 +526,7 @@ public struct PhotoEditor: View {
 
                 if options.allowsQuarterTurnRotation {
                     SBJImageButton(
-                        SBJImageSemanticImageReference.rotateRight,
+                        SBJImageSymbology.rotateRight,
                         accessibilityLabel: "Rotate Right 90 Degrees",
                         accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
                     ) {
@@ -534,7 +535,7 @@ public struct PhotoEditor: View {
                 }
 
                 SBJImageButton(
-                    SBJImageSemanticImageReference.resetStraighten,
+                    SBJImageSymbology.resetStraighten,
                     accessibilityLabel: "Reset Straighten",
                     accessibilityHint: straightenInfo.summary,
                     action: model.resetRotation

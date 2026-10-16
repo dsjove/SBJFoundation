@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJLocalization
 
 struct SBJEditorOriginalValue {
     let valueType: Any.Type
@@ -29,12 +30,12 @@ enum SBJEditorStatusKind {
     case changed
     case empty
 
-    var image: ImageReference {
+    var image: SBJSymbol {
         switch self {
         case .changed:
-            return SBJSemanticImageReference.changed
+            return SBJSymbology.changed
         case .empty:
-            return SBJSemanticImageReference.empty
+            return SBJSymbology.empty
         }
     }
 
@@ -65,7 +66,7 @@ struct SBJEditorStatusSymbol: View {
     let kind: SBJEditorStatusKind
 
     var body: some View {
-        Image(kind.image)
+        Image(symbol: kind.image)
             .font(.caption.weight(.semibold))
             .fixedSize()
             .accessibilityLabel(kind.accessibilityLabel)

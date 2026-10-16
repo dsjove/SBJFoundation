@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
+import SBJLocalization
 
 struct SBJOptionalEditor<Wrapped: Codable>: View {
     private var sbjFormatting: SBJEditorFormattingOptions { presentationModel.formattingOptions }
@@ -152,7 +153,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
 
     private var clearButton: some View {
         SBJImageButton(
-            SBJSemanticImageReference.clearOptional,
+            SBJSymbology.clearOptional,
             accessibilityLabel: "Clear \(label)",
             accessibilityHint: "Removes the current optional value"
         ) {
@@ -164,7 +165,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
 
     private var setButton: some View {
         SBJImageButton(
-            SBJSemanticImageReference.setOptional,
+            SBJSymbology.setOptional,
             accessibilityLabel: "Set \(label)",
             accessibilityHint: "Creates a value and moves focus into the new field"
         ) {

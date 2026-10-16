@@ -2,6 +2,7 @@
 import Observation
 import SwiftUI
 import UIKit
+import SBJLocalization
 
 /// Full-screen presentation for inspecting image resource content.
 ///
@@ -85,7 +86,7 @@ public struct PhotoViewer: View {
                             presenter: sharePresenter,
                             prepare: { SBJSharePayload(imageForSharing()) }
                         ) {
-                            Image(SBJSemanticImageReference.share)
+                            Image(symbol: SBJSymbology.share)
                                 .accessibility(AccessibleItem(label: "Share"))
                         }
 
@@ -98,7 +99,7 @@ public struct PhotoViewer: View {
 
                     ToolbarItem(placement: .topBarTrailing) {
                         SBJImageButton(
-                            SBJImageSemanticImageReference.resetPanZoom,
+                            SBJImageSymbology.resetPanZoom,
                             accessibilityLabel: "Reset zoom and position",
                             accessibilityHint: "Returns the image to its fitted size and centered position.",
                             action: resetPosition

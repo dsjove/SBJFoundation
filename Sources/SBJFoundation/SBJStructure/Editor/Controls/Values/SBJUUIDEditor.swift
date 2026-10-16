@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
+import SBJLocalization
 
 struct SBJUUIDEditor: View {
     let label: String
@@ -34,7 +35,7 @@ struct SBJUUIDEditor: View {
             .textInputAutocapitalization(.characters)
 #endif
             SBJImageButton(
-                SBJSemanticImageReference.regenerate,
+                SBJSymbology.regenerate,
                 accessibilityLabel: "Generate new \(label)"
             ) {
                 value = UUID()

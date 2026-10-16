@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import SBJLocalization
 @testable import SBJFoundation
 
 @Suite("Image references")
@@ -19,7 +20,9 @@ struct ImageReferenceTests {
         #expect(decorative.accessibilityLabel == nil)
         #expect(!decorative.labeled)
 
+        #expect(decorative.accessibility.isEmpty)
         let labeled = AccessibleImageItem(image: .system("star"), labeled: true, label: "Favorite")
+        #expect(labeled.accessibility == AccessibleItem(label: "Favorite"))
         #expect(labeled.accessibilityLabel == "Favorite")
         #expect(labeled.labeled)
     }

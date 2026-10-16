@@ -1,6 +1,7 @@
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
+import SBJLocalization
 @testable import SBJFoundationMacros
 
 final class SBJStructureMacroTests: XCTestCase {

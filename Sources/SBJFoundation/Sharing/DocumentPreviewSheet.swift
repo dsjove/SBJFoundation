@@ -2,6 +2,7 @@
 import QuickLook
 import SwiftUI
 import UIKit
+import SBJLocalization
 
 public struct DocumentPreviewController: UIViewControllerRepresentable {
     public let preview: URLAttachment
@@ -75,7 +76,7 @@ public struct DocumentPreviewSheet: View {
 
                         ToolbarItemGroup(placement: .primaryAction) {
                             SBJImageButton(
-                                SBJSemanticImageReference.open,
+                                SBJSymbology.open,
                                 accessibilityLabel: "Open"
                             ) {
                                 preview.url.open()
@@ -85,7 +86,7 @@ public struct DocumentPreviewSheet: View {
                                 presenter: sharePresenter,
                                 prepare: { SBJSharePayload(preview.url) }
                             ) {
-                                Image(SBJSemanticImageReference.share)
+                                Image(symbol: SBJSymbology.share)
                                     .accessibilityLabel("Share")
                             }
                         }

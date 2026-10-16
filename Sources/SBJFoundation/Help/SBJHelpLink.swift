@@ -1,13 +1,14 @@
 #if !os(watchOS)
 import SwiftUI
+import SBJLocalization
 
 /// Standard SwiftUI help entry point backed by SBJFoundation's help system.
 ///
-/// The view accepts a finished `SBJAssetReference`
+/// The view accepts a finished `SBJBundledContentReference`
 /// instead of mirroring every resource-storage constructor.
 @MainActor
 public struct SBJHelpLink: View {
-    public let asset: SBJAssetReference
+    public let asset: SBJBundledContentReference
     public let auto: Bool
     public let substitutions: [String: String]
     public let configuration: SBJHelpConfiguration
@@ -15,7 +16,7 @@ public struct SBJHelpLink: View {
     public let presenter: SBJAnyHelpContentPresenter?
 
     public init(
-        asset: SBJAssetReference,
+        asset: SBJBundledContentReference,
         auto: Bool = true,
         substitutions: [String: String] = [:],
         configuration: SBJHelpConfiguration = .standard,
@@ -49,7 +50,7 @@ public struct SBJHelpLink: View {
         HelpLink(action: action)
         #else
         SBJImageButton(
-            SBJSemanticImageReference.help,
+            SBJSymbology.help,
             accessibilityLabel: "Help",
             action: action
         )
@@ -74,7 +75,7 @@ public struct SBJHelpLink: View {
 /// custom presenters remain owned by `SBJHelpTrigger`/`SBJHelpSheet`.
 @MainActor
 public struct SBJHelpButton: View {
-    public let asset: SBJAssetReference
+    public let asset: SBJBundledContentReference
     public let auto: Bool
     public let substitutions: [String: String]
     public let configuration: SBJHelpConfiguration
@@ -82,7 +83,7 @@ public struct SBJHelpButton: View {
     public let presenter: SBJAnyHelpContentPresenter?
 
     public init(
-        asset: SBJAssetReference,
+        asset: SBJBundledContentReference,
         auto: Bool = false,
         substitutions: [String: String] = [:],
         configuration: SBJHelpConfiguration = .standard,
@@ -107,12 +108,12 @@ public struct SBJHelpButton: View {
             presenter: presenter
         ) { action in
             Button(action: action) {
-                Label("Help", image: SBJSemanticImageReference.help)
+                Label("Help", symbol: SBJSymbology.help)
                     .labelStyle(.iconOnly)
             }
             .accessibilityLabel("Help")
 //			SBJImageButton(
-//				SBJSemanticImageReference.help,
+//				SBJSymbology.help,
 //				accessibilityLabel: "Help",
 //				action: action
 //			)

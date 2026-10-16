@@ -1,5 +1,6 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import SwiftUI
+import SBJLocalization
 
 /// Semantic share control for content whose activity representation is
 /// expensive or must remain stable for the full system share interaction.
@@ -57,7 +58,7 @@ public extension SBJShareButton where Label == SwiftUI.Label<Text, Image> {
             onPresent: onPresent,
             onDismiss: onDismiss
         ) {
-            Label(title, image: SBJSemanticImageReference.share)
+            Label(title, symbol: SBJSymbology.share)
                 //.labelStyle(.titleAndIcon)
         }
     }

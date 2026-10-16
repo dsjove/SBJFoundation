@@ -671,8 +671,8 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		let snapshot = Document.snapshotForExport(document.snapshot)
 		let writer = ExportArtifactWriter(directoryName: "DocumentExports", fileManager: location.fileManager)
 		let packageExtension = location.packageExtension
-		let preferredName = document.name.sanitizedFilename(removeSpaces: false)
-		let name = preferredName.hasContent ? preferredName : "Document"
+		let preferredName = document.name.sanitizedFilename()
+		let name = preferredName.isEmpty ? "Document" : preferredName
 		return try await Task.detached(priority: .userInitiated) {
 			let wrapper = try Document.fileWrapper(for: snapshot)
 			return try writer.write(wrapper, named: name, extension: packageExtension)

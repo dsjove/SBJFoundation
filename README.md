@@ -55,7 +55,7 @@ Directory placement communicates ownership; it does not create separate modules.
 
 See [Legacy Photo Workflow](Documentation/LEGACY_PHOTO.md) for the status and rewrite boundary of the quarantined photo APIs.
 
-`ImageReference` is the single concrete image reference type. It covers asset-catalog images, ordinary bundled image files, system symbols, and file-backed image sources with `none`, `asset`, `resource`, `system`, and `file` cases realized by SwiftUI/UIKit adapters. `SBJAssetReference` is deliberately separate: it is the generic data-loading reference for asset-catalog data sets and arbitrary bundle resources such as HTML/CSS. Both use the same bundle-resource lookup helper so processed-resource flattening is handled consistently.
+`ImageReference` is the single concrete image reference type. It covers asset-catalog images, ordinary bundled image files, system symbols, and file-backed image sources with `none`, `asset`, `resource`, `system`, and `file` cases realized by SwiftUI/UIKit adapters. `SBJBundledContentReference` is deliberately separate: it is the generic data-loading reference for asset-catalog data sets and arbitrary bundle resources such as HTML/CSS. Both use the same bundle-resource lookup helper so processed-resource flattening is handled consistently.
 
 ## Help
 
@@ -78,13 +78,13 @@ SBJStructure describes the structure of Codable models independently from busine
 
 SBJFoundation separates semantic resource identity from encoded payload:
 
-- `SBJResourceID` is the stable reference stored by structured/document models.
+- `SBJReferencedContentID` is the stable reference stored by structured/document models.
 - `SBJResourceContent` is an unnamed encoded payload: `Data` plus its Foundation `UTType`.
-- `SBJResourceDiscovery` finds `SBJResourceID` usages throughout generated SBJStructure graphs and standard containers.
+- `SBJReferencedContentTraversal` finds `SBJReferencedContentID` usages throughout generated SBJStructure graphs and standard containers.
 
 That boundary keeps file locations, UIKit objects, persistence callbacks, and application-specific attachment semantics out of structured models.
 
-`PhotoMenu` edits a `Binding<SBJResourceContent?>`. Files, Photos, and Paste preserve encoded image bytes and content type when available; Camera output is encoded off the main actor. `PhotoThumbnailView` and `PhotoDisplayView` provide reusable presentation around the same resource-content model. The application remains responsible for storing returned content, assigning or retaining `SBJResourceID`, garbage collection, and document-save policy.
+`PhotoMenu` edits a `Binding<SBJResourceContent?>`. Files, Photos, and Paste preserve encoded image bytes and content type when available; Camera output is encoded off the main actor. `PhotoThumbnailView` and `PhotoDisplayView` provide reusable presentation around the same resource-content model. The application remains responsible for storing returned content, assigning or retaining `SBJReferencedContentID`, garbage collection, and document-save policy.
 
 ## Search and editor filtering
 

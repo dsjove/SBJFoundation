@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 /// UI-independent helpers for deriving stable, human-readable identities for
 /// collection elements.

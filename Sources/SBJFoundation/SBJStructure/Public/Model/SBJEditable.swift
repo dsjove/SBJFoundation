@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 /// UI-independent description of a structured value whose writable properties
 /// can be consumed by editors or other mutation tools.

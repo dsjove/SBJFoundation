@@ -17,7 +17,7 @@ public struct SBJHelpTemplateRenderer {
     }
 
     public func renderedSource(
-        for asset: SBJAssetReference,
+        for asset: SBJBundledContentReference,
         substitutions: [String: String] = [:]
     ) -> String? {
         renderedSource(
@@ -27,7 +27,7 @@ public struct SBJHelpTemplateRenderer {
         )
     }
 
-    public func standardSubstitutions(for asset: SBJAssetReference) -> [String: String] {
+    public func standardSubstitutions(for asset: SBJBundledContentReference) -> [String: String] {
         let iconData: String
         #if canImport(UIKit)
         let icon = AppInfo.icon
@@ -50,7 +50,7 @@ public struct SBJHelpTemplateRenderer {
     }
 
     private func renderedSource(
-        for asset: SBJAssetReference,
+        for asset: SBJBundledContentReference,
         substitutions: [String: String],
         embeddedStack: Set<String>
     ) -> String? {
@@ -102,7 +102,7 @@ public struct SBJHelpTemplateRenderer {
             guard
                 let reference = configuration.semanticImages[name],
                 let encoded = encodeImage(
-                    reference.image?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)),
+                    reference.uiImage?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)),
                     alt: name
                 )
             else { continue }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import SBJLocalization
 @testable import SBJFoundation
 
 private struct Phase7Item: Codable, Hashable {

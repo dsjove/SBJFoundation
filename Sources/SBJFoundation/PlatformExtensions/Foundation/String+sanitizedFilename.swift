@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 public extension String {
 	func sanitizedFilename(
-		removeSpaces: Bool = false,
+		removeInnerWhiteSpace: Bool = false,
 		replacement: String = "-"
 	) -> String {
 		let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -40,11 +40,12 @@ public extension String {
 			result.removeLast(replacement.count)
 		}
 
-		if removeSpaces {
+		// Always remove surrounding whitespace, independently of inner whitespace handling.
+		result = result.trimmingCharacters(in: .whitespacesAndNewlines)
+
+		if removeInnerWhiteSpace {
 			result = result.replacingOccurrences(of: " ", with: "")
 		}
-
-		result = result.trimmingCharacters(in: .whitespacesAndNewlines)
 
 		let reservedWindowsNames: Set<String> = [
 			"CON", "PRN", "AUX", "NUL",

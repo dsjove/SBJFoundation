@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
   import SwiftUI
+import SBJLocalization
 
   /// Configuration distilled from structural property metadata for one editor field.
   @MainActor

@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJLocalization
 
 @MainActor
 struct SBJEditorPropertyInfoContainer: View {
@@ -79,7 +80,7 @@ struct SBJEditorPropertyInfoButton: View {
 
     var body: some View {
         SBJImageButton(
-            SBJSemanticImageReference.information,
+            SBJSymbology.information,
             accessibilityLabel: info.accessibilityLabel ?? "Information about \(title)",
             accessibilityHint: info.accessibilityHint ?? info.summary
         ) {

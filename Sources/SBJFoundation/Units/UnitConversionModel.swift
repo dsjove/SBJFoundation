@@ -1,4 +1,5 @@
 import Observation
+import SBJLocalization
 
 @Observable
 @MainActor

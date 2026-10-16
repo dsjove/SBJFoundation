@@ -1,3 +1,4 @@
+import SBJCamera
 #if !os(watchOS) && canImport(UIKit)
 import SwiftUI
 import UIKit
@@ -5,12 +6,13 @@ import Observation
 import UniformTypeIdentifiers
 #if !os(tvOS)
 import PhotosUI
+import SBJLocalization
 #endif
 
 public struct _DefaultPhotoMenuLabel: View {
     let isFilled: Bool
     public var body: some View {
-        Image(isFilled ? SBJImageSemanticImageReference.photoFilled : SBJImageSemanticImageReference.photo)
+        Image(symbol: isFilled ? SBJImageSymbology.photoFilled : SBJImageSymbology.photo)
             .controlSize(.regular)
             .buttonStyle(.borderedProminent)
             .accessibilityAddTraits(.isButton)
@@ -100,7 +102,7 @@ public struct PhotoMenu<Content: View>: View {
     @ViewBuilder
     private func menuItems(_ labelIsHidden: Bool, sharePresenter: SBJSharePresenter) -> some View {
         if options.contains(.view), resource != nil {
-            menuButton("View", labeled: !labelIsHidden, image: SBJImageSemanticImageReference.viewPhoto) {
+            menuButton("View", labeled: !labelIsHidden, image: SBJImageSymbology.viewPhoto) {
                 state.viewingResource = resource
             }
         }
@@ -111,41 +113,41 @@ public struct PhotoMenu<Content: View>: View {
                 prepare: { SBJSharePayload(image) }
             ) {
                 if !labelIsHidden {
-                    Label("Share", image: SBJSemanticImageReference.share)
+                    Label("Share", symbol: SBJSymbology.share)
                 } else {
-                    Image(SBJSemanticImageReference.share)
+                    Image(symbol: SBJSymbology.share)
                         .accessibilityLabel("Share")
                 }
             }
         }
 
         if options.contains(.photos) {
-            menuButton("Photos", labeled: !labelIsHidden, image: SBJImageSemanticImageReference.choosePhotos) {
+            menuButton("Photos", labeled: !labelIsHidden, image: SBJImageSymbology.choosePhotos) {
                 state.isPhotoPickerPresented = true
             }
         }
 
         if options.contains(.camera), PhotoMenuOptions.canShowCamera {
-            menuButton("Camera", labeled: !labelIsHidden, image: SBJImageSemanticImageReference.camera) {
+            menuButton("Camera", labeled: !labelIsHidden, image: SBJImageSymbology.camera) {
                 state.isCameraPresented = true
             }
         }
 
         if options.contains(.files) {
-            menuButton("Files", labeled: !labelIsHidden, image: SBJImageSemanticImageReference.chooseFile) {
+            menuButton("Files", labeled: !labelIsHidden, image: SBJImageSymbology.chooseFile) {
                 state.isFileImporterPresented = true
             }
         }
 
         if options.contains(.paste) {
-            menuButton("Paste", labeled: !labelIsHidden, image: SBJImageSemanticImageReference.pastePhoto) {
+            menuButton("Paste", labeled: !labelIsHidden, image: SBJImageSymbology.pastePhoto) {
                 importFromPasteboard()
             }
             .disabled(!state.canPasteImage)
         }
 
         if options.contains(.edit), let resource {
-            menuButton("Edit", labeled: !labelIsHidden, image: SBJImageSemanticImageReference.editPhoto) {
+            menuButton("Edit", labeled: !labelIsHidden, image: SBJImageSymbology.editPhoto) {
                 beginEditing(resource, restoringOnCancel: false)
             }
         }
@@ -154,7 +156,7 @@ public struct PhotoMenu<Content: View>: View {
             Button(role: .destructive) {
                 state.isPhotoClearPresented = true
             } label: {
-                Label("Clear", image: SBJSemanticImageReference.delete)
+                Label("Clear", symbol: SBJSymbology.delete)
             }
         }
     }
@@ -163,14 +165,14 @@ public struct PhotoMenu<Content: View>: View {
     private func menuButton(
         _ title: LocalizedStringKey,
         labeled: Bool,
-        image: ImageReference,
+        image: SBJSymbol,
         action: @escaping @MainActor () -> Void
     ) -> some View {
         Button(action: action) {
             if labeled {
-                Label(title, image: image)
+                Label(title, symbol: image)
             } else {
-                Image(image)
+                Image(symbol: image)
                     .accessibilityLabel(title)
             }
         }
@@ -406,7 +408,7 @@ public struct PhotoMenu<Content: View>: View {
                 Button(role: .destructive) {
                     state.isPhotoClearPresented = true
                 } label: {
-                    Label("Clear", image: SBJSemanticImageReference.delete)
+                    Label("Clear", symbol: SBJSymbology.delete)
                 }
             }
         } label: {
@@ -423,7 +425,7 @@ public struct PhotoMenu<Content: View>: View {
 #else
         SBJSharePresentationHost { sharePresenter in
             actions(
-                content: CollapsingMenu {
+                content: SBJSelectionMenu {
                     menuItems(false, sharePresenter: sharePresenter)
                 } collapsedContent: {
                     menuItems(true, sharePresenter: sharePresenter)

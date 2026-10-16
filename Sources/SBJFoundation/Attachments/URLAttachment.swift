@@ -1,5 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
+import SBJLocalization
 
 /// A concrete attachment presentation independent of attachment storage.
 ///

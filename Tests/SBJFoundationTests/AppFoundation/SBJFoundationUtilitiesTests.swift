@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import SBJLocalization
 @testable import SBJFoundation
 
 @Suite("Foundation utilities")
@@ -31,6 +32,8 @@ struct SBJFoundationUtilitiesTests {
         #expect(accessible.accessibilityLabel == "Label")
         #expect(accessible.accessibilityHint == "Hint")
         #expect(accessible.accessibilityValue == "Value")
+        #expect(info.accessibility == AccessibleItem(label: "Label", hint: "Hint", value: "Value"))
+        #expect(SBJPropertyInfo(summary: "Summary", details: "Details", accessibility: info.accessibility) == info)
     }
 
     @Test func accessibleItemRetainsOriginalInitializer() {

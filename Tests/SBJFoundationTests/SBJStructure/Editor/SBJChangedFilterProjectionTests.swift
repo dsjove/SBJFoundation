@@ -43,7 +43,7 @@ struct SBJChangedFilterProjectionTests {
         let rows = sbjEditorRows(roots: [tree(fixture)], presentationModel: model)
         #expect(rows.map(\.name) == ["Capabilities", "Skills", "Arcana", "Mark"])
         #expect(rows.map(\.depth) == [0, 1, 2, 3])
-        #expect(rows[3].endDividerLevels == [4, 3, 2])
+        #expect(rows[3].endDividerLevels == [3, 2, 1])
     }
 
     @Test("Filter toggling and restoring the value do not retain stale matches")

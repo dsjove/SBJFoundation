@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import SBJLocalization
 
 public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 	typealias Tag = T.Tag
@@ -35,7 +36,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 					List {
 						if sortedTags.isEmpty {
 							Button(action: addTag) {
-								Label("Add Tag", image: SBJSemanticImageReference.add)
+								Label("Add Tag", symbol: SBJSymbology.add)
 							}
 							.buttonStyle(.borderedProminent)
 						} else {
@@ -102,8 +103,8 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
                                         .accessibilityValue(tag.displayName)
                                         SBJImageButton(
                                             user.isTagPrimary(tag)
-                                                ? SBJTagSemanticImageReference.primaryTag
-                                                : SBJTagSemanticImageReference.notPrimaryTag,
+                                                ? SBJTagSymbology.primaryTag
+                                                : SBJTagSymbology.notPrimaryTag,
                                             propertyInfo: T.propertyInfo(for: \T.__primaryTagID)
                                                 ?? SBJPropertyInfo(
                                                     summary: "Primary tag",
@@ -159,7 +160,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 				ToolbarItemGroup(placement: .topBarTrailing) {
 					SBJAddButton("Tag", action: addTag)
 	#if !os(watchOS)
-					SBJHelpLink(asset: .editTags, configuration: SBJTagSemanticImageReference.helpConfiguration)
+					SBJHelpLink(asset: .editTags, configuration: SBJTagSymbology.helpConfiguration)
 	#endif
 				}
 			}

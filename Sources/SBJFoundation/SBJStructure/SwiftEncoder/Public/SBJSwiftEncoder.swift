@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 /// Describes how one designated initializer parameter maps to a stored property.
 public struct SBJSwiftInitializerParameter: Sendable, Equatable {

@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import SBJLocalization
 
 @SBJStructure
 public struct NormalizedPhotoOffset: SBJFoundationType, Sendable {

@@ -36,7 +36,7 @@ struct SBJSingleLineTextEditor: View {
             )
             .sbjEditorAccessibleControl(label: label, status: rowStatus)
 
-        if let sizing = SBJTextFieldWidth.singleLine(maximumLength: maximumLength) {
+        if let sizing = SBJTextFieldSizing.singleLine(maximumLength: maximumLength) {
             base.sbjPreferredFieldWidth(sizing)
         } else {
             base

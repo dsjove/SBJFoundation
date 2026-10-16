@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 
 /// Shared primitive for compact icon-only actions.
 ///
@@ -25,6 +26,27 @@ public struct SBJImageButton: View {
         self.accessibilityLabel = accessibilityLabel
         self.accessibilityHint = accessibilityHint
         self.action = action
+    }
+
+    /// Semantic-symbol convenience, preserving ImageReference as the general image API.
+    public init(
+        _ symbol: SBJSymbol,
+        role: ButtonRole? = nil,
+        accessibilityLabel: String,
+        accessibilityHint: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.init(.symbol(symbol), role: role, accessibilityLabel: accessibilityLabel, accessibilityHint: accessibilityHint, action: action)
+    }
+
+    public init(
+        _ symbol: SBJSymbol,
+        role: ButtonRole? = nil,
+        propertyInfo: SBJPropertyInfo,
+        fallbackAccessibilityLabel: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.init(.symbol(symbol), role: role, propertyInfo: propertyInfo, fallbackAccessibilityLabel: fallbackAccessibilityLabel, action: action)
     }
 
     /// Creates an image button whose accessibility contract comes directly from

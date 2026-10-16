@@ -1,3 +1,4 @@
+import SBJCamera
 import SwiftUI
 import PhotosUI
 import UIKit

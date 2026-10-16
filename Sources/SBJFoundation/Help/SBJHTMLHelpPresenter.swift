@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import UniformTypeIdentifiers
+import SBJLocalization
 
 public struct SBJHTMLHelpPresenter: SBJHelpContentPresenter {
     public let contentType: UTType = .html
@@ -62,7 +63,7 @@ private struct SBJHTMLHelpPresentation: View {
                         Circle()
                             .stroke(Color.primary.opacity(0.5))
                             .frame(width: 32, height: 32)
-                        Image(scrollState == .atBottom ? SBJSemanticImageReference.scrollToTop : SBJSemanticImageReference.scrollPageDown)
+                        Image(symbol: scrollState == .atBottom ? SBJSymbology.scrollToTop : SBJSymbology.scrollPageDown)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Color.primary.opacity(0.5))
                     }

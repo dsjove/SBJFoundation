@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJLocalization
 
 /// Pure accessibility wording used by generated field controls.
 ///
@@ -26,13 +27,13 @@ private struct SBJEditorAccessibleControlModifier: ViewModifier {
     let status: SBJEditorRowStatus
 
     func body(content: Content) -> some View {
-        content.accessibilityLabel(
-            SBJEditorAccessibilitySemantics.spokenLabel(
+        content.accessibility(
+            AccessibleItem(label: SBJEditorAccessibilitySemantics.spokenLabel(
                 label: label,
                 isChanged: status.isChanged,
                 hasContent: status.hasContent,
                 isInvalid: status.isInvalid
-            )
+            ))
         )
     }
 }

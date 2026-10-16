@@ -1,5 +1,6 @@
 #if !os(watchOS)
 import SwiftUI
+import SBJLocalization
 
 /// Shared help presentation chrome for every help representation.
 ///
@@ -10,7 +11,7 @@ import SwiftUI
 public struct SBJHelpSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    public let asset: SBJAssetReference
+    public let asset: SBJBundledContentReference
     public let substitutions: [String: String]
     public let configuration: SBJHelpConfiguration
     public let showAbout: Bool
@@ -19,7 +20,7 @@ public struct SBJHelpSheet: View {
     @State private var showAboutSheet = false
 
     public init(
-        asset: SBJAssetReference,
+        asset: SBJBundledContentReference,
         substitutions: [String: String] = [:],
         configuration: SBJHelpConfiguration = .standard,
         showAbout: Bool = true,
@@ -43,7 +44,7 @@ public struct SBJHelpSheet: View {
         return SBJHelpPresenters.builtIn(for: contentType)
     }
 
-    private var availableAboutAsset: SBJAssetReference? {
+    private var availableAboutAsset: SBJBundledContentReference? {
         guard showAbout, let about = configuration.aboutAsset, about.exists else { return nil }
         return about
     }
@@ -56,13 +57,13 @@ public struct SBJHelpSheet: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button { dismiss() } label: {
-                            Label("Dismiss", image: SBJSemanticImageReference.dismiss)
+                            Label("Dismiss", symbol: SBJSymbology.dismiss)
                         }
                     }
                     if availableAboutAsset != nil {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button { showAboutSheet = true } label: {
-                                Label("About", image: SBJSemanticImageReference.about)
+                                Label("About", symbol: SBJSymbology.about)
                             }
                         }
                     }
@@ -96,13 +97,13 @@ public struct SBJHelpSheet: View {
             presenter.makeView(source: source)
         } else if resolvedSource == nil {
             ContentUnavailableView {
-                Label("Help Unavailable", image: SBJSemanticImageReference.helpUnavailable)
+                Label("Help Unavailable", symbol: SBJSymbology.helpUnavailable)
             } description: {
                 Text("Help is unavailable for this part of the app.")
             }
         } else {
             ContentUnavailableView {
-                Label("Unsupported Help Format", image: SBJSemanticImageReference.unsupportedHelp)
+                Label("Unsupported Help Format", symbol: SBJSymbology.unsupportedHelp)
             } description: {
                 Text("This help format cannot be displayed.")
             }

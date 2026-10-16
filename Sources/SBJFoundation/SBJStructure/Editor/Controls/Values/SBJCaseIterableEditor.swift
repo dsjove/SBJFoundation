@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
+import SBJLocalization
 
 struct SBJCaseIterableEditor<Value>: View {
     let label: String
@@ -8,30 +9,29 @@ struct SBJCaseIterableEditor<Value>: View {
     let options: [Value]
     let labelIsUnknown: Bool
 
-    private var selectedIndex: Int {
-        guard let current = value as? AnyHashable else { return 0 }
-        return options.firstIndex { ($0 as? AnyHashable) == current } ?? 0
+    private var selectedIndex: Int? {
+        guard let current = value as? AnyHashable else { return nil }
+        return options.firstIndex { ($0 as? AnyHashable) == current }
     }
 
     var rowStatus: SBJEditorRowStatus = .init()
 
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
-            Menu {
-                ForEach(Array(options.enumerated()), id: \.offset) { index, option in
-                    Button(sbjCaseIterablePresentation(option)) {
+            SBJSelectionMenu(
+                selection: Binding<Int?>(
+                    get: { selectedIndex },
+                    set: { index in
+                        guard let index, options.indices.contains(index) else { return }
                         value = options[index]
                     }
-                }
-            } label: {
-                SBJCompactMenuLabel(
-                    text: sbjCaseIterablePresentation(value),
-                    options: options.map(sbjCaseIterablePresentation)
-                )
-            }
-            .controlSize(.mini)
-            .fixedSize()
-            .sbjActiveControl(horizontalPadding: 4, verticalPadding: 0)
+                ),
+                choices: options.enumerated().map {
+                    SBJMenuChoice(id: $0.offset, title: sbjCaseIterablePresentation($0.element))
+                },
+                currentTitle: sbjCaseIterablePresentation(value),
+                invalidSelection: selectedIndex == nil
+            )
             .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
     }

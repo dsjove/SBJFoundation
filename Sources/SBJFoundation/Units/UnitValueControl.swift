@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 
 /// Compact reusable control for a numeric value paired with a unit.
 ///
@@ -46,7 +47,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
 
     @ViewBuilder
     private var unitControl: some View {
-        if !unitEditable || units.count <= 1 {
+        if !unitEditable {
             Text(value.unit.symbol)
                 .foregroundStyle(.secondary)
                 .fixedSize()
@@ -64,25 +65,20 @@ public struct UnitValueControl<Unit: UnitType>: View {
             }
             .accessibilityLabel(UnitValue<Unit>.propertyInfo(for: \UnitValue<Unit>.unit)?.accessibilityLabel ?? "Unit")
 #else
-            Menu {
-                ForEach(units) { option in
-                    Button {
-                        value = value.converted(to: option)
-                    } label: {
-                        if option == value.unit {
-                            Label(option.displayName, image: SBJSemanticImageReference.selected)
-                        } else {
-                            Text(option.displayName)
-                        }
+            SBJSelectionMenu(
+                selection: Binding<Int?>(
+                    get: { units.firstIndex(of: value.unit) },
+                    set: { index in
+                        guard let index, units.indices.contains(index) else { return }
+                        value = value.converted(to: units[index])
                     }
-                }
-                .labelStyle(.titleAndIcon)
-            } label: {
-                SBJCompactMenuLabel(text: value.unit.symbol, options: units.map(\.symbol))
-            }
-            .controlSize(.mini)
-            .fixedSize()
-            .sbjActiveControl(horizontalPadding: 4, verticalPadding: 0)
+                ),
+                choices: units.enumerated().map {
+                    SBJMenuChoice(id: $0.offset, title: $0.element.displayName)
+                },
+                currentTitle: value.unit.symbol,
+                invalidSelection: !units.contains(value.unit)
+            )
             .accessibilityLabel(UnitValue<Unit>.propertyInfo(for: \UnitValue<Unit>.unit)?.accessibilityLabel ?? "Unit")
             .accessibilityValue(value.unit.displayName)
 #endif

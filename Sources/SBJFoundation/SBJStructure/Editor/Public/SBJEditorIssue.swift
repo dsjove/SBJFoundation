@@ -91,6 +91,7 @@ public enum SBJEditorDiagnostics {
 }
 
 import SwiftUI
+import SBJLocalization
 
 public struct SBJEditorIssueList: View {
     public let issues: [SBJEditorIssue]
@@ -135,7 +136,7 @@ public struct SBJEditorIssueList: View {
 
                             if let navigate {
                                 SBJImageButton(
-                                    SBJSemanticImageReference.navigateToProperty,
+                                    SBJSymbology.navigateToProperty,
                                     accessibilityLabel: "Go to \(issue.path)",
                                     accessibilityHint: "Closes the issue viewer and reveals this property in the editor"
                                 ) {

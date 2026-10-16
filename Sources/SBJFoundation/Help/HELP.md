@@ -18,9 +18,9 @@ directly from SBJFoundation.
 
 ## Source organization
 
-`SBJAssetReference` lives with the Foundation/resource support and is the generic reference/loading boundary for asset-catalog data sets and ordinary bundle resources.
+`SBJBundledContentReference` lives with the Foundation/resource support and is the generic reference/loading boundary for asset-catalog data sets and ordinary bundle resources.
 
-`SBJAssetReference` itself lives in `PlatformExtensions/Foundation`; `Sources/SBJFoundation/Help/` contains:
+`SBJBundledContentReference` itself lives in `PlatformExtensions/Foundation`; `Sources/SBJFoundation/Help/` contains:
 
 - `SBJHelpTemplateRenderer` — standard and caller token expansion.
 - `SBJHelpContentPresenter` / `SBJAnyHelpContentPresenter` — format-specific presentation boundary.
@@ -36,7 +36,7 @@ directly from SBJFoundation.
 Help formats are identified by `UniformTypeIdentifiers.UTType`; SBJFoundation does not define a
 parallel `SBJHelpFormat` enumeration or identifier namespace.
 
-`SBJAssetReference` is the generic reference for both asset-catalog data sets and ordinary bundle
+`SBJBundledContentReference` is the generic reference for both asset-catalog data sets and ordinary bundle
 resources. It carries a `displayName` because resources outside the help system also need a
 human-readable presentation name. For bundle resources, `resourceName` is optional: when omitted,
 it is derived from `displayName` with `String.sanitizedFilename(removeSpaces: true)`. This keeps the
@@ -44,12 +44,12 @@ visible name and default filename convention in one place while still allowing a
 name when they intentionally differ.
 
 ```swift
-let html = SBJAssetReference(
+let html = SBJBundledContentReference(
     displayName: "Recipe Details",
     subdirectory: "help"
 )
 
-let catalogData = SBJAssetReference(
+let catalogData = SBJBundledContentReference(
     displayName: "Recipe Details",
     dataAsset: "help/RecipeDetails",
     contentType: .html
@@ -60,14 +60,14 @@ For asset-catalog data sets, the content type normally comes from `NSDataAsset.t
 explicit type overrides it. For bundle resources, the type is inferred from the filename extension
 unless explicitly overridden.
 
-HTML help uses the standard `SBJAssetReference.help(...)` factory, which supplies the `html` extension,
+HTML help uses the standard `SBJBundledContentReference.help(...)` factory, which supplies the `html` extension,
 the lowercase `help` source subdirectory, and `.main` bundle. Application call sites normally need
 only the display name; the sanitized display name becomes the resource filename automatically.
 
 ## Framework-bundled and embedded help
 
-SBJFoundation ships two non-overlapping generated-editor fragments: `SBJAssetReference.structureEditorCore`
-for structural value states and controls, and `SBJAssetReference.structureEditorSearch` for search/filter
+SBJFoundation ships two non-overlapping generated-editor fragments: `SBJBundledContentReference.structureEditorCore`
+for structural value states and controls, and `SBJBundledContentReference.structureEditorSearch` for search/filter
 behavior. An application can present either resource exactly like application-owned help:
 
 ```swift
@@ -89,7 +89,7 @@ embedded assets to the configuration. Recursive inclusion is guarded against by 
 The built-in presenter registry supports HTML and Markdown. Presenter selection uses the asset's
 resolved `UTType`; a presenter may also be supplied explicitly.
 
-A future format does not require a change to `SBJAssetReference` or `SBJHelpSheet`. Define or obtain an
+A future format does not require a change to `SBJBundledContentReference` or `SBJHelpSheet`. Define or obtain an
 appropriate `UTType`, conform a presenter to `SBJHelpContentPresenter`, and pass its type-erased
 form where help is presented.
 
@@ -129,7 +129,7 @@ substitutions are applied last. Later values therefore override earlier values.
 
 SF Symbol and application-asset token rasterization remains HTML-renderer work because those
 values become embedded image data inside the HTML document. UI controls surrounding the document
-do not hard-code symbol strings; they use `SBJSemanticImageReference`.
+do not hard-code symbol strings; they use `SBJSymbology`.
 
 ## Markdown help
 
@@ -146,7 +146,7 @@ SBJFoundation trigger, sheet, and presenter pipeline.
 
 Where `SwiftUI.HelpLink` is available, `SBJHelpLink` uses it. The SwiftUI API is explicitly
 unavailable in the iOS SDK, and Mac Catalyst compiles against that SDK surface. On iOS and Catalyst,
-`SBJHelpLink` therefore uses an `SBJImageButton` with `SBJSemanticImageReference.help` as the
+`SBJHelpLink` therefore uses an `SBJImageButton` with `SBJSymbology.help` as the
 platform fallback. This is a presentation fallback only; help behavior and content are identical.
 
 The platform conditional must remain compile-time. Referencing `SwiftUI.HelpLink` in an iOS or
@@ -159,7 +159,7 @@ uses the same `SBJHelpTrigger` and `SBJHelpSheet` pipeline; only the visible con
 
 ## Shared UI vocabulary
 
-Help-owned UI symbols are semantic entries in `SBJSemanticImageReference`, including Help, About,
+Help-owned UI symbols are semantic entries in `SBJSymbology`, including Help, About,
 Dismiss, unavailable/unsupported help, page down, and scroll-to-top. Help views consume those
 references through `Image`, `Label`, or `SBJImageButton` rather than embedding raw SF Symbol names.
 
@@ -205,9 +205,9 @@ HTML help can use `UI_name\` tokens for controls that are part of the shared UI 
 
 ## Bundled Foundation help
 
-`SBJAssetReference.structureEditorCore` and `.structureEditorSearch` are packaged with SBJFoundation and may be presented directly or embedded with the standard `SBJ_STRUCTURE_EDITOR_CORE_HELP` and `SBJ_STRUCTURE_EDITOR_SEARCH_HELP` tokens. Bundle-resource lookup tolerates processed-resource flattening, so the authored `Resources/help` organization does not have to match the generated bundle layout.
+`SBJBundledContentReference.structureEditorCore` and `.structureEditorSearch` are packaged with SBJFoundation and may be presented directly or embedded with the standard `SBJ_STRUCTURE_EDITOR_CORE_HELP` and `SBJ_STRUCTURE_EDITOR_SEARCH_HELP` tokens. Bundle-resource lookup tolerates processed-resource flattening, so the authored `Resources/help` organization does not have to match the generated bundle layout.
 
 
 ## Resource directory layout
 
-Source resources are organized into `Resources/help`, but runtime lookup must not rely on that directory surviving resource processing. SwiftPM `.process` recursively processes files and places otherwise-unprocessed outputs at the resource bundle top level; preserving a directory hierarchy requires `.copy`. Xcode bundle-resource processing similarly guarantees placement in the bundle resource area, not the source-tree group hierarchy. `SBJAssetReference` therefore tries the authored subdirectory first and the bundle root second.
+Source resources are organized into `Resources/help`, but runtime lookup must not rely on that directory surviving resource processing. SwiftPM `.process` recursively processes files and places otherwise-unprocessed outputs at the resource bundle top level; preserving a directory hierarchy requires `.copy`. Xcode bundle-resource processing similarly guarantees placement in the bundle resource area, not the source-tree group hierarchy. `SBJBundledContentReference` therefore tries the authored subdirectory first and the bundle root second.

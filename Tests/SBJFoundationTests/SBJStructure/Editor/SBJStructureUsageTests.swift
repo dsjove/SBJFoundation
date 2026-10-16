@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Testing
+import SBJLocalization
 @testable import SBJFoundation
 
 @SBJStructure

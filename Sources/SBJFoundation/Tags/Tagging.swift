@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import SBJLocalization
 
 public protocol Tagging:
 	AnyObject,

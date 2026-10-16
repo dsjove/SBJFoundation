@@ -21,24 +21,22 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
         HStack(spacing: 8) {
             SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
                 .accessibilityHidden(true)
-            Menu {
-                ForEach(Array(Value.sbjEditorEnumCases.enumerated()), id: \.offset) { _, enumCase in
-                    Button(enumCase.name) {
-                        if let replacement = enumCase.makeDefaultValue() {
-                            value = replacement
-                        }
+            SBJSelectionMenu(
+                selection: Binding<Int?>(
+                    get: { Value.sbjEditorEnumCases.firstIndex(where: { $0.matches(value) }) },
+                    set: { index in
+                        guard let index, Value.sbjEditorEnumCases.indices.contains(index),
+                              let replacement = Value.sbjEditorEnumCases[index].makeDefaultValue()
+                        else { return }
+                        value = replacement
                     }
-                    .disabled(!enumCase.canCreate)
-                }
-            } label: {
-                SBJCompactMenuLabel(
-                    text: selectedCase?.name ?? "Unknown",
-                    options: Value.sbjEditorEnumCases.map(\.name)
-                )
-            }
-            .controlSize(.mini)
-            .fixedSize()
-            .sbjActiveControl(horizontalPadding: 4, verticalPadding: 0)
+                ),
+                choices: Value.sbjEditorEnumCases.enumerated().map {
+                    SBJMenuChoice(id: $0.offset, title: $0.element.name, isEnabled: $0.element.canCreate)
+                },
+                currentTitle: selectedCase?.name ?? String(describing: value),
+                invalidSelection: selectedCase == nil
+            )
             .sbjEditorAccessibleControl(label: label, status: rowStatus)
             Spacer(minLength: 0)
         }
