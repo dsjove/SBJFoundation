@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 import UIKit
 import SwiftUI
 
@@ -67,7 +68,7 @@ public struct CodableFont: SBJFoundationType, Comparable, Hashable, Sendable, Cu
 	}
 
 	/// Font family name. `nil` means the system font.
-	@SBJPresentation(.fontFamily)
+	@SBJEditorFontFamily
 	public var name: String?
 	public var size: Double
 	public var weight: Weight

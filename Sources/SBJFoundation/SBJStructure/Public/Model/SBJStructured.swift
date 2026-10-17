@@ -15,6 +15,7 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
     /// The default implementation returns `nil`. Applications may implement this
     /// method to provide documentation consumed by editors or any other UI/tool.
     static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo?
+    static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo?
 
     /// Returns a sensible default instance when the structured type can be
     /// constructed without application-specific context. `@SBJStructure`
@@ -33,7 +34,11 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
 }
 
 public extension SBJStructured {
-    static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? { nil }
+    static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+        _propertyInfo(for: keyPath)
+    }
+
+    static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? { nil }
 
     static func sbjDefaultValue() -> Self? { nil }
 
@@ -201,7 +206,11 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
     case numberRange(ClosedRange<Double>)
     case numberMinimum(Double)
     case required(Bool)
+    /// Whether changing the unit is prohibited by the property definition.
+    case immutableUnit(Bool)
     case count(min: Int?, max: Int?)
+    /// Whether reordering the collection is a permitted data mutation.
+    case reorderable(Bool)
     case unique
     /// Human-readable representation of the compiler-checked element key path.
     /// Generated validation retains and uses the actual key path expression.
@@ -215,13 +224,11 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
 /// Non-invariant usage or presentation information declared on a model property.
 /// Consumers may honor these hints, but they do not participate in validation.
 public enum SBJPropertyHint: Sendable, Equatable {
-    case presentation(SBJPropertyPresentation)
+    case fontFamilyEditor
     case textStyle(SBJStringStyle)
     case textAutocorrection(SBJTextAutocorrection)
     case textCapitalization(SBJTextCapitalization)
-    case reorderable(Bool)
     case colorSupportsAlpha(Bool)
-    case unitEditor(SBJUnitValueEditorMode)
     /// Human-readable representation of the compiler-checked item-title key path.
     case itemTitle(String)
 }

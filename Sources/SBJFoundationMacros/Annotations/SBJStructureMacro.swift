@@ -49,6 +49,18 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         in context: some MacroExpansionContext
     ) -> [DeclSyntax] {
         let codedNames = codingKeyNames(in: structDecl)
+        // Named static declarations (`nameInfo`, etc.) provide zero-boilerplate
+        // metadata. The underscored implementation remains callable by explicit
+        // static propertyInfo(for:) overrides, including overrides in extensions.
+        let conventionalInfoNames: Set<String> = Set(structDecl.memberBlock.members.compactMap { member in
+            guard let variable = member.decl.as(VariableDeclSyntax.self),
+                  variable.modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) }),
+                  let binding = variable.bindings.first,
+                  let id = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
+                  id.hasSuffix("Info") else { return nil }
+            return String(id.dropLast(4))
+        })
+
         let access = effectiveAccessPrefix(modifiers: structDecl.modifiers, in: context)
 
         var propertyEntries: [String] = []
@@ -124,15 +136,17 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 )
 
                 // Structural content and invariant generation is independent of
-                // editor eligibility. Read-only and @SBJNotEditable properties
+                // editor eligibility. Read-only and @SBJEditorExclude properties
                 // remain part of the declared model and are validated when a
                 // consumer explicitly invokes the invariant.
                 contentMembers.append(name)
                 let arrayOptions = arrayOptions(on: variable)
+                let arrayTitle = editorTitle(on: variable, annotation: "SBJEditorArray")
                 let setOptions = setOptions(on: variable)
-                if let itemTitleKey = arrayOptions.title {
+                let setTitle = editorTitle(on: variable, annotation: "SBJEditorSet")
+                if let itemTitleKey = arrayTitle {
                     invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(swiftStringLiteral(itemTitleKey)))")
-                } else if let itemTitleKey = setOptions.title {
+                } else if let itemTitleKey = setTitle {
                     invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(swiftStringLiteral(itemTitleKey)))")
                 } else {
                     invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)))")
@@ -179,8 +193,8 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(numberMinimum), at: keyPath.appending(\\Self.\(name)))")
                     constraintMetadata.append(".numberMinimum(\(numberMinimum))")
                 }
-                if let unitEditor = unitValueEditor(on: variable) {
-                    hintMetadata.append(".unitEditor(\(unitEditor))")
+                if let immutableUnit = unitValueImmutable(on: variable) {
+                    constraintMetadata.append(".immutableUnit(\(immutableUnit))")
                 }
                 if let unitMinimum = unitValueMinimum(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(unitMinimum), at: keyPath.appending(\\Self.\(name)))")
@@ -250,8 +264,8 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                     constraintMetadata.append(".urlKinds(\(allowedURLKinds))")
                 }
 
-                if let presentation = propertyPresentation(on: variable) {
-                    hintMetadata.append(".presentation(\(presentation))")
+                if hasAttribute(named: "SBJEditorFontFamily", on: variable) {
+                    hintMetadata.append(".fontFamilyEditor")
                 }
 
                 if let colorAlpha = colorAlpha(on: variable) {
@@ -259,9 +273,9 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 }
 
                 if let reorderable = arrayOptions.reorderable {
-                    hintMetadata.append(".reorderable(\(reorderable))")
+                    constraintMetadata.append(".reorderable(\(reorderable))")
                 }
-                if let title = arrayOptions.title ?? setOptions.title {
+                if let title = arrayTitle ?? setTitle {
                     hintMetadata.append(".itemTitle(\"\(title)\")")
                 }
 
@@ -272,7 +286,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 )
 
                 // Everything below this point is editor-only.
-                if hasAttribute(named: "SBJNotEditable", on: variable) { continue }
+                if hasAttribute(named: "SBJEditorExclude", on: variable) { continue }
 
                 // Immutable stored properties remain part of structure metadata,
                 // export, content checks, and invariants, but are simply not editable.
@@ -287,10 +301,34 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
             }
         }
 
+        let hasExplicitGeneratedInfo = structDecl.memberBlock.members.contains { member in
+            guard let method = member.decl.as(FunctionDeclSyntax.self) else { return false }
+            return method.name.text == "_propertyInfo"
+        }
+        let conventionalEntries = structDecl.memberBlock.members.compactMap { member -> String? in
+            guard let variable = member.decl.as(VariableDeclSyntax.self),
+                  !variable.modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) || $0.name.tokenKind == .keyword(.class) }) else { return nil }
+            return variable.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text
+        }.filter { conventionalInfoNames.contains($0) && (codedNames == nil || codedNames!.contains($0)) }
+
         let propertyBody = propertyEntries.joined(separator: ",\n")
         let editableBody = editableEntries.joined(separator: ",\n")
         let body = entries.joined(separator: ",\n")
-        var result: [DeclSyntax] = [
+        var result: [DeclSyntax] = []
+        if !hasExplicitGeneratedInfo {
+            let generatedCases = conventionalEntries.map { name in
+                "case \\Self.\(name): return Self.\(name)Info"
+            }.joined(separator: "\n                ")
+            result.append(DeclSyntax(stringLiteral: """
+            \(access)static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                switch keyPath as AnyKeyPath {
+                \(generatedCases)
+                default: return nil
+                }
+            }
+            """))
+        }
+        result += [
             DeclSyntax(stringLiteral: """
             \(access)static var sbjProperties: [SBJPropertyMetadata<Self>] {
                 [
@@ -747,23 +785,10 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         return nil
     }
 
-    private static func propertyPresentation(on variable: VariableDeclSyntax) -> String? {
-        for element in variable.attributes {
-            guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJPresentation" else { continue }
-            guard let rawArguments = attribute.arguments,
-                  case .argumentList(let arguments) = rawArguments,
-                  let argument = arguments.first else { return nil }
-            return argument.expression.trimmedDescription
-        }
-        return nil
-    }
-
-
     private static func textStyle(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJString" else { continue }
+            guard attribute.attributeName.trimmedDescription == "SBJEditorString" else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments,
                   let argument = arguments.first else {
@@ -788,7 +813,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
     private static func textInputOptions(on variable: VariableDeclSyntax) -> (autocorrect: String?, capitalization: String?) {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJString" else { continue }
+            guard attribute.attributeName.trimmedDescription == "SBJEditorString" else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else { return (nil, nil) }
 
@@ -847,13 +872,13 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         return (nil, nil)
     }
 
-    private static func unitValueEditor(on variable: VariableDeclSyntax) -> String? {
+    private static func unitValueImmutable(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
             guard attribute.attributeName.trimmedDescription == "SBJUnitValue" else { continue }
             guard let rawArguments = attribute.arguments,
-                  case .argumentList(let arguments) = rawArguments else { return nil }
-            return arguments.first(where: { $0.label?.text == "editor" })?.expression.trimmedDescription
+                  case .argumentList(let arguments) = rawArguments else { return "false" }
+            return arguments.first(where: { $0.label?.text == "immutableUnit" })?.expression.trimmedDescription ?? "false"
         }
         return nil
     }
@@ -909,6 +934,19 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
             .replacingOccurrences(of: "\r", with: "\\r")
             .replacingOccurrences(of: "\t", with: "\\t")
         return "\"\(escaped)\""
+    }
+
+    private static func editorTitle(on variable: VariableDeclSyntax, annotation: String) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == annotation,
+                  let raw = attribute.arguments,
+                  case .argumentList(let args) = raw,
+                  let argument = args.first(where: { $0.label?.text == "title" }) else { continue }
+            let expression = argument.expression.trimmedDescription
+            return expression == "nil" ? nil : keyPathPropertyName(from: expression)
+        }
+        return nil
     }
 
     private static func arrayOptions(on variable: VariableDeclSyntax) -> (reorderable: String?, title: String?, minCount: String?, maxCount: String?, unique: String?, uniqueBy: String?) {

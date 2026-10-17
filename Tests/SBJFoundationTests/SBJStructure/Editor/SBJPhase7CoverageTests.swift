@@ -10,7 +10,8 @@ private struct Phase7Item: Codable, Hashable {
 
 @SBJStructure
 private struct Phase7RuleModel: Codable {
-    @SBJString(.multiline, minLength: 1, maxLength: 8)
+    @SBJString(minLength: 1, maxLength: 8)
+    @SBJEditorString(.multiline)
     var text: String = "a"
 
     @SBJInteger(range: 1...3)
@@ -22,10 +23,12 @@ private struct Phase7RuleModel: Codable {
     @SBJOptional(required: false)
     var optional: String?
 
-    @SBJArray(reorderable: true, title: \Phase7Item.name, minCount: 1, maxCount: 2, uniqueBy: \Phase7Item.id)
+    @SBJArray(reorderable: true, minCount: 1, maxCount: 2, uniqueBy: \Phase7Item.id)
+    @SBJEditorArray(title: \Phase7Item.name)
     var array: [Phase7Item] = [.init(id: 1, name: "one")]
 
-    @SBJSet(title: \Phase7Item.name, minCount: 1, maxCount: 2)
+    @SBJSet(minCount: 1, maxCount: 2)
+    @SBJEditorSet(title: \Phase7Item.name)
     var set: Set<Phase7Item> = [.init(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
@@ -74,8 +77,8 @@ struct SBJPhase7CoverageTests {
         #expect(optional?.constraints == [.required(false)])
 
         let array = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.array)
-        #expect(array?.constraints == [.count(min: 1, max: 2), .uniqueBy("\\Phase7Item.id")])
-        #expect(array?.hints == [.reorderable(true), .itemTitle("name")])
+        #expect(array?.constraints == [.count(min: 1, max: 2), .uniqueBy("\\Phase7Item.id"), .reorderable(true)])
+        #expect(array?.constraints.contains(.reorderable(true)) == true && array?.hints == [.itemTitle("name")])
 
         let set = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.set)
         #expect(set?.constraints == [.count(min: 1, max: 2)])

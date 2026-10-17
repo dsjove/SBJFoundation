@@ -52,6 +52,6 @@ It is intentionally **internal but not DEBUG-only** so it can serve three purpos
 - the standalone `SBJEditField` preview;
 - `@testable` integration tests.
 
-Both editor previews must use this model rather than maintaining independent fixture families. Extra properties needed only to exercise standalone editor dispatch are marked `@SBJNotEditable` so they remain available for direct bindings without cluttering the automatic editor.
+Both editor previews must use this model rather than maintaining independent fixture families. Extra properties needed only to exercise standalone editor dispatch are marked `@SBJEditorExclude` so they remain available for direct bindings without cluttering the automatic editor.
 
 Focused unit tests should still define tiny local fixtures when a test needs a very specific shape. The canonical sample model is for cross-feature integration coverage, not a replacement for precise unit fixtures.

@@ -10,7 +10,7 @@ struct SBJStructureSampleModelTests {
     let ingredients = SBJStructureSampleModel.propertyMetadata(
       for: \SBJStructureSampleModel.ingredients)
     #expect(ingredients?.kind == .array)
-    #expect(ingredients?.hints.contains(.reorderable(true)) == true)
+    #expect(ingredients?.constraints.contains(.reorderable(true)) == true)
 
     let sourceURL = SBJStructureSampleModel.propertyMetadata(
       for: \SBJStructureSampleModel.sourceURL)

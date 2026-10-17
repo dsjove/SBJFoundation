@@ -39,7 +39,7 @@
               SBJEditField(
                 "Sheet-edit String", value: $model.editorSheetText, textStyle: .sheetEdit)
               SBJEditField(
-                "Font Family", value: $model.recipeCardFontFamily, presentation: .fontFamily)
+                "Font Family", value: $model.recipeCardFontFamily, fontFamily: true)
             }
 
             Group {

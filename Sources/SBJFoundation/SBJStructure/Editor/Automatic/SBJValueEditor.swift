@@ -309,7 +309,7 @@ enum SBJValueEditor {
         value: Binding<Value>,
         originalValue: SBJEditorOriginalValue? = nil,
         registry: SBJEditorRegistry,
-        presentation: SBJPropertyPresentation? = nil,
+        fontFamily: Bool = false,
         textStyle: SBJStringStyle? = nil,
         textAutocorrection: SBJTextAutocorrection = .automatic,
         textCapitalization: SBJTextCapitalization = .automatic,
@@ -318,7 +318,7 @@ enum SBJValueEditor {
         numberRange: ClosedRange<Double>? = nil,
         dateRange: ClosedRange<Date>? = nil,
         colorSupportsAlpha: Bool = true,
-        unitEditor: SBJUnitValueEditorMode = .editable,
+        unitEditor: SBJUnitValueEditorMode = .fixedUnit,
         collectionReorderable: Bool = true,
         collectionItemTitleKey: String? = nil,
         collectionItemIdentifierKey: String? = nil,
@@ -333,7 +333,7 @@ enum SBJValueEditor {
         // Intentional built-in editor composition point. Concrete standard value
         // editors are selected here so the generic traversal/property layers do
         // not depend on them. Application-specific editors belong in the registry.
-        if presentation == .fontFamily, Value.self == String?.self {
+        if fontFamily, Value.self == String?.self {
             return wrapLeaf(
                 SBJFontFamilyEditor(
                     label: label,

@@ -48,10 +48,7 @@ public enum SBJStringTrimming: Sendable, Equatable {
 /// Length constraints are emitted into the containing type's generated `_invariant`.
 @attached(peer)
 public macro SBJString(
-    _ style: SBJStringStyle = .singleLine,
     minLength: Int? = nil,
     maxLength: Int? = nil,
-    trimming: SBJStringTrimming = .none,
-    autocorrect: SBJTextAutocorrection = .automatic,
-    capitalization: SBJTextCapitalization = .automatic
+    trimming: SBJStringTrimming = .none
 ) = #externalMacro(module: "SBJFoundationMacros", type: "SBJStringMacro")

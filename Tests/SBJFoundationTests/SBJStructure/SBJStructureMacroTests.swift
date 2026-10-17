@@ -7,11 +7,15 @@ import SBJLocalization
 final class SBJStructureMacroTests: XCTestCase {
     private let macros: [String: Macro.Type] = [
         "SBJStructure": SBJStructureMacro.self,
+        "SBJPropertyInfo": SBJPropertyInfoMacro.self,
         "SBJDesignatedInit": SBJDesignatedInitMacro.self,
-        "SBJNotEditable": SBJNotEditableMacro.self,
+        "SBJEditorExclude": SBJEditorExcludeMacro.self,
         "SBJEditorProperty": SBJEditorPropertyMacro.self,
         "SBJString": SBJStringMacro.self,
-        "SBJPresentation": SBJPresentationMacro.self,
+        "SBJEditorString": SBJEditorStringMacro.self,
+        "SBJEditorArray": SBJEditorArrayMacro.self,
+        "SBJEditorSet": SBJEditorSetMacro.self,
+        "SBJEditorFontFamily": SBJEditorFontFamilyMacro.self,
         "SBJInteger": SBJIntegerMacro.self,
         "SBJNumber": SBJNumberMacro.self,
         "SBJOptional": SBJOptionalMacro.self,
@@ -25,6 +29,73 @@ final class SBJStructureMacroTests: XCTestCase {
         "SBJColor": SBJColorMacro.self,
     ]
 
+
+    func testExtensionPropertyInfoDiscoversStaticLetAndComputedVar() {
+        assertMacroExpansion(
+            """
+            @SBJPropertyInfo
+            extension Example {
+                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                static var ageInfo: SBJPropertyInfo {
+                    get { SBJPropertyInfo(summary: "Age") }
+                }
+            }
+            """,
+            expandedSource: """
+            extension Example {
+                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                static var ageInfo: SBJPropertyInfo {
+                    get { SBJPropertyInfo(summary: "Age") }
+                }
+
+                public static func _extensionPropertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
+                    if keyPath == \\Example.name {
+                        return Self.nameInfo
+                    }
+                    if keyPath == \\Example.age {
+                        return Self.ageInfo
+                    }
+                    return Self._propertyInfo(for: keyPath)
+                }
+
+                public static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
+                    _extensionPropertyInfo(for: keyPath)
+                }
+            }
+            """,
+            macros: macros
+        )
+    }
+
+    func testExtensionPropertyInfoSupportsExplicitPublicOverride() {
+        assertMacroExpansion(
+            """
+            @SBJPropertyInfo
+            extension Example {
+                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
+                    _extensionPropertyInfo(for: keyPath)
+                }
+            }
+            """,
+            expandedSource: """
+            extension Example {
+                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
+                    _extensionPropertyInfo(for: keyPath)
+                }
+
+                public static func _extensionPropertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
+                    if keyPath == \\Example.name {
+                        return Self.nameInfo
+                    }
+                    return Self._propertyInfo(for: keyPath)
+                }
+            }
+            """,
+            macros: macros
+        )
+    }
 
     func testPreferredInitCapturesExternalLabelsAndLocalPropertyNames() {
         assertMacroExpansion(
@@ -116,6 +187,14 @@ final class SBJStructureMacroTests: XCTestCase {
             expandedSource: """
             struct Empty {
 
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
+
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
 
@@ -183,6 +262,14 @@ final class SBJStructureMacroTests: XCTestCase {
             expandedSource: """
             struct Model {
                 var displayName: String
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
@@ -256,6 +343,14 @@ final class SBJStructureMacroTests: XCTestCase {
                 var image: PlatformImage? {
                     get { nil }
                     set {}
+                }
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
                 }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
@@ -341,6 +436,14 @@ final class SBJStructureMacroTests: XCTestCase {
                     try SBJInvariantCheck.require(value != "reserved", at: keyPath, "reserved")
                 }
 
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
+
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
                         SBJPropertyMetadata<Self>(sourceName: "value", displayName: "value".uncamelCased, keyPath: \\Self.value, kind: .text, constraints: [], hints: [], info: Self.propertyInfo(for: \\Self.value))
@@ -389,13 +492,21 @@ final class SBJStructureMacroTests: XCTestCase {
             """
             @SBJStructure
             struct Model {
-                @SBJNotEditable
+                @SBJEditorExclude
                 let identifier: String
             }
             """,
             expandedSource: """
             struct Model {
                 let identifier: String
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
@@ -461,9 +572,17 @@ final class SBJStructureMacroTests: XCTestCase {
             struct Model {
                 var items: [Item]
 
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
+
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
-                        SBJPropertyMetadata<Self>(sourceName: "items", displayName: "items".uncamelCased, keyPath: \\Self.items, kind: .array, constraints: [.uniqueBy("\\\\Item.id")], hints: [.reorderable(true)], info: Self.propertyInfo(for: \\Self.items))
+                        SBJPropertyMetadata<Self>(sourceName: "items", displayName: "items".uncamelCased, keyPath: \\Self.items, kind: .array, constraints: [.uniqueBy("\\\\Item.id"), .reorderable(true)], hints: [], info: Self.propertyInfo(for: \\Self.items))
                     ]
                 }
 
@@ -526,9 +645,17 @@ final class SBJStructureMacroTests: XCTestCase {
             struct Model {
                 var items: [Item]
 
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
+
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
-                        SBJPropertyMetadata<Self>(sourceName: "items", displayName: "items".uncamelCased, keyPath: \\Self.items, kind: .array, constraints: [.uniqueBy("\\\\Item.id")], hints: [.reorderable(true)], info: Self.propertyInfo(for: \\Self.items))
+                        SBJPropertyMetadata<Self>(sourceName: "items", displayName: "items".uncamelCased, keyPath: \\Self.items, kind: .array, constraints: [.uniqueBy("\\\\Item.id"), .reorderable(true)], hints: [], info: Self.propertyInfo(for: \\Self.items))
                     ]
                 }
 
@@ -596,6 +723,14 @@ final class SBJStructureMacroTests: XCTestCase {
             expandedSource: """
             struct Model {
                 let identifier: String
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
@@ -671,6 +806,14 @@ final class SBJStructureMacroTests: XCTestCase {
                 enum CodingKeys: String, CodingKey {
                     case name
                     case website
+                }
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
                 }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
@@ -751,6 +894,14 @@ final class SBJStructureMacroTests: XCTestCase {
                 var created: Date
                 var website: URL
                 var color: CodableColor
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
@@ -836,6 +987,14 @@ final class SBJStructureMacroTests: XCTestCase {
             struct Defaultable: Codable {
                 var name: String = ""
 
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
+
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
                         SBJPropertyMetadata<Self>(sourceName: "name", displayName: "name".uncamelCased, keyPath: \\Self.name, kind: .text, constraints: [], hints: [], info: Self.propertyInfo(for: \\Self.name))
@@ -907,6 +1066,14 @@ final class SBJStructureMacroTests: XCTestCase {
             struct Model: ModelCodable {
                 var name = ""
 
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
+
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
                         SBJPropertyMetadata<Self>(sourceName: "name", displayName: "name".uncamelCased, keyPath: \\Self.name, kind: .text, constraints: [], hints: [], info: Self.propertyInfo(for: \\Self.name))
@@ -974,6 +1141,14 @@ final class SBJStructureMacroTests: XCTestCase {
             expandedSource: """
             struct Model {
                 var payload: String
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [
@@ -1046,6 +1221,14 @@ final class SBJStructureMacroTests: XCTestCase {
             expandedSource: """
             struct Model {
                 var payload: Data
+
+                static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+                    switch keyPath as AnyKeyPath {
+
+                    default:
+                        return nil
+                    }
+                }
 
                 static var sbjProperties: [SBJPropertyMetadata<Self>] {
                     [

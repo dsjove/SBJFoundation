@@ -5,12 +5,16 @@ import SwiftSyntaxMacros
 struct SBJStructurePlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         SBJStructureMacro.self,
+        SBJPropertyInfoMacro.self,
         SBJEditorDisclosureMacro.self,
         SBJDesignatedInitMacro.self,
-        SBJNotEditableMacro.self,
+        SBJEditorExcludeMacro.self,
         SBJEditorPropertyMacro.self,
-        SBJPresentationMacro.self,
+        SBJEditorFontFamilyMacro.self,
         SBJStringMacro.self,
+        SBJEditorStringMacro.self,
+        SBJEditorArrayMacro.self,
+        SBJEditorSetMacro.self,
         SBJIntegerMacro.self,
         SBJNumberMacro.self,
         SBJUnitValueMacro.self,

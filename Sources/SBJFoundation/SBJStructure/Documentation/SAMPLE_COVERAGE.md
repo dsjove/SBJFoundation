@@ -42,7 +42,7 @@ Examples:
 - `CodableColor` is covered because the sample model declares a `CodableColor`
   property and the editor dispatches through the color-editor path.
 - `CodableFont` and `CodableFontCache` become covered transitively because the
-  Preview declares `@SBJPresentation(.fontFamily)` and the font-family editor uses
+  Preview declares `@SBJEditorFontFamily` and the font-family editor uses
   the cache/type.
 - collection mutation helpers used by the Set/Dictionary editors are covered even
   though the Preview does not spell their method names.
@@ -71,10 +71,10 @@ The canonical sample model currently declares every annotation in
 - `@SBJDictionary` — substitutions.
 - `@SBJEditorProperty` — editor-only computed display-name adapter.
 - `@SBJInteger` — servings and time fields.
-- `@SBJNotEditable` — import source.
+- `@SBJEditorExclude` — import source.
 - `@SBJNumber` — nutrition/ingredient quantities.
 - `@SBJOptional` — source URL presence requirement.
-- `@SBJPresentation` — recipe-card font family.
+- `@SBJEditorFontFamily` — recipe-card font family.
 - `@SBJSet` — tags.
 - `@SBJString` — single-line, multiline, and sheet-edit examples. The annotation is
   the coverage unit; multiple styles are retained because they exercise distinct
@@ -105,7 +105,7 @@ in the fixture. Important examples include:
 - `CodableColor` and color editing;
 - `CodableFont` / `CodableFontCache` through the font-family presentation editor; directory placement does not affect this transitive coverage;
 - `PlaceholderMultilineTextField` and shared multiline chrome through
-  `@SBJString(.sheetEdit)`;
+  `@SBJEditorString(.sheetEdit)`;
 - `SBJSelectionMenuLabel`, `SBJUIAppearance`, focus/invalid modifiers,
   `SearchField`, and other UIVocabulary used by editor implementations;
 - Swift-source encoder types referenced by the `SBJStructured` contract and the
@@ -186,7 +186,7 @@ them into the sample would test nothing about SBJStructure.
 contract: each stock editor-selection category must be constructible from an
 ordinary SwiftUI binding without going through `SBJEditorView`. It binds to `SBJStructureSampleModel`, the same model used by the automatic preview.
 Dispatch-only properties that would make the automatic form noisy are kept on that
-model with `@SBJNotEditable`; the standalone preview can still bind to them directly.
+model with `@SBJEditorExclude`; the standalone preview can still bind to them directly.
 
 When a new stock `SBJValueEditor` selection path is added, add a corresponding
 `SBJEditField` example so standalone usability remains a compile-visible design

@@ -20,7 +20,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
         units: [Unit] = Array(Unit.allCases),
         accessibilityLabel: String? = nil,
         propertyInfo: SBJPropertyInfo? = nil,
-        unitEditable: Bool = true
+        unitEditable: Bool = false
     ) {
         _value = value
         self.units = units

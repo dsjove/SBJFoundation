@@ -6,7 +6,7 @@ import SBJLocalization
   @MainActor
   struct SBJEditFieldConfiguration {
     let propertyInfo: SBJPropertyInfo?
-    let presentation: SBJPropertyPresentation?
+    let fontFamily: Bool
     let textStyle: SBJStringStyle?
     let textAutocorrection: SBJTextAutocorrection
     let textCapitalization: SBJTextCapitalization
@@ -22,11 +22,7 @@ import SBJLocalization
 
     init<Root: SBJStructured>(metadata: SBJPropertyMetadata<Root>?) {
       propertyInfo = metadata?.info
-      presentation =
-        metadata?.hints.compactMap { hint -> SBJPropertyPresentation? in
-          if case .presentation(let value) = hint { return value }
-          return nil
-        }.first
+      fontFamily = metadata?.hints.contains(.fontFamilyEditor) ?? false
       textStyle =
         metadata?.hints.compactMap { hint -> SBJStringStyle? in
           if case .textStyle(let style) = hint { return style }
@@ -73,13 +69,10 @@ import SBJLocalization
           if case .colorSupportsAlpha(let value) = hint { return value }
           return nil
         }.first ?? true
-      unitEditor = metadata?.hints.compactMap { hint -> SBJUnitValueEditorMode? in
-        if case .unitEditor(let mode) = hint { return mode }
-        return nil
-      }.first ?? .editable
+      unitEditor = .fixedUnit
       collectionReorderable =
-        metadata?.hints.compactMap { hint -> Bool? in
-          if case .reorderable(let value) = hint { return value }
+        metadata?.constraints.compactMap { constraint -> Bool? in
+          if case .reorderable(let value) = constraint { return value }
           return nil
         }.first ?? true
       collectionItemTitleKey =
@@ -126,14 +119,14 @@ import SBJLocalization
       _ label: String,
       value: Binding<Value>,
       registry: SBJEditorRegistry = .init(),
-      presentation: SBJPropertyPresentation? = nil,
+      fontFamily: Bool = false,
       textStyle: SBJStringStyle? = nil,
       textMaximumLength: Int? = nil,
       integerRange: ClosedRange<Int>? = nil,
       numberRange: ClosedRange<Double>? = nil,
       dateRange: ClosedRange<Date>? = nil,
       colorSupportsAlpha: Bool = true,
-      unitEditor: SBJUnitValueEditorMode = .editable,
+      unitEditor: SBJUnitValueEditorMode = .fixedUnit,
       collectionReorderable: Bool = true
     ) {
       render = {
@@ -141,7 +134,7 @@ import SBJLocalization
           label: label,
           value: value,
           registry: registry,
-          presentation: presentation,
+          fontFamily: fontFamily,
           textStyle: textStyle,
           textMaximumLength: textMaximumLength,
           integerRange: integerRange,
@@ -208,7 +201,7 @@ import SBJLocalization
           value: value,
           originalValue: originalRoot.map { SBJEditorOriginalValue($0[keyPath: keyPath]) },
           registry: registry,
-          presentation: configuration.presentation,
+          fontFamily: configuration.fontFamily,
           textStyle: configuration.textStyle,
           textAutocorrection: configuration.textAutocorrection,
           textCapitalization: configuration.textCapitalization,

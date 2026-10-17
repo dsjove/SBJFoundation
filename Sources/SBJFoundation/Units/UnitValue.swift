@@ -9,7 +9,7 @@ import SBJLocalization
 @SBJStructure
 public struct UnitValue<Unit: UnitType>: SBJFoundationType, Sendable, Hashable {
     public var value: Double
-    public var unit: Unit
+    public let unit: Unit
 
     @SBJDesignatedInit
     public init(_ value: Double = 0, unit: Unit) {
@@ -26,7 +26,6 @@ public struct UnitValue<Unit: UnitType>: SBJFoundationType, Sendable, Hashable {
     /// New code should use `unit`.
     public var kind: Unit {
         get { unit }
-        set { unit = newValue }
     }
 
     public func converted(to otherUnit: Unit) -> Self {

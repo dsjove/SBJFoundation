@@ -2,6 +2,7 @@ import Foundation
 import SBJDocuments
 import Testing
 @testable import SBJFoundation
+@testable import SBJDocuments
 
 @Suite("Export artifact writer")
 struct ExportArtifactWriterTests {

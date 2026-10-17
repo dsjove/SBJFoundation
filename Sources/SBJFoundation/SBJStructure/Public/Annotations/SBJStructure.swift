@@ -22,7 +22,7 @@
             named(_sbjStructuralEquals), named(sbjStructuralEquals),
             named(sbjDefaultValue),
             named(sbjCreateDefaultValueIfPossible),
-            named(sbjProperties),
+            named(sbjProperties), named(_propertyInfo),
             named(sbjEditableFields),
         // Editor
             named(sbjEditorFields),

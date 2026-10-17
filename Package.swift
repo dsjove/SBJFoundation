@@ -19,6 +19,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "Packages/SBJLocalization"),
+        .package(path: "Packages/SBJDataDefinition"),
+        .package(path: "Packages/SBJStructuredEditor"),
         .package(path: "Packages/SBJCamera"),
         .package(path: "Packages/SBJDocuments"),
         .package(path: "Packages/SBJFileResources"),
@@ -42,6 +44,8 @@ let package = Package(
             name: "SBJFoundation",
             dependencies: [
                 "SBJFoundationMacros",
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJCamera", package: "SBJCamera"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
@@ -64,6 +68,8 @@ let package = Package(
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 "SBJFoundationMacros",
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ],
             resources: [

@@ -6,7 +6,6 @@
 /// preferring a natural order where SBJStructure can identify one.
 @attached(peer)
 public macro SBJSet(
-    title: AnyKeyPath? = nil,
     minCount: Int? = nil,
     maxCount: Int? = nil
 ) = #externalMacro(module: "SBJFoundationMacros", type: "SBJSetMacro")

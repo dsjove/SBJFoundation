@@ -76,7 +76,8 @@ struct SBJStructureSampleStep: Codable, Hashable {
   @SBJString(minLength: 1, maxLength: 50)
   var title = "New step"
 
-  @SBJString(.multiline, minLength: 1, maxLength: 600)
+  @SBJString(minLength: 1, maxLength: 600)
+  @SBJEditorString(.multiline)
   var instruction = "Describe what to do."
 }
 
@@ -85,7 +86,8 @@ struct SBJStructureSampleModel: Codable {
   @SBJString(minLength: 1, maxLength: 80)
   var name = "Roasted Vegetable Pasta"
 
-  @SBJString(.multiline, minLength: 1, maxLength: 400)
+  @SBJString(minLength: 1, maxLength: 400)
+  @SBJEditorString(.multiline)
   var summary =
     "Roasted peppers, cauliflower, and onion tossed with pasta and a simple olive-oil dressing."
 
@@ -102,7 +104,7 @@ struct SBJStructureSampleModel: Codable {
   var vegetarian = true
   var rating = SBJStructureSampleRating(value: 4)
 
-  @SBJUnitValue(min: 0, editor: .fixedUnit)
+  @SBJUnitValue(min: 0)
   var servingVolume = UnitValue<VolumeUnit>(1.5, unit: .cup)
   var packageWeight = UnitValue<MassUnit>(340, unit: .gram)
   var simmerTime = UnitValue<DurationUnit>(45, unit: .minute)
@@ -121,19 +123,14 @@ struct SBJStructureSampleModel: Codable {
   @SBJColor(alpha: false)
   var recipeCardTint = CodableColor(0.85, 0.35, 0.15, 1.0)
 
-  @SBJPresentation(.fontFamily)
+  @SBJEditorFontFamily
   var recipeCardFontFamily: String? = nil
 
   var nutrition = SBJStructureSampleNutrition()
   var heatSetting: SBJStructureSampleHeatSetting = .oven(celsius: 220, convection: true)
 
-  @SBJArray(
-    reorderable: true,
-    title: \SBJStructureSampleIngredient.name,
-    minCount: 1,
-    maxCount: 30,
-    uniqueBy: \SBJStructureSampleIngredient.id
-  )
+  @SBJArray(reorderable: true, minCount: 1, maxCount: 30, uniqueBy: \SBJStructureSampleIngredient.id)
+  @SBJEditorArray(title: \SBJStructureSampleIngredient.name)
   var ingredients = [
     SBJStructureSampleIngredient(
       name: "Red bell pepper", quantity: 2, unit: .item, preparation: "sliced"),
@@ -145,13 +142,8 @@ struct SBJStructureSampleModel: Codable {
     SBJStructureSampleIngredient(name: "Pasta", quantity: 340, unit: .gram),
   ]
 
-  @SBJArray(
-    reorderable: true,
-    title: \SBJStructureSampleStep.title,
-    minCount: 1,
-    maxCount: 20,
-    uniqueBy: \SBJStructureSampleStep.id
-  )
+  @SBJArray(reorderable: true, minCount: 1, maxCount: 20, uniqueBy: \SBJStructureSampleStep.id)
+  @SBJEditorArray(title: \SBJStructureSampleStep.title)
   var steps = [
     SBJStructureSampleStep(
       title: "Roast the vegetables",
@@ -178,7 +170,8 @@ struct SBJStructureSampleModel: Codable {
     "Pasta": "Whole-wheat pasta",
   ]
 
-  @SBJString(.sheetEdit, maxLength: 1_000)
+  @SBJString(maxLength: 1_000)
+  @SBJEditorString(.sheetEdit)
   var notes: String? = "Add red-pepper flakes at the table for anyone who wants more heat."
 
   @SBJEditorProperty
@@ -190,7 +183,7 @@ struct SBJStructureSampleModel: Codable {
   @SBJUUID(nonzero: true)
   var identifier = UUID()
 
-  @SBJNotEditable
+  @SBJEditorExclude
   var importSource = "Canonical SBJStructure sample fixture"
 
   // MARK: - Standalone editor dispatch coverage
@@ -200,21 +193,21 @@ struct SBJStructureSampleModel: Codable {
   // directly to cover stock editor selection paths that a recipe would not
   // naturally need.
 
-  @SBJNotEditable var editorSheetText = "This string uses the sheet-edit presentation."
-  @SBJNotEditable var editorInt8: Int8 = 8
-  @SBJNotEditable var editorInt16: Int16 = 16
-  @SBJNotEditable var editorInt32: Int32 = 32
-  @SBJNotEditable var editorInt64: Int64 = 64
-  @SBJNotEditable var editorUInt: UInt = 1
-  @SBJNotEditable var editorUInt8: UInt8 = 8
-  @SBJNotEditable var editorUInt16: UInt16 = 16
-  @SBJNotEditable var editorUInt32: UInt32 = 32
-  @SBJNotEditable var editorUInt64: UInt64 = 64
-  @SBJNotEditable var editorFloat: Float = 2.5
-  @SBJNotEditable var editorCGFloat: CGFloat = 1.25
-  @SBJNotEditable var editorDecimal: Decimal = 12.34
-  @SBJNotEditable var editorDate = Date()
-  @SBJNotEditable var editorURL = URL(string: "https://example.com")!
+  @SBJEditorExclude var editorSheetText = "This string uses the sheet-edit presentation."
+  @SBJEditorExclude var editorInt8: Int8 = 8
+  @SBJEditorExclude var editorInt16: Int16 = 16
+  @SBJEditorExclude var editorInt32: Int32 = 32
+  @SBJEditorExclude var editorInt64: Int64 = 64
+  @SBJEditorExclude var editorUInt: UInt = 1
+  @SBJEditorExclude var editorUInt8: UInt8 = 8
+  @SBJEditorExclude var editorUInt16: UInt16 = 16
+  @SBJEditorExclude var editorUInt32: UInt32 = 32
+  @SBJEditorExclude var editorUInt64: UInt64 = 64
+  @SBJEditorExclude var editorFloat: Float = 2.5
+  @SBJEditorExclude var editorCGFloat: CGFloat = 1.25
+  @SBJEditorExclude var editorDecimal: Decimal = 12.34
+  @SBJEditorExclude var editorDate = Date()
+  @SBJEditorExclude var editorURL = URL(string: "https://example.com")!
 
   static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
     switch keyPath as AnyKeyPath {

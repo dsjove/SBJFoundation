@@ -7,7 +7,7 @@ import Foundation
 public struct SBJPropertyInfo: Sendable, Equatable, Accessible {
     public let title: String?
     public let summary: String
-    public let details: String
+    public let details: String?
     public let accessibility: AccessibleItem
 
     public var accessibilityLabel: String? { accessibility.accessibilityLabel }
@@ -17,7 +17,7 @@ public struct SBJPropertyInfo: Sendable, Equatable, Accessible {
     public init(
         title: String? = nil,
         summary: String,
-        details: String,
+        details: String? = nil,
         accessibilityLabel: String? = nil,
         accessibilityHint: String? = nil,
         accessibilityValue: String? = nil
@@ -29,7 +29,7 @@ public struct SBJPropertyInfo: Sendable, Equatable, Accessible {
     }
 
     /// Explicit metadata initializer for callers that already have accessibility semantics.
-    public init(title: String? = nil, summary: String, details: String, accessibility: AccessibleItem) {
+    public init(title: String? = nil, summary: String, details: String? = nil, accessibility: AccessibleItem) {
         self.title = title
         self.summary = summary
         self.details = details

@@ -16,7 +16,7 @@ private struct TestEditableValue: Codable {
     var nested = TestNestedValue()
     var notes: [String] = []
     var nickname: String?
-    @SBJNotEditable var transientState: String = ""
+    @SBJEditorExclude var transientState: String = ""
     let immutableIdentifier: Int = 7
 
     enum CodingKeys: String, CodingKey {
@@ -228,7 +228,7 @@ private struct TestValidatedValue: Codable {
     @SBJString(minLength: 1, trimming: .whitespaceAndNewlines)
     var trimmedCode: String = "ok"
 
-    @SBJNotEditable
+    @SBJEditorExclude
     @SBJString(minLength: 2)
     var hiddenCode: String = "ok"
 
@@ -263,7 +263,7 @@ extension SBJStructureUsageTests {
 
         let names = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.names)
         #expect(names?.kind == .array)
-        #expect(names?.constraints == [.count(min: 1, max: 2)])
+        #expect(names?.constraints == [.count(min: 1, max: 2), .reorderable(true)])
 
         let minimumNumber = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.minimumNumber)
         #expect(minimumNumber?.kind == .number)
@@ -366,10 +366,10 @@ private struct TestCollectionRules: Codable {
 extension SBJStructureUsageTests {
     @Test func arrayUniquenessRulesAreGeneratedAndDescribed() throws {
         let tags = TestCollectionRules.propertyMetadata(for: \TestCollectionRules.tags)
-        #expect(tags?.constraints == [.unique])
+        #expect(tags?.constraints == [.unique, .reorderable(true)])
 
         let items = TestCollectionRules.propertyMetadata(for: \TestCollectionRules.items)
-        #expect(items?.constraints == [.uniqueBy("\\TestUniqueItem.id")])
+        #expect(items?.constraints == [.uniqueBy("\\TestUniqueItem.id"), .reorderable(true)])
 
         try TestCollectionRules(
             tags: ["a", "b"],
@@ -518,10 +518,12 @@ private struct TestDataConstraintHolder {
 
 @SBJStructure
 private struct TestPhase4Collections: Codable {
-    @SBJArray(reorderable: false, title: \TestUniqueItem.name, minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
+    @SBJArray(reorderable: false, minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
+    @SBJEditorArray(title: \TestUniqueItem.name)
     var items: [TestUniqueItem] = [TestUniqueItem(id: 1, name: "one")]
 
-    @SBJSet(title: \TestUniqueItem.name, minCount: 1, maxCount: 2)
+    @SBJSet(minCount: 1, maxCount: 2)
+    @SBJEditorSet(title: \TestUniqueItem.name)
     var members: Set<TestUniqueItem> = [TestUniqueItem(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
@@ -535,9 +537,9 @@ extension SBJStructureUsageTests {
         #expect(items?.constraints == [
             .count(min: 1, max: 3),
             .uniqueBy("\\TestUniqueItem.id"),
+            .reorderable(false),
         ])
         #expect(items?.hints == [
-            .reorderable(false),
             .itemTitle("name"),
         ])
 
@@ -645,10 +647,11 @@ extension SBJStructureUsageTests {
 
 @SBJStructure
 private struct TestPhase6MetadataDrivenEditor: Codable {
-    @SBJString(.multiline, minLength: 2, maxLength: 20, autocorrect: .disabled, capitalization: .sentences)
+    @SBJString(minLength: 2, maxLength: 20)
+    @SBJEditorString(.multiline, autocorrect: .disabled, capitalization: .sentences)
     var notes: String = "ok"
 
-    @SBJString(.sheetEdit)
+    @SBJEditorString(.sheetEdit)
     var longNotes: String = "longer text"
 
     @SBJInteger(range: 1...9)
@@ -932,7 +935,7 @@ private struct TestTitledValidationItem: Codable, Hashable {
 
 @SBJStructure
 private struct TestTitledValidationContainer: Codable {
-    @SBJArray(title: \TestTitledValidationItem.name)
+    @SBJEditorArray(title: \TestTitledValidationItem.name)
     var abilities: [TestTitledValidationItem] = []
 }
 
@@ -956,4 +959,25 @@ extension SBJStructureUsageTests {
             Issue.record("Expected SBJValidationError")
         }
     }
+}
+
+
+@SBJStructure
+private struct Phase1PropertyInfoExample: Codable {
+    var title: String = "Example"
+    var count: Int = 0
+    static let titleInfo = SBJPropertyInfo(summary: "Generated title documentation")
+
+    // The manually defined API can augment and delegate to the generated static lookup.
+    static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+        if keyPath as AnyKeyPath == \Self.count {
+            return SBJPropertyInfo(summary: "Override count documentation")
+        }
+        return _propertyInfo(for: keyPath)
+    }
+}
+
+@Test func phase1PropertyInfoConventionAndOverride() {
+    #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.title)?.summary == "Generated title documentation")
+    #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.count)?.summary == "Override count documentation")
 }

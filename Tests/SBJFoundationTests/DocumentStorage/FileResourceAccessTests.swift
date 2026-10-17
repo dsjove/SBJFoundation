@@ -2,6 +2,7 @@ import Foundation
 import SBJFileResources
 import Testing
 @testable import SBJFoundation
+@testable import SBJDocuments
 
 @Suite("Coordinated file access")
 struct FileResourceAccessTests {

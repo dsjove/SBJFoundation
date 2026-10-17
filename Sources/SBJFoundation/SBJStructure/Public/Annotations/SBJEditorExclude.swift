@@ -5,7 +5,7 @@
 /// writable property belongs to the model declaration but should not be edited by
 /// the generic editor. Immutable `let` properties are already non-editable.
 @attached(peer)
-public macro SBJNotEditable() = #externalMacro(
+public macro SBJEditorExclude() = #externalMacro(
     module: "SBJFoundationMacros",
-    type: "SBJNotEditableMacro"
+    type: "SBJEditorExcludeMacro"
 )

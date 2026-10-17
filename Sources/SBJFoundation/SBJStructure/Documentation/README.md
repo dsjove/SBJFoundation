@@ -17,11 +17,8 @@ struct MealRecipe: Codable {
     @SBJInteger(range: 1...24)
     var servings: Int
 
-    @SBJArray(
-        reorderable: true,
-        title: \RecipeIngredient.name,
-        uniqueBy: \RecipeIngredient.id
-    )
+    @SBJArray(reorderable: true, uniqueBy: \RecipeIngredient.id)
+    @SBJEditorArray(title: \RecipeIngredient.name)
     var ingredients: [RecipeIngredient]
 }
 ```
@@ -62,7 +59,8 @@ A property should not have one declaration for coding, another for validation, a
 SBJStructure treats the Swift/Codable model as the schema. Property annotations **refine** that schema with information Swift does not already express:
 
 ```swift
-@SBJString(.multiline, maxLength: 2_000)
+@SBJString(maxLength: 2_000)
+@SBJEditorString(.multiline)
 var notes: String
 
 @SBJArray(minCount: 1, uniqueBy: \RecipeIngredient.id)
@@ -179,11 +177,8 @@ An element can move from index 2 to index 0 while retaining the same item identi
 For arrays, `uniqueBy:` provides a natural stable element identifier when the model has one:
 
 ```swift
-@SBJArray(
-    reorderable: true,
-    title: \RecipeIngredient.name,
-    uniqueBy: \RecipeIngredient.id
-)
+@SBJArray(reorderable: true, uniqueBy: \RecipeIngredient.id)
+@SBJEditorArray(title: \RecipeIngredient.name)
 var ingredients: [RecipeIngredient]
 ```
 
@@ -241,7 +236,8 @@ struct MealRecipe: Codable {
     @SBJString(minLength: 1, maxLength: 80)
     var name = "Roasted Vegetable Pasta"
 
-    @SBJString(.multiline, maxLength: 400)
+    @SBJString(maxLength: 400)
+    @SBJEditorString(.multiline)
     var summary = "Roasted vegetables tossed with pasta and olive oil."
 
     @SBJInteger(range: 1...24)
@@ -251,19 +247,15 @@ struct MealRecipe: Codable {
     var lastMade: Date? = nil
     var sourceURL: URL? = nil
 
-    @SBJArray(
-        reorderable: true,
-        title: \RecipeIngredient.name,
-        minCount: 1,
-        maxCount: 30,
-        uniqueBy: \RecipeIngredient.id
-    )
+    @SBJArray(reorderable: true, minCount: 1, maxCount: 30, uniqueBy: \RecipeIngredient.id)
+    @SBJEditorArray(title: \RecipeIngredient.name)
     var ingredients: [RecipeIngredient]
 
     @SBJSet(maxCount: 12)
     var tags: Set<String> = []
 
-    @SBJString(.multiline, maxLength: 1_000)
+    @SBJString(maxLength: 1_000)
+    @SBJEditorString(.multiline)
     var notes: String? = nil
 }
 ```
@@ -359,7 +351,7 @@ var servings: Int
 A hint describes how a consumer may work with it:
 
 ```swift
-@SBJString(.multiline)
+@SBJEditorString(.multiline)
 var notes: String
 ```
 
@@ -829,10 +821,12 @@ For enums, associated-value case metadata is generated for recursive editing and
 Adds String length constraints and/or text presentation.
 
 ```swift
-@SBJString(.singleLine, minLength: 1, maxLength: 40)
+@SBJString(minLength: 1, maxLength: 40)
+@SBJEditorString(.singleLine)
 var name: String
 
-@SBJString(.multiline, maxLength: 2_000)
+@SBJString(maxLength: 2_000)
+@SBJEditorString(.multiline)
 var notes: String
 ```
 
@@ -884,13 +878,8 @@ The requirement is checked only during explicit validation.
 Adds array constraints and usage hints.
 
 ```swift
-@SBJArray(
-    reorderable: true,
-    title: \RecipeIngredient.name,
-    minCount: 1,
-    maxCount: 10,
-    uniqueBy: \RecipeIngredient.id
-)
+@SBJArray(reorderable: true, minCount: 1, maxCount: 10, uniqueBy: \RecipeIngredient.id)
+@SBJEditorArray(title: \RecipeIngredient.name)
 var ingredients: [RecipeIngredient]
 ```
 
@@ -910,11 +899,8 @@ Parameters:
 Adds Set count constraints and item-title metadata.
 
 ```swift
-@SBJSet(
-    title: \Proficiency.name,
-    minCount: 1,
-    maxCount: 20
-)
+@SBJSet(minCount: 1, maxCount: 20)
+@SBJEditorSet(title: \Proficiency.name)
 var proficiencies: Set<Proficiency>
 ```
 
@@ -997,12 +983,12 @@ var accent: CodableColor
 
 A plain `CodableColor` already uses the built-in color editor. `alpha: false` tells consumers to treat the value as RGB-only.
 
-## `@SBJNotEditable`
+## `@SBJEditorExclude`
 
 Suppresses generic editor generation while retaining structural membership.
 
 ```swift
-@SBJNotEditable
+@SBJEditorExclude
 var generatedSummary: String
 ```
 
@@ -1029,14 +1015,14 @@ Editor-only properties:
 
 This distinction is intentional: editability and structure are separate concerns.
 
-## `@SBJPresentation`
+## `@SBJEditorFontFamily`
 
 Adds editor-neutral presentation semantics to a structural property. Presentation metadata does not alter storage, Codable behavior, validation, or assignment semantics.
 
 The current presentation option is font-family selection for an optional String, where `nil` represents the platform/system family:
 
 ```swift
-@SBJPresentation(.fontFamily)
+@SBJEditorFontFamily
 var family: String?
 ```
 

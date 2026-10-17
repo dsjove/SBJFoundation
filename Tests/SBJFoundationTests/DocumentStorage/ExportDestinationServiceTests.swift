@@ -1,7 +1,7 @@
 import Foundation
-import SBJDocuments
 import Testing
 @testable import SBJFoundation
+@testable import SBJDocuments
 
 @Suite("Export destination collision handling")
 struct ExportDestinationServiceTests {

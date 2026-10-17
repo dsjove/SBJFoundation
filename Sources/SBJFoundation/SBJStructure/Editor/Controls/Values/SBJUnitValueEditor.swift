@@ -1,3 +1,10 @@
+/// Internal editor rendering mode. Model units are immutable; all automatic
+/// unit-value fields select `.fixedUnit`.
+public enum SBJUnitValueEditorMode: Sendable, Hashable {
+    case editable
+    case fixedUnit
+}
+
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 

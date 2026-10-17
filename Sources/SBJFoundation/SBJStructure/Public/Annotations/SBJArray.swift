@@ -9,7 +9,6 @@
 @attached(peer)
 public macro SBJArray(
     reorderable: Bool = true,
-    title: AnyKeyPath? = nil,
     minCount: Int? = nil,
     maxCount: Int? = nil,
     unique: Bool = false,

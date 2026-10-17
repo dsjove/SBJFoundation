@@ -132,9 +132,11 @@ private struct SBJEditorPropertyInfoSheet: View {
             Text(info.summary)
                 .font(.headline)
 
-            ScrollView {
-                Text(info.details)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if let details = info.details {
+                ScrollView {
+                    Text(details)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
         .padding()
