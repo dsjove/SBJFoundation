@@ -31,7 +31,11 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         if declaration.is(StructDeclSyntax.self) {
             conformance = "SBJEditable, SBJSwiftUIEditable"
         } else if declaration.is(EnumDeclSyntax.self) {
-            conformance = "SBJEditableAssociatedEnum, SBJStructuredEnum"
+            let enumDecl = declaration.cast(EnumDeclSyntax.self)
+            let hasPayload = enumCases(in: enumDecl).contains { !$0.parameters.isEmpty }
+            conformance = hasPayload
+                ? "SBJEnumCaseIdentifiable, SBJEditableAssociatedEnum, SBJStructuredEnum"
+                : "SBJEnumCaseIdentifiable"
         } else {
             throw SBJStructureMacroError.onlyStructsOrEnums
         }
@@ -496,32 +500,68 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
             return function.name.text == "sbjStructuralEquals"
         }
 
-        let caseEntries = cases.map(enumCaseDescriptor).joined(separator: ",\n            ")
+        let hasPayload = cases.contains { !$0.parameters.isEmpty }
         let failableCreatorBody = enumFailableCreatorBody(for: cases)
         let sourceCaseNames = cases.map { swiftStringLiteral($0.caseName) }.joined(separator: ", ")
         let sourceCaseNameSwitch = cases.map { info in
             "case \(casePattern(info)): \(swiftStringLiteral(info.caseName))"
         }.joined(separator: "\n        ")
 
+        // Case presentation names come from `caseNameInfo` members in a metadata
+        // extension. The protocol's default lookup returns nil when none exists.
+        let caseEntries = cases.map { info in
+            enumCaseDescriptor(info).replacingOccurrences(
+                of: "name: \(info.displayNameExpression),",
+                with: "name: Self.sbjCaseInfo(for: \(swiftStringLiteral(info.caseName)))?.title ?? \(info.displayNameExpression),"
+            )
+        }.joined(separator: ",\n            ")
+
+        // Metadata may also live beside the enum's cases as conventional
+        // `static let caseNameInfo` members. Extension metadata is synthesized
+        // independently by @SBJPropertyInfoEnum.
+        let infoNames = Set(enumDecl.memberBlock.members.compactMap { member -> String? in
+            guard let variable = member.decl.as(VariableDeclSyntax.self),
+                  variable.modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) }),
+                  let id = variable.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
+                  id.hasSuffix("Info") else { return nil }
+            return String(id.dropLast(4))
+        })
+        let namedCaseInfo = cases.filter { infoNames.contains($0.caseName) }
+        let infoSwitch = namedCaseInfo.map { info in
+            "case \(swiftStringLiteral(info.caseName)): return Self.\(info.caseName)Info"
+        }.joined(separator: "\n            ")
+
         var result: [DeclSyntax] = [
             DeclSyntax(stringLiteral: """
-            \(access)static var sbjCaseNames: [String] {
+            public static var sbjCaseNames: [String] {
                 [\(sourceCaseNames)]
             }
             """),
             DeclSyntax(stringLiteral: """
-            var sbjCaseName: String {
+            public var sbjCaseName: String {
                 switch self {
                 \(sourceCaseNameSwitch)
                 }
             }
             """),
-            DeclSyntax(stringLiteral: """
-            \(access)static func sbjCaseName(for value: Any) -> String? {
-                guard let value = value as? Self else { return nil }
-                return value.sbjCaseName
+        ]
+
+        if !namedCaseInfo.isEmpty {
+            result.append(DeclSyntax(stringLiteral: """
+            public static func sbjCaseInfo(for caseName: String) -> SBJPropertyInfo? {
+                switch caseName {
+                \(infoSwitch)
+                default: return nil
+                }
             }
-            """),
+            """))
+        }
+
+        // Plain enums supply exact case names for source export but use the
+        // generic CaseIterable & Hashable editor, without associated-value APIs.
+        guard hasPayload else { return result }
+
+        result += [
             DeclSyntax(stringLiteral: """
             @MainActor
             \(access)static var sbjEditorEnumCases: [SBJEditorEnumCase<Self>] {

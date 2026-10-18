@@ -11,8 +11,9 @@
 /// `@SBJEditorProperty`, in which case they become editor-only fields. Immutable
 /// `let` properties remain structural but are not included in generated editor fields.
 ///
-/// For enums, each case becomes a selection and its associated values become
-/// recursively editable fields. Changing an associated value reconstructs the
+/// For simple enums, exact source case names are generated; the standard
+/// CaseIterable & Hashable editor handles selection. For enums with associated
+/// payloads, case descriptors and editable payload bindings are generated. Changing an associated value reconstructs the
 /// enum case while preserving the other associated values.
 @attached(member,
     names:
@@ -30,7 +31,7 @@
             named(sbjEditorEnumCases),
         // Swift Code Encoder Enum
             named(sbjCaseName),
-            named(sbjCaseNames)
+            named(sbjCaseNames), named(sbjCaseInfo)
 )
 
 @attached(extension,
@@ -39,8 +40,8 @@
             SBJEditable, SBJSwiftUIEditable,
         // Editor Enum
             SBJEditableAssociatedEnum,
-        // Swift Code Encoder Enum
-            SBJStructuredEnum)
+        // Swift Code Encoder Enum / payload-enum marker
+            SBJEnumCaseIdentifiable, SBJStructuredEnum)
 
 public macro SBJStructure() = #externalMacro(
     module: "SBJFoundationMacros",

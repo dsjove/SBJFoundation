@@ -1,16 +1,20 @@
-/// Compile-time case-name metadata synthesized for enums annotated with `@SBJStructure`.
-///
-/// Swift's runtime reflection does not reliably expose an enum case's source spelling,
-/// especially when the enum uses presentation-oriented raw values or descriptions.
-/// `@SBJStructure` therefore records the declared case names while the source is
-/// available to the macro.
-public protocol SBJStructuredEnum {
-    /// Swift source names of all cases, in declaration order.
+/// Source-level case identity of an enum, independently of its raw values or
+/// localized display text. Generated for every enum annotated @SBJStructure.
+public protocol SBJEnumCaseIdentifiable {
     static var sbjCaseNames: [String] { get }
-
-    /// Returns the Swift source name for an enum value of this type.
-    ///
-    /// This static entry point keeps the per-instance generated convenience property
-    /// from becoming public API solely to satisfy the exporter.
-    static func sbjCaseName(for value: Any) -> String?
+    var sbjCaseName: String { get }
+    static func sbjCaseInfo(for caseName: String) -> SBJPropertyInfo?
 }
+
+public extension SBJEnumCaseIdentifiable {
+    static func sbjCaseInfo(for caseName: String) -> SBJPropertyInfo? { nil }
+
+    static func sbjCaseName(for value: Any) -> String? {
+        (value as? Self)?.sbjCaseName
+    }
+}
+
+/// Marker for an annotated enum with one or more associated-value payloads.
+/// Payload-aware consumers should use this rather than treating all enums with
+/// case-name metadata as recursive structures.
+public protocol SBJStructuredEnum {}

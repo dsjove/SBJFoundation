@@ -8,6 +8,7 @@ final class SBJStructureMacroTests: XCTestCase {
     private let macros: [String: Macro.Type] = [
         "SBJStructure": SBJStructureMacro.self,
         "SBJPropertyInfo": SBJPropertyInfoMacro.self,
+        "SBJPropertyInfoEnum": SBJPropertyInfoMacro.self,
         "SBJDesignatedInit": SBJDesignatedInitMacro.self,
         "SBJEditorExclude": SBJEditorExcludeMacro.self,
         "SBJEditorProperty": SBJEditorPropertyMacro.self,

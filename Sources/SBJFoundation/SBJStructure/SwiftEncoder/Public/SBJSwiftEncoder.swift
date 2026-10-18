@@ -250,7 +250,7 @@ public struct SBJSwiftEncoder {
 
     private func enumExpression(_ value: Any, mirror: Mirror) -> String {
         guard let payload = mirror.children.first else {
-            if let structuredEnumType = type(of: value) as? any SBJStructuredEnum.Type,
+            if let structuredEnumType = type(of: value) as? any SBJEnumCaseIdentifiable.Type,
                let caseName = structuredEnumType.sbjCaseName(for: value) {
                 return ".\(caseName)"
             }

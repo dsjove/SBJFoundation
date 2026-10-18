@@ -235,6 +235,7 @@ import SBJLocalization
             content: AnyView(content.opacity(visuallyIneffective ? 0.5 : 1.0)),
             propertyName: propertyName,
             info: configuration.propertyInfo,
+            caseInfo: { SBJEditorEnumCaseInformation.info(for: value.wrappedValue) },
             branch: context.branch
           )
           .sbjEditorNavigationAnchor(for: context.navigationPath)

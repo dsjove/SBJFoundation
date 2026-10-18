@@ -9,6 +9,7 @@ struct SBJEditorPropertyInfoContainer: View {
     let content: AnyView
     let propertyName: String
     let info: SBJPropertyInfo?
+    var caseInfo: (() -> SBJEditorSelectedCaseInfo?)? = nil
     var branch: SBJEditorBranchContext = .init()
     private var rowLayoutSuppressed: Bool { branch.placement == .contentOnly }
     private var rowEmbedded: Bool { branch.placement == .embedded }
@@ -23,13 +24,13 @@ struct SBJEditorPropertyInfoContainer: View {
                 } else {
                     content
                 }
-            } else if propertyInfoInline, let info {
+            } else if propertyInfoInline, info != nil || caseInfo?() != nil {
                 HStack(spacing: sbjFormatting.laneSpacing) {
-                    accessible(content, using: info)
+                    accessibleIfAvailable(content)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .layoutPriority(1)
 
-                    SBJEditorPropertyInfoButton(propertyName: propertyName, info: info)
+                    SBJEditorPropertyInfoButton(propertyName: propertyName, info: info, caseInfo: caseInfo)
                         .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
                         .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                         .fixedSize(horizontal: true, vertical: false)
@@ -48,8 +49,8 @@ struct SBJEditorPropertyInfoContainer: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(alignment: .topTrailing) {
-                    if let info {
-                        SBJEditorPropertyInfoButton(propertyName: propertyName, info: info)
+                    if info != nil || caseInfo?() != nil {
+                        SBJEditorPropertyInfoButton(propertyName: propertyName, info: info, caseInfo: caseInfo)
                             .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
                             .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                             .offset(
@@ -63,6 +64,11 @@ struct SBJEditorPropertyInfoContainer: View {
         }
     }
 
+    private func accessibleIfAvailable(_ view: AnyView) -> AnyView {
+        guard let info else { return view }
+        return accessible(view, using: info)
+    }
+
     private func accessible(_ view: AnyView, using info: SBJPropertyInfo) -> AnyView {
         AnyView(view.accessibility(info))
     }
@@ -71,18 +77,19 @@ struct SBJEditorPropertyInfoContainer: View {
 @MainActor
 struct SBJEditorPropertyInfoButton: View {
     let propertyName: String
-    let info: SBJPropertyInfo
+    let info: SBJPropertyInfo?
+    var caseInfo: (() -> SBJEditorSelectedCaseInfo?)? = nil
     @State private var isPresented = false
 
     private var title: String {
-        info.title ?? propertyName
+        info?.title ?? propertyName
     }
 
     var body: some View {
         SBJImageButton(
             SBJSymbology.information,
-            accessibilityLabel: info.accessibilityLabel ?? "Information about \(title)",
-            accessibilityHint: info.accessibilityHint ?? info.summary
+            accessibilityLabel: info?.accessibilityLabel ?? "Information about \(title)",
+            accessibilityHint: info?.accessibilityHint ?? info?.summary ?? caseInfo?()?.info.summary
         ) {
             isPresented = true
         }
@@ -91,6 +98,7 @@ struct SBJEditorPropertyInfoButton: View {
             SBJEditorPropertyInfoSheet(
                 title: title,
                 info: info,
+                caseInfo: caseInfo?(),
                 showsDoneButton: false
             ) {
                 isPresented = false
@@ -102,6 +110,7 @@ struct SBJEditorPropertyInfoButton: View {
             SBJEditorPropertyInfoSheet(
                 title: title,
                 info: info,
+                caseInfo: caseInfo?(),
                 showsDoneButton: true
             ) {
                 isPresented = false
@@ -114,12 +123,13 @@ struct SBJEditorPropertyInfoButton: View {
 @MainActor
 private struct SBJEditorPropertyInfoSheet: View {
     let title: String
-    let info: SBJPropertyInfo
+    let info: SBJPropertyInfo?
+    let caseInfo: SBJEditorSelectedCaseInfo?
     let showsDoneButton: Bool
     let dismiss: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
                     .font(.title2.weight(.semibold))
@@ -129,17 +139,36 @@ private struct SBJEditorPropertyInfoSheet: View {
                 }
             }
 
-            Text(info.summary)
-                .font(.headline)
+            if let info {
+                Text(info.summary)
+                    .font(.subheadline.weight(.semibold))
+                if let details = info.details {
+                    ScrollView {
+                        Text(details)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
 
-            if let details = info.details {
-                ScrollView {
-                    Text(details)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            if let caseInfo {
+                if info != nil { Divider().padding(.vertical, 2) }
+                Text(caseInfo.title)
+                    .font(.headline)
+                Text(caseInfo.info.summary)
+                    .font(.subheadline.weight(.medium))
+                if let details = caseInfo.info.details {
+                    ScrollView {
+                        Text(details)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }
-        .padding()
+        .padding(14)
         .frame(idealWidth: 440, maxWidth: 520, idealHeight: 320, maxHeight: 520)
     }
 }

@@ -1,8 +1,21 @@
-/// Generates `static _extensionPropertyInfo(for:)` and the default `static propertyInfo(for:)` using static `fooInfo` declarations
-/// in the annotated extension. For declarations on the primary type,
-/// `@SBJStructure` already performs discovery without this annotation.
-/// Supports stored `static let` and computed `static var { get }` metadata.
-@attached(member, names: named(_extensionPropertyInfo), named(propertyInfo))
-public macro SBJPropertyInfo() = #externalMacro(
+/// Synthesizes property metadata lookup from `propertyNameInfo` members in a
+/// metadata extension. For enum metadata, use `@SBJPropertyInfoEnum`
+/// on the extension and `static let caseNameInfo = SBJPropertyInfo(...)` members.
+/// No annotations are needed on individual enum cases.
+///
+/// The extension marker is required because an attached macro cannot inspect
+/// members of other extensions when expanding the original type.
+@attached(member, names: named(_extensionPropertyInfo), named(propertyInfo), named(sbjCaseInfo))
+public macro SBJPropertyInfo(enumCases: Bool = false, fallbackToStructure: Bool = true) = #externalMacro(
+    module: "SBJFoundationMacros", type: "SBJPropertyInfoMacro"
+)
+
+/// Synthesizes enum-case metadata lookup from `caseNameInfo` static members
+/// on an extension. Case declarations remain free of metadata annotations.
+///
+/// A distinct extension marker is needed because an extension macro cannot
+/// determine whether the extended type is an enum from extension syntax alone.
+@attached(member, names: named(sbjCaseInfo))
+public macro SBJPropertyInfoEnum() = #externalMacro(
     module: "SBJFoundationMacros", type: "SBJPropertyInfoMacro"
 )

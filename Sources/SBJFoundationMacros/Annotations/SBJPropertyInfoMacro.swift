@@ -35,10 +35,35 @@ public struct SBJPropertyInfoMacro: MemberMacro {
             }
         }
 
+        // Enum cases cannot be key-path targets. Reuse the same `nameInfo`
+        // convention but synthesize a case-name lookup instead.
+        let isEnumCases: Bool = {
+            if node.attributeName.trimmedDescription == "SBJPropertyInfoEnum" { return true }
+            guard let arguments = node.arguments,
+                  case .argumentList(let parameters) = arguments else { return false }
+            return parameters.contains { parameter in
+                parameter.label?.text == "enumCases" &&
+                parameter.expression.as(BooleanLiteralExprSyntax.self)?.literal.tokenKind == .keyword(.true)
+            }
+        }()
+        if isEnumCases {
+            let checks = names.map { name in
+                "case \"\(name)\": return Self.\(name)Info"
+            }.joined(separator: "\n            ")
+            return [DeclSyntax(stringLiteral: """
+            public static func sbjCaseInfo(for caseName: String) -> SBJPropertyInfo? {
+                switch caseName {
+                \(checks)
+                default: return nil
+                }
+            }
+            """)]
+        }
+
         // An extension of a class cannot use covariant Self in a KeyPath parameter.
         let typeName = extensionDecl.extendedType.trimmedDescription
-        let checks = names.map { name in
-            "if keyPath == \\\(typeName).\(name) {\n    return Self.\(name)Info\n}"
+        let checks = names.enumerated().map { index, name in
+            "if keyPath == \\\(typeName).\(name) {\n\(index == 0 ? "        " : "    ")return Self.\(name)Info\n}"
         }.joined(separator: "\n")
 
         let fallback = "return Self._propertyInfo(for: keyPath)"

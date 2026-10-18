@@ -102,6 +102,20 @@ extension SBJStructureUsageTests {
 }
 
 @SBJStructure
+private enum TestPlainStructuredEnum: String, Codable, CaseIterable, Hashable {
+    case firstChoice
+    case secondChoice
+}
+
+extension SBJStructureUsageTests {
+    @Test func plainEnumsRetainSourceIdentityWithoutAssociatedEditorConformance() {
+        #expect(TestPlainStructuredEnum.sbjCaseNames == ["firstChoice", "secondChoice"])
+        #expect(TestPlainStructuredEnum.firstChoice.sbjCaseName == "firstChoice")
+        #expect(!(TestPlainStructuredEnum.self is any SBJEditableAssociatedEnum.Type))
+    }
+}
+
+@SBJStructure
 private enum TestAssociatedEnum: Codable {
     case automatic
     case adjusted(amount: Int, enabled: Bool)
@@ -980,4 +994,32 @@ private struct Phase1PropertyInfoExample: Codable {
 @Test func phase1PropertyInfoConventionAndOverride() {
     #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.title)?.summary == "Generated title documentation")
     #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.count)?.summary == "Override count documentation")
+}
+
+@SBJStructure
+private enum TestCaseInfoEnum: Codable {
+    case none
+    case adjusted(amount: Int, enabled: Bool)
+    case fixed(Int)
+}
+
+@SBJPropertyInfoEnum
+extension TestCaseInfoEnum {
+    static let noneInfo = SBJPropertyInfo(title: "None", summary: "No payload")
+    static let adjustedInfo = SBJPropertyInfo(title: "Adjusted score", summary: "Score with an adjustment", details: "Enter a whole number.")
+}
+
+extension SBJStructureUsageTests {
+    @Test func annotatedEnumCasesRetainSourceNamesAndExposePropertyInfo() {
+        #expect(TestCaseInfoEnum.sbjCaseNames == ["none", "adjusted", "fixed"])
+        #expect(TestCaseInfoEnum.adjusted(amount: 2, enabled: true).sbjCaseName == "adjusted")
+        #expect(TestCaseInfoEnum.sbjCaseInfo(for: "adjusted")?.title == "Adjusted score")
+        #expect(TestCaseInfoEnum.sbjCaseInfo(for: "adjusted")?.summary == "Score with an adjustment")
+        #expect(TestCaseInfoEnum.sbjCaseInfo(for: "fixed") == nil)
+    }
+
+    @MainActor
+    @Test func annotatedCaseTitleAppearsInAssociatedValueEditor() {
+        #expect(TestCaseInfoEnum.sbjEditorEnumCases.map(\.name) == ["None", "Adjusted score", "Fixed"])
+    }
 }
