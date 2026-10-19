@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 /// Shared read-only URL presentation using the same URL-opening behavior as
 /// `URLButton` rather than SwiftUI's separate `Link`/`openURL` path.
 public struct URLText: View {

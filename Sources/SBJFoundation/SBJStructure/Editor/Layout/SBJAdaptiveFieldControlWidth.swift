@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// Controls how the editor control uses horizontal space inside
 /// ``SBJAdaptiveFieldLayout``.
 ///

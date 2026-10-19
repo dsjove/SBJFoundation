@@ -1,184 +1,41 @@
+import SwiftSyntax
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
-import SBJLocalization
 @testable import SBJFoundationMacros
 
 final class SBJStructureMacroTests: XCTestCase {
+    // Data annotation marker macros generate no peers; the @SBJEditable umbrella
+    // generator reads their syntax and applies structural metadata and diagnostics.
+    private struct DataAnnotationMarker: PeerMacro {
+        static func expansion(
+            of node: AttributeSyntax,
+            providingPeersOf declaration: some DeclSyntaxProtocol,
+            in context: some MacroExpansionContext
+        ) throws -> [DeclSyntax] { [] }
+    }
+
     private let macros: [String: Macro.Type] = [
-        "SBJStructure": SBJStructureMacro.self,
         "SBJEditable": SBJEditableMacro.self,
-        "SBJPropertyInfo": SBJPropertyInfoMacro.self,
-        "SBJPropertyInfoEnum": SBJPropertyInfoMacro.self,
-        "SBJDesignatedInit": SBJDesignatedInitMacro.self,
         "SBJEditorExclude": SBJEditorExcludeMacro.self,
         "SBJEditorProperty": SBJEditorPropertyMacro.self,
-        "SBJString": SBJStringMacro.self,
         "SBJEditorString": SBJEditorStringMacro.self,
         "SBJEditorArray": SBJEditorArrayMacro.self,
         "SBJEditorSet": SBJEditorSetMacro.self,
         "SBJEditorFontFamily": SBJEditorFontFamilyMacro.self,
-        "SBJInteger": SBJIntegerMacro.self,
-        "SBJNumber": SBJNumberMacro.self,
-        "SBJOptional": SBJOptionalMacro.self,
-        "SBJArray": SBJArrayMacro.self,
-        "SBJSet": SBJSetMacro.self,
-        "SBJDictionary": SBJDictionaryMacro.self,
-        "SBJURL": SBJURLMacro.self,
-        "SBJUUID": SBJUUIDMacro.self,
-        "SBJDate": SBJDateMacro.self,
-        "SBJData": SBJDataMacro.self,
-        "SBJColor": SBJColorMacro.self,
+        "SBJString": DataAnnotationMarker.self,
+        "SBJInteger": DataAnnotationMarker.self,
+        "SBJNumber": DataAnnotationMarker.self,
+        "SBJOptional": DataAnnotationMarker.self,
+        "SBJArray": DataAnnotationMarker.self,
+        "SBJSet": DataAnnotationMarker.self,
+        "SBJDictionary": DataAnnotationMarker.self,
+        "SBJURL": DataAnnotationMarker.self,
+        "SBJUUID": DataAnnotationMarker.self,
+        "SBJDate": DataAnnotationMarker.self,
+        "SBJData": DataAnnotationMarker.self,
+        "SBJColor": DataAnnotationMarker.self,
     ]
-
-
-    func testExtensionPropertyInfoDiscoversStaticLetAndComputedVar() {
-        assertMacroExpansion(
-            """
-            @SBJPropertyInfo
-            extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
-                static var ageInfo: SBJPropertyInfo {
-                    get { SBJPropertyInfo(summary: "Age") }
-                }
-            }
-            """,
-            expandedSource: """
-            extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
-                static var ageInfo: SBJPropertyInfo {
-                    get { SBJPropertyInfo(summary: "Age") }
-                }
-
-                public static func _extensionPropertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
-                    if keyPath == \\Example.name {
-                        return Self.nameInfo
-                    }
-                    if keyPath == \\Example.age {
-                        return Self.ageInfo
-                    }
-                    return Self._propertyInfo(for: keyPath)
-                }
-
-                public static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
-                    _extensionPropertyInfo(for: keyPath)
-                }
-            }
-            """,
-            macros: macros
-        )
-    }
-
-    func testExtensionPropertyInfoSupportsExplicitPublicOverride() {
-        assertMacroExpansion(
-            """
-            @SBJPropertyInfo
-            extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
-                static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
-                    _extensionPropertyInfo(for: keyPath)
-                }
-            }
-            """,
-            expandedSource: """
-            extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
-                static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
-                    _extensionPropertyInfo(for: keyPath)
-                }
-
-                public static func _extensionPropertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
-                    if keyPath == \\Example.name {
-                        return Self.nameInfo
-                    }
-                    return Self._propertyInfo(for: keyPath)
-                }
-            }
-            """,
-            macros: macros
-        )
-    }
-
-    func testPreferredInitCapturesExternalLabelsAndLocalPropertyNames() {
-        assertMacroExpansion(
-            """
-            struct FontLike {
-                @SBJDesignatedInit
-                init(_ name: String?, ofSize size: Double, weight: Int) {}
-            }
-            """,
-            expandedSource: """
-            struct FontLike {
-                init(_ name: String?, ofSize size: Double, weight: Int) {}
-
-                public static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
-                    [
-                        .init(propertyName: "name", label: nil),
-                        .init(propertyName: "size", label: "ofSize"),
-                        .init(propertyName: "weight", label: "weight")
-                    ]
-                }
-            }
-            """,
-            macros: macros
-        )
-    }
-
-
-    func testPreferredInitMapsParameterToDirectlyAssignedProperty() {
-        assertMacroExpansion(
-            """
-            struct TitledBodyLike {
-                @SBJDesignatedInit
-                init(_ key: String, _ body: String) {
-                    self.title = key
-                    self.body = body
-                }
-            }
-            """,
-            expandedSource: """
-            struct TitledBodyLike {
-                init(_ key: String, _ body: String) {
-                    self.title = key
-                    self.body = body
-                }
-
-                public static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
-                    [
-                        .init(propertyName: "title", label: nil),
-                        .init(propertyName: "body", label: nil)
-                    ]
-                }
-            }
-            """,
-            macros: macros
-        )
-    }
-
-
-    func testDesignatedInitCapturesDefaultExpressions() {
-        assertMacroExpansion(
-            """
-            struct SectionLike {
-                @SBJDesignatedInit
-                init(_ name: String = "", _ values: [String] = []) {}
-            }
-            """,
-            expandedSource: #"""
-            struct SectionLike {
-                init(_ name: String = "", _ values: [String] = []) {}
-
-                public static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
-                    [
-                        .init(propertyName: "name", label: nil, defaultExpression: "\"\""),
-                        .init(propertyName: "values", label: nil, defaultExpression: "[]")
-                    ]
-                }
-            }
-            """#,
-            macros: macros
-        )
-    }
 
     func testEmptyStructureGeneratesPublicConsumptionHooksAndEditorConformance() {
         assertMacroExpansion(

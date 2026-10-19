@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 public extension Encodable {
     /// Compares two encodable values using stable JSON encoding.
     ///

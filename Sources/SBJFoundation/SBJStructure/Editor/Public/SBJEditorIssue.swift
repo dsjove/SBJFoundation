@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 
+import SBJDataDefinition
 /// A problem with the SwiftUI editor's ability to represent a value.
 ///
 /// This is deliberately separate from structural validation. Another editor

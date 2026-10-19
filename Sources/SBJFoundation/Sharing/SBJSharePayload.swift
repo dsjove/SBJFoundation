@@ -1,5 +1,6 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import LinkPresentation
+import SBJDataDefinition
 import UIKit
 
 /// A fully prepared payload for one UIKit share presentation.

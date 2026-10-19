@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 public struct Identified<T>: Identifiable, Hashable {
 	public let id: UUID
 	public let value: T

@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJDataDefinition
 import SBJLocalization
 
 /// Compact binary control using the shared SBJ active-control chrome.

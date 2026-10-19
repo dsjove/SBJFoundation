@@ -2,6 +2,7 @@
   import SwiftUI
 import SBJLocalization
 
+import SBJDataDefinition
   /// Configuration distilled from structural property metadata for one editor field.
   @MainActor
   struct SBJEditFieldConfiguration {

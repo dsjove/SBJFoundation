@@ -1,5 +1,6 @@
 #if canImport(UIKit) && canImport(WebKit)
 import SwiftUI
+import SBJDataDefinition
 import UIKit
 import WebKit
 import UniformTypeIdentifiers

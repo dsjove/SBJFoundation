@@ -8,6 +8,7 @@ public enum SBJUnitValueEditorMode: Sendable, Hashable {
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 protocol _SBJUnitValueEditorValue {
     @MainActor
     static func _sbjMakeUnitValueEditor(

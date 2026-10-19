@@ -1,4 +1,5 @@
 import CoreLocation
+import SBJDataDefinition
 import Foundation
 import Observation
 

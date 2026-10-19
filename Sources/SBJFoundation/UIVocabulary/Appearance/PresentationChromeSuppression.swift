@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 /// Environment hook for child presentations that temporarily obscure their
 /// parent's presentation chrome.
 ///

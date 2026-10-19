@@ -1,5 +1,6 @@
 #if os(iOS) && canImport(MessageUI)
 import Foundation
+import SBJDataDefinition
 import SBJFileResources
 import MessageUI
 import SwiftUI

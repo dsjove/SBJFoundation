@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJDataDefinition
 import SBJLocalization
 
 /// Compact reusable control for a numeric value paired with a unit.

@@ -1,6 +1,7 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import SwiftUI
 
+import SBJDataDefinition
 /// Stable owner for UIKit share presentation.
 ///
 /// The host creates one `SBJSharePresenter` and passes it explicitly to its

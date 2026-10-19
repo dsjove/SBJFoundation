@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJDataDefinition
 import SBJLocalization
 
 @MainActor

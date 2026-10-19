@@ -1,3 +1,4 @@
+import SBJDataDefinition
 /// Editor-only text entry configuration; structural constraints belong to @SBJString.
 @attached(peer)
 public macro SBJEditorString(

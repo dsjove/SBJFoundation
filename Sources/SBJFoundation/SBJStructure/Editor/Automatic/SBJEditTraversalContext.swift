@@ -1,3 +1,4 @@
+import SBJDataDefinition
 /// Stable logical identity for one item in an editor snapshot.
 ///
 /// Like a collection-view item identifier, this answers *which logical item is

@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import Testing
+import SBJDataDefinition
 @testable import SBJFoundation
 
 struct SBJTextFieldSizingTests {

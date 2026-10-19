@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 private struct SBJInvalidDecorationModifier: ViewModifier {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     let isInvalid: Bool

@@ -1,4 +1,5 @@
 import Observation
+import SBJDataDefinition
 import SBJLocalization
 
 @Observable

@@ -1,5 +1,6 @@
 #if !os(watchOS) && canImport(UIKit)
 import ImageIO
+import SBJDataDefinition
 import SBJFileResources
 import UniformTypeIdentifiers
 import UIKit

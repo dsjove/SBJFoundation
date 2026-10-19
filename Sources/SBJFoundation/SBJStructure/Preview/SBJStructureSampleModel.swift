@@ -1,4 +1,5 @@
 import CoreGraphics
+import SBJDataDefinition
 import Foundation
 import SBJLocalization
 

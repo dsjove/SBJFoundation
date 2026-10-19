@@ -1,5 +1,6 @@
 #if os(iOS)
 import Foundation
+import SBJDataDefinition
 import SBJFileResources
 import Photos
 

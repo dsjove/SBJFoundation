@@ -1,5 +1,6 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import Foundation
+import SBJDataDefinition
 import SBJFileResources
 import CoreLocation
 import Testing

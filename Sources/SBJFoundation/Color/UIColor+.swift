@@ -1,5 +1,6 @@
 import UIKit
 
+import SBJDataDefinition
 public extension UIColor {
 	var brightness: CGFloat {
 		var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0

@@ -1,4 +1,5 @@
 import CoreLocation
+import SBJDataDefinition
 import ImageIO
 import UniformTypeIdentifiers
 

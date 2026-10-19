@@ -1,5 +1,6 @@
 #if !os(watchOS)
 import XCTest
+import SBJDataDefinition
 import UniformTypeIdentifiers
 @testable import SBJFoundation
 @testable import SBJFileResources

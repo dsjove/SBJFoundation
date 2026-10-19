@@ -1,4 +1,5 @@
 import Testing
+import SBJDataDefinition
 @testable import SBJFoundation
 
 @Suite("Menu selection states")

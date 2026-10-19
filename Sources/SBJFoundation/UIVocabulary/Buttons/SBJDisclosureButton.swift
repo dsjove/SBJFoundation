@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJDataDefinition
 import SBJLocalization
 
 /// Compact disclosure control for expandable UI.

@@ -1,3 +1,4 @@
+import SBJDataDefinition
 /// Excludes a stored property from `SBJCodableEditor` field generation.
 ///
 /// The property remains part of `@SBJEditable` structural metadata, content

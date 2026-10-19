@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     private var sbjFormatting: SBJEditorFormattingOptions { presentationModel.formattingOptions }
     let title: String

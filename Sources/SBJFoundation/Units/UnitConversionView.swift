@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 @MainActor
 public struct UnitConversionView<Unit: UnitType>: View {
     @Bindable private var model: UnitConversionModel<Unit>

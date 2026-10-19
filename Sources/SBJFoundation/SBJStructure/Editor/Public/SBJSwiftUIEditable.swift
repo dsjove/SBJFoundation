@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// SwiftUI rendering capability layered on top of the UI-independent
 /// ``SBJMutableStructure`` model description.
 ///

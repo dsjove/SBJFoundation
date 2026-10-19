@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 public struct TagsListView<T: TagUser>: View {
 	private let user: T
 

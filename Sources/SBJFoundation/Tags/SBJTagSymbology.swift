@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJLocalization
 
 /// Semantic imagery used by tag UI and tag help.

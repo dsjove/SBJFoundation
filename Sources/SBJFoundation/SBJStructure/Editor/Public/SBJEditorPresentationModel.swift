@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJDataDefinition
 import Observation
 
 /// Shared presentation state for one structured editor tree, independent of row lifetimes.

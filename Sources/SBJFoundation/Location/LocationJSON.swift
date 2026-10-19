@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import CoreLocation
 
 public struct LocationJSON: Codable, Equatable {

@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// Describes compound descendants without constructing any SwiftUI views.
 /// The flat editor projection consumes these descriptors without nested views.
 @MainActor

@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJFileResources
 import SBJDocuments
 

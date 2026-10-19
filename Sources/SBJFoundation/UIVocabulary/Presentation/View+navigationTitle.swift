@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 private struct NavigationTitleHighlighted: ViewModifier {
 	let alerted: Bool
 

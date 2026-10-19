@@ -1,5 +1,6 @@
 #if !os(watchOS) && canImport(UIKit)
 import CoreGraphics
+import SBJDataDefinition
 import Foundation
 
 struct PhotoResolvedLayout {

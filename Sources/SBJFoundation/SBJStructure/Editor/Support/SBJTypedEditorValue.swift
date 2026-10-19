@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
+import SBJDataDefinition
 import CoreGraphics
 
 /// Marker for value types that the built-in SwiftUI editor can render directly

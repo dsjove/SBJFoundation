@@ -1,5 +1,6 @@
 #if canImport(UIKit)
 import UIKit
+import SBJDataDefinition
 import SBJFileResources
 import UniformTypeIdentifiers
 

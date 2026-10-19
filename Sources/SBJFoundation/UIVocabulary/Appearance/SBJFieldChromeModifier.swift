@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 private struct SBJFieldChromeModifier: ViewModifier {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     let state: SBJFieldChromeState

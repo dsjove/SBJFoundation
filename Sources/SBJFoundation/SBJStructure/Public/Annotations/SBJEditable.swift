@@ -1,6 +1,7 @@
+import SBJDataDefinition
 /// Generates structural metadata and editor integration with one annotation.
 ///
-/// `@SBJEditable` includes all behavior of `@SBJEditable`; do not apply both
+/// `@SBJEditable` includes all behavior of `@SBJStructure`; do not apply both
 /// annotations to the same declaration.
 @attached(member,
     names:

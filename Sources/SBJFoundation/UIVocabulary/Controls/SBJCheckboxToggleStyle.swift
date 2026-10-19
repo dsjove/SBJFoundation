@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJDataDefinition
 import SBJLocalization
 
 /// A checkbox presentation for `Toggle` that keeps the normal Toggle binding contract while

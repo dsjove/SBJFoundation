@@ -1,6 +1,7 @@
 #if os(tvOS) || os(watchOS)
 import Foundation
 
+import SBJDataDefinition
 /// tvOS/watchOS retain the model metadata synthesized by `@SBJEditable`, but does
 /// not provide the SwiftUI structured editor UI.
 public protocol SBJSwiftUIEditable: SBJMutableStructure {

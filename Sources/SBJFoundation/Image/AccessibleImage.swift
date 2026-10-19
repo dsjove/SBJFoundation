@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJLocalization
 
 /// An image reference with optional visible and spoken descriptions.

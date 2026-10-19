@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
+import SBJDataDefinition
 import SwiftUI
 
 /// Locale-aware editor for the fixed-width integer types that do not have a

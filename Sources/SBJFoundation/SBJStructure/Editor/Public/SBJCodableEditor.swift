@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// The reflected editor content without search controls or a scrolling container.
 ///
 /// The host owns layout and scrolling. Pair this with ``SBJEditorSearchView``

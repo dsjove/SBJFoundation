@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// Metadata for one associated value belonging to an enum case synthesized by
 /// ``SBJStructure()``.
 @MainActor

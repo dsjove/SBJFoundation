@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// Shared disclosure row used by the generated editor.
 ///
 /// Disclosure, element actions, state indicators, title content and trailing

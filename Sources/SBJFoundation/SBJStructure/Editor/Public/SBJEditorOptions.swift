@@ -1,3 +1,4 @@
+import SBJDataDefinition
 #if !os(tvOS) && !os(watchOS)
 /// Rendering policies for an SBJEditorView. Does not hold editor session state.
 public struct SBJEditorOptions: Sendable, Equatable {

@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 /// The reusable SBJ integer text field.
 ///
 /// `NumberTextField` is a standalone input control. Surrounding labels, status,

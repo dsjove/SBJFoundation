@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 /// A reusable text field for values that participate in `SearchProtocol`.
 public struct SearchField<S: SearchProtocol>: View {
     private let titleKey: LocalizedStringKey

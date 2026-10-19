@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// Layout configuration for a structured editor tree.
 /// Stored on `SBJEditorPresentationModel` and observed by editor rows.
 public struct SBJEditorFormattingOptions: Sendable, Equatable {

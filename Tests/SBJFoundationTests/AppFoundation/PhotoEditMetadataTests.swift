@@ -1,5 +1,6 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import Testing
+import SBJDataDefinition
 @testable import SBJFoundation
 
 @Suite("Photo edit metadata")

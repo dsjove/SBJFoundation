@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 private enum SBJEditorFirstLineCenterID: AlignmentID {
     static func defaultValue(in dimensions: ViewDimensions) -> CGFloat {
         min(dimensions.height, 28) / 2

@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// One logical field in the traversal, independent of the SwiftUI view used
 /// to display that field. Children are intentionally deferred: closed branches
 /// do not build descendant nodes.

@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 @MainActor
 struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
     let label: String

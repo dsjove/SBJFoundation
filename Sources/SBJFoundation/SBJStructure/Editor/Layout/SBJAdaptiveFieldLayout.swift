@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// A label/control pair that preserves the compact editor grammar when it fits,
 /// but stacks vertically when Dynamic Type or translated text needs more room.
 ///

@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 
+import SBJDataDefinition
 enum SBJArrayEditorPresentation {
     static func itemNumber(for underlyingIndex: Int) -> Int {
         underlyingIndex + 1

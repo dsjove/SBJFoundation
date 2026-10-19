@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 
+import SBJDataDefinition
 /// DEBUG-only console diagnostics for root structured-editor work.
 /// Logs individual operations taking >= 5 ms, plus a summary every 100 calls
 /// so that many inexpensive evaluations are also observable.

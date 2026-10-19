@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 private struct SBJActiveSearchModifier: ViewModifier {
     let isActive: Bool
     let padding: CGFloat

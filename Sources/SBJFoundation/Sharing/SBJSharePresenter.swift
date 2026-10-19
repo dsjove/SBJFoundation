@@ -1,5 +1,6 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import SwiftUI
+import SBJDataDefinition
 import Observation
 
 @MainActor

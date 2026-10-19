@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 public enum MacFlavor {
 	case native
 	case catalyst

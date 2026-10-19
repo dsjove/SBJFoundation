@@ -1,5 +1,6 @@
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
 import QuickLook
+import SBJDataDefinition
 import SwiftUI
 import UIKit
 import SBJLocalization

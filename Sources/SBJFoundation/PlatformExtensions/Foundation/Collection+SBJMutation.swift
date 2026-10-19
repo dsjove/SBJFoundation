@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 public extension Set {
     /// Replaces one element without silently collapsing the set when the
     /// replacement already exists.

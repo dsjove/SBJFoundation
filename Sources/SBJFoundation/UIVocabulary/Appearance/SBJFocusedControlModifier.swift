@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 private struct SBJFocusedControlModifier: ViewModifier {
     @FocusState private var isFocused: Bool
 

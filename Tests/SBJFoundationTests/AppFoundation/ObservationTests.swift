@@ -1,4 +1,5 @@
 import Observation
+import SBJDataDefinition
 import XCTest
 @testable import SBJFoundation
 

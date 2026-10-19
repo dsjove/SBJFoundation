@@ -1,4 +1,5 @@
 import SBJCamera
+import SBJDataDefinition
 import SBJDocuments
 import SBJFileResources
 #if !os(watchOS) && canImport(UIKit)

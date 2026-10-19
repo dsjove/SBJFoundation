@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 /// UI-independent search and filter criteria for structured editing.
 ///
 /// Keeping the criteria together lets editors add new filters without threading

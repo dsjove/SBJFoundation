@@ -38,12 +38,14 @@ let package = Package(
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
             ]
         ),
         .target(
             name: "SBJFoundation",
             dependencies: [
                 "SBJFoundationMacros",
+                .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
@@ -68,6 +70,7 @@ let package = Package(
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 "SBJFoundationMacros",
+                .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),

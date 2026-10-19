@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 struct SBJEditorLabeledField<Control: View>: View {
     let label: String
     let labelIsUnknown: Bool

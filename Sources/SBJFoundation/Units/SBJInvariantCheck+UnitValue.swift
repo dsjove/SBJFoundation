@@ -1,3 +1,4 @@
+import SBJDataDefinition
 /// Unit-specific validation belongs with the unit abstraction rather than in
 /// SBJStructure's general invariant checker implementation.
 public extension SBJInvariantCheck {

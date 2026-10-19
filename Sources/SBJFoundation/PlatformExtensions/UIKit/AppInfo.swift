@@ -1,5 +1,6 @@
 import UIKit
 
+import SBJDataDefinition
 public enum AppInfo {
 //These need to be localized
 	public static let companyName: String = "Software by Jove"

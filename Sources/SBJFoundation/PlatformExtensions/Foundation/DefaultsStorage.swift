@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 @propertyWrapper
 public struct DefaultsStorage<Value> {
 	public let key: String

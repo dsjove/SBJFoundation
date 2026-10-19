@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
+import SBJDataDefinition
 import SwiftUI
 
 struct SBJIntegerEditor: View {

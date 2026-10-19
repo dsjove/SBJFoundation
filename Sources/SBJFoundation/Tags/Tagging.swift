@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJDocuments
 import SwiftUI
 import SwiftData

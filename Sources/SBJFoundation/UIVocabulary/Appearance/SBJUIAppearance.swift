@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 /// Shared visual vocabulary for SBJFoundation controls and consuming applications.
 ///
 /// Semantic colors live here instead of at their call sites so a state such as

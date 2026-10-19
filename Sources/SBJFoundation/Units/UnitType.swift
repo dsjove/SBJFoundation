@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJLocalization
 
 /// Broad measurement-system classification for reusable units.

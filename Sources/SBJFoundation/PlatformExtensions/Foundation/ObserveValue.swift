@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import Observation
 
 /// Lifetime token for an observation installed by ``observeValue``.

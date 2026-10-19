@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 public extension View {
     @ViewBuilder
     func applyIf<T>(_ value: T?, transform: (Self, T) -> some View) -> some View {

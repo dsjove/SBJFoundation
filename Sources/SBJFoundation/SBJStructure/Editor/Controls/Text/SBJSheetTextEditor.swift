@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 struct SBJSheetTextEditor: View {
     let label: String
     @Binding var value: String

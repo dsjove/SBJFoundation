@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// Application-supplied custom editors and value factories.
 ///
 /// The registry matches exact Swift types. SBJStructure provides built-in editors

@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 /// Nominal body-text dimensions for a compact field.
 ///
 /// The values are preferences rather than fixed screen-space dimensions. The

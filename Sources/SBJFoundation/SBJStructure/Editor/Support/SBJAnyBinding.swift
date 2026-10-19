@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// A deliberately type-erased binding used only to cross heterogeneous editor
 /// dispatch boundaries.
 ///

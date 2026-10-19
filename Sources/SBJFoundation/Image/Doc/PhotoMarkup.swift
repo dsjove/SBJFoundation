@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import UniformTypeIdentifiers
 #if canImport(CoreGraphics)
 import CoreGraphics

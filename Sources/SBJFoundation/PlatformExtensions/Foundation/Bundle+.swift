@@ -1,5 +1,6 @@
 import UIKit
 
+import SBJDataDefinition
 public extension Bundle {
 	var displayName: String? {
 		self.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String

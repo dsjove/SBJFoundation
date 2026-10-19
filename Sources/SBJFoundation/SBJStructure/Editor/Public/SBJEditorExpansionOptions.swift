@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 
+import SBJDataDefinition
 /// Storage for the user's explicit disclosure choices. Implementations may persist
 /// to a database, document settings, or another application-specific destination.
 @MainActor

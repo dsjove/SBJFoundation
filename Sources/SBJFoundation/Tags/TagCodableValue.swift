@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJLocalization
 
 /// Codable value representation of the generic, user-visible portion of a tag.

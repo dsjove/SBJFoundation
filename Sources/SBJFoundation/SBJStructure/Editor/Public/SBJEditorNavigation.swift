@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 /// A presentation path the stock structured editor can reveal and scroll to.
 ///
 /// Paths use the same human-readable components shown by editor diagnostics.

@@ -1,5 +1,6 @@
 import Testing
 
+import SBJDataDefinition
 @testable import SBJFoundation
 
 struct SBJStructureSampleModelTests {

@@ -1,5 +1,6 @@
 #if os(iOS) || os(visionOS)
 import SwiftUI
+import SBJDataDefinition
 import UIKit
 
 // TODO(ColorPicker duplication — unresolved): SBJFoundation still has both this UIKit-backed

@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJDataDefinition
 import UIKit
 
 /// Folder picker used by app-controlled exports. Selecting the destination

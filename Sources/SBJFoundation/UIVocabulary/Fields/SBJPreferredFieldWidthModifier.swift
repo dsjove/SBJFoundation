@@ -1,5 +1,6 @@
 import SwiftUI
 
+import SBJDataDefinition
 struct SBJPreferredFieldWidthModifier: ViewModifier {
     @ScaledMetric(relativeTo: .body) private var minimum: CGFloat = 0
     @ScaledMetric(relativeTo: .body) private var ideal: CGFloat = 0

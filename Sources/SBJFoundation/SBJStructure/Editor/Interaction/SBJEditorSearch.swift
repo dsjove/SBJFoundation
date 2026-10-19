@@ -1,6 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
+import SBJDataDefinition
 @MainActor
 struct SBJEditorSearchBar: View {
     @Binding var searchText: String

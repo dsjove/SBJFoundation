@@ -1,5 +1,6 @@
 import CoreLocation
 
+import SBJDataDefinition
 /// Location capability used by clients that need an eagerly acquired, cached
 /// location without depending on a concrete Core Location implementation.
 public protocol LocationProvider: AnyObject {

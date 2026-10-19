@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SwiftUI
 
 /// Domain-informed sizing for compact scalar controls.

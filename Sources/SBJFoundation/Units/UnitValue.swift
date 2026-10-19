@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SBJLocalization
 
 /// Codable pairing of a numeric amount and a strongly typed unit.

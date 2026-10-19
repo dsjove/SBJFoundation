@@ -1,5 +1,6 @@
 import Foundation
 
+import SBJDataDefinition
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)

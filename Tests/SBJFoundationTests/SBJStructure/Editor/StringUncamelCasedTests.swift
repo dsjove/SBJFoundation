@@ -1,4 +1,5 @@
 import Testing
+import SBJDataDefinition
 import SBJLocalization
 @testable import SBJFoundation
 
