@@ -4,6 +4,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
+/// Generates structural metadata without editor-specific declarations.
 public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -11,13 +12,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        if let structDecl = declaration.as(StructDeclSyntax.self) {
-            return structMembers(for: structDecl, in: context)
-        }
-        if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-            return enumMembers(for: enumDecl, in: context)
-        }
-        throw SBJStructureMacroError.onlyStructsOrEnums
+        try SBJStructureGeneration.members(of: declaration, in: context, includingEditor: false)
     }
 
     public static func expansion(
@@ -27,14 +22,87 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
+        try SBJStructureGeneration.extensions(of: declaration, type: type, includingEditor: false)
+    }
+}
+
+/// Editor umbrella annotation: structural generation plus editor integration.
+public struct SBJEditableMacro: MemberMacro, ExtensionMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        try SBJStructureGeneration.members(of: declaration, in: context, includingEditor: true)
+    }
+
+    public static func expansion(
+        of node: AttributeSyntax,
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [ExtensionDeclSyntax] {
+        try SBJStructureGeneration.extensions(of: declaration, type: type, includingEditor: true)
+    }
+}
+
+/// Single implementation shared by the two macro entry points.
+/// When the packages split, this generator can move behind a shared macro target.
+enum SBJStructureGeneration {
+    private static func hasBothAnnotations(_ declaration: some DeclGroupSyntax) -> Bool {
+        let attributes: AttributeListSyntax
+        if let declaration = declaration.as(StructDeclSyntax.self) {
+            attributes = declaration.attributes
+        } else if let declaration = declaration.as(EnumDeclSyntax.self) {
+            attributes = declaration.attributes
+        } else {
+            return false
+        }
+        let names = Set(attributes.compactMap { element -> String? in
+            element.as(AttributeSyntax.self)?.attributeName.trimmedDescription
+        })
+        return names.contains("SBJStructure") && names.contains("SBJEditable")
+    }
+
+    static func members(
+        of declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext,
+        includingEditor: Bool
+    ) throws -> [DeclSyntax] {
+        if hasBothAnnotations(declaration) {
+            throw SBJStructureMacroError.conflictingAnnotations
+        }
+        if let structDecl = declaration.as(StructDeclSyntax.self) {
+            return structMembers(for: structDecl, in: context, includingEditor: includingEditor)
+        }
+        if let enumDecl = declaration.as(EnumDeclSyntax.self) {
+            return enumMembers(for: enumDecl, in: context, includingEditor: includingEditor)
+        }
+        throw SBJStructureMacroError.onlyStructsOrEnums
+    }
+
+    static func extensions(
+        of declaration: some DeclGroupSyntax,
+        type: some TypeSyntaxProtocol,
+        includingEditor: Bool
+    ) throws -> [ExtensionDeclSyntax] {
+        if hasBothAnnotations(declaration) {
+            return [] // The member expansion reports the conflict.
+        }
         let conformance: String
         if declaration.is(StructDeclSyntax.self) {
-            conformance = "SBJMutableStructure, SBJSwiftUIEditable"
+            conformance = includingEditor
+                ? "SBJMutableStructure, SBJSwiftUIEditable"
+                : "SBJMutableStructure"
         } else if declaration.is(EnumDeclSyntax.self) {
             let enumDecl = declaration.cast(EnumDeclSyntax.self)
             let hasPayload = enumCases(in: enumDecl).contains { !$0.parameters.isEmpty }
             conformance = hasPayload
-                ? "SBJEnumCaseIdentifiable, SBJEditableAssociatedEnum, SBJStructuredEnum"
+                ? (includingEditor
+                    ? "SBJEnumCaseIdentifiable, SBJEditableAssociatedEnum, SBJStructuredEnum"
+                    : "SBJEnumCaseIdentifiable, SBJStructuredEnum")
                 : "SBJEnumCaseIdentifiable"
         } else {
             throw SBJStructureMacroError.onlyStructsOrEnums
@@ -50,7 +118,8 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
 
     private static func structMembers(
         for structDecl: StructDeclSyntax,
-        in context: some MacroExpansionContext
+        in context: some MacroExpansionContext,
+        includingEditor: Bool
     ) -> [DeclSyntax] {
         let codedNames = codingKeyNames(in: structDecl)
         // Named static declarations (`nameInfo`, etc.) provide zero-boilerplate
@@ -114,7 +183,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                         isStoredWithObservers = false
                     }
                     if !isStoredWithObservers {
-                        if hasAttribute(named: "SBJEditorProperty", on: variable) {
+                        if includingEditor && hasAttribute(named: "SBJEditorProperty", on: variable) {
                         editableEntries.append(
                             "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
@@ -299,9 +368,11 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 editableEntries.append(
                     "SBJMutableProperty<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
                 )
-                entries.append(
-                    "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name), disclosureMode: \(editorDisclosure(on: variable) ?? ".closed"))"
-                )
+                if includingEditor {
+                    entries.append(
+                        "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name), disclosureMode: \(editorDisclosure(on: variable) ?? ".closed"))"
+                    )
+                }
             }
         }
 
@@ -347,15 +418,17 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 ]
             }
             """),
-            DeclSyntax(stringLiteral: """
+        ]
+        if includingEditor {
+            result.append(DeclSyntax(stringLiteral: """
             @MainActor
             \(access)static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                 [
                     \(body)
                 ]
             }
-            """)
-        ]
+            """))
+        }
 
         let contentExpression = contentMembers.isEmpty
             ? "true"
@@ -491,7 +564,8 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
 
     private static func enumMembers(
         for enumDecl: EnumDeclSyntax,
-        in context: some MacroExpansionContext
+        in context: some MacroExpansionContext,
+        includingEditor: Bool
     ) -> [DeclSyntax] {
         let access = effectiveAccessPrefix(modifiers: enumDecl.modifiers, in: context)
         let cases = enumCases(in: enumDecl)
@@ -561,21 +635,21 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         // generic CaseIterable & Hashable editor, without associated-value APIs.
         guard hasPayload else { return result }
 
-        result += [
-            DeclSyntax(stringLiteral: """
+        if includingEditor {
+            result.append(DeclSyntax(stringLiteral: """
             @MainActor
             \(access)static var sbjEditorEnumCases: [SBJEditorEnumCase<Self>] {
                 [
                     \(caseEntries)
                 ]
             }
-            """),
-            DeclSyntax(stringLiteral: """
+            """))
+        }
+        result.append(DeclSyntax(stringLiteral: """
             \(access)static func sbjCreateDefaultValueIfPossible() -> Self? {
                 \(failableCreatorBody)
             }
-            """),
-        ]
+            """))
 
         let structuralCases = cases.map(enumStructuralComparisonCase).joined(separator: "\n        ")
         result.append(
@@ -1464,11 +1538,14 @@ private struct InvalidAnnotationDeclarationDiagnostic: DiagnosticMessage {
 
 private enum SBJStructureMacroError: Error, CustomStringConvertible {
     case onlyStructsOrEnums
+    case conflictingAnnotations
 
     var description: String {
         switch self {
         case .onlyStructsOrEnums:
-            return "@SBJStructure can be applied only to structs or enums"
+            return "@SBJStructure and @SBJEditable can be applied only to structs or enums"
+        case .conflictingAnnotations:
+            return "Use either @SBJStructure or @SBJEditable, not both"
         }
     }
 }

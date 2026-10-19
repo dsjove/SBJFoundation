@@ -50,7 +50,7 @@ struct UnitValueTests {
 #endif
 }
 
-@SBJStructure
+@SBJEditable
 private struct UnitValueEditorFixture: Codable {
     @SBJUnitValue(min: 0)
     var length = UnitValue<LengthUnit>(5, unit: .foot)

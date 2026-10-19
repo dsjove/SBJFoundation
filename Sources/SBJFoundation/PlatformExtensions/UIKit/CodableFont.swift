@@ -3,7 +3,7 @@ import SBJLocalization
 import UIKit
 import SwiftUI
 
-@SBJStructure
+@SBJEditable
 public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, CustomDebugStringConvertible {
 	public enum Weight: String, Codable, Equatable, CaseIterable, Comparable, Sendable {
 		case ultraLight

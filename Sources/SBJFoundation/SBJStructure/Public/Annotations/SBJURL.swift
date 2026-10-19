@@ -1,6 +1,6 @@
 import Foundation
 
-/// Broad URL categories that can be declared as valid for an `@SBJStructure` property.
+/// Broad URL categories that can be declared as valid for an `@SBJEditable` property.
 ///
 /// `.file` accepts file URLs. `.network` accepts absolute, non-file URLs with a
 /// scheme. The declaration is a model invariant only; it does not restrict direct
@@ -10,7 +10,7 @@ public enum SBJURLKind: Sendable, Hashable {
     case network
 }
 
-/// Declares which broad URL categories are valid for an `@SBJStructure` property.
+/// Declares which broad URL categories are valid for an `@SBJEditable` property.
 ///
 /// Plain `URL` properties require no annotation. Use this annotation only when the
 /// model distinguishes file URLs from network URLs. The allowed kinds are checked

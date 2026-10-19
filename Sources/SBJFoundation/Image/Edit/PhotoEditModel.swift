@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 import SBJLocalization
 
-@SBJStructure
+@SBJEditable
 public struct NormalizedPhotoOffset: Codable, Equatable, Sendable {
     @SBJNumber(range: -1...1)
     public var x: Double = 0
@@ -21,7 +21,7 @@ public struct NormalizedPhotoOffset: Codable, Equatable, Sendable {
     }
 }
 
-@SBJStructure
+@SBJEditable
 public struct PhotoRotation: Codable, Equatable, Sendable {
     @SBJInteger(range: 0...3)
     public var quarterTurns: Int = 0
@@ -41,7 +41,7 @@ public struct PhotoRotation: Codable, Equatable, Sendable {
     }
 }
 
-@SBJStructure
+@SBJEditable
 public struct PhotoMirrorState: Codable, Equatable, Sendable {
     public var horizontal = false
     public var vertical = false
@@ -56,7 +56,7 @@ public struct PhotoMirrorState: Codable, Equatable, Sendable {
     }
 }
 
-@SBJStructure
+@SBJEditable
 public struct PhotoCropState: Codable, Equatable, Sendable {
     public var option: PhotoCropOption
     @SBJNumber(range: 0.25...4)
@@ -141,7 +141,7 @@ public struct PhotoSkew: Codable, Equatable, Sendable {
 }
 
 /// Geometry is the complete geometric adjustment recipe. It is state, not edit history.
-@SBJStructure
+@SBJEditable
 public struct PhotoEditGeometry: Codable, Equatable, Sendable {
     public var crop: PhotoCropState
     public var placement: NormalizedPhotoOffset = .zero

@@ -48,7 +48,7 @@ public struct SBJSwiftArgument {
 }
 
 
-/// Exports populated `@SBJStructure` values as reconstructable Swift source.
+/// Exports populated `@SBJEditable` values as reconstructable Swift source.
 ///
 /// This first version deliberately uses fixed formatting. Formatting policy can
 /// be added independently after the source-generation behavior is validated.

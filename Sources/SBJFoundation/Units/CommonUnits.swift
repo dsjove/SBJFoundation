@@ -1,7 +1,7 @@
 import Foundation
 import SBJLocalization
 
-@SBJStructure
+@SBJEditable
 public enum LengthUnit: String, UnitType {
     case point
     case millimeter
@@ -57,7 +57,7 @@ public enum LengthUnit: String, UnitType {
     }
 }
 
-@SBJStructure
+@SBJEditable
 public enum MassUnit: String, UnitType {
     case gram
     case kilogram
@@ -97,7 +97,7 @@ public enum MassUnit: String, UnitType {
     }
 }
 
-@SBJStructure
+@SBJEditable
 public enum VolumeUnit: String, UnitType {
     case milliliter
     case liter
@@ -149,7 +149,7 @@ public enum VolumeUnit: String, UnitType {
     }
 }
 
-@SBJStructure
+@SBJEditable
 public enum DurationUnit: String, UnitType {
     case second
     case minute

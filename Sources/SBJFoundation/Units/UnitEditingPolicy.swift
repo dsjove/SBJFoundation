@@ -4,7 +4,7 @@ import SBJLocalization
 /// Editing increments are presentation/application policy, not intrinsic unit
 /// semantics. Different apps can therefore step the same physical unit in
 /// different increments without changing conversion behavior.
-@SBJStructure
+@SBJEditable
 public struct UnitEditingPolicy<Unit: UnitType>: Codable, Equatable, Sendable {
     public var defaultStep: Double
     public var overrides: [Unit: Double]

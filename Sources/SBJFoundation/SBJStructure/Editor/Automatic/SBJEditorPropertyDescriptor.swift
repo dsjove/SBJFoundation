@@ -20,7 +20,7 @@
 
   /// Type-erased property descriptor used by the generated SwiftUI editor.
   ///
-  /// `@SBJStructure` emits this type into client code, so it must remain public even
+  /// `@SBJEditable` emits this type into client code, so it must remain public even
   /// though applications normally use ``SBJEditField`` rather than constructing
   /// editor properties directly. The descriptor owns automatic-editor concerns such
   /// as search/filtering, validation state, and type erasure; actual field rendering

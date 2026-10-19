@@ -4,7 +4,7 @@ import Foundation
 /// content has structurally changed.
 ///
 /// Structural equivalence is intentionally independent of application mutation
-/// history. Generated `@SBJStructure` models compare their coded properties
+/// history. Generated `@SBJEditable` models compare their coded properties
 /// recursively, collections compare their contents recursively, ordinary
 /// `Equatable` values use `==`, and opaque `Encodable` values fall back to a
 /// stable encoded representation.

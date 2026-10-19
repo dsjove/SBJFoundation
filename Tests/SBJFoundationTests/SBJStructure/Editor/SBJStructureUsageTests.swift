@@ -4,12 +4,12 @@ import Testing
 import SBJLocalization
 @testable import SBJFoundation
 
-@SBJStructure
+@SBJEditable
 private struct TestNestedValue: Codable {
     var note: String = ""
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestEditableValue: Codable {
     var name: String = ""
     var level: Int = 1
@@ -50,7 +50,7 @@ struct SBJStructureUsageTests {
 
 private final class TestEditorOnlyReference {}
 
-@SBJStructure
+@SBJEditable
 private struct TestEditorOnlyPropertyValue: Codable {
     var stored: String = ""
 
@@ -101,7 +101,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private enum TestPlainStructuredEnum: String, Codable, CaseIterable, Hashable {
     case firstChoice
     case secondChoice
@@ -115,7 +115,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private enum TestAssociatedEnum: Codable {
     case automatic
     case adjusted(amount: Int, enabled: Bool)
@@ -147,7 +147,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestContentLeaf: Codable {
     var text: String = ""
 }
@@ -157,7 +157,7 @@ private enum TestPlainScalarEnum: Codable {
     case second
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestGeneratedContent: Codable {
     var scalar: Int = 1
     var text: String = ""
@@ -228,7 +228,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestValidatedValue: Codable {
     @SBJInteger(range: 1...20)
     var level: Int = 1
@@ -320,7 +320,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestDocumentedValue: Codable {
     var name: String = ""
 
@@ -368,7 +368,7 @@ private struct TestUniqueItem: Codable, Hashable {
     var name: String
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestCollectionRules: Codable {
     @SBJArray(unique: true)
     var tags: [String] = []
@@ -449,13 +449,13 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestInvalidNestedValue: Codable, Hashable {
     @SBJString(minLength: 2)
     var code: String = "ok"
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestValidationContainers: Codable {
     var keyed: [String: TestInvalidNestedValue] = [:]
     var members: Set<TestInvalidNestedValue> = []
@@ -530,7 +530,7 @@ private struct TestDataConstraintHolder {
     var payload = Data()
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestPhase4Collections: Codable {
     @SBJArray(reorderable: false, minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
     @SBJEditorArray(title: \TestUniqueItem.name)
@@ -608,7 +608,7 @@ extension SBJStructureUsageTests {
 
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestScalarAnnotations: Codable {
     var url = URL(string: "https://example.com")!
     @SBJUUID(nonzero: true) var uuid = UUID()
@@ -659,7 +659,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestPhase6MetadataDrivenEditor: Codable {
     @SBJString(minLength: 2, maxLength: 20)
     @SBJEditorString(.multiline, autocorrect: .disabled, capitalization: .sentences)
@@ -695,7 +695,7 @@ private enum TestCaseIterableChoice: String, Codable, CaseIterable, Hashable {
     case secondChoice
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestDefaultedInitializer: Codable {
     var name: String
 
@@ -704,7 +704,7 @@ private struct TestDefaultedInitializer: Codable {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestRequiresCreationContext: Codable {
     var name: String
 
@@ -772,13 +772,13 @@ private struct TestNonHashableCaseIterable: Codable, CaseIterable {
     static let allCases = [first, second]
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestEditorDiagnosticsOwnerConstraint: Codable {
     @SBJInteger(range: 1...3)
     var value: Int = 5
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestUnsupportedCaseIterableContainer: Codable {
     var choice: TestNonHashableCaseIterable = .first
 }
@@ -799,7 +799,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestExpandedScalarValidation: Codable {
     @SBJInteger(range: 1...9)
     var signedSmall: Int8 = 2
@@ -871,13 +871,13 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestNestedValidationLeaf: Codable {
     @SBJInteger(range: 1...3)
     var value: Int = 5
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestNestedValidationParent: Codable {
     var child: TestNestedValidationLeaf = .init()
 }
@@ -939,7 +939,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestTitledValidationItem: Codable, Hashable {
     var name: String = ""
 
@@ -947,7 +947,7 @@ private struct TestTitledValidationItem: Codable, Hashable {
     var code: String = "ok"
 }
 
-@SBJStructure
+@SBJEditable
 private struct TestTitledValidationContainer: Codable {
     @SBJEditorArray(title: \TestTitledValidationItem.name)
     var abilities: [TestTitledValidationItem] = []
@@ -976,7 +976,7 @@ extension SBJStructureUsageTests {
 }
 
 
-@SBJStructure
+@SBJEditable
 private struct Phase1PropertyInfoExample: Codable {
     var title: String = "Example"
     var count: Int = 0
@@ -996,7 +996,7 @@ private struct Phase1PropertyInfoExample: Codable {
     #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.count)?.summary == "Override count documentation")
 }
 
-@SBJStructure
+@SBJEditable
 private enum TestCaseInfoEnum: Codable {
     case none
     case adjusted(amount: Int, enabled: Bool)

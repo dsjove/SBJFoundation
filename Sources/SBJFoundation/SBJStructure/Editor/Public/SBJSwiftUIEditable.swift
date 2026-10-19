@@ -4,7 +4,7 @@ import SwiftUI
 /// SwiftUI rendering capability layered on top of the UI-independent
 /// ``SBJMutableStructure`` model description.
 ///
-/// `@SBJStructure` synthesizes this conformance together with `SBJMutableStructure`.
+/// `@SBJEditable` synthesizes this conformance together with `SBJMutableStructure`.
 public protocol SBJSwiftUIEditable: SBJMutableStructure {
     @MainActor
     static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] { get }

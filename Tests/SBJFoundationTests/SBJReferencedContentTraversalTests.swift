@@ -1,12 +1,12 @@
 import Testing
 @testable import SBJFoundation
 
-@SBJStructure
+@SBJEditable
 private struct ResourceLeaf: Codable, Equatable {
     var resource: SBJReferencedContentID?
 }
 
-@SBJStructure
+@SBJEditable
 private struct ResourceRoot: Codable, Equatable {
     var direct: SBJReferencedContentID?
     var children: [ResourceLeaf]

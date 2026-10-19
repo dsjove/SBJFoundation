@@ -8,7 +8,7 @@ import SBJLocalization
 /// URL-backed attachments keep their existing URL. Embedded attachments
 /// are materialized to a temporary file because Quick Look, sharing, and
 /// OS opening operate on file URLs.
-@SBJStructure
+@SBJEditable
 public struct URLAttachment: Identifiable, Codable, Equatable, Sendable {
 	@SBJUUID(nonzero: true)
 	public let id: UUID

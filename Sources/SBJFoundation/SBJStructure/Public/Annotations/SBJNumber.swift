@@ -1,4 +1,4 @@
-/// Adds floating-point constraints to a coded property handled by `@SBJStructure`.
+/// Adds floating-point constraints to a coded property handled by `@SBJEditable`.
 /// An ordinary floating-point property requires no annotation.
 ///
 /// A closed `range` constrains both bounds. `min` constrains only the lower

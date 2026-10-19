@@ -92,7 +92,7 @@ import SBJLocalization
 
   /// A reusable SBJFoundation editor for one bound value.
   ///
-  /// Use the binding initializer when the value is not part of an `@SBJStructure`
+  /// Use the binding initializer when the value is not part of an `@SBJEditable`
   /// model, or when a hand-built form wants to provide presentation hints directly:
   ///
   /// ```swift

@@ -19,13 +19,13 @@ private struct UnavailableDefault: SBJDefaultValueCreatable {
     static func sbjCreateDefaultValueIfPossible() -> Self? { nil }
 }
 
-@SBJStructure
+@SBJEditable
 private struct StructWithGeneratedDefault: Codable {
     var name = ""
     var count = 0
 }
 
-@SBJStructure
+@SBJEditable
 private struct StructWithoutGeneratedDefault: Codable {
     var name: String
 
@@ -34,7 +34,7 @@ private struct StructWithoutGeneratedDefault: Codable {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private enum AssociatedDefault: Codable {
     case unavailable(StructWithoutGeneratedDefault)
     case available(Int, label: String)

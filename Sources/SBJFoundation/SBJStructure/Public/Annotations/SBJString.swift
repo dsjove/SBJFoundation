@@ -1,6 +1,6 @@
 import Foundation
 
-/// Declares text presentation metadata and length constraints for `@SBJStructure`.
+/// Declares text presentation metadata and length constraints for `@SBJEditable`.
 public enum SBJStringStyle: Sendable, Equatable {
     case singleLine
     case multiline

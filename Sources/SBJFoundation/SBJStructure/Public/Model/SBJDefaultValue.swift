@@ -3,7 +3,7 @@ import Foundation
 /// A type that can create a context-free default instance of itself.
 ///
 /// Use this for model types whose default construction is not represented by
-/// ``SBJStructured/sbjDefaultValue()``. `@SBJStructure` uses it for associated-
+/// ``SBJStructured/sbjDefaultValue()``. `@SBJEditable` uses it for associated-
 /// value enums, where construction may require recursively creating the values
 /// belonging to a case.
 public protocol SBJDefaultValueCreatable {

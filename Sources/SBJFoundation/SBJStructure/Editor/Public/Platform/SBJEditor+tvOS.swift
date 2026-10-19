@@ -1,14 +1,14 @@
 #if os(tvOS) || os(watchOS)
 import Foundation
 
-/// tvOS/watchOS retain the model metadata synthesized by `@SBJStructure`, but does
+/// tvOS/watchOS retain the model metadata synthesized by `@SBJEditable`, but does
 /// not provide the SwiftUI structured editor UI.
 public protocol SBJSwiftUIEditable: SBJMutableStructure {
     @MainActor
     static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] { get }
 }
 
-/// Metadata-only shell used by `@SBJStructure` on tvOS/watchOS. There is intentionally
+/// Metadata-only shell used by `@SBJEditable` on tvOS/watchOS. There is intentionally
 /// no rendering API here: structured editing is not a tvOS/watchOS feature.
 @MainActor
 public struct SBJEditorPropertyDescriptor<Root: SBJStructured> {
@@ -68,7 +68,7 @@ public struct SBJEditorEnumCase<Root> {
     public func makeDefaultValue() -> Root? { createValue() }
 }
 
-/// Associated-enum metadata remains available so `@SBJStructure` model
+/// Associated-enum metadata remains available so `@SBJEditable` model
 /// synthesis is source-compatible on tvOS/watchOS/watchOS, while the editor UI is omitted.
 public protocol SBJEditableAssociatedEnum:
     Codable,

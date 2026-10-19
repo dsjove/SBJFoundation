@@ -1,4 +1,4 @@
-/// Marks the initializer that `@SBJStructure` should use when exporting a value
+/// Marks the initializer that `@SBJEditable` should use when exporting a value
 /// as reconstructable Swift source.
 ///
 /// The initializer declaration itself is the source of truth for argument order

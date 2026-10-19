@@ -8,7 +8,7 @@ private struct Phase7Item: Codable, Hashable {
     var name: String
 }
 
-@SBJStructure
+@SBJEditable
 private struct Phase7RuleModel: Codable {
     @SBJString(minLength: 1, maxLength: 8)
     @SBJEditorString(.multiline)
@@ -266,7 +266,7 @@ extension SBJPhase7CoverageTests {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct Phase9CodingShapeModel: Codable {
     var text: String = ""
     var enabled: Bool = false

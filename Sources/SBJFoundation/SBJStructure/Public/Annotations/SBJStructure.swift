@@ -1,4 +1,4 @@
-/// Generates UI-independent SBJStructure metadata and optional editor integration
+/// Generates UI-independent structural metadata
 /// for a `Codable` structure or enum.
 ///
 /// The macro does not wrap stored properties, intercept reads or writes, or
@@ -6,15 +6,12 @@
 /// validation or another SBJStructure consumer is explicitly invoked.
 ///
 /// For structures, coded stored properties become structural metadata. Stored
-/// writable properties also become recursive editor fields. Writable computed
-/// properties remain outside the structure unless explicitly marked
-/// `@SBJEditorProperty`, in which case they become editor-only fields. Immutable
-/// `let` properties remain structural but are not included in generated editor fields.
+/// writable properties also become editor-independent mutable-property descriptors.
+/// Editor-specific declarations are generated only by `@SBJEditable`.
+/// Immutable `let` properties remain structural but are not mutable.
 ///
-/// For simple enums, exact source case names are generated; the standard
-/// CaseIterable & Hashable editor handles selection. For enums with associated
-/// payloads, case descriptors and editable payload bindings are generated. Changing an associated value reconstructs the
-/// enum case while preserving the other associated values.
+/// Enums receive exact source case names. Payload enums receive structural
+/// comparison support; editor case descriptors are exclusive to `@SBJEditable`.
 @attached(member,
     names:
         // Business
@@ -25,10 +22,6 @@
             named(sbjCreateDefaultValueIfPossible),
             named(sbjProperties), named(_propertyInfo),
             named(sbjMutableProperties),
-        // Editor
-            named(sbjEditorFields),
-        // Editor Enum
-            named(sbjEditorEnumCases),
         // Swift Code Encoder Enum
             named(sbjCaseName),
             named(sbjCaseNames), named(sbjCaseInfo)
@@ -36,10 +29,8 @@
 
 @attached(extension,
     conformances:
-        // Editable structure / SwiftUI editor
-            SBJMutableStructure, SBJSwiftUIEditable,
-        // Editor Enum
-            SBJEditableAssociatedEnum,
+        // Structural type
+            SBJMutableStructure,
         // Swift Code Encoder Enum / payload-enum marker
             SBJEnumCaseIdentifiable, SBJStructuredEnum)
 

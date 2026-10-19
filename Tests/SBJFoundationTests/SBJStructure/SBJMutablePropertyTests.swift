@@ -1,7 +1,7 @@
 import Testing
 @testable import SBJFoundation
 
-@SBJStructure
+@SBJEditable
 private struct MutablePropertyModel: Codable {
     var title: String
     var count: Int

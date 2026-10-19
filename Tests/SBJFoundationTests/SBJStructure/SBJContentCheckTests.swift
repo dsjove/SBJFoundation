@@ -1,26 +1,26 @@
 import Testing
 @testable import SBJFoundation
 
-@SBJStructure
+@SBJEditable
 private struct ContentLeaf: Codable {
     var filled: String
     var empty: String
 }
 
-@SBJStructure
+@SBJEditable
 private struct ContentBranch: Codable {
     var title: String
     var leaf: ContentLeaf
 }
 
-@SBJStructure
+@SBJEditable
 private struct CollectionContent: Codable {
     var array: [String]
     var set: Set<String>
     var dictionary: [String: String]
 }
 
-@SBJStructure
+@SBJEditable
 private enum AssociatedContent: Codable {
     case text(String)
     case pair(name: String, value: Int)

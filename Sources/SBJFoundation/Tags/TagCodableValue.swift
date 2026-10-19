@@ -7,7 +7,7 @@ import SBJLocalization
 /// because their relationship graph belongs to the persistence layer. This value
 /// type provides a stable representation for export, recovery, interchange, and
 /// other serialization without coupling Codable to SwiftData relationships.
-@SBJStructure
+@SBJEditable
 public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable {
     public var id: ID
     public var name: String

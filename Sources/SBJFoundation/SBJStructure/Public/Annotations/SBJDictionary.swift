@@ -1,4 +1,4 @@
-/// Adds Dictionary business rules and editor presentation metadata in `@SBJStructure`.
+/// Adds Dictionary business rules and editor presentation metadata in `@SBJEditable`.
 /// An ordinary Dictionary requires no annotation.
 ///
 /// `minCount` and `maxCount` constrain entry count when validation is explicitly

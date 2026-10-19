@@ -5,7 +5,7 @@ import SwiftUI
 
 /// A deliberately broad test bed for recursive editing and enum-case switching.
 /// Separate from the canonical recipe fixture so its existing tests remain stable.
-@SBJStructure
+@SBJEditable
 enum SBJStructureStressChoice: Codable {
     case unspecified
 
@@ -27,14 +27,14 @@ extension SBJStructureStressChoice {
     static let collectionInfo = SBJPropertyInfo(title: "Complex collection", summary: "Nested collection payloads with optional elements.")
 }
 
-@SBJStructure
+@SBJEditable
 enum SBJStructureStressNested: Codable {
     case absent
     case direct(SBJStructureStressChoice)
     case labeled(primary: SBJStructureStressChoice, secondary: SBJStructureStressChoice?)
 }
 
-@SBJStructure
+@SBJEditable
 struct SBJStructureStressSection: Codable {
     var title = "Nested structure"
     var choice: SBJStructureStressChoice = .adjustment(3)
@@ -43,7 +43,7 @@ struct SBJStructureStressSection: Codable {
     )
 }
 
-@SBJStructure
+@SBJEditable
 struct SBJStructureStressModel: Codable {
     // Same case across several positions to reveal incorrect binding reuse.
     var noPayload: SBJStructureStressChoice = .unspecified
@@ -60,7 +60,7 @@ struct SBJStructureStressModel: Codable {
         values: [1, 2, 3], names: ["a": "Alpha", "b": "Beta"], flags: ["On", "Checked"]
     )
 
-    // The generic CaseIterable & Hashable editor (no @SBJStructure annotation).
+    // The generic CaseIterable & Hashable editor (no @SBJEditable annotation).
     var plainEnum: SBJStructureSampleCourse = .lunch
     var optionalPlainEnum: SBJStructureSampleCourse? = nil
 

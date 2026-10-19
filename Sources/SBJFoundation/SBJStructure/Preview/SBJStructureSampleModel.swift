@@ -27,7 +27,7 @@ enum SBJStructureSampleIngredientUnit: String, Codable, CaseIterable, Hashable {
   case item
 }
 
-@SBJStructure
+@SBJEditable
 enum SBJStructureSampleHeatSetting: Codable {
   case none
   case oven(celsius: Int, convection: Bool)
@@ -38,7 +38,7 @@ struct SBJStructureSampleRating: Codable, Equatable {
   var value: Int
 }
 
-@SBJStructure
+@SBJEditable
 struct SBJStructureSampleNutrition: Codable {
   @SBJInteger(range: 0...2_500)
   var caloriesPerServing: Int
@@ -53,7 +53,7 @@ struct SBJStructureSampleNutrition: Codable {
   }
 }
 
-@SBJStructure
+@SBJEditable
 struct SBJStructureSampleIngredient: Codable, Hashable {
   var id = UUID()
 
@@ -69,7 +69,7 @@ struct SBJStructureSampleIngredient: Codable, Hashable {
   var preparation: String? = nil
 }
 
-@SBJStructure
+@SBJEditable
 struct SBJStructureSampleStep: Codable, Hashable {
   var id = UUID()
 
@@ -81,7 +81,7 @@ struct SBJStructureSampleStep: Codable, Hashable {
   var instruction = "Describe what to do."
 }
 
-@SBJStructure
+@SBJEditable
 struct SBJStructureSampleModel: Codable {
   @SBJString(minLength: 1, maxLength: 80)
   var name = "Roasted Vegetable Pasta"

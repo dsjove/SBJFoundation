@@ -1,7 +1,7 @@
 import Foundation
 import SBJLocalization
 
-/// UI-independent description of a model annotated with `@SBJStructure`.
+/// UI-independent description of a model annotated with `@SBJEditable`.
 ///
 /// SBJStructure declarations describe the model; they do not intercept property
 /// access or automatically enforce invariants. Consumers explicitly choose when
@@ -18,7 +18,7 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
     static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo?
 
     /// Returns a sensible default instance when the structured type can be
-    /// constructed without application-specific context. `@SBJStructure`
+    /// constructed without application-specific context. `@SBJEditable`
     /// synthesizes this when a zero-argument initialization is provably valid.
     static func sbjDefaultValue() -> Self?
 

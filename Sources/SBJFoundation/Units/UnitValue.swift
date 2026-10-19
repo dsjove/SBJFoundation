@@ -6,7 +6,7 @@ import SBJLocalization
 /// `UnitValue` stores the source unit rather than normalizing values at rest.
 /// Conversion is explicit and non-mutating, which preserves the vocabulary of
 /// imported/domain data while still using Foundation `Measurement` for math.
-@SBJStructure
+@SBJEditable
 public struct UnitValue<Unit: UnitType>: Codable, Equatable, Sendable, Hashable {
     public var value: Double
     public let unit: Unit

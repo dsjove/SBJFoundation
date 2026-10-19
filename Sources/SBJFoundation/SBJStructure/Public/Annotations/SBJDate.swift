@@ -1,6 +1,6 @@
 import Foundation
 
-/// Declares an allowed Date range for an `@SBJStructure` property.
+/// Declares an allowed Date range for an `@SBJEditable` property.
 ///
 /// Date properties require no annotation for structural participation or native
 /// date editing. The range is checked only when validation is explicitly requested;

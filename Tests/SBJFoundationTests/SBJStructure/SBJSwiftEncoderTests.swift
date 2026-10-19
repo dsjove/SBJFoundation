@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import SBJFoundation
 
-@SBJStructure
+@SBJEditable
 public struct SwiftExportFixture: Codable, Equatable {
     var name: String = ""
     var tags: Set<String> = []

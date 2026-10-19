@@ -14,7 +14,7 @@ private struct EncodedLeaf: Codable {
     var value: String
 }
 
-@SBJStructure
+@SBJEditable
 private struct GeneratedStructuralValue: Codable, Equatable {
     var identity: Int
     var payload: String
@@ -24,14 +24,14 @@ private struct GeneratedStructuralValue: Codable, Equatable {
     }
 }
 
-@SBJStructure
+@SBJEditable
 private struct StructuralContainer: Codable {
     var equatableLeaf: EquatableLeaf
     var encodedLeaf: EncodedLeaf
     var generatedValues: [GeneratedStructuralValue]
 }
 
-@SBJStructure
+@SBJEditable
 private struct StructuralOverride: Codable {
     var identity: Int
     var ignoredPayload: String

@@ -6,7 +6,7 @@ import SBJLocalization
 /// This is semantic classification, not formatting policy. Whether a value is
 /// shown as a fraction, decimal, compound measurement, abbreviation, and so on
 /// belongs to presentation policy rather than to the measurement system itself.
-@SBJStructure
+@SBJEditable
 public enum MeasurementSystem: String, Codable, Equatable, Sendable, CaseIterable, Hashable {
     case metric
     case imperial
@@ -14,7 +14,7 @@ public enum MeasurementSystem: String, Codable, Equatable, Sendable, CaseIterabl
 }
 
 /// Reusable measurement dimensions supplied by SBJFoundation.
-@SBJStructure
+@SBJEditable
 public enum UnitCategory: String, Codable, Equatable, Sendable, CaseIterable, Hashable {
     case length
     case mass

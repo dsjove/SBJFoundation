@@ -7,6 +7,7 @@ import SBJLocalization
 final class SBJStructureMacroTests: XCTestCase {
     private let macros: [String: Macro.Type] = [
         "SBJStructure": SBJStructureMacro.self,
+        "SBJEditable": SBJEditableMacro.self,
         "SBJPropertyInfo": SBJPropertyInfoMacro.self,
         "SBJPropertyInfoEnum": SBJPropertyInfoMacro.self,
         "SBJDesignatedInit": SBJDesignatedInitMacro.self,
@@ -182,7 +183,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testEmptyStructureGeneratesPublicConsumptionHooksAndEditorConformance() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Empty {}
             """,
             expandedSource: """
@@ -254,7 +255,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testAnnotatedStoredPropertyRemainsStoredProperty() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJString(minLength: 1, maxLength: 40)
                 var displayName: String
@@ -327,7 +328,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testEditorPropertyGeneratesOnlyEditorField() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 var stored: String
 
@@ -410,7 +411,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testCustomPublicHooksCanExtendGeneratedUnderscoreBehavior() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 var value: String
 
@@ -491,7 +492,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testNotEditableStillParticipatesInStructureButNotEditorFields() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJEditorExclude
                 let identifier: String
@@ -563,7 +564,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testUniqueByPreservesTypedKeyPathAndEscapesDescriptiveMetadata() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJArray(uniqueBy: \\Item.id)
                 var items: [Item]
@@ -636,7 +637,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testConflictingArrayUniquenessProducesDiagnostic() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJArray(unique: true, uniqueBy: \\Item.id)
                 var items: [Item]
@@ -716,7 +717,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testImmutablePropertyIsSimplyNotEditable() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 let identifier: String
             }
@@ -786,7 +787,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testCodingKeysDefineMembershipAndUnannotatedTypesInferKinds() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 var name: String
                 var website: URL
@@ -877,7 +878,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testScalarAnnotationsAddRulesAndHintsRatherThanMembership() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJUUID(nonzero: true)
                 var identifier: UUID
@@ -979,7 +980,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testCodableStructWithDefaultableInitializationSynthesizesDefaultValue() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Defaultable: Codable {
                 var name: String = ""
             }
@@ -1057,7 +1058,7 @@ final class SBJStructureMacroTests: XCTestCase {
             """
             protocol ModelCodable: Codable {}
 
-            @SBJStructure
+            @SBJEditable
             struct Model: ModelCodable {
                 var name = ""
             }
@@ -1133,7 +1134,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testAnnotationTypeMismatchProducesDiagnostic() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJData
                 var payload: String
@@ -1213,7 +1214,7 @@ final class SBJStructureMacroTests: XCTestCase {
     func testInvalidDataDeclarationProducesDiagnostics() {
         assertMacroExpansion(
             """
-            @SBJStructure
+            @SBJEditable
             struct Model {
                 @SBJData(min: 8, max: 4, modulo: 0)
                 var payload: Data
