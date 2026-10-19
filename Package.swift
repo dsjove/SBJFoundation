@@ -45,7 +45,6 @@ let package = Package(
             name: "SBJFoundation",
             dependencies: [
                 "SBJFoundationMacros",
-                .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),

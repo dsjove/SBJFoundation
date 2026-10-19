@@ -11,7 +11,7 @@ foundation/UI utilities do not have to be forced into the sample merely to be
 covered, but anything outside the sample editor dependency path must have a clear useful
 purpose or be explicitly marked for review.
 
-This document lives with the SBJStructure subsystem under `SBJStructure/Documentation/`.
+This document lives under `Documentation/Editor/` in SBJFoundation.
 
 ## Coverage definition
 
