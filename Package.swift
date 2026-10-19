@@ -24,6 +24,7 @@ let package = Package(
         .package(path: "Packages/SBJCamera"),
         .package(path: "Packages/SBJDocuments"),
         .package(path: "Packages/SBJFileResources"),
+        .package(path: "Packages/SBJHelp"),
         .package(
             url: "https://github.com/swiftlang/swift-syntax.git",
             exact: "604.0.0-prerelease-2026-06-05"
@@ -51,6 +52,7 @@ let package = Package(
                 .product(name: "SBJCamera", package: "SBJCamera"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJHelp", package: "SBJHelp"),
             ],
             resources: [
                 .process("Resources"),
@@ -68,6 +70,7 @@ let package = Package(
                 .product(name: "SBJCamera", package: "SBJCamera"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJHelp", package: "SBJHelp"),
                 "SBJFoundationMacros",
                 .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),

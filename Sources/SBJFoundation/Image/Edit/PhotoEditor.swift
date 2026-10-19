@@ -1,4 +1,5 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+import SBJHelp
 import Observation
 import SBJDataDefinition
 import SBJDocuments

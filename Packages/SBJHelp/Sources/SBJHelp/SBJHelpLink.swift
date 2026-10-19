@@ -1,10 +1,9 @@
 #if !os(watchOS)
 import SwiftUI
-import SBJDataDefinition
 import SBJFileResources
 import SBJLocalization
 
-/// Standard SwiftUI help entry point backed by SBJFoundation's help system.
+/// Standard SwiftUI help entry point backed by SBJHelp's presentation system.
 ///
 /// The view accepts a finished `SBJBundledContentReference`
 /// instead of mirroring every resource-storage constructor.
@@ -51,17 +50,18 @@ public struct SBJHelpLink: View {
         #if os(macOS) && !targetEnvironment(macCatalyst)
         HelpLink(action: action)
         #else
-        SBJImageButton(
-            SBJSymbology.help,
-            accessibilityLabel: "Help",
-            action: action
-        )
+        Button(action: action) {
+            Label("Help", symbol: SBJSymbology.help)
+                .labelStyle(.iconOnly)
+        }
+        .accessibilityLabel("Help")
         #endif
     }
 }
 #endif
 
 
+#if !os(watchOS)
 /// Toolbar-safe Help control for layouts where SwiftUI must be free to relocate
 /// toolbar items between horizontal and vertical system chrome.
 ///
@@ -70,7 +70,7 @@ public struct SBJHelpLink: View {
 /// deliberately presents as a plain SwiftUI `Button` with a `Label`. Keeping the
 /// visible control structurally ordinary lets the system participate fully in
 /// toolbar collapsing and relocation (for example, onto iPhone Duo's vertical
-/// toolbar) while still using SBJFoundation's single Help presentation pipeline.
+/// toolbar) while still using SBJHelp's presentation pipeline.
 ///
 /// Use this type only when the *placement behavior* of a toolbar item matters.
 /// Help content, automatic presentation, About handling, substitutions, and
@@ -114,12 +114,9 @@ public struct SBJHelpButton: View {
                     .labelStyle(.iconOnly)
             }
             .accessibilityLabel("Help")
-//			SBJImageButton(
-//				SBJSymbology.help,
-//				accessibilityLabel: "Help",
-//				action: action
-//			)
         }
     }
 }
 
+
+#endif

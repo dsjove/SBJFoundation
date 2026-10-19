@@ -35,7 +35,7 @@ Swift Package Manager target/product boundaries are defined in `Package.swift` a
 - [Editor organization](Documentation/Editor/ORGANIZATION.md)
 - [Editor sample coverage](Documentation/Editor/SAMPLE_COVERAGE.md)
 - [Accessibility regression checklist](Documentation/Editor/ACCESSIBILITY_REGRESSION.md)
-- [Help](Documentation/HELP.md), [Units](Documentation/UNITS.md), [Image document](Documentation/Image/IMAGE_DOCUMENT.md), [Tags](Documentation/Tags.md), [Testing](Documentation/TESTING.md)
+- [Help](Packages/SBJHelp/Documentation/Help-System.md), [Units](Documentation/UNITS.md), [Image document](Documentation/Image/IMAGE_DOCUMENT.md), [Tags](Documentation/Tags.md), [Testing](Documentation/TESTING.md)
 - [Phase 7 audit](Documentation/PHASE7_AUDIT.md)
 - [SBJDataDefinition](Packages/SBJDataDefinition/README.md)
 - [SBJLocalization](Packages/SBJLocalization/README.md)
@@ -43,3 +43,7 @@ Swift Package Manager target/product boundaries are defined in `Package.swift` a
 - [SBJFileResources](Packages/SBJFileResources/README.md)
 - [SBJCamera](Packages/SBJCamera/README.md)
 
+
+## Help extraction
+
+The reusable Help UI is in [Packages/SBJHelp](Packages/SBJHelp/README.md). Foundation-owned HTML pages remain in `Sources/SBJFoundation/Resources/Help/`; `SBJHelpConfiguration.foundation` supplies their token references. Platform URL opening is owned by SBJFileResources.

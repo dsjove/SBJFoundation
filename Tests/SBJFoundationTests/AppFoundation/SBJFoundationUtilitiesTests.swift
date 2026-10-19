@@ -10,7 +10,6 @@ struct SBJFoundationUtilitiesTests {
         #expect("  Hello \n".trimmed == "Hello")
         #expect(" \n ".querify == nil)
         #expect("  Hello ".isEquivalent(to: "hello"))
-        #expect("a-b".replacingOccurrences(using: ["-": "_"]) == "a_b")
     }
 
     @Test func collectionUtilities() {

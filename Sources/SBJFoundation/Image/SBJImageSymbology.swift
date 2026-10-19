@@ -1,3 +1,4 @@
+import SBJHelp
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
@@ -77,6 +78,8 @@ public enum SBJImageSymbology {
 public extension SBJHelpConfiguration {
     /// Help configuration for image import, viewing, and editing UI.
     static var image: Self {
-        .init(semanticImages: SBJImageSymbology.helpVocabulary)
+        var configuration = Self.foundation
+        configuration.semanticImages = SBJImageSymbology.helpVocabulary
+        return configuration
     }
 }

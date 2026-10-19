@@ -1,5 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
 import UniformTypeIdentifiers
 
 /// Native SwiftUI presenter for Markdown help assets.

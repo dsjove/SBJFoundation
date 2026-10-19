@@ -1,10 +1,10 @@
 #if canImport(UIKit) && canImport(WebKit)
 import SwiftUI
-import SBJDataDefinition
 import UIKit
 import WebKit
 import UniformTypeIdentifiers
 import SBJLocalization
+import SBJFileResources
 
 public struct SBJHTMLHelpPresenter: SBJHelpContentPresenter {
     public let contentType: UTType = .html

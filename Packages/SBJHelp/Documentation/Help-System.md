@@ -1,8 +1,6 @@
 # Help System
 
-SBJFoundation owns the reusable application help system. Every SBJ application can use the same
-resource lookup, token expansion, presentation chrome, About behavior, and first-use presentation
-directly from SBJFoundation.
+SBJHelp owns the reusable Help presentation and rendering system. Applications provide their own help resources and application-specific token values; SBJFoundation integrates its feature-specific Help pages.
 
 ## Design goals
 
@@ -14,13 +12,13 @@ directly from SBJFoundation.
 - Keep the sheet/chrome independent of the content presenter so new formats can be added later.
 - Use native SwiftUI help UI when the target SDK provides it, while retaining the same behavior on
   iOS and Mac Catalyst where `SwiftUI.HelpLink` is unavailable.
-- Keep reusable help imagery in SBJFoundation's shared UI vocabulary.
+- Resolve semantic symbols through SBJLocalization, allowing callers to configure additional imagery.
 
 ## Source organization
 
 `SBJBundledContentReference` lives with the Foundation/resource support and is the generic reference/loading boundary for asset-catalog data sets and ordinary bundle resources.
 
-`SBJBundledContentReference` itself lives in `PlatformExtensions/Foundation`; `Sources/SBJFoundation/Help/` contains:
+`SBJBundledContentReference` itself lives in SBJFileResources; `Packages/SBJHelp/Sources/SBJHelp/` contains:
 
 - `SBJHelpTemplateRenderer` — standard and caller token expansion.
 - `SBJHelpContentPresenter` / `SBJAnyHelpContentPresenter` — format-specific presentation boundary.
@@ -33,7 +31,7 @@ directly from SBJFoundation.
 
 ## Content types
 
-Help formats are identified by `UniformTypeIdentifiers.UTType`; SBJFoundation does not define a
+Help formats are identified by `UniformTypeIdentifiers.UTType`; SBJHelp does not define a
 parallel `SBJHelpFormat` enumeration or identifier namespace.
 
 `SBJBundledContentReference` is the generic reference for both asset-catalog data sets and ordinary bundle
@@ -75,8 +73,7 @@ SBJHelpLink(asset: .structureEditorSearch)
 ```
 
 Reusable help can also be composed into an application's larger topic.
-`SBJHelpConfiguration.embeddedAssets` maps template tokens to help assets. The standard
-configuration maps `SBJ_STRUCTURE_EDITOR_CORE_HELP` to `.structureEditorCore` and `SBJ_STRUCTURE_EDITOR_SEARCH_HELP` to `.structureEditorSearch`. When that token occurs in an
+`SBJHelpConfiguration.embeddedAssets` maps template tokens to help assets. Foundation’s `SBJHelpConfiguration.foundation` maps `SBJ_STRUCTURE_EDITOR_CORE_HELP` to `.structureEditorCore` and `SBJ_STRUCTURE_EDITOR_SEARCH_HELP` to `.structureEditorSearch`; the package-level standard configuration contains no feature-specific fragments. When that token occurs in an
 application HTML help document, `SBJHelpTemplateRenderer` recursively renders the framework help
 and substitutes it into the parent document. This lets an application surround framework help
 with app-specific context while keeping the shared instructions authoritative in SBJFoundation.
@@ -211,3 +208,7 @@ HTML help can use `UI_name\` tokens for controls that are part of the shared UI 
 ## Resource directory layout
 
 Source resources are organized into `Resources/help`, but runtime lookup must not rely on that directory surviving resource processing. SwiftPM `.process` recursively processes files and places otherwise-unprocessed outputs at the resource bundle top level; preserving a directory hierarchy requires `.copy`. Xcode bundle-resource processing similarly guarantees placement in the bundle resource area, not the source-tree group hierarchy. `SBJBundledContentReference` therefore tries the authored subdirectory first and the bundle root second.
+
+## Package boundary
+
+The Help package depends only on SBJFileResources and SBJLocalization. It does not bundle any HTML help resources, and does not depend on SBJFoundation. URL opening is provided by SBJFileResources. App identity tokens are configured by callers in `applicationSubstitutions`. Foundation continues to provide its own bundled help references and an app-specific `SBJHelpConfiguration.foundation` preset.

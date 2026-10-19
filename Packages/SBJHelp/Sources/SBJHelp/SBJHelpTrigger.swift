@@ -1,6 +1,5 @@
 #if !os(watchOS)
 import SwiftUI
-import SBJDataDefinition
 import SBJFileResources
 import Foundation
 
@@ -10,16 +9,16 @@ import Foundation
 /// behavior. The caller supplies only the visible control, which lets new code
 /// use SwiftUI's `HelpLink` while legacy adapters preserve their old labels.
 enum SBJHelpPresentationHistory {
-    private static func storage(for asset: SBJBundledContentReference) -> DefaultsStorage<Bool> {
-        DefaultsStorage(wrappedValue: false, asset.fullName)
+    private static func key(for asset: SBJBundledContentReference) -> String {
+        asset.fullName
     }
 
     static func hasPresented(_ asset: SBJBundledContentReference) -> Bool {
-        storage(for: asset).wrappedValue
+        UserDefaults.standard.bool(forKey: key(for: asset))
     }
 
     static func markPresented(_ asset: SBJBundledContentReference) {
-        storage(for: asset).wrappedValue = true
+        DefaultsStorage<Bool>(wrappedValue: false, key(for: asset)).wrappedValue = true
     }
 }
 

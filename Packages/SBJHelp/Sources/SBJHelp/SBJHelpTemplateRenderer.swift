@@ -1,6 +1,6 @@
 import Foundation
-import SBJDataDefinition
 import SBJFileResources
+import SBJLocalization
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -30,25 +30,19 @@ public struct SBJHelpTemplateRenderer {
     }
 
     public func standardSubstitutions(for asset: SBJBundledContentReference) -> [String: String] {
-        let iconData: String
-        #if canImport(UIKit)
-        let icon = AppInfo.icon
-        iconData = icon?.pngData()?.base64EncodedString() ?? ""
-        #else
-        iconData = ""
-        #endif
-
-        return [
+        var values = [
             "TITLE": asset.displayName,
-            "DISPLAY_NAME": AppInfo.displayName,
-            "VERSION": AppInfo.fullVersion,
-            "COMPANY_NAME": AppInfo.companyName,
-            "EMAIL": AppInfo.supportEmail,
-            "URL": AppInfo.supportURL,
-            "PRIVACY_URL": AppInfo.privacyPolicyURL,
-            "ICON": iconData,
+            "DISPLAY_NAME": "",
+            "VERSION": "",
+            "COMPANY_NAME": "",
+            "EMAIL": "",
+            "URL": "",
+            "PRIVACY_URL": "",
+            "ICON": "",
             "STYLE_SHEET": configuration.styleSheetAsset?.stringValue() ?? "",
         ]
+        values.merge(configuration.applicationSubstitutions) { _, new in new }
+        return values
     }
 
     private func renderedSource(

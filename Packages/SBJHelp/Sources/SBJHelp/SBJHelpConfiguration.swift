@@ -1,5 +1,4 @@
 import Foundation
-import SBJDataDefinition
 import SBJFileResources
 import UniformTypeIdentifiers
 import SBJLocalization
@@ -12,6 +11,7 @@ public struct SBJHelpConfiguration {
     public var aboutAsset: SBJBundledContentReference?
     public var styleSheetAsset: SBJBundledContentReference?
     public var autoPresentAbout: Bool
+    public var applicationSubstitutions: [String: String]
     public var substitutions: [String: String]
     /// Semantic images available to HTML help as `UI_name\` tokens.
     /// Keeping these names semantic lets help use the same image vocabulary as
@@ -25,16 +25,15 @@ public struct SBJHelpConfiguration {
         aboutAsset: SBJBundledContentReference? = .help("About"),
         styleSheetAsset: SBJBundledContentReference? = .help("Style Sheet"),
         autoPresentAbout: Bool = true,
+        applicationSubstitutions: [String: String] = [:],
         substitutions: [String: String] = [:],
         semanticImages: [String: SBJSymbol] = SBJSymbology.all,
-        embeddedAssets: [String: SBJBundledContentReference] = [
-            "SBJ_STRUCTURE_EDITOR_CORE_HELP": .structureEditorCore,
-            "SBJ_STRUCTURE_EDITOR_SEARCH_HELP": .structureEditorSearch,
-        ]
+        embeddedAssets: [String: SBJBundledContentReference] = [:]
     ) {
         self.aboutAsset = aboutAsset
         self.styleSheetAsset = styleSheetAsset
         self.autoPresentAbout = autoPresentAbout
+        self.applicationSubstitutions = applicationSubstitutions
         self.substitutions = substitutions
         self.semanticImages = semanticImages
         self.embeddedAssets = embeddedAssets

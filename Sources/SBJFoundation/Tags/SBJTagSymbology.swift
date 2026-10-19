@@ -1,3 +1,4 @@
+import SBJHelp
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
@@ -22,7 +23,7 @@ public enum SBJTagSymbology {
     public static let notPrimaryTag = image("notPrimaryTag")
 
     public static var helpConfiguration: SBJHelpConfiguration {
-        var configuration = SBJHelpConfiguration.standard
+        var configuration = SBJHelpConfiguration.foundation
         configuration.semanticImages = SBJSymbology.vocabulary(adding: all)
         return configuration
     }

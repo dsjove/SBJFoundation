@@ -18,3 +18,6 @@ public struct Identified<T>: Identifiable, Hashable {
 		id.hash(into: &hasher)
 	}
 }
+
+public typealias IdentifiedURL = Identified<URL>
+public typealias IdentifiedURLs = Identified<[URL]>

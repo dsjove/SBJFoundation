@@ -1,3 +1,4 @@
+import SBJHelp
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
@@ -20,7 +21,7 @@ public enum SBJAttachmentSymbology {
     public static let previewAttachment = image("previewAttachment")
 
     public static var helpConfiguration: SBJHelpConfiguration {
-        var configuration = SBJHelpConfiguration.standard
+        var configuration = SBJHelpConfiguration.foundation
         configuration.semanticImages = SBJSymbology.vocabulary(adding: all)
         return configuration
     }

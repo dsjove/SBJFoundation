@@ -1,3 +1,4 @@
+import SBJHelp
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
@@ -20,7 +21,7 @@ public enum SBJUnitSymbology {
     public static let swapUnits = image("swapUnits")
 
     public static var helpConfiguration: SBJHelpConfiguration {
-        var configuration = SBJHelpConfiguration.standard
+        var configuration = SBJHelpConfiguration.foundation
         configuration.semanticImages = SBJSymbology.vocabulary(adding: all)
         return configuration
     }

@@ -1,6 +1,5 @@
 #if !os(watchOS)
 import SwiftUI
-import SBJDataDefinition
 import SBJFileResources
 import SBJLocalization
 
@@ -55,7 +54,9 @@ public struct SBJHelpSheet: View {
         NavigationStack {
             content
                 .navigationTitle(asset.displayName)
-                .sbjInlineNavigationTitle()
+                #if !os(tvOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button { dismiss() } label: {
@@ -114,16 +115,3 @@ public struct SBJHelpSheet: View {
 }
 #endif
 
-
-#if !os(watchOS)
-public extension View {
-    @ViewBuilder
-    func sbjInlineNavigationTitle() -> some View {
-#if os(tvOS)
-        self
-#else
-        self.navigationBarTitleDisplayMode(.inline)
-#endif
-    }
-}
-#endif

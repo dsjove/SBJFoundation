@@ -1,5 +1,6 @@
 #if !os(watchOS)
 import XCTest
+import SBJHelp
 import SBJDataDefinition
 import UniformTypeIdentifiers
 @testable import SBJFoundation
@@ -72,7 +73,7 @@ final class SBJHelpTests: XCTestCase {
 
     func testEmbeddedFrameworkHelpIsExpandedInsideApplicationHelp() throws {
         let parent = SBJBundledContentReference.help("Embedding Fixture", bundle: .module)
-        let source = try XCTUnwrap(SBJHelpTemplateRenderer().renderedSource(for: parent))
+        let source = try XCTUnwrap(SBJHelpTemplateRenderer(configuration: .foundation).renderedSource(for: parent))
         XCTAssertFalse(source.contains("SBJ_STRUCTURE_EDITOR_SEARCH_HELP"))
         XCTAssertFalse(source.contains("UI_help\\"))
         XCTAssertTrue(source.contains("data:image/png;base64"))
