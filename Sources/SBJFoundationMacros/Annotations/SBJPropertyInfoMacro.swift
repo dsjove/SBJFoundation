@@ -37,15 +37,7 @@ public struct SBJPropertyInfoMacro: MemberMacro {
 
         // Enum cases cannot be key-path targets. Reuse the same `nameInfo`
         // convention but synthesize a case-name lookup instead.
-        let isEnumCases: Bool = {
-            if node.attributeName.trimmedDescription == "SBJPropertyInfoEnum" { return true }
-            guard let arguments = node.arguments,
-                  case .argumentList(let parameters) = arguments else { return false }
-            return parameters.contains { parameter in
-                parameter.label?.text == "enumCases" &&
-                parameter.expression.as(BooleanLiteralExprSyntax.self)?.literal.tokenKind == .keyword(.true)
-            }
-        }()
+        let isEnumCases = node.attributeName.trimmedDescription == "SBJPropertyInfoEnum"
         if isEnumCases {
             let checks = names.map { name in
                 "case \"\(name)\": return Self.\(name)Info"

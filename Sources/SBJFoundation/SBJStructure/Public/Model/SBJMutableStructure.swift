@@ -5,15 +5,8 @@ import SBJLocalization
 /// can be consumed by editors or other mutation tools.
 ///
 /// Normally this conformance is synthesized by ``SBJStructure()``.
-public protocol SBJEditable: SBJStructured {
-    static var sbjEditableFields: [SBJEditableField<Self>] { get }
-}
-
-public extension SBJEditable {
-    /// Human-readable default name used by editors and other presentation tools.
-    static var sbjEditorTypeName: String {
-        String(describing: Self.self).uncamelCased
-    }
+public protocol SBJMutableStructure: SBJStructured {
+    static var sbjMutableProperties: [SBJMutableProperty<Self>] { get }
 }
 
 /// UI-independent, type-erased description of one writable property on `Root`.
@@ -21,7 +14,7 @@ public extension SBJEditable {
 /// The descriptor intentionally contains no SwiftUI concepts. It exposes the
 /// writable key path and editor-independent behaviors so alternative editors can
 /// reuse the same generated model description.
-public struct SBJEditableField<Root: SBJStructured> {
+public struct SBJMutableProperty<Root: SBJStructured> {
     public let name: String
     public let valueType: Any.Type
     public let keyPath: PartialKeyPath<Root>
@@ -86,7 +79,7 @@ public struct SBJEditableField<Root: SBJStructured> {
     /// metadata. This is still editor-independent: an alternative editor may
     /// choose whether and how to render the value.
     public init<Value>(
-        editorOnlyName name: String,
+        nonStructuralName name: String,
         _ keyPath: WritableKeyPath<Root, Value>
     ) {
         self.name = name

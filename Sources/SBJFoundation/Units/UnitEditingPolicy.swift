@@ -5,7 +5,7 @@ import SBJLocalization
 /// semantics. Different apps can therefore step the same physical unit in
 /// different increments without changing conversion behavior.
 @SBJStructure
-public struct UnitEditingPolicy<Unit: UnitType>: SBJFoundationType, Sendable {
+public struct UnitEditingPolicy<Unit: UnitType>: Codable, Equatable, Sendable {
     public var defaultStep: Double
     public var overrides: [Unit: Double]
 

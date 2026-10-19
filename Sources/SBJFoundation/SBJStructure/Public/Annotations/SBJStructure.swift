@@ -24,7 +24,7 @@
             named(sbjDefaultValue),
             named(sbjCreateDefaultValueIfPossible),
             named(sbjProperties), named(_propertyInfo),
-            named(sbjEditableFields),
+            named(sbjMutableProperties),
         // Editor
             named(sbjEditorFields),
         // Editor Enum
@@ -37,7 +37,7 @@
 @attached(extension,
     conformances:
         // Editable structure / SwiftUI editor
-            SBJEditable, SBJSwiftUIEditable,
+            SBJMutableStructure, SBJSwiftUIEditable,
         // Editor Enum
             SBJEditableAssociatedEnum,
         // Swift Code Encoder Enum / payload-enum marker

@@ -7,7 +7,7 @@ import CoreGraphics
 import PencilKit
 #endif
 
-public struct PhotoMarkupCanvasSize: SBJFoundationType, Sendable {
+public struct PhotoMarkupCanvasSize: Codable, Equatable, Sendable {
     public var width: Double
     public var height: Double
 
@@ -23,14 +23,14 @@ public struct PhotoMarkupCanvasSize: SBJFoundationType, Sendable {
     public var cgSize: CGSize { .init(width: width, height: height) }
 }
 
-public enum PhotoMarkupCoordinateSpace: String, SBJFoundationType, Sendable {
+public enum PhotoMarkupCoordinateSpace: String, Codable, Equatable, Sendable {
     /// Markup coordinates describe the visible composition/crop frame, not source pixels.
     case composition
 }
 
 
 /// Format-neutral serialized markup. PencilKit is one supported encoding, not part of the container contract.
-public struct PhotoMarkup: SBJFoundationType, Sendable {
+public struct PhotoMarkup: Codable, Equatable, Sendable {
     public var data: Data
     public var contentTypeIdentifier: String
     public var canvasSize: PhotoMarkupCanvasSize

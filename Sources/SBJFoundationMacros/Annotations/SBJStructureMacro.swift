@@ -29,7 +29,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
     ) throws -> [ExtensionDeclSyntax] {
         let conformance: String
         if declaration.is(StructDeclSyntax.self) {
-            conformance = "SBJEditable, SBJSwiftUIEditable"
+            conformance = "SBJMutableStructure, SBJSwiftUIEditable"
         } else if declaration.is(EnumDeclSyntax.self) {
             let enumDecl = declaration.cast(EnumDeclSyntax.self)
             let hasPayload = enumCases(in: enumDecl).contains { !$0.parameters.isEmpty }
@@ -116,10 +116,10 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                     if !isStoredWithObservers {
                         if hasAttribute(named: "SBJEditorProperty", on: variable) {
                         editableEntries.append(
-                            "SBJEditableField<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
+                            "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
                         entries.append(
-                            "SBJEditorPropertyDescriptor<Self>(editorOnlyName: \"\(name)\".uncamelCased, \\.\(name))"
+                            "SBJEditorPropertyDescriptor<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
                         )
                     }
                         continue
@@ -297,7 +297,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
                 if variable.bindingSpecifier.tokenKind == .keyword(.let) { continue }
 
                 editableEntries.append(
-                    "SBJEditableField<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
+                    "SBJMutableProperty<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
                 )
                 entries.append(
                     "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name), disclosureMode: \(editorDisclosure(on: variable) ?? ".closed"))"
@@ -341,7 +341,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
             }
             """),
             DeclSyntax(stringLiteral: """
-            \(access)static var sbjEditableFields: [SBJEditableField<Self>] {
+            \(access)static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                 [
                     \(editableBody)
                 ]

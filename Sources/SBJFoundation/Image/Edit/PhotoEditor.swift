@@ -417,7 +417,7 @@ public struct PhotoEditor: View {
         .disabled(!model.hasPlacementOrMagnificationEdits)
         .accessibility(
             label: "Reset Pan and Zoom",
-            hint: "\(placementInfo.summary) \(magnificationInfo.summary)"
+            hint: [placementInfo.summary, magnificationInfo.summary].compactMap { $0 }.joined(separator: " ")
         )
     }
 

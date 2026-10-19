@@ -5,7 +5,7 @@ import Foundation
 ///
 /// The identifier is deliberately string-backed so hand-authored Swift documents
 /// can use readable, stable resource names while generated/user resources may use UUID strings.
-public struct SBJReferencedContentID: RawRepresentable, SBJFoundationType, Hashable, Sendable, Comparable {
+public struct SBJReferencedContentID: RawRepresentable, Codable, Hashable, Sendable, Comparable {
     public let rawValue: String
 
     public init(rawValue: String) {

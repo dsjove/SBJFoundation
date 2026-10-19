@@ -28,7 +28,7 @@ public struct SBJImageDocument: Sendable, Equatable {
 
     private static let thumbnailMaximumPixelDimension: CGFloat = 512
 
-    public struct RenderCache: OptionSet, SBJFoundationType, Sendable {
+    public struct RenderCache: OptionSet, Codable, Equatable, Sendable {
         public let rawValue: UInt8
 
         public init(rawValue: UInt8) {

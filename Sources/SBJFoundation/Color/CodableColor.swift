@@ -5,7 +5,7 @@ import SwiftUI
 import UIKit
 #endif
 
-public struct CodableColor: SBJFoundationType, Comparable, CustomDebugStringConvertible, SBJDefaultValueCreatable, SBJSwiftExpressionRepresentable {
+public struct CodableColor: Codable, Equatable, Comparable, CustomDebugStringConvertible, SBJDefaultValueCreatable, SBJSwiftExpressionRepresentable {
     public var red: Double
     public var green: Double
     public var blue: Double

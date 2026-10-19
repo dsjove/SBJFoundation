@@ -71,7 +71,7 @@ public struct SBJSwiftEncoder {
         label: String?,
         info: SBJPropertyInfo?
     ) -> SBJSwiftArgument {
-        let summary = info?.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let summary = info?.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
         return SBJSwiftArgument(
             label: label,
             expression: expression(forAny: value, nested: true),
@@ -85,7 +85,7 @@ public struct SBJSwiftEncoder {
         info: SBJPropertyInfo?
     ) -> SBJSwiftArgument {
         let expression = expression(forAny: value, nested: true)
-        let summary = info?.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        let summary = info?.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
         return SBJSwiftArgument(
             label: parameter.label,
             expression: expression,

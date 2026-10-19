@@ -202,7 +202,7 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
 
                     ]
@@ -244,7 +244,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Empty: SBJEditable, SBJSwiftUIEditable {
+            extension Empty: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -278,9 +278,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "displayName".uncamelCased, \\.displayName)
+                        SBJMutableProperty<Self>(name: "displayName".uncamelCased, \\.displayName)
                     ]
                 }
 
@@ -317,7 +317,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -360,10 +360,10 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "stored".uncamelCased, \\.stored),
-                        SBJEditableField<Self>(editorOnlyName: "image".uncamelCased, \\.image)
+                        SBJMutableProperty<Self>(name: "stored".uncamelCased, \\.stored),
+                        SBJMutableProperty<Self>(nonStructuralName: "image".uncamelCased, \\.image)
                     ]
                 }
 
@@ -371,7 +371,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
                     [
                         SBJEditorPropertyDescriptor<Self>(name: "stored".uncamelCased, \\.stored, disclosureMode: .closed),
-                        SBJEditorPropertyDescriptor<Self>(editorOnlyName: "image".uncamelCased, \\.image)
+                        SBJEditorPropertyDescriptor<Self>(nonStructuralName: "image".uncamelCased, \\.image)
                     ]
                 }
 
@@ -400,7 +400,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -451,9 +451,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "value".uncamelCased, \\.value)
+                        SBJMutableProperty<Self>(name: "value".uncamelCased, \\.value)
                     ]
                 }
 
@@ -481,7 +481,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -515,7 +515,7 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
 
                     ]
@@ -553,7 +553,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -587,9 +587,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "items".uncamelCased, \\.items)
+                        SBJMutableProperty<Self>(name: "items".uncamelCased, \\.items)
                     ]
                 }
 
@@ -626,7 +626,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -660,9 +660,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "items".uncamelCased, \\.items)
+                        SBJMutableProperty<Self>(name: "items".uncamelCased, \\.items)
                     ]
                 }
 
@@ -699,7 +699,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             diagnostics: [
@@ -739,7 +739,7 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
 
                     ]
@@ -777,7 +777,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -824,10 +824,10 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "name".uncamelCased, \\.name),
-                        SBJEditableField<Self>(name: "website".uncamelCased, \\.website)
+                        SBJMutableProperty<Self>(name: "name".uncamelCased, \\.name),
+                        SBJMutableProperty<Self>(name: "website".uncamelCased, \\.website)
                     ]
                 }
 
@@ -867,7 +867,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -913,12 +913,12 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "identifier".uncamelCased, \\.identifier),
-                        SBJEditableField<Self>(name: "created".uncamelCased, \\.created),
-                        SBJEditableField<Self>(name: "website".uncamelCased, \\.website),
-                        SBJEditableField<Self>(name: "color".uncamelCased, \\.color)
+                        SBJMutableProperty<Self>(name: "identifier".uncamelCased, \\.identifier),
+                        SBJMutableProperty<Self>(name: "created".uncamelCased, \\.created),
+                        SBJMutableProperty<Self>(name: "website".uncamelCased, \\.website),
+                        SBJMutableProperty<Self>(name: "color".uncamelCased, \\.color)
                     ]
                 }
 
@@ -969,7 +969,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -1002,9 +1002,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "name".uncamelCased, \\.name)
+                        SBJMutableProperty<Self>(name: "name".uncamelCased, \\.name)
                     ]
                 }
 
@@ -1044,7 +1044,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Defaultable: SBJEditable, SBJSwiftUIEditable {
+            extension Defaultable: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -1081,9 +1081,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "name".uncamelCased, \\.name)
+                        SBJMutableProperty<Self>(name: "name".uncamelCased, \\.name)
                     ]
                 }
 
@@ -1123,7 +1123,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             macros: macros
@@ -1157,9 +1157,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "payload".uncamelCased, \\.payload)
+                        SBJMutableProperty<Self>(name: "payload".uncamelCased, \\.payload)
                     ]
                 }
 
@@ -1195,7 +1195,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             diagnostics: [
@@ -1237,9 +1237,9 @@ final class SBJStructureMacroTests: XCTestCase {
                     ]
                 }
 
-                static var sbjEditableFields: [SBJEditableField<Self>] {
+                static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                     [
-                        SBJEditableField<Self>(name: "payload".uncamelCased, \\.payload)
+                        SBJMutableProperty<Self>(name: "payload".uncamelCased, \\.payload)
                     ]
                 }
 
@@ -1276,7 +1276,7 @@ final class SBJStructureMacroTests: XCTestCase {
                 }
             }
 
-            extension Model: SBJEditable, SBJSwiftUIEditable {
+            extension Model: SBJMutableStructure, SBJSwiftUIEditable {
             }
             """,
             diagnostics: [

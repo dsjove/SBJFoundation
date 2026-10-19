@@ -2,10 +2,10 @@
 import SwiftUI
 
 /// SwiftUI rendering capability layered on top of the UI-independent
-/// ``SBJEditable`` model description.
+/// ``SBJMutableStructure`` model description.
 ///
-/// `@SBJStructure` synthesizes this conformance together with `SBJEditable`.
-public protocol SBJSwiftUIEditable: SBJEditable {
+/// `@SBJStructure` synthesizes this conformance together with `SBJMutableStructure`.
+public protocol SBJSwiftUIEditable: SBJMutableStructure {
     @MainActor
     static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] { get }
 

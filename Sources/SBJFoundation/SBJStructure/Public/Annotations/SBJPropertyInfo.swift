@@ -1,3 +1,4 @@
+import SBJLocalization
 /// Synthesizes property metadata lookup from `propertyNameInfo` members in a
 /// metadata extension. For enum metadata, use `@SBJPropertyInfoEnum`
 /// on the extension and `static let caseNameInfo = SBJPropertyInfo(...)` members.
@@ -6,7 +7,7 @@
 /// The extension marker is required because an attached macro cannot inspect
 /// members of other extensions when expanding the original type.
 @attached(member, names: named(_extensionPropertyInfo), named(propertyInfo), named(sbjCaseInfo))
-public macro SBJPropertyInfo(enumCases: Bool = false, fallbackToStructure: Bool = true) = #externalMacro(
+public macro SBJPropertyInfo(fallbackToStructure: Bool = true) = #externalMacro(
     module: "SBJFoundationMacros", type: "SBJPropertyInfoMacro"
 )
 

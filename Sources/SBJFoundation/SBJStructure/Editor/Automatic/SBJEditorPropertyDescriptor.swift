@@ -30,7 +30,7 @@
     public let name: String
     let traversalDisclosureMode: SBJEditorDisclosureMode
     let isTraversalDisclosure: Bool
-    public let editableField: SBJEditableField<Root>
+    public let editableField: SBJMutableProperty<Root>
     private let makeView:
       (
         Binding<Root>, Root?, SBJEditorRegistry, String?, SBJEditorFocusRequest?, Bool,
@@ -50,7 +50,7 @@
       self.isTraversalDisclosure = Value.self is any SBJSwiftUIEditable.Type
         || Value.self is any SBJEditorTraversableValue.Type
         || Value.self is any SBJEditableAssociatedEnum.Type
-      let editableField = SBJEditableField<Root>(name: name, keyPath)
+      let editableField = SBJMutableProperty<Root>(name: name, keyPath)
       self.editableField = editableField
       let configuration = SBJEditFieldConfiguration(metadata: editableField.structuralMetadata)
 
@@ -104,13 +104,13 @@
     /// metadata. `Value` does not need to be `Codable`; the application may
     /// provide an exact-type editor through `SBJEditorRegistry`.
     public init<Value>(
-      editorOnlyName name: String,
+      nonStructuralName name: String,
       _ keyPath: WritableKeyPath<Root, Value>
     ) {
       self.name = name
       self.traversalDisclosureMode = .closed
       self.isTraversalDisclosure = false
-      self.editableField = SBJEditableField<Root>(editorOnlyName: name, keyPath)
+      self.editableField = SBJMutableProperty<Root>(nonStructuralName: name, keyPath)
       self.makeView = {
         root, originalRoot, registry, overrideName, focusRequest, labelIsUnknown, context, headerOnly in
         AnyView(

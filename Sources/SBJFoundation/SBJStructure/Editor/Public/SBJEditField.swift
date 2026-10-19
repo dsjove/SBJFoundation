@@ -161,7 +161,7 @@ import SBJLocalization
       let metadata = Root.propertyMetadata(for: keyPath)
       let label =
         metadata?.displayName
-        ?? Root.sbjEditableFields.first(where: { ($0.keyPath as AnyKeyPath) == (keyPath as AnyKeyPath) })?.name
+        ?? Root.sbjMutableProperties.first(where: { ($0.keyPath as AnyKeyPath) == (keyPath as AnyKeyPath) })?.name
         ?? "Value"
       self.init(
         root: root,

@@ -64,8 +64,10 @@ public struct SBJImageButton: View {
             accessibilityLabel: propertyInfo.accessibilityLabel
                 ?? propertyInfo.title
                 ?? fallbackAccessibilityLabel
-                ?? propertyInfo.summary,
-            accessibilityHint: propertyInfo.accessibilityHint ?? propertyInfo.summary,
+                ?? propertyInfo.summary
+                ?? "Button",
+            accessibilityHint: propertyInfo.accessibilityHint ?? propertyInfo.summary
+                ?? "Button",
             action: action
         )
     }

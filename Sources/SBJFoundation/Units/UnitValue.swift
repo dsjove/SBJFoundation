@@ -7,7 +7,7 @@ import SBJLocalization
 /// Conversion is explicit and non-mutating, which preserves the vocabulary of
 /// imported/domain data while still using Foundation `Measurement` for math.
 @SBJStructure
-public struct UnitValue<Unit: UnitType>: SBJFoundationType, Sendable, Hashable {
+public struct UnitValue<Unit: UnitType>: Codable, Equatable, Sendable, Hashable {
     public var value: Double
     public let unit: Unit
 

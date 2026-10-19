@@ -2,7 +2,7 @@ import Testing
 @testable import SBJFoundation
 
 @SBJStructure
-private struct EditableFieldModel: Codable {
+private struct MutablePropertyModel: Codable {
     var title: String
     var count: Int
 
@@ -13,12 +13,12 @@ private struct EditableFieldModel: Codable {
     }
 }
 
-struct SBJEditableFieldTests {
-    @Test func generatedEditableFieldsAreUIIndependentAndWritable() {
-        let fields = EditableFieldModel.sbjEditableFields
+struct SBJMutablePropertyTests {
+    @Test func generatedMutablePropertiesAreUIIndependentAndWritable() {
+        let fields = MutablePropertyModel.sbjMutableProperties
         #expect(fields.map(\.name) == ["Title", "Count", "Summary"])
 
-        var value = EditableFieldModel(title: "Before", count: 2)
+        var value = MutablePropertyModel(title: "Before", count: 2)
         let title = fields[0]
 
         #expect(title.value(in: value) as? String == "Before")
@@ -27,8 +27,8 @@ struct SBJEditableFieldTests {
         #expect(!title.setValue(42, in: &value))
     }
 
-    @Test func generatedEditableFieldCarriesStructuralMetadata() {
-        let fields = EditableFieldModel.sbjEditableFields
+    @Test func generatedMutablePropertyCarriesStructuralMetadata() {
+        let fields = MutablePropertyModel.sbjMutableProperties
 
         #expect(fields[0].structuralMetadata?.sourceName == "title")
         #expect(fields[1].structuralMetadata?.sourceName == "count")
@@ -37,10 +37,10 @@ struct SBJEditableFieldTests {
         #expect(!fields[2].participatesInStructuralValidation)
     }
 
-    @Test func generatedEditableFieldProvidesSharedSearchAndChangeSemantics() {
-        let field = EditableFieldModel.sbjEditableFields[0]
-        let original = EditableFieldModel(title: "Original", count: 2)
-        let changed = EditableFieldModel(title: "Changed", count: 2)
+    @Test func generatedMutablePropertyProvidesSharedSearchAndChangeSemantics() {
+        let field = MutablePropertyModel.sbjMutableProperties[0]
+        let original = MutablePropertyModel(title: "Original", count: 2)
+        let changed = MutablePropertyModel(title: "Changed", count: 2)
 
         #expect(field.matchesSearch(in: changed, query: "changed"))
         #expect(!field.hasChanged(in: original, from: original))

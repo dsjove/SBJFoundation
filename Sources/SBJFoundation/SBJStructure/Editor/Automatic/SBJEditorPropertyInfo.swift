@@ -140,8 +140,10 @@ private struct SBJEditorPropertyInfoSheet: View {
             }
 
             if let info {
-                Text(info.summary)
-                    .font(.subheadline.weight(.semibold))
+                if let summary = info.summary {
+                    Text(summary)
+                        .font(.subheadline.weight(.semibold))
+                }
                 if let details = info.details {
                     ScrollView {
                         Text(details)
@@ -156,8 +158,10 @@ private struct SBJEditorPropertyInfoSheet: View {
                 if info != nil { Divider().padding(.vertical, 2) }
                 Text(caseInfo.title)
                     .font(.headline)
-                Text(caseInfo.info.summary)
-                    .font(.subheadline.weight(.medium))
+                if let summary = caseInfo.info.summary {
+                    Text(summary)
+                        .font(.subheadline.weight(.medium))
+                }
                 if let details = caseInfo.info.details {
                     ScrollView {
                         Text(details)

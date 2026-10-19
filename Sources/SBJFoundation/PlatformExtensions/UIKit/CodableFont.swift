@@ -4,8 +4,8 @@ import UIKit
 import SwiftUI
 
 @SBJStructure
-public struct CodableFont: SBJFoundationType, Comparable, Hashable, Sendable, CustomDebugStringConvertible {
-	public enum Weight: String, SBJFoundationType, CaseIterable, Comparable, Sendable {
+public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, CustomDebugStringConvertible {
+	public enum Weight: String, Codable, Equatable, CaseIterable, Comparable, Sendable {
 		case ultraLight
 		case thin
 		case light
@@ -49,7 +49,7 @@ public struct CodableFont: SBJFoundationType, Comparable, Hashable, Sendable, Cu
 		}
 	}
 
-	public enum Width: String, SBJFoundationType, CaseIterable, Comparable, Sendable {
+	public enum Width: String, Codable, Equatable, CaseIterable, Comparable, Sendable {
 		case condensed
 		case standard
 		case expanded

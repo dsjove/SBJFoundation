@@ -3,7 +3,7 @@ import Foundation
 
 /// tvOS/watchOS retain the model metadata synthesized by `@SBJStructure`, but does
 /// not provide the SwiftUI structured editor UI.
-public protocol SBJSwiftUIEditable: SBJEditable {
+public protocol SBJSwiftUIEditable: SBJMutableStructure {
     @MainActor
     static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] { get }
 }
@@ -13,7 +13,7 @@ public protocol SBJSwiftUIEditable: SBJEditable {
 @MainActor
 public struct SBJEditorPropertyDescriptor<Root: SBJStructured> {
     public let name: String
-    public let editableField: SBJEditableField<Root>
+    public let editableField: SBJMutableProperty<Root>
 
     public init<Value: Codable>(
         name: String,
@@ -23,15 +23,15 @@ public struct SBJEditorPropertyDescriptor<Root: SBJStructured> {
         // Accepted for macro-generated source compatibility; tvOS/watchOS have no editor UI.
         _ = disclosureMode
         self.name = name
-        self.editableField = SBJEditableField<Root>(name: name, keyPath)
+        self.editableField = SBJMutableProperty<Root>(name: name, keyPath)
     }
 
     public init<Value>(
-        editorOnlyName name: String,
+        nonStructuralName name: String,
         _ keyPath: WritableKeyPath<Root, Value>
     ) {
         self.name = name
-        self.editableField = SBJEditableField<Root>(editorOnlyName: name, keyPath)
+        self.editableField = SBJMutableProperty<Root>(nonStructuralName: name, keyPath)
     }
 }
 
