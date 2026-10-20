@@ -293,10 +293,6 @@ public enum SBJStructureGeneration {
                     constraintMetadata.append(".urlKinds(\(allowedURLKinds))")
                 }
 
-                if hasAttribute(named: "SBJEditorFontFamily", on: variable) {
-                    hintMetadata.append(".fontFamilyEditor")
-                }
-
                 if let colorAlpha = colorAlpha(on: variable) {
                     hintMetadata.append(".colorSupportsAlpha(\(colorAlpha))")
                 }

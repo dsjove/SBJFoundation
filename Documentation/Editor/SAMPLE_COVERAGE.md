@@ -42,7 +42,7 @@ Examples:
 - `CodableColor` is covered because the sample model declares a `CodableColor`
   property and the editor dispatches through the color-editor path.
 - `CodableFont` and `CodableFontCache` become covered transitively because the
-  Preview declares `@SBJEditorFontFamily` and the font-family editor uses
+  Preview declares a `FontFamily?` property and the font-family editor uses
   the cache/type.
 - collection mutation helpers used by the Set/Dictionary editors are covered even
   though the Preview does not spell their method names.
@@ -74,7 +74,7 @@ The canonical sample model currently declares every annotation in
 - `@SBJEditorExclude` — import source.
 - `@SBJNumber` — nutrition/ingredient quantities.
 - `@SBJOptional` — source URL presence requirement.
-- `@SBJEditorFontFamily` — recipe-card font family.
+- `FontFamily?` — recipe-card font-family editor (type-based dispatch).
 - `@SBJSet` — tags.
 - `@SBJString` — single-line, multiline, and sheet-edit examples. The annotation is
   the coverage unit; multiple styles are retained because they exercise distinct

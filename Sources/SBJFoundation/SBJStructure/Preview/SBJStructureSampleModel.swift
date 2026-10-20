@@ -124,8 +124,7 @@ struct SBJStructureSampleModel: Codable {
   @SBJColor(alpha: false)
   var recipeCardTint = CodableColor(0.85, 0.35, 0.15, 1.0)
 
-  @SBJEditorFontFamily
-  var recipeCardFontFamily: String? = nil
+  var recipeCardFontFamily: FontFamily? = nil
 
   var nutrition = SBJStructureSampleNutrition()
   var heatSetting: SBJStructureSampleHeatSetting = .oven(celsius: 220, convection: true)

@@ -39,9 +39,19 @@ struct CodableFontTests {
         #expect(first === second)
         #expect(first.pointSize == 12)
     }
-    @Test func nameCarriesFontFamilyPresentationMetadata() {
-        let metadata = CodableFont.propertyMetadata(for: \CodableFont.name)
-        #expect(metadata?.hints.contains(.fontFamilyEditor) == true)
+    @Test func fontNameNormalizesAndIsLiteralInitializable() {
+        let family: FontFamily = "  Helvetica  "
+        #expect(family.name == "Helvetica")
+        let font = CodableFont("Helvetica", ofSize: 12)
+        #expect(font.family == family)
+    }
+
+    @Test func fontNameUsesSynthesizedCodable() throws {
+        let name: FontFamily = "Helvetica"
+        let encoded = try JSONEncoder().encode(name)
+        let decoded = try JSONDecoder().decode(FontFamily.self, from: encoded)
+        #expect(decoded == name)
+        #expect(decoded.name == "Helvetica")
     }
 
 }

@@ -224,7 +224,6 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
 /// Non-invariant usage or presentation information declared on a model property.
 /// Consumers may honor these hints, but they do not participate in validation.
 public enum SBJPropertyHint: Sendable, Equatable {
-    case fontFamilyEditor
     case textStyle(SBJStringStyle)
     case textAutocorrection(SBJTextAutocorrection)
     case textCapitalization(SBJTextCapitalization)

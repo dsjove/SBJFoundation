@@ -8,7 +8,6 @@ struct SBJStructurePlugin: CompilerPlugin {
         SBJEditorDisclosureMacro.self,
         SBJEditorExcludeMacro.self,
         SBJEditorPropertyMacro.self,
-        SBJEditorFontFamilyMacro.self,
         SBJEditorStringMacro.self,
         SBJEditorArrayMacro.self,
         SBJEditorSetMacro.self,

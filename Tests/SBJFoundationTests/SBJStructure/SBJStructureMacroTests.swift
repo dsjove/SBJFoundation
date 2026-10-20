@@ -22,7 +22,6 @@ final class SBJStructureMacroTests: XCTestCase {
         "SBJEditorString": SBJEditorStringMacro.self,
         "SBJEditorArray": SBJEditorArrayMacro.self,
         "SBJEditorSet": SBJEditorSetMacro.self,
-        "SBJEditorFontFamily": SBJEditorFontFamilyMacro.self,
         "SBJString": DataAnnotationMarker.self,
         "SBJInteger": DataAnnotationMarker.self,
         "SBJNumber": DataAnnotationMarker.self,

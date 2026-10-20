@@ -69,8 +69,7 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 	}
 
 	/// Font family name. `nil` means the system font.
-	@SBJEditorFontFamily
-	public var name: String?
+	public var family: FontFamily?
 	public var size: Double
 	public var weight: Weight
 	public var italic: Bool
@@ -78,13 +77,13 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 
 	@SBJDesignatedInit
 	public init(
-		_ name: String? = nil,
+		_ name: FontFamily? = nil,
 		ofSize size: Double = 12.0,
 		weight: Weight = .regular,
 		italic: Bool = false,
 		width: Width = .standard
 	) {
-		self.name = name
+		self.family = name
 		self.size = size
 		self.weight = weight
 		self.italic = italic
@@ -92,7 +91,7 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 	}
 
 	public static func < (lhs: CodableFont, rhs: CodableFont) -> Bool {
-		switch (lhs.name, rhs.name) {
+		switch (lhs.family, rhs.family) {
 		case (nil, nil):
 			break
 		case (nil, _?):
@@ -100,7 +99,7 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 		case (_?, nil):
 			return false
 		case let (lhsName?, rhsName?) where lhsName != rhsName:
-			return lhsName.localizedStandardCompare(rhsName) == .orderedAscending
+			return lhsName.name.localizedStandardCompare(rhsName.name) == .orderedAscending
 		default:
 			break
 		}
@@ -113,7 +112,7 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 	}
 
 	public var debugDescription: String {
-		"\(name.map { $0.debugDescription } ?? "System") \(size) \(weight.rawValue) \(width.rawValue)\(italic ? " italic" : "")"
+		"\(family.map { $0.debugDescription } ?? "System") \(size) \(weight.rawValue) \(width.rawValue)\(italic ? " italic" : "")"
 	}
 
 	/// Creates the described font without using a cache.
@@ -138,7 +137,7 @@ public extension CodableFont {
         _ keyPath: WritableKeyPath<CodableFont, Value>,
         in root: CodableFont
     ) -> Bool {
-        let capabilities = CodableFontCache.shared.capabilities(forFamily: root.name)
+        let capabilities = CodableFontCache.shared.capabilities(forFamily: root.family)
         let erasedKeyPath = keyPath as AnyKeyPath
 
         if erasedKeyPath == (\CodableFont.weight as AnyKeyPath) {

@@ -81,7 +81,8 @@ public final class CodableFontCache: @unchecked Sendable {
 	/// This is presentation metadata only. A caller should keep the requested
 	/// weight, italic, and width values even when the selected family does not
 	/// currently provide a meaningful variation on that axis.
-	public func capabilities(forFamily family: String?) -> FamilyCapabilities {
+	public func capabilities(forFamily name: FontFamily?) -> FamilyCapabilities {
+		let family = name?.name
 		guard let family else {
 			// The system font supports all three requested variation axes.
 			return FamilyCapabilities(
@@ -172,7 +173,7 @@ public final class CodableFontCache: @unchecked Sendable {
 		// System fonts have a direct weight API. Only add descriptor traits for
 		// variations that actually need them; in particular, `.standard` width
 		// means "no width override" rather than forcing a descriptor rematch.
-		guard let family = font.name else {
+		guard let family = font.family?.name else {
 			let base = UIFont.systemFont(ofSize: size, weight: font.weight.uiWeight)
 			let descriptor = descriptorApplyingVariations(
 				to: base.fontDescriptor,

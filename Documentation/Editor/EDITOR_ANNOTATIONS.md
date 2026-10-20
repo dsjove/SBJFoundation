@@ -34,16 +34,15 @@ Editor-only properties:
 
 This distinction is intentional: editability and structure are separate concerns.
 
-## `@SBJEditorFontFamily`
+## Font-family values
 
-Adds editor-neutral presentation semantics to a structural property. Presentation metadata does not alter storage, Codable behavior, validation, or assignment semantics.
-
-The current presentation option is font-family selection for an optional String, where `nil` represents the platform/system family:
+Font-family selection is determined by the property type, not an editor annotation.
+Declare a `FontFamily?` property to present the font-family picker. `nil` denotes
+the system font:
 
 ```swift
-@SBJEditorFontFamily
-var family: String?
+var family: FontFamily?
 ```
 
-Presentation hints are not invariants and may be ignored by non-UI consumers.
-
+`FontFamily` is string-literal-initializable and normalizes names on ordinary
+initialization. Its `Codable` conformance is synthesized.

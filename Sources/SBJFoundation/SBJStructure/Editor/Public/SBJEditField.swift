@@ -7,7 +7,6 @@ import SBJDataDefinition
   @MainActor
   struct SBJEditFieldConfiguration {
     let propertyInfo: SBJPropertyInfo?
-    let fontFamily: Bool
     let textStyle: SBJStringStyle?
     let textAutocorrection: SBJTextAutocorrection
     let textCapitalization: SBJTextCapitalization
@@ -23,7 +22,6 @@ import SBJDataDefinition
 
     init<Root: SBJStructured>(metadata: SBJPropertyMetadata<Root>?) {
       propertyInfo = metadata?.info
-      fontFamily = metadata?.hints.contains(.fontFamilyEditor) ?? false
       textStyle =
         metadata?.hints.compactMap { hint -> SBJStringStyle? in
           if case .textStyle(let style) = hint { return style }
@@ -120,7 +118,6 @@ import SBJDataDefinition
       _ label: String,
       value: Binding<Value>,
       registry: SBJEditorRegistry = .init(),
-      fontFamily: Bool = false,
       textStyle: SBJStringStyle? = nil,
       textMaximumLength: Int? = nil,
       integerRange: ClosedRange<Int>? = nil,
@@ -135,7 +132,6 @@ import SBJDataDefinition
           label: label,
           value: value,
           registry: registry,
-          fontFamily: fontFamily,
           textStyle: textStyle,
           textMaximumLength: textMaximumLength,
           integerRange: integerRange,
@@ -202,7 +198,6 @@ import SBJDataDefinition
           value: value,
           originalValue: originalRoot.map { SBJEditorOriginalValue($0[keyPath: keyPath]) },
           registry: registry,
-          fontFamily: configuration.fontFamily,
           textStyle: configuration.textStyle,
           textAutocorrection: configuration.textAutocorrection,
           textCapitalization: configuration.textCapitalization,
