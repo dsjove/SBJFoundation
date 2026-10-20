@@ -1,5 +1,5 @@
-import SBJUIVocabulary
 import UIKit
+import SBJUIVocabulary
 
 import SBJDataDefinition
 public enum AppInfo {

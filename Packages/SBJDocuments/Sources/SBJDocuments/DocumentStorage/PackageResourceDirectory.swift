@@ -1,6 +1,6 @@
 import Foundation
-import SBJFileResources
 import UniformTypeIdentifiers
+import SBJFileResources
 
 /// Filesystem operations for named secondary resources stored inside document packages.
 ///

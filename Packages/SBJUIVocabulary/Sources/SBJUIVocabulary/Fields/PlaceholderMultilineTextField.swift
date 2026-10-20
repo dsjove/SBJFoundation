@@ -3,7 +3,6 @@ import SwiftUI
 import SBJDataDefinition
 #if canImport(UIKit)
 import UIKit
-import SBJLocalization
 // TODO: editor only?
 #endif
 

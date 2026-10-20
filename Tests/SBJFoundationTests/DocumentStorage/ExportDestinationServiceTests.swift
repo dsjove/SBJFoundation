@@ -1,9 +1,9 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
 import Testing
-@testable import SBJFoundation
+import SBJDataDefinition
 @testable import SBJDocuments
+@testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Export destination collision handling")
 struct ExportDestinationServiceTests {

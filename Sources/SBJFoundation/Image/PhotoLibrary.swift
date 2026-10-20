@@ -1,9 +1,9 @@
-import SBJUIVocabulary
 #if os(iOS)
 import Foundation
+import Photos
 import SBJDataDefinition
 import SBJFileResources
-import Photos
+import SBJUIVocabulary
 
 /// A named encoded image resource that can be passed to image destinations
 /// without losing its content type or filename.

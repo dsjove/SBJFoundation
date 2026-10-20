@@ -1,12 +1,12 @@
 import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
-import Foundation
-import SBJDataDefinition
-import SBJFileResources
 import CoreLocation
+import Foundation
 import Testing
 import UIKit
 import UniformTypeIdentifiers
+import SBJDataDefinition
+import SBJFileResources
 @testable import SBJFoundation
 
 @Suite("Photo edit behavior")

@@ -1,9 +1,8 @@
-import SBJUIVocabulary
 import CoreLocation
-import SBJDataDefinition
 import ImageIO
 import UniformTypeIdentifiers
-
+import SBJDataDefinition
+import SBJUIVocabulary
 
 extension CLLocation {
 	public convenience init?(gpsMetadata: [String: Any]?) {

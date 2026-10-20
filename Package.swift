@@ -1,7 +1,6 @@
 // swift-tools-version: 6.4
 
 import PackageDescription
-import CompilerPluginSupport
 
 let package = Package(
     name: "SBJFoundation",
@@ -27,27 +26,11 @@ let package = Package(
         .package(path: "Packages/SBJDocuments"),
         .package(path: "Packages/SBJFileResources"),
         .package(path: "Packages/SBJHelp"),
-        .package(
-            url: "https://github.com/swiftlang/swift-syntax.git",
-            exact: "604.0.0-prerelease-2026-06-05"
-        ),
     ],
     targets: [
-        .macro(
-            name: "SBJFoundationMacros",
-            dependencies: [
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
-                .product(name: "SwiftDiagnostics", package: "swift-syntax"),
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
-            ]
-        ),
         .target(
             name: "SBJFoundation",
             dependencies: [
-                "SBJFoundationMacros",
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJUnits", package: "SBJUnits"),
@@ -76,12 +59,9 @@ let package = Package(
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
-                "SBJFoundationMacros",
-                .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJUnits", package: "SBJUnits"),
-                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ],
             resources: [
                 .process("Resources"),

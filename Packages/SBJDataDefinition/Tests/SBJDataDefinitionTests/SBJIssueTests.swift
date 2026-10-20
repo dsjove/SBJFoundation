@@ -1,5 +1,4 @@
 import Testing
-import SBJDataDefinition
 @testable import SBJDataDefinition
 
 private enum TestIssueKind: Hashable {

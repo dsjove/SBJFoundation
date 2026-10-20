@@ -1,17 +1,16 @@
-import SBJUIVocabulary
-import SBJCamera
-import SBJDataDefinition
-import SBJDocuments
-import SBJFileResources
 #if !os(watchOS) && canImport(UIKit)
+import Observation
 import SwiftUI
 import UIKit
-import Observation
 import UniformTypeIdentifiers
 #if !os(tvOS)
 import PhotosUI
 #endif
-import SBJLocalization
+import SBJCamera
+import SBJDataDefinition
+import SBJDocuments
+import SBJFileResources
+import SBJUIVocabulary
 
 public struct _DefaultPhotoMenuLabel: View {
     let isFilled: Bool

@@ -1,5 +1,5 @@
-import SBJUIVocabulary
 import SwiftUI
+import SBJUIVocabulary
 
 import SBJDataDefinition
 private struct NavigationTitleHighlighted: ViewModifier {

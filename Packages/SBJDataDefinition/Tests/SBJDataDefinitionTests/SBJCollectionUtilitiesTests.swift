@@ -1,5 +1,4 @@
 import Foundation
-import SBJDataDefinition
 import Testing
 @testable import SBJDataDefinition
 

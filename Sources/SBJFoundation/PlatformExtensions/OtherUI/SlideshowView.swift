@@ -1,7 +1,6 @@
-import SBJUIVocabulary
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
+import SBJUIVocabulary
 internal import Combine
 
 public protocol SlideView: View {

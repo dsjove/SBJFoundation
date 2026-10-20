@@ -1,5 +1,5 @@
-import SBJUIVocabulary
 import SwiftUI
+import SBJUIVocabulary
 
 import SBJDataDefinition
 public struct TagsControlView<T: TagUser>: View {

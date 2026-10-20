@@ -1,7 +1,7 @@
-import SBJUIVocabulary
 import Foundation
-
 import SBJDataDefinition
+import SBJUIVocabulary
+
 /// Current non-destructive edit state. This is deliberately not an edit history.
 public struct PhotoEditResult: Codable, Equatable, Sendable {
     public var displayName: String

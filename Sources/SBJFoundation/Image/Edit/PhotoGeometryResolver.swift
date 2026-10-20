@@ -1,8 +1,8 @@
-import SBJUIVocabulary
 #if !os(watchOS) && canImport(UIKit)
 import CoreGraphics
-import SBJDataDefinition
 import Foundation
+import SBJDataDefinition
+import SBJUIVocabulary
 
 struct PhotoResolvedLayout {
     let sourceSize: CGSize

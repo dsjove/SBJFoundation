@@ -1,7 +1,6 @@
-import SBJUIVocabulary
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
+import SBJUIVocabulary
 
 /// A checkbox presentation for `Toggle` that keeps the normal Toggle binding contract while
 /// presenting an explicit checked/unchecked semantic image.

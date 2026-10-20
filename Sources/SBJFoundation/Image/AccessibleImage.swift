@@ -1,7 +1,6 @@
-import SBJUIVocabulary
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
+import SBJUIVocabulary
 
 /// An image reference with optional visible and spoken descriptions.
 public protocol AccessibleImage: Accessible {

@@ -1,10 +1,10 @@
 import Foundation
-#if canImport(UIKit)
+#if os(watchOS)
+import WatchKit
+#elseif canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
 import AppKit
-#elseif os(watchOS)
-import WatchKit
 #endif
 
 /// Platform URL behavior used by help and other clients.
@@ -17,15 +17,15 @@ public extension URL {
     var isValidURL: Bool {
         guard !absoluteString.isEmpty, scheme != nil else { return false }
 
-#if canImport(UIKit)
-#if WIDGET_TARGET
+#if os(watchOS)
         return true
-#else
+#elseif canImport(UIKit)
+    #if WIDGET_TARGET
+        return true
+    #else
         return UIApplication.shared.canOpenURL(self)
-#endif
+    #endif
 #elseif canImport(AppKit)
-        return true
-#elseif os(watchOS)
         return true
 #else
         return true
@@ -44,16 +44,14 @@ public extension URL {
     }
 
     func open() {
-#if canImport(UIKit)
-#if !WIDGET_TARGET
+#if os(watchOS)
+		WKApplication.shared().openSystemURL(self)
+#elseif canImport(UIKit)
+    #if !WIDGET_TARGET
         UIApplication.shared.open(self, options: [:], completionHandler: nil)
-#endif
+    #endif
 #elseif canImport(AppKit)
         NSWorkspace.shared.open(self)
-#elseif os(watchOS)
-		WKApplication.shared().openSystemURL(self)
 #endif
     }
 }
-
-

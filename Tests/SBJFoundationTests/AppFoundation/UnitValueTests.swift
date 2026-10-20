@@ -1,9 +1,9 @@
-import SBJUnits
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
 import Testing
+import SBJDataDefinition
 @testable import SBJFoundation
+import SBJUIVocabulary
+import SBJUnits
 
 @Suite("Unit values")
 struct UnitValueTests {

@@ -1,9 +1,8 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
 import Testing
-import SBJLocalization
+import SBJDataDefinition
 @testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Foundation utilities")
 struct SBJFoundationUtilitiesTests {

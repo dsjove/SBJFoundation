@@ -1,8 +1,8 @@
-import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS)
 import SwiftUI
-
 import SBJDataDefinition
+import SBJUIVocabulary
+
 private struct PhotoEditGestureModifier<G: Gesture>: ViewModifier {
     let isEnabled: Bool
     let gesture: G

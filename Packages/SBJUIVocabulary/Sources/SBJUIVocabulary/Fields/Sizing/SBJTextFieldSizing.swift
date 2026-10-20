@@ -1,7 +1,7 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
-import SBJDataDefinition
 import SwiftUI
+import SBJDataDefinition
 
 /// Reusable width preferences for single-line text fields with a known length limit.
 /// Applied through `sbjPreferredFieldWidth` to scale with Dynamic Type.

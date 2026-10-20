@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 @SBJStructure
 public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, CustomDebugStringConvertible {

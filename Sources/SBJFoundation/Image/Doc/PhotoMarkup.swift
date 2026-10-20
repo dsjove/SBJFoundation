@@ -1,6 +1,4 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
 import UniformTypeIdentifiers
 #if canImport(CoreGraphics)
 import CoreGraphics
@@ -8,6 +6,8 @@ import CoreGraphics
 #if canImport(PencilKit)
 import PencilKit
 #endif
+import SBJDataDefinition
+import SBJUIVocabulary
 
 public struct PhotoMarkupCanvasSize: Codable, Equatable, Sendable {
     public var width: Double

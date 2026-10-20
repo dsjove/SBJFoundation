@@ -1,8 +1,8 @@
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 
 /// Folder picker used by app-controlled exports. Selecting the destination
 /// directory first lets the app detect name collisions before writing, instead

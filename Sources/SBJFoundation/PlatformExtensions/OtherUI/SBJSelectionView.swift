@@ -1,7 +1,6 @@
-import SBJUIVocabulary
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
+import SBJUIVocabulary
 
 /// Searchable single-selection presentation that supports both required and optional selections.
 ///

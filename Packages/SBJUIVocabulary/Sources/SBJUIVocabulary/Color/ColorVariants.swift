@@ -1,7 +1,7 @@
 import Foundation
-import SBJDataDefinition
 import SwiftUI
 import UIKit
+import SBJDataDefinition
 
 /// Common sources from which a `CodableColor` can be constructed.
 /// Platform-specific cases exist only where their native color type exists.

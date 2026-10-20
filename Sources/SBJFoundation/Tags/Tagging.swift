@@ -1,10 +1,9 @@
-import SBJUIVocabulary
 import Foundation
+import SwiftData
+import SwiftUI
 import SBJDataDefinition
 import SBJDocuments
-import SwiftUI
-import SwiftData
-import SBJLocalization
+import SBJUIVocabulary
 
 public protocol Tagging:
 	AnyObject,

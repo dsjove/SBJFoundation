@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 extension DurationUnit: StringPresentable {
     public var abbreviation: String {

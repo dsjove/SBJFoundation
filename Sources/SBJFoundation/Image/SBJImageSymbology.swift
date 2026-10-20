@@ -1,8 +1,7 @@
-import SBJUIVocabulary
-import SBJHelp
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
+import SBJHelp
+import SBJUIVocabulary
 
 /// Semantic imagery used by image import, viewing, and editing UI.
 ///

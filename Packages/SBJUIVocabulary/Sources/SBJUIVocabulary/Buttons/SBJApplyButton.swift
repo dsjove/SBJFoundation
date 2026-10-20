@@ -1,6 +1,5 @@
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
 
 // TODO: editor only?
 @MainActor

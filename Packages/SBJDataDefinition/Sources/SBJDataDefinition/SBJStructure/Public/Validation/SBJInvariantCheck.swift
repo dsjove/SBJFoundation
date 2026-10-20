@@ -1,5 +1,5 @@
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// Runtime validation helpers used by macro-generated and handwritten invariants.
 ///

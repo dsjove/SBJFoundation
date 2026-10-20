@@ -1,7 +1,7 @@
-import SBJDataDefinitionMacros
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
+import SBJDataDefinitionMacros
 import SBJStructureMacroSupport
 
 final class SBJStructureMacroTests: XCTestCase {

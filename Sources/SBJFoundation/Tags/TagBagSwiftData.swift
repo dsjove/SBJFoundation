@@ -1,10 +1,10 @@
-import SBJUIVocabulary
+import Foundation
+import Observation
+import SwiftData
 import SwiftUI
 import SBJDataDefinition
 import SBJDocuments
-import SwiftData
-import Foundation
-import Observation
+import SBJUIVocabulary
 
 @MainActor
 @Observable

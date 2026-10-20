@@ -1,8 +1,8 @@
-import SBJUIVocabulary
 import Observation
-import SBJDataDefinition
 import SwiftUI
 import UIKit
+import SBJDataDefinition
+import SBJUIVocabulary
 
 @MainActor
 @Observable

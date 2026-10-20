@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 extension UnitConversionModel: StringPresentable {
     public var description: String {

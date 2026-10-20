@@ -1,8 +1,7 @@
-import SBJUIVocabulary
 import CoreGraphics
-import SBJDataDefinition
 import Foundation
-import SBJLocalization
+import SBJStructuredEditor
+import SBJUIVocabulary
 
 @SBJEditable
 public enum PhotoCropOption: Codable, Hashable, Sendable, Identifiable {

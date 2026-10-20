@@ -1,6 +1,6 @@
 import Foundation
-import SBJDataDefinition
 import SwiftUI
+import SBJDataDefinition
 
 #if canImport(UIKit)
 import UIKit

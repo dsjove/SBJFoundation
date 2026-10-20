@@ -1,5 +1,5 @@
-import SBJUIVocabulary
 import CoreLocation
+import SBJUIVocabulary
 
 import SBJDataDefinition
 /// Location capability used by clients that need an eagerly acquired, cached

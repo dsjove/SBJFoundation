@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 extension VolumeUnit: StringPresentable {
     public var abbreviation: String {

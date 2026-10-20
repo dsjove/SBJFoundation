@@ -1,8 +1,8 @@
-import SBJUIVocabulary
 import Observation
-import SBJDataDefinition
 import XCTest
+import SBJDataDefinition
 @testable import SBJFoundation
+import SBJUIVocabulary
 
 @Observable
 private final class ObservationFixture {

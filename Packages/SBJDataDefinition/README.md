@@ -24,7 +24,7 @@ For editor integration, import SBJFoundation and use `@SBJEditable` instead; do 
 
 - `SBJDataDefinition`: runtime library and public data macro declarations. It depends on `SBJLocalization` and on its macro plugin.
 - `SBJDataDefinitionMacros`: compiler plugin that registers data macro entry points. It depends on the shared support target.
-- `SBJStructureMacroSupport`: ordinary **compiler-side** SwiftSyntax library containing reusable structural syntax analysis and code generation. It is also exposed as a package product so **SBJFoundationMacros** in the parent package can import it.
+- `SBJStructureMacroSupport`: ordinary **compiler-side** SwiftSyntax library containing reusable structural syntax analysis and code generation. It is also exposed as a package product so **SBJStructuredEditorMacros** in the parent package can import it.
 
 SwiftPM compiles the shared support target for the **host toolchain** as a dependency of the macro plugins. The compiler loads the plugins when expanding annotations, and the plugins generate Swift declarations into the client's compilation. The client's application does **not** call or link `SBJStructureMacroSupport` as a runtime API. A runtime dependency on `SBJDataDefinition` alone does not expose macro implementation types; the editor macro target explicitly depends on the support product.
 

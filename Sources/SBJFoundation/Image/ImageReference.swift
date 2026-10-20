@@ -1,6 +1,3 @@
-import SBJUIVocabulary
-import SBJFileResources
-import SBJDataDefinition
 import Foundation
 import SwiftUI
 #if canImport(ImageIO)
@@ -8,8 +5,10 @@ import ImageIO
 #endif
 #if canImport(UIKit)
 import UIKit
-import SBJLocalization
 #endif
+import SBJDataDefinition
+import SBJFileResources
+import SBJUIVocabulary
 
 /// General image reference: obtain an image from symbolic, bundled or file-backed sources.
 /// `SBJSymbol` is restricted to local UI symbology; `.file` also resolves image-document thumbnails.

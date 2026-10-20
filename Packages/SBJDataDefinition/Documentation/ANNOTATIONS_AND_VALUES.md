@@ -254,7 +254,7 @@ let snapshot = edited.sbjCodableCopy()
 let encodedDifference = edited.sbjEncodedIsDifferent(from: original)
 ```
 
-`sbjCodableCopy()` is useful for independent snapshots. Encoded comparison remains available as a public utility and as the structural-comparison fallback for opaque Codable values, but generated SBJ structures normally use field-by-field structural comparison.
+`sbjCodableCopy()` (available through the structured editor utilities) is useful for independent snapshots. Encoded comparison remains available as a public utility and as the structural-comparison fallback for opaque Codable values, but generated SBJ structures normally use field-by-field structural comparison.
 
 ---
 

@@ -2,7 +2,6 @@ import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
 
 /// Semantic share control for content whose activity representation is
 /// expensive or must remain stable for the full system share interaction.

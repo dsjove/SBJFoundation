@@ -1,9 +1,9 @@
-import SBJUIVocabulary
 import Foundation
+import Testing
 import SBJDataDefinition
 @testable import SBJDocuments
-import Testing
 @testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Package library catalog")
 struct PackageLibraryStoreTests {

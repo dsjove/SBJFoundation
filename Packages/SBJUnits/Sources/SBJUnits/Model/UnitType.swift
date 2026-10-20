@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 /// A strongly typed unit that delegates physical conversion to Foundation's
 /// `Dimension` / `Measurement` infrastructure.

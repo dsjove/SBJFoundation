@@ -1,8 +1,8 @@
-import SBJUIVocabulary
-import SBJFileResources
-import SBJDataDefinition
 #if canImport(UIKit)
 import UIKit
+import SBJDataDefinition
+import SBJFileResources
+import SBJUIVocabulary
 
 public typealias IdentifiableImage = Identified<UIImage>
 

@@ -1,10 +1,10 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
-import SBJFileResources
 import Testing
 import UniformTypeIdentifiers
+import SBJDataDefinition
+import SBJFileResources
 @testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Package attachment storage")
 struct PackageAttachmentStoreTests {

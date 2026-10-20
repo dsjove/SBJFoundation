@@ -1,8 +1,8 @@
 import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import SwiftUI
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 
 /// Low-level SwiftUI bridge to `UIActivityViewController`.
 ///

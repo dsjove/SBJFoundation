@@ -1,5 +1,5 @@
-import SBJUIVocabulary
 import Foundation
+import SBJUIVocabulary
 
 import SBJDataDefinition
 public extension Data {

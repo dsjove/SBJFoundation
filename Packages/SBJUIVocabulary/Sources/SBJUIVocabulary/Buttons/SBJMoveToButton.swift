@@ -1,6 +1,5 @@
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
 
 @MainActor
 public struct SBJMoveToButton: View {

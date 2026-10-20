@@ -1,9 +1,9 @@
-import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import Observation
-import SBJDataDefinition
 import SwiftUI
 import UIKit
+import SBJDataDefinition
+import SBJUIVocabulary
 
 /// Mutable interaction state for a photo-editing session.
 ///

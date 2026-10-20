@@ -1,8 +1,7 @@
-import SBJUIVocabulary
 import Foundation
 import SBJDataDefinition
 import SBJFileResources
-import SBJLocalization
+import SBJUIVocabulary
 
 /// A named item presented by the standard attachment editor.
 ///

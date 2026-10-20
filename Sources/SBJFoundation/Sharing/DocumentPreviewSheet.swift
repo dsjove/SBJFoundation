@@ -1,11 +1,10 @@
 import SBJUIVocabulary
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
-import SBJFileResources
 import QuickLook
-import SBJDataDefinition
 import SwiftUI
 import UIKit
-import SBJLocalization
+import SBJDataDefinition
+import SBJFileResources
 
 public struct DocumentPreviewController: UIViewControllerRepresentable {
     public let preview: URLAttachment

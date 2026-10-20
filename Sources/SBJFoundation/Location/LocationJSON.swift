@@ -1,7 +1,7 @@
-import SBJUIVocabulary
+import CoreLocation
 import Foundation
 import SBJDataDefinition
-import CoreLocation
+import SBJUIVocabulary
 
 public struct LocationJSON: Codable, Equatable {
 	public var latitude: CLLocationDegrees

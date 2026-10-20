@@ -1,7 +1,7 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
 import Observation
+import SBJDataDefinition
+import SBJUIVocabulary
 
 /// Lifetime token for an observation installed by ``observeValue``.
 ///

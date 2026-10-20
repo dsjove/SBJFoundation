@@ -1,6 +1,6 @@
 import Foundation
-import SBJFileResources
 import UniformTypeIdentifiers
+import SBJFileResources
 
 public extension SBJBundledContentReference {
     /// HTML help stored in the standard `help` resource directory.

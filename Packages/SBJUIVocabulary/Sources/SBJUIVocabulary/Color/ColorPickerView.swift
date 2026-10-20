@@ -1,7 +1,7 @@
 #if os(iOS) || os(visionOS)
 import SwiftUI
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 
 // TODO(ColorPicker duplication — unresolved): SBJFoundation still has both this UIKit-backed
 // ColorPickerView and direct SwiftUI.ColorPicker use in SBJColorEditor. Do not consolidate yet:

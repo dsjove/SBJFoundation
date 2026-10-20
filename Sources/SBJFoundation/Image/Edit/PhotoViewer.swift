@@ -1,13 +1,18 @@
-import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
-import SBJHelp
 import Observation
+import SwiftUI
+import UIKit
 import SBJDataDefinition
 import SBJDocuments
 import SBJFileResources
-import SwiftUI
-import UIKit
-import SBJLocalization
+import SBJHelp
+import SBJUIVocabulary
+
+public extension SBJBundledContentReference {
+    static var imageView: SBJBundledContentReference {
+        .help("Image View", bundle: .module)
+    }
+}
 
 /// Full-screen presentation for inspecting image resource content.
 ///

@@ -1,10 +1,10 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
-import SBJDocuments
 import Testing
-@testable import SBJFoundation
+import SBJDataDefinition
 @testable import SBJDocuments
+import SBJDocuments
+@testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Export artifact writer")
 struct ExportArtifactWriterTests {

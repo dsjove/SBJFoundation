@@ -1,10 +1,9 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
 import SwiftUI
 import Testing
-import SBJLocalization
+import SBJDataDefinition
 @testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Shared UI API")
 struct SharedUIAPITests {

@@ -1,7 +1,7 @@
-import XCTest
-import SBJFileResources
 import UniformTypeIdentifiers
+import XCTest
 @testable import SBJFileResources
+import SBJFileResources
 
 final class FilenameTests: XCTestCase {
     func testSanitizedFilenameAddsPreferredContentTypeExtension() {

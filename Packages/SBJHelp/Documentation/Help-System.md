@@ -64,22 +64,8 @@ only the display name; the sanitized display name becomes the resource filename 
 
 ## Framework-bundled and embedded help
 
-SBJFoundation ships two non-overlapping generated-editor fragments: `SBJBundledContentReference.structureEditorCore`
-for structural value states and controls, and `SBJBundledContentReference.structureEditorSearch` for search/filter
-behavior. An application can present either resource exactly like application-owned help:
+Structured-editor help resources are bundled with `SBJStructuredEditor`, not SBJFoundation or SBJHelp. Import the editor module and call `SBJHelpConfiguration.includeStructuredEditorHelp()` when configuring application Help. It registers the editor-owned `.structuredEditorCore` and `.structuredEditorSearch` bundled-content references for the two embedded HTML tokens.
 
-```swift
-SBJHelpLink(asset: .structureEditorSearch)
-```
-
-Reusable help can also be composed into an application's larger topic.
-`SBJHelpConfiguration.embeddedAssets` maps template tokens to help assets. Foundation’s `SBJHelpConfiguration.foundation` maps `SBJ_STRUCTURE_EDITOR_CORE_HELP` to `.structureEditorCore` and `SBJ_STRUCTURE_EDITOR_SEARCH_HELP` to `.structureEditorSearch`; the package-level standard configuration contains no feature-specific fragments. When that token occurs in an
-application HTML help document, `SBJHelpTemplateRenderer` recursively renders the framework help
-and substitutes it into the parent document. This lets an application surround framework help
-with app-specific context while keeping the shared instructions authoritative in SBJFoundation.
-
-Embedding is deliberately generic: applications and future frameworks may add their own named
-embedded assets to the configuration. Recursive inclusion is guarded against by resource identity.
 
 ## Presenter dispatch and extension
 
@@ -202,7 +188,7 @@ HTML help can use `UI_name\` tokens for controls that are part of the shared UI 
 
 ## Bundled Foundation help
 
-`SBJBundledContentReference.structureEditorCore` and `.structureEditorSearch` are packaged with SBJFoundation and may be presented directly or embedded with the standard `SBJ_STRUCTURE_EDITOR_CORE_HELP` and `SBJ_STRUCTURE_EDITOR_SEARCH_HELP` tokens. Bundle-resource lookup tolerates processed-resource flattening, so the authored `Resources/help` organization does not have to match the generated bundle layout.
+Editor-specific HTML resources belong to `SBJStructuredEditor`. Its view-level `help()` methods provide the supported entry points.
 
 
 ## Resource directory layout

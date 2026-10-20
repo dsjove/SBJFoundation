@@ -1,8 +1,8 @@
-import SBJUIVocabulary
 import CoreLocation
-import SBJDataDefinition
 import Foundation
 import Observation
+import SBJDataDefinition
+import SBJUIVocabulary
 
 /// Eager Core Location provider intended for clients that need a location
 /// immediately at the point of use. It begins authorization/acquisition as soon

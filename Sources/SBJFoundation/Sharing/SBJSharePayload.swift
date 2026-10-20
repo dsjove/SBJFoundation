@@ -1,8 +1,8 @@
 import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import LinkPresentation
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 
 /// A fully prepared payload for one UIKit share presentation.
 ///

@@ -1,14 +1,14 @@
-import SBJUIVocabulary
-#if canImport(UIKit)
-import Foundation
-import SBJDataDefinition
-import SBJFileResources
 import CoreLocation
+import Foundation
 import UniformTypeIdentifiers
+#if canImport(UIKit)
 import UIKit
 #if canImport(PencilKit)
 import PencilKit
 #endif
+import SBJDataDefinition
+import SBJFileResources
+import SBJUIVocabulary
 
 /// A self-contained non-destructive image package.
 ///

@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 extension UnitValue: StringPresentable {
     public var description: String {

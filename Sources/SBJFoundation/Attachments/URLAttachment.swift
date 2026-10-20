@@ -1,9 +1,8 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
-import SBJFileResources
 import UniformTypeIdentifiers
-import SBJLocalization
+import SBJFileResources
+import SBJStructuredEditor
+import SBJUIVocabulary
 
 /// A concrete attachment presentation independent of attachment storage.
 ///

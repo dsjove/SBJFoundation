@@ -1,7 +1,7 @@
 #if !os(watchOS)
+import Foundation
 import SwiftUI
 import SBJFileResources
-import Foundation
 
 /// Shared presentation behavior for help entry controls.
 ///

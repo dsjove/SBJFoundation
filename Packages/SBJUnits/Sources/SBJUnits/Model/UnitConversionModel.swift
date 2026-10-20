@@ -1,6 +1,5 @@
 import Observation
 import SBJDataDefinition
-import SBJLocalization
 
 @Observable
 public final class UnitConversionModel<Unit: UnitType> {

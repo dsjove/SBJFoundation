@@ -1,8 +1,8 @@
-import SBJUIVocabulary
 import Testing
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 @testable import SBJFoundation
+import SBJUIVocabulary
 
 struct CodableFontTests {
     @Test func systemFontSortsBeforeNamedFontsWithoutCrashing() {

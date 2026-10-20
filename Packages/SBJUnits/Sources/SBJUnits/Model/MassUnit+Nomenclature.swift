@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 extension MassUnit: StringPresentable {
     public var abbreviation: String {

@@ -1,6 +1,6 @@
 import Foundation
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 
 public extension CodableFont {
 	/// Shared cached font lookup, with a caller-supplied theme scale.

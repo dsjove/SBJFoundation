@@ -1,11 +1,11 @@
 import SBJUIVocabulary
 #if !os(watchOS)
-import XCTest
-import SBJHelp
-import SBJDataDefinition
 import UniformTypeIdentifiers
-@testable import SBJFoundation
+import XCTest
+import SBJDataDefinition
 @testable import SBJFileResources
+@testable import SBJFoundation
+import SBJHelp
 
 final class SBJHelpTests: XCTestCase {
     func testFilenameExtensionsUseUniformTypeIdentifiers() {
@@ -52,18 +52,6 @@ final class SBJHelpTests: XCTestCase {
         XCTAssertNotNil(SBJHelpPresenters.builtIn(for: .html))
         XCTAssertNotNil(SBJHelpPresenters.builtIn(for: .markdown))
         XCTAssertNil(SBJHelpPresenters.builtIn(for: .json))
-    }
-
-    @MainActor
-    func testHelpLinkCompilesOnCurrentPlatform() {
-        _ = SBJHelpLink(asset: .structureEditorCore)
-        _ = SBJHelpButton(asset: .structureEditorCore)
-    }
-
-    func testBundledStructureSearchHelpIsAvailable() {
-        let asset = SBJBundledContentReference.structureEditorSearch
-        XCTAssertTrue(asset.exists)
-        XCTAssertEqual(asset.contentType, .html)
     }
 
     func testBundledResourceContentTypeCanComeFromExtension() {

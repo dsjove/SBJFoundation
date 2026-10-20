@@ -1,8 +1,7 @@
 import Foundation
-import SBJDataDefinition
-import SBJLocalization
-import UIKit
 import SwiftUI
+import UIKit
+import SBJDataDefinition
 
 extension CodableFont {
 	/// Creates the described font without using a cache.

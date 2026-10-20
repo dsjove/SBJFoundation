@@ -1,5 +1,5 @@
-import SwiftUI
 import Observation
+import SwiftUI
 
 /// Coordinates a simulated front-camera flash.
 ///

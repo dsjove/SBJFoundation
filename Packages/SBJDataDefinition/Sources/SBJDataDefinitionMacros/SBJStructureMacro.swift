@@ -1,9 +1,9 @@
-import SBJStructureMacroSupport
 import Foundation
 import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import SBJStructureMacroSupport
 
 /// Generates structural metadata without editor-specific declarations.
 public struct SBJStructureMacro: MemberMacro, ExtensionMacro {

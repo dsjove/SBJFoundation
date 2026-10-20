@@ -1,8 +1,8 @@
 import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+import Observation
 import SwiftUI
 import SBJDataDefinition
-import Observation
 
 @MainActor
 struct SBJSharePresentation: Identifiable {

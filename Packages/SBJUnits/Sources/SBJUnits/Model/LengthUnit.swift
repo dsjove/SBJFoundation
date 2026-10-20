@@ -1,6 +1,5 @@
 import Foundation
 import SBJDataDefinition
-import SBJLocalization
 
 @SBJStructure
 public enum LengthUnit: String, UnitType {

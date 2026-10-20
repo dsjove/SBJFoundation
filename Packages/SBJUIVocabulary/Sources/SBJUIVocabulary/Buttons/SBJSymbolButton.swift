@@ -1,6 +1,5 @@
 import SwiftUI
 import SBJDataDefinition
-import SBJLocalization
 
 /// Shared primitive for compact symbol-only actions.
 ///

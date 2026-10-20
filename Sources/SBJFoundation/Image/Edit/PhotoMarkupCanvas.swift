@@ -1,10 +1,10 @@
-import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit) && canImport(PencilKit)
 import Foundation
-import SBJDataDefinition
 import Observation
 import PencilKit
 import SwiftUI
+import SBJDataDefinition
+import SBJUIVocabulary
 
 @MainActor
 @Observable

@@ -1,16 +1,21 @@
-import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
-import SBJHelp
 import Observation
-import SBJDataDefinition
-import SBJDocuments
-import SBJFileResources
 import SwiftUI
 import UIKit
 #if canImport(PencilKit)
 import PencilKit
-import SBJLocalization
 #endif
+import SBJDataDefinition
+import SBJDocuments
+import SBJFileResources
+import SBJHelp
+import SBJUIVocabulary
+
+public extension SBJBundledContentReference {
+    static var imageEdit: SBJBundledContentReference {
+        .help("Image Edit", bundle: .module)
+    }
+}
 
 /// Full-screen image editor backed by normalized edit geometry.
 ///

@@ -1,7 +1,7 @@
 #if !os(watchOS)
 import Foundation
-import SBJFileResources
 import Observation
+import SBJFileResources
 
 public enum PackageExternalConflictKind: Equatable, Sendable {
 	case modified

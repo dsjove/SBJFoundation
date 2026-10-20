@@ -1,10 +1,10 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
-import SBJFileResources
 import Testing
-@testable import SBJFoundation
+import SBJDataDefinition
 @testable import SBJDocuments
+import SBJFileResources
+@testable import SBJFoundation
+import SBJUIVocabulary
 
 @Suite("Coordinated file access")
 struct FileResourceAccessTests {

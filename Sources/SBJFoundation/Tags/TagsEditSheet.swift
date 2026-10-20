@@ -1,9 +1,15 @@
-import SBJUIVocabulary
-import SBJHelp
+import SwiftData
 import SwiftUI
 import SBJDataDefinition
-import SwiftData
-import SBJLocalization
+import SBJHelp
+import SBJUIVocabulary
+import SBJFileResources
+
+public extension SBJBundledContentReference {
+    static var editTags: SBJBundledContentReference {
+        .help("Edit Tags", bundle: .module)
+    }
+}
 
 public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 	typealias Tag = T.Tag

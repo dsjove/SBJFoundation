@@ -1,11 +1,17 @@
-import SBJUIVocabulary
 #if !os(watchOS)
 import Foundation
-import SBJDataDefinition
-import SBJFileResources
 import Observation
 import SwiftUI
 import UniformTypeIdentifiers
+import SBJDataDefinition
+import SBJFileResources
+import SBJUIVocabulary
+
+public extension SBJBundledContentReference {
+    static var attachmentsHelp: SBJBundledContentReference {
+        .help("Attachments", bundle: .module)
+    }
+}
 
 /// Standard editor for a collection of named attachments.
 ///

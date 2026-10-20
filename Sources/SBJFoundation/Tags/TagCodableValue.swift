@@ -1,7 +1,6 @@
-import SBJUIVocabulary
 import Foundation
-import SBJDataDefinition
-import SBJLocalization
+import SBJStructuredEditor
+import SBJUIVocabulary
 
 /// Codable value representation of the generic, user-visible portion of a tag.
 ///

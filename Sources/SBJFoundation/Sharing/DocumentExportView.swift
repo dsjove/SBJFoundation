@@ -1,8 +1,8 @@
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
-import SBJDataDefinition
 import UIKit
+import SBJDataDefinition
 
 public typealias ExportPayload = Identified<[URL]>
 

@@ -19,3 +19,7 @@ See [Help architecture](Documentation/Architecture.md) and [Help system](Documen
 ## Tests
 
 Protect resource selection, substitution precedence, supported content-type dispatch, and error paths. Avoid asserting trivial literal replacements already guaranteed by Foundation's string APIs.
+
+## Editor help
+
+The structured editor owns its own help HTML. The editor exposes bundled-content references and `SBJHelpConfiguration.includeStructuredEditorHelp()` for applications that embed its help content. `SBJHelp` provides the presentation mechanism; it does not own those documents.

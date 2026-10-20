@@ -1,13 +1,13 @@
-import SBJUIVocabulary
 #if !os(watchOS) && canImport(UIKit)
 import ImageIO
-import SBJDataDefinition
-import SBJFileResources
-import UniformTypeIdentifiers
 import UIKit
+import UniformTypeIdentifiers
 #if canImport(PencilKit)
 import PencilKit
 #endif
+import SBJDataDefinition
+import SBJFileResources
+import SBJUIVocabulary
 
 enum PhotoEditRenderer {
     enum Encoding {
