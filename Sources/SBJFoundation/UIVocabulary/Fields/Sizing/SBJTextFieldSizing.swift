@@ -5,6 +5,12 @@ import SwiftUI
 
 /// Reusable width preferences for single-line text fields with a known length limit.
 /// Applied through `sbjPreferredFieldWidth` to scale with Dynamic Type.
+// TODO: Replace the hard-coded character-count tiers with a policy based on
+// actual font metrics, candidate text, field purpose and available layout width.
+// Character-count limits constrain input but do not determine measured width.
+// Share measurement infrastructure with localized candidate fitting, not the
+// semantic candidate-selection logic itself.
+// TODO: editor only?
 enum SBJTextFieldSizing {
     /// Single-line text constraints are useful layout information, but maximum
     /// character count is not a literal pixel width. Use broad tiers so short

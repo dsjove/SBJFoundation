@@ -103,7 +103,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
                                             view.accessibilityHint(hint)
                                         }
                                         .accessibilityValue(tag.displayName)
-                                        SBJImageButton(
+                                        SBJSymbolButton(
                                             user.isTagPrimary(tag)
                                                 ? SBJTagSymbology.primaryTag
                                                 : SBJTagSymbology.notPrimaryTag,

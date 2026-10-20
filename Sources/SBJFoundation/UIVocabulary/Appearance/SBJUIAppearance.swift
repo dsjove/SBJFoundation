@@ -86,6 +86,9 @@ public enum SBJUIAppearance {
     // MARK: - Common field geometry
 
     public static let fieldCornerRadius: Double = 6.0
+    public static let activeSearchCornerRadius: Double = 10.0
+    public static let activeSearchStrokeWidth: Double = 2.0
+    public static let activeSearchDash: [CGFloat] = [6, 3]
     public static let selectionCornerRadius: Double = 8.0
     public static let transientSelectionCornerRadius: Double = 6.0
     public static let singleLineFieldMinimumHeight: Double = 24.0

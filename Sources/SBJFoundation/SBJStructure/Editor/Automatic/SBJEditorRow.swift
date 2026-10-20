@@ -102,7 +102,7 @@ struct SBJEditorRow<Content: View>: View {
             // their own validation state.
             .background(alignment: .top) {
                 if isInvalid && !reduceTransparency {
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius)
                         .fill(SBJUIAppearance.invalidFillColor(colorSchemeContrast))
                         .frame(minHeight: sbjFormatting.firstLineMinimumHeight)
                         .allowsHitTesting(false)
@@ -113,7 +113,7 @@ struct SBJEditorRow<Content: View>: View {
             // change/content state.
             .overlay {
                 if isInvalid && (reduceTransparency || colorSchemeContrast == .increased) {
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius)
                         .stroke(
                             SBJUIAppearance.invalidColor,
                             lineWidth: SBJUIAppearance.borderThickness(colorSchemeContrast)

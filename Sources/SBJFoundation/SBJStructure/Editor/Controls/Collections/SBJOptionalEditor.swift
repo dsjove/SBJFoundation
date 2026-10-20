@@ -153,7 +153,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     }
 
     private var clearButton: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             SBJSymbology.clearOptional,
             accessibilityLabel: "Clear \(label)",
             accessibilityHint: "Removes the current optional value"
@@ -165,7 +165,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     }
 
     private var setButton: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             SBJSymbology.setOptional,
             accessibilityLabel: "Set \(label)",
             accessibilityHint: "Creates a value and moves focus into the new field"

@@ -44,7 +44,7 @@ struct SBJURLEditor: View {
             .keyboardType(.URL)
             .textInputAutocapitalization(.never)
 #endif
-            URLButton(url: openableURL, accessibilityLabel: "Open \(label)")
+            SBJURLButton(url: openableURL, accessibilityLabel: "Open \(label)")
         }
         .accessibilityValue(value.absoluteString)
         .onAppear {

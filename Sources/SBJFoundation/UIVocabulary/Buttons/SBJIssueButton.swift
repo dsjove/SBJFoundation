@@ -2,6 +2,7 @@ import SwiftUI
 import SBJDataDefinition
 import SBJLocalization
 
+// TODO: editor only?
 @MainActor
 public struct SBJIssueButton: View {
     public let hasIssues: Bool?
@@ -21,7 +22,7 @@ public struct SBJIssueButton: View {
     @ViewBuilder
     public var body: some View {
         if hasIssues != false {
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJSymbology.issues,
                 accessibilityLabel: accessibilityLabel,
                 action: action

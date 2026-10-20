@@ -77,7 +77,7 @@ public struct DocumentPreviewSheet: View {
                         }
 
                         ToolbarItemGroup(placement: .primaryAction) {
-                            SBJImageButton(
+                            SBJSymbolButton(
                                 SBJSymbology.open,
                                 accessibilityLabel: "Open"
                             ) {

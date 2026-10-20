@@ -37,7 +37,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
                 }
 #endif
 
-                SBJImageButton(
+                SBJSymbolButton(
                     SBJUnitSymbology.resetValue,
                     propertyInfo: UnitConversionModel<Unit>.resetPropertyInfo
                 ) {
@@ -49,7 +49,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
                 Text(model.source.unit.displayName)
                     .foregroundStyle(.secondary)
 
-                SBJImageButton(
+                SBJSymbolButton(
                     SBJUnitSymbology.swapUnits,
                     propertyInfo: UnitConversionModel<Unit>.swapPropertyInfo
                 ) {

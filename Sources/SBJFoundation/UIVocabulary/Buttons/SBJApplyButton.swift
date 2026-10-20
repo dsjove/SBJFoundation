@@ -2,6 +2,7 @@ import SwiftUI
 import SBJDataDefinition
 import SBJLocalization
 
+// TODO: editor only?
 @MainActor
 public struct SBJApplyButton: View {
     private let accessibilityLabel: String
@@ -13,7 +14,7 @@ public struct SBJApplyButton: View {
     }
 
     public var body: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             SBJSymbology.apply,
             accessibilityLabel: accessibilityLabel,
             action: action

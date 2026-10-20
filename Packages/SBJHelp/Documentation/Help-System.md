@@ -143,14 +143,14 @@ SBJFoundation trigger, sheet, and presenter pipeline.
 
 Where `SwiftUI.HelpLink` is available, `SBJHelpLink` uses it. The SwiftUI API is explicitly
 unavailable in the iOS SDK, and Mac Catalyst compiles against that SDK surface. On iOS and Catalyst,
-`SBJHelpLink` therefore uses an `SBJImageButton` with `SBJSymbology.help` as the
+`SBJHelpLink` therefore uses an `SBJSymbolButton` with `SBJSymbology.help` as the
 platform fallback. This is a presentation fallback only; help behavior and content are identical.
 
 The platform conditional must remain compile-time. Referencing `SwiftUI.HelpLink` in an iOS or
 Catalyst code path is a compile error even if guarded only by a runtime availability check.
 
 `SBJHelpToolbarButton` is the toolbar-placement variant. It intentionally renders a plain SwiftUI
-`Button`/`Label` rather than `HelpLink` or `SBJImageButton`, so SwiftUI can collapse and relocate the
+`Button`/`Label` rather than `HelpLink` or `SBJSymbolButton`, so SwiftUI can collapse and relocate the
 item as ordinary system toolbar content (including horizontal-to-vertical toolbar transitions). It
 uses the same `SBJHelpTrigger` and `SBJHelpSheet` pipeline; only the visible control differs.
 
@@ -158,7 +158,7 @@ uses the same `SBJHelpTrigger` and `SBJHelpSheet` pipeline; only the visible con
 
 Help-owned UI symbols are semantic entries in `SBJSymbology`, including Help, About,
 Dismiss, unavailable/unsupported help, page down, and scroll-to-top. Help views consume those
-references through `Image`, `Label`, or `SBJImageButton` rather than embedding raw SF Symbol names.
+references through `Image`, `Label`, or `SBJSymbolButton` rather than embedding raw SF Symbol names.
 
 The HTML `SF_...\\` token mechanism is intentionally different: those symbol names are authored
 content embedded in existing HTML and are resolved by the HTML template renderer.

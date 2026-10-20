@@ -76,7 +76,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                 }
                 .padding(.vertical, 2)
                         .background(SBJUIAppearance.filteredEmptyFillColor)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius))
             } else if !headerOnly && Value.sbjEditorFields.count == 1, let field = Value.sbjEditorFields.first {
                 // A one-field object is visually one row. The outer row owns the
                 // item's status/indent/remove/reorder lanes; the field keeps only

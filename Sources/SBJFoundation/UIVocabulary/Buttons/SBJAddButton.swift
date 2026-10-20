@@ -47,7 +47,7 @@ public struct SBJAddButton: View {
                 view.accessibilityHint(hint)
             }
         } else {
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJSymbology.add,
                 accessibilityLabel: accessibilityLabel,
                 accessibilityHint: accessibilityHint,

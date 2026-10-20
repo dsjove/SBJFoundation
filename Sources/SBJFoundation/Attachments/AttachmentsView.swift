@@ -143,7 +143,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                         }
 
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
-                        SBJImageButton(
+                        SBJSymbolButton(
                             SBJAttachmentSymbology.previewAttachment,
                             accessibilityLabel: "Preview \(attachment.displayName)"
                         ) {

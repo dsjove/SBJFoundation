@@ -22,7 +22,7 @@ public struct SBJDismissButton: View {
     }
 
     public var body: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             SBJSymbology.dismiss,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint,

@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 private struct SBJFieldChromeModifier: ViewModifier {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     let state: SBJFieldChromeState
@@ -13,39 +12,55 @@ private struct SBJFieldChromeModifier: ViewModifier {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius)
-                    .stroke(strokeColor, lineWidth: strokeWidth)
+                    .stroke(
+                        SBJFieldChromeStroke.color(for: state, contrast: colorSchemeContrast),
+                        lineWidth: SBJFieldChromeStroke.width(for: state, contrast: colorSchemeContrast)
+                    )
                     .allowsHitTesting(false)
             }
     }
 
     private var backgroundColor: Color {
-        if state == .selected {
-            return SBJUIAppearance.activeControlColor
-        }
+        if state.contains(.selected) { return SBJUIAppearance.activeControlColor }
 #if os(tvOS) || os(watchOS)
         return .clear
 #else
         return Color(.systemBackground)
 #endif
     }
+}
 
-    private var strokeColor: Color {
-        switch state {
-        case .standard:
-            SBJUIAppearance.fieldBorderColor(colorSchemeContrast)
-        case .focused:
-            SBJUIAppearance.focusColor
-        case .selected:
-            SBJUIAppearance.activeControlColor
-        }
+/// Centralized stroke precedence: invalid > focused > selected > standard.
+private enum SBJFieldChromeStroke {
+    static func color(for state: SBJFieldChromeState, contrast: ColorSchemeContrast) -> Color {
+        if state.contains(.invalid) { return SBJUIAppearance.invalidColor }
+        if state.contains(.focused) { return SBJUIAppearance.focusColor }
+        if state.contains(.selected) { return SBJUIAppearance.activeControlColor }
+        return SBJUIAppearance.fieldBorderColor(contrast)
     }
 
-    private var strokeWidth: CGFloat {
-        switch state {
-        case .focused:
-            SBJUIAppearance.focusThickness(colorSchemeContrast)
-        case .standard, .selected:
-            SBJUIAppearance.borderThickness(colorSchemeContrast)
+    static func width(for state: SBJFieldChromeState, contrast: ColorSchemeContrast) -> CGFloat {
+        if state.contains(.focused) { return SBJUIAppearance.focusThickness(contrast) }
+        return SBJUIAppearance.borderThickness(contrast)
+    }
+}
+
+/// Standalone invalid outline for controls that do not own their field-chrome state.
+/// Shares stroke decisions with the field-chrome modifier.
+private struct SBJInvalidFieldOutlineModifier: ViewModifier {
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    let isInvalid: Bool
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            if isInvalid {
+                RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius)
+                    .stroke(
+                        SBJFieldChromeStroke.color(for: .invalid, contrast: colorSchemeContrast),
+                        lineWidth: SBJFieldChromeStroke.width(for: .invalid, contrast: colorSchemeContrast)
+                    )
+                    .allowsHitTesting(false)
+            }
         }
     }
 }
@@ -53,5 +68,12 @@ private struct SBJFieldChromeModifier: ViewModifier {
 extension View {
     func sbjFieldChrome(_ state: SBJFieldChromeState = .standard) -> some View {
         modifier(SBJFieldChromeModifier(state: state))
+    }
+}
+
+public extension View {
+    /// Draws the shared invalid-field outline on views that do not supply chrome state.
+    func invalidDecoration(_ isInvalid: Bool = true) -> some View {
+        modifier(SBJInvalidFieldOutlineModifier(isInvalid: isInvalid))
     }
 }

@@ -319,21 +319,21 @@ public struct PhotoEditor: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
 #if canImport(PencilKit)
                 if options.allowsMarkup, markupActive {
-                    SBJImageButton(
+                    SBJSymbolButton(
                         SBJImageSymbology.eraseMarkup,
                         accessibilityLabel: "Clear Markup",
                         action: markup.clear
                     )
                     .disabled(!markup.hasDrawing)
 
-                    SBJImageButton(
+                    SBJSymbolButton(
                         SBJImageSymbology.undoMarkup,
                         accessibilityLabel: "Undo Markup",
                         action: markup.undo
                     )
                     .disabled(!markup.canUndo)
 
-                    SBJImageButton(
+                    SBJSymbolButton(
                         SBJImageSymbology.redoMarkup,
                         accessibilityLabel: "Redo Markup",
                         action: markup.redo
@@ -369,7 +369,7 @@ public struct PhotoEditor: View {
 #if canImport(PencilKit)
     @ViewBuilder
     private var markupToggleButton: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             markupActive ? SBJImageSymbology.hideMarkup : SBJImageSymbology.markup,
             accessibilityLabel: markupActive ? "Hide Markup Tools" : "Show Markup Tools"
         ) {
@@ -381,21 +381,21 @@ public struct PhotoEditor: View {
 #if canImport(PencilKit)
     @ViewBuilder
     private var compactMarkupActions: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             SBJImageSymbology.eraseMarkup,
             accessibilityLabel: "Clear Markup",
             action: markup.clear
         )
         .disabled(!markup.hasDrawing)
 
-        SBJImageButton(
+        SBJSymbolButton(
             SBJImageSymbology.undoMarkup,
             accessibilityLabel: "Undo Markup",
             action: markup.undo
         )
         .disabled(!markup.canUndo)
 
-        SBJImageButton(
+        SBJSymbolButton(
             SBJImageSymbology.redoMarkup,
             accessibilityLabel: "Redo Markup",
             action: markup.redo
@@ -460,7 +460,7 @@ public struct PhotoEditor: View {
         }
 
         if options.availableMirrorAxes.contains(.horizontal) {
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJImageSymbology.mirrorHorizontal,
                 propertyInfo: horizontalMirrorInfo
             ) {
@@ -470,7 +470,7 @@ public struct PhotoEditor: View {
         }
 
         if options.allowsQuarterTurnRotation {
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJImageSymbology.rotateLeft,
                 accessibilityLabel: "Rotate Left 90 Degrees",
                 accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
@@ -480,7 +480,7 @@ public struct PhotoEditor: View {
         }
 
         if options.availableMirrorAxes.contains(.vertical) {
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJImageSymbology.mirrorVertical,
                 propertyInfo: verticalMirrorInfo
             ) {
@@ -490,7 +490,7 @@ public struct PhotoEditor: View {
         }
 
         if options.allowsFreeRotation {
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJImageSymbology.straighten,
                 propertyInfo: straightenInfo
             ) {
@@ -510,7 +510,7 @@ public struct PhotoEditor: View {
                     .font(.caption)
 
                 if options.allowsQuarterTurnRotation {
-                    SBJImageButton(
+                    SBJSymbolButton(
                         SBJImageSymbology.rotateLeft,
                         accessibilityLabel: "Rotate Left 90 Degrees",
                         accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
@@ -529,7 +529,7 @@ public struct PhotoEditor: View {
                     .frame(width: 54, alignment: .trailing)
 
                 if options.allowsQuarterTurnRotation {
-                    SBJImageButton(
+                    SBJSymbolButton(
                         SBJImageSymbology.rotateRight,
                         accessibilityLabel: "Rotate Right 90 Degrees",
                         accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
@@ -538,7 +538,7 @@ public struct PhotoEditor: View {
                     }
                 }
 
-                SBJImageButton(
+                SBJSymbolButton(
                     SBJImageSymbology.resetStraighten,
                     accessibilityLabel: "Reset Straighten",
                     accessibilityHint: straightenInfo.summary,

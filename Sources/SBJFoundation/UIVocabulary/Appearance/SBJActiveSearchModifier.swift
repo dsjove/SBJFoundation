@@ -9,12 +9,12 @@ private struct SBJActiveSearchModifier: ViewModifier {
         content
             .padding(padding)
             .overlay {
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: SBJUIAppearance.activeSearchCornerRadius)
                     .stroke(
                         style: StrokeStyle(
-                            lineWidth: isActive ? 2 : 0,
+                            lineWidth: isActive ? SBJUIAppearance.activeSearchStrokeWidth : 0,
                             lineCap: .round,
-                            dash: [6, 3]
+                            dash: SBJUIAppearance.activeSearchDash
                         )
                     )
                     .foregroundStyle(isActive ? SBJUIAppearance.searchActiveColor : .clear)

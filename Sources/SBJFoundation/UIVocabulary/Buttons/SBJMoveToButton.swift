@@ -22,7 +22,7 @@ public struct SBJMoveToButton: View {
     }
 
     public var body: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             direction == .first ? SBJSymbology.moveToFirst : SBJSymbology.moveToLast,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint

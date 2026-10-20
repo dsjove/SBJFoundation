@@ -2,6 +2,9 @@ import SwiftUI
 import SBJDataDefinition
 import SBJLocalization
 
+
+//TODO: rectify with SBJDeleteButton
+
 @MainActor
 public struct SBJRemoveButton: View {
     private let accessibilityLabel: String
@@ -19,7 +22,7 @@ public struct SBJRemoveButton: View {
     }
 
     public var body: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             SBJSymbology.remove,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint,

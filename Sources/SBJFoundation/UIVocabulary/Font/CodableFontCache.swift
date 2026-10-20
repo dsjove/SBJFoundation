@@ -9,6 +9,13 @@ public extension CodableFont {
 	}
 }
 
+extension CodableFont.Weight {
+}
+
+// TODO: Consider exposing cached realized fonts to a separate text measurement
+// service shared by field sizing and localization candidate fitting. Do not cache
+// text widths here without designing keys for content, effective font/scale,
+// formatting, line-break constraints and relevant layout environment.
 /// A process-wide cache for installed font metadata and realized `UIFont` objects.
 ///
 /// The cache is synchronous and actor-neutral. Installed font families/faces are

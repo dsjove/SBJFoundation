@@ -104,7 +104,7 @@ struct SBJEditorDisclosureHeader: View {
                 SBJUIAppearance.headerFillColor(colorSchemeContrast)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius))
         .contentShape(Rectangle())
     }
 

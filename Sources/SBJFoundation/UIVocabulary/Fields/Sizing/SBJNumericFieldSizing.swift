@@ -9,6 +9,12 @@ import SwiftUI
 /// The finite maximum keeps small-domain controls compact in wide editors,
 /// while the scaled range still leaves room for larger fonts and localized
 /// punctuation.
+// TODO: Replace hard-coded widths and the character-count multiplier with
+// font-aware measurement of locale-formatted representative inputs.
+// Consider sign, separators, digit shapes, floating-point precision and
+// unbounded-input behavior; range endpoints alone may not represent editing text.
+// Coordinate shared measurement with the localization fitting pipeline.
+// TODO: editor only?
 enum SBJNumericFieldSizing {
     static let unboundedInteger = SBJFieldSizing(minimum: 88, ideal: 120, maximum: 168)
     static let unboundedNumber = SBJFieldSizing(minimum: 96, ideal: 140, maximum: 196)

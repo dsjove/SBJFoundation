@@ -102,7 +102,7 @@ public struct PhotoViewer: View {
                     }
 
                     ToolbarItem(placement: .topBarTrailing) {
-                        SBJImageButton(
+                        SBJSymbolButton(
                             SBJImageSymbology.resetPanZoom,
                             accessibilityLabel: "Reset zoom and position",
                             accessibilityHint: "Returns the image to its fitted size and centered position.",

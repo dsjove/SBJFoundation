@@ -2,6 +2,7 @@ import SwiftUI
 import SBJDataDefinition
 import SBJLocalization
 
+// TODO: editor only?
 @MainActor
 public struct SBJMoveButton: View {
     public let direction: SBJMoveDirection
@@ -22,7 +23,7 @@ public struct SBJMoveButton: View {
     }
 
     public var body: some View {
-        SBJImageButton(
+        SBJSymbolButton(
             direction == .up ? SBJSymbology.moveUp : SBJSymbology.moveDown,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint

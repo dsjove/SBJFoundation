@@ -8,6 +8,7 @@ import SBJLocalization
 /// affordance. The surrounding container remains responsible for hierarchy,
 /// row layout, content semantics, and whether this control should be hidden
 /// from accessibility to avoid duplicate actions.
+// TODO: editor only?
 @MainActor
 public struct SBJDisclosureButton: View {
     public let title: String

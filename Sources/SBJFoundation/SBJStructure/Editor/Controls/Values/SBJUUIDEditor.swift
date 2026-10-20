@@ -35,7 +35,7 @@ struct SBJUUIDEditor: View {
 #if os(iOS)
             .textInputAutocapitalization(.characters)
 #endif
-            SBJImageButton(
+            SBJSymbolButton(
                 SBJSymbology.regenerate,
                 accessibilityLabel: "Generate new \(label)"
             ) {

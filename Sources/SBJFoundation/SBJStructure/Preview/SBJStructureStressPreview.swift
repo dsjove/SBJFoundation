@@ -2,6 +2,7 @@
 #if DEBUG
 import Foundation
 import SBJDataDefinition
+import SBJLocalization
 import SwiftUI
 
 /// A deliberately broad test bed for recursive editing and enum-case switching.

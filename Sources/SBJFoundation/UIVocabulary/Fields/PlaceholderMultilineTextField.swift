@@ -4,6 +4,7 @@ import SBJDataDefinition
 #if canImport(UIKit)
 import UIKit
 import SBJLocalization
+// TODO: editor only?
 #endif
 
 /// A compact multiline text field that can promote input into a sheet when more
@@ -54,7 +55,7 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
 
             HStack {
                 Spacer()
-                SBJImageButton(
+                SBJSymbolButton(
                     SBJSymbology.edit,
                     accessibilityLabel: "Edit in sheet"
                 ) {

@@ -1,6 +1,10 @@
 import SwiftUI
 
 import SBJDataDefinition
+// TODO: Audit whether scaling all three nominal widths via @ScaledMetric(.body)
+// matches the effective font used by each field (including custom fonts).
+// Future measured sizes should be keyed by the realized font and Dynamic Type
+// environment rather than scaling precomputed widths blindly.
 struct SBJPreferredFieldWidthModifier: ViewModifier {
     @ScaledMetric(relativeTo: .body) private var minimum: CGFloat = 0
     @ScaledMetric(relativeTo: .body) private var ideal: CGFloat = 0

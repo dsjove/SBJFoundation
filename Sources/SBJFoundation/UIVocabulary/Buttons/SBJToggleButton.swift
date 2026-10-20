@@ -7,6 +7,7 @@ import SBJLocalization
 /// The control owns selection presentation, the Differentiate Without Color
 /// cue, label typography, and button style. Callers provide only the semantic
 /// label, state, optional leading content, and accessibility wording.
+// TODO: editor only?
 @MainActor
 public struct SBJToggleButton<Leading: View>: View {
     private let title: String
