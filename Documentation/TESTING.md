@@ -1,76 +1,33 @@
-# SBJFoundation Testing
+# Testing guide
 
-SBJFoundation is a low-level dependency for multiple applications, so its tests should protect
-stable semantics and regression-prone infrastructure rather than duplicate SwiftUI implementation
-details.
+Tests should verify **meaningful behavior and externally observable contracts**. Prefer focused unit tests for validation, conversion, persistence, macro expansion, transformations and state transitions. Avoid tests that merely read a stored property, echo a string literal, or instantiate a type without exercising behavior.
 
-## Two complementary coverage mechanisms
+## Run tests
 
-### SBJStructure sample compile coverage
+Each nested package has its own `Package.swift`; SwiftPM runs package test targets independently. From a package directory, run `swift test` when the current platform supports that package. For SwiftUI targets, use Xcode with an appropriate Apple-platform test destination. The enclosing Foundation package and individual nested packages do not automatically form one umbrella test target.
 
-`SBJStructureSampleModel` is the canonical integration fixture used by both editor previews and
-by focused integration tests. It declares every SBJStructure annotation and intentionally pulls
-the editor dependency graph into one living sample. Its contract is documented in
-[`SAMPLE_COVERAGE.md`](../Documentation/Editor/SAMPLE_COVERAGE.md).
+## Package responsibilities
 
-This is compile dependency coverage: if a type on that path is removed, the Preview should no
-longer build. It is not runtime branch coverage.
+- **SBJDataDefinition:** generated structural members and annotations, validation, equality, defaults, traversal, collection changes and source encoding.
+- **SBJLocalization:** string transformation rules, optional/empty presentation handling, accessibility behavior and metadata decisions. Do not test duplicated literal titles.
+- **SBJUIVocabulary:** field-sizing and menu-selection policy, disabled/invalid decisions and meaningful UI state policy. Prefer pure policies over snapshots.
+- **SBJUnits:** Codable round trips preserving unit choices, conversion mathematics, invariant checks and conversion-state workflow.
+- **SBJFileResources:** content integrity, resource resolution, filename collision handling, security-scope and failure behavior.
+- **SBJDocuments:** document/library persistence behavior, ordering and error recovery.
+- **SBJHelp:** content resolution, templating precedence and presenter dispatch; do not retest Foundation's string replacement.
+- **SBJCamera:** encoded capture representation and capture behavior; avoid tests limited to stored properties.
+- **SBJStructuredEditor:** currently a scaffold, with no standalone editor behavior to test. Editor behavior tests currently belong to Foundation.
+- **SBJFoundation:** integrated image/attachment/structured-editor interactions and platform behavior not owned by the smaller modules.
 
-### Focused tests
+## Editor integration
 
-Focused tests protect behavior that a compile fixture cannot:
+The editor's sample model and preview give **compile coverage** of the annotation and dependency graph; they do not substitute for behavioral tests. Preserve tests for mutation, validation, navigation, selection, filtering and state restoration. SwiftUI snapshot tests are appropriate only when visual output itself is a contract worth protecting.
 
-- macro expansion and structural metadata;
-- structural equality/content/default/validation semantics;
-- collection mutation and editor traversal/identity;
-- Swift source encoding;
-- Codable platform-value bridges;
-- accessibility/localization mechanics and semantic wiring (not exact copy);
-- reusable UI API surfaces and pure presentation policies;
-- help content-type resolution, presenter dispatch, compatibility conventions, and cross-platform compile seams;
-- shared workflow seams that were consolidated from retired packages.
+## Do not add tests for
 
-## Refactoring gaps reviewed during the SBJFoundation rename
+- Plain getters, setters, initializers or computed properties with no behavior.
+- Direct string copies, or assertions that documentation strings equal their literals.
+- `#expect(true)` and tests that only prove the test target loads.
+- One-to-one forwarding that is already adequately tested at its behavioral boundary.
 
-The recent consolidation introduced several behaviors that deserved explicit regression tests:
-
-1. **Observation without a context object** — the original helper once failed to re-arm this
-   path after a change. `ObservationTests` now verifies repeated context-free delivery and
-   synchronous cancellation.
-2. **Free-form one-line editor width** — unconstrained String fields should fill the available
-   horizontal space, while constrained strings remain intrinsic. `SBJFieldWidthPolicyTests`
-   protects that policy without snapshot-testing SwiftUI layout.
-3. **Presentation-resource concurrency** — `ImageReference` is an immutable image description
-   and must remain `Sendable`. `ImageReferenceTests` now enforces that at
-   compile time.
-4. **Retired-package workflow ownership** — the unit conversion model/view now live in
-   SBJFoundation. `UnitValueTests` protects conversion/swap/reset semantics and construction of the
-   shared conversion views.
-
-Existing tests already cover the major structural/editor/codable behaviors touched by the recent
-moves. No additional snapshot/UI-rendering suite is recommended merely for directory or module
-renames.
-
-## Help coverage
-
-`Help/SBJHelpTests.swift` protects the help framework at semantic seams rather than snapshotting
-SwiftUI/WebKit output. It verifies `UTType` resolution and explicit override precedence,
-asset-catalog and ordinary bundle-resource lookup, HTML/Markdown presenter dispatch, the bundled
-SBJStructure editor topic, recursive embedded-help composition, shared help imagery, and
-construction of `SBJHelpLink` on the active target. The latter is specifically intended to catch
-accidental references to `SwiftUI.HelpLink` in iOS/Mac Catalyst compilation, where that Apple type
-is unavailable.
-
-When a new built-in help representation is added, add presenter-dispatch coverage and any pure
-resolution behavior here. Do not duplicate Apple renderer behavior.
-
-## What not to test here
-
-- Apple framework behavior already guaranteed by SwiftUI/UIKit/Foundation.
-- Pixel-perfect editor rendering; use previews and accessibility/manual regression checks.
-- Exact user-facing copy, English wording, localization strings, or the concrete SF Symbol chosen for a semantic image. Those are intentionally changeable presentation decisions. Test semantic wiring/resource resolution instead.
-- Every annotation parameter or enum case solely for coverage metrics.
-
-When localization/presentation-resource resolution becomes implemented, add resolver tests at the
-semantic boundary and measurement/fit tests in SBJLayout rather than forcing those into view
-snapshots.
+When a simple implementation is part of a **serialization or public compatibility contract**, test the contract rather than the mechanical accessor. Test names should describe the requirement they protect.

@@ -4,10 +4,6 @@ import SBJFileResources
 @testable import SBJHelp
 
 final class SBJHelpPackageTests: XCTestCase {
-    func testLiteralReplacements() {
-        XCTAssertEqual("a-b".replacingOccurrences(using: ["-": "_"]), "a_b")
-    }
-
     func testApplicationTemplateSubstitutions() {
         var config = SBJHelpConfiguration.standard
         config.applicationSubstitutions["DISPLAY_NAME"] = "Example App"

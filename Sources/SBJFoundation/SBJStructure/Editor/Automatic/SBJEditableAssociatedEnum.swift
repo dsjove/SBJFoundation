@@ -215,21 +215,6 @@ public extension SBJEditableAssociatedEnum {
         return SBJContentCheck.hasContent(payload)
     }
 
-    /// Compatibility alias for the former editor-owned creation API.
-    @available(*, deprecated, renamed: "sbjCreateDefaultValueIfPossible()")
-    static func sbjCreateEditorValueIfPossible() -> Self? {
-        sbjCreateDefaultValueIfPossible()
-    }
-
-    /// Compatibility convenience for callers that require creation to succeed.
-    @available(*, deprecated, message: "Use sbjCreateDefaultValueIfPossible() and handle an unavailable default explicitly.")
-    static func sbjCreateEditorValue() -> Self {
-        guard let value = sbjCreateDefaultValueIfPossible() else {
-            preconditionFailure("No enum case has creatable associated values")
-        }
-        return value
-    }
-
     @MainActor
     internal static func _sbjAssociatedTraversalNodes(
         value: Any, context: SBJEditTraversalContext

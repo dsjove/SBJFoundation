@@ -84,18 +84,5 @@ public protocol SBJEditableAssociatedEnum:
 
 public extension SBJEditableAssociatedEnum {
     var hasContent: Bool { true }
-
-    @available(*, deprecated, renamed: "sbjCreateDefaultValueIfPossible()")
-    static func sbjCreateEditorValueIfPossible() -> Self? {
-        sbjCreateDefaultValueIfPossible()
-    }
-
-    @available(*, deprecated, message: "Use sbjCreateDefaultValueIfPossible() and handle an unavailable default explicitly.")
-    static func sbjCreateEditorValue() -> Self {
-        guard let value = sbjCreateDefaultValueIfPossible() else {
-            preconditionFailure("No enum case has creatable associated values")
-        }
-        return value
-    }
 }
 #endif

@@ -1,8 +1,6 @@
-import SBJUIVocabulary
 import Testing
 import SBJDataDefinition
-@testable import SBJFoundation
-
+@testable 
 @Suite("Menu selection states")
 struct SBJMenuSelectionPolicyTests {
     private let single = [SBJMenuChoice(id: 0, title: "Only")]

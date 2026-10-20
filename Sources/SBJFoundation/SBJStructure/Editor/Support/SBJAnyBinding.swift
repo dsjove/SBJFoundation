@@ -26,19 +26,6 @@ public struct SBJAnyBinding {
         }
     }
 
-    @available(*, deprecated, message: "Recover a typed Binding with binding(as:) instead of reading the erased value directly.")
-    @MainActor
-    public func get() -> Any { getter() }
-
-    @available(*, deprecated, message: "Recover a typed Binding with binding(as:) instead of mutating the erased value directly.")
-    @MainActor
-    public func set(_ value: Any) {
-        precondition(
-            setter(value),
-            "SBJAnyBinding setter rejected \(String(describing: Swift.type(of: value))) for stored type \(String(describing: valueType))"
-        )
-    }
-
     /// Recovers the concrete binding after existential dispatch has established
     /// its type. A mismatched request is an internal editor contract violation
     /// and reports both types instead of failing at an opaque cast.

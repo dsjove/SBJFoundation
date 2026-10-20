@@ -1,9 +1,7 @@
-import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import Testing
 import SBJDataDefinition
-@testable import SBJFoundation
-
+@testable 
 struct SBJTextFieldSizingTests {
     @Test func unconstrainedTextDoesNotImposeCompactWidth() {
         #expect(SBJTextFieldSizing.singleLine(maximumLength: nil) == nil)

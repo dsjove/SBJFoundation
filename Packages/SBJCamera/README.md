@@ -1,19 +1,19 @@
-# Camera
+# SBJCamera
 
-The `SBJCamera` subpackage contains the complete camera abstraction used by the framework. It merges the former standalone SBJCamera package with the camera picker previously embedded in `Image/`.
+`SBJCamera` provides camera capture and preview controls, encoded captured-attachment data, and platform camera adapters.
 
 The camera layer deliberately separates capture from image editing:
 
 - `CameraView` is the preferred high-level SwiftUI capture surface. It returns encoded `CapturedAttachment` data and chooses the most appropriate supported implementation.
 - `CameraCaptureView` is the framework's AVFoundation implementation.
 - `SystemCameraPickerView` is Apple's `UIImagePickerController` camera UI where that API is available.
-- `CameraPickerView` is a compatibility convenience that returns an in-memory `UIImage` for callers that intentionally want that simpler API.
+- `CameraPickerView` is a convenience that returns an in-memory `UIImage` for callers that intentionally want that simpler API.
 - `Camera`, `CameraModel`, `CameraPreview`, `CameraPosition`, and `CameraFlashMode` support custom camera experiences.
 - `PhotoMenu` uses `CameraView` directly so a camera capture can remain encoded data and does not need an unnecessary UIImage decode/re-encode cycle.
 
 ## Project configuration
 
-Camera privacy configuration belongs to the **application target**, not SBJFoundation. A Swift package cannot add an application's privacy usage strings, entitlements, or capabilities for it.
+Camera privacy configuration belongs to the **application target**, not the camera package. A Swift package cannot add an application's privacy usage strings, entitlements, or capabilities for it.
 
 ### iPhone and iPad (iOS / iPadOS)
 
