@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJDataDefinition
 /// Stable logical identity for one item in an editor snapshot.
 ///

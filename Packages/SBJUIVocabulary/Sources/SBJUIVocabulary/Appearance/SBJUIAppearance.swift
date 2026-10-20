@@ -49,7 +49,7 @@ public enum SBJUIAppearance {
         reduceTransparency ? .clear : focusColor.opacity(0.25)
     }
 
-    static var filteredEmptyFillColor: Color {
+    public static var filteredEmptyFillColor: Color {
         Color.secondary.opacity(0.08)
     }
 

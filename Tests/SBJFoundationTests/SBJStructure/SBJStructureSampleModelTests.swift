@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import Testing
 
 import SBJDataDefinition

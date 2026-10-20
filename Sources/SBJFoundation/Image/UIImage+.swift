@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJFileResources
 import SBJDataDefinition
 #if canImport(UIKit)

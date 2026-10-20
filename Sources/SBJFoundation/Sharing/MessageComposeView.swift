@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if os(iOS) && canImport(MessageUI)
 import Foundation
 import SBJDataDefinition

@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import Testing
 import SBJDataDefinition

@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if !os(watchOS)
 import Foundation
 import SBJDataDefinition

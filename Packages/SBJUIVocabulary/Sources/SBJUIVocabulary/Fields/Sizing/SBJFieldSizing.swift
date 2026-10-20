@@ -11,8 +11,14 @@ import SBJDataDefinition
 /// The values are preferences rather than fixed screen-space dimensions. The
 /// corresponding view modifier scales them with Dynamic Type before applying
 /// them to the view.
-struct SBJFieldSizing: Sendable, Equatable {
-    let minimum: CGFloat
-    let ideal: CGFloat
-    let maximum: CGFloat
+public struct SBJFieldSizing: Sendable, Equatable {
+    public let minimum: CGFloat
+    public let ideal: CGFloat
+    public let maximum: CGFloat
+
+    public init(minimum: CGFloat, ideal: CGFloat, maximum: CGFloat) {
+        self.minimum = minimum
+        self.ideal = ideal
+        self.maximum = maximum
+    }
 }

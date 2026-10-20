@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJDataDefinition
 /// Editor-only item heading selector.
 @attached(peer)

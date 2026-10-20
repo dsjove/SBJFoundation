@@ -29,7 +29,7 @@ struct SBJPreferredFieldWidthModifier: ViewModifier {
 extension View {
     /// Keeps a compact field near its preferred width without freezing it to
     /// one point size. Nominal sizing scales with Dynamic Type.
-    func sbjPreferredFieldWidth(_ sizing: SBJFieldSizing) -> some View {
+    public func sbjPreferredFieldWidth(_ sizing: SBJFieldSizing) -> some View {
         modifier(SBJPreferredFieldWidthModifier(sizing: sizing))
     }
 }

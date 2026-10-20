@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if os(tvOS) || os(watchOS)
 import Foundation
 

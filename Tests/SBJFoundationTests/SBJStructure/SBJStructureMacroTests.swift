@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SwiftSyntax
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport

@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJDataDefinition
 /// Default disclosure behavior for a structured editor property.
 /// `.closed` starts collapsed; `.autoOpen` starts expanded but remains collapsible; `.alwaysOpen` is permanently

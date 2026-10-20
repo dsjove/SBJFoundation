@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if !os(watchOS) && canImport(UIKit)
 import ImageIO
 import SBJDataDefinition

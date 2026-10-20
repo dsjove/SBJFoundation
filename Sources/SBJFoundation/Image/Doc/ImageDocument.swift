@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if canImport(UIKit)
 import Foundation
 import SBJDataDefinition

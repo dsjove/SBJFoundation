@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJDataDefinition
 /// Generates structural metadata and editor integration with one annotation.
 ///

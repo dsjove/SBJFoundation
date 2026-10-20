@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJDataDefinition
 #if !os(tvOS) && !os(watchOS)
   #if DEBUG

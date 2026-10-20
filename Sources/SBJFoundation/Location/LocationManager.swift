@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import CoreLocation
 import SBJDataDefinition
 import Foundation

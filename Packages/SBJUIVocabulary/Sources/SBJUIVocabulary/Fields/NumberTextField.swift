@@ -51,7 +51,7 @@ public struct NumberTextField: View {
 
     /// Internal initializer that lets an owning view participate in
     /// programmatic focus without duplicating the numeric field implementation.
-    init(
+    public init(
         _ title: String = "",
         value: Binding<Int>,
         in range: ClosedRange<Int>? = nil,

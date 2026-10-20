@@ -10,22 +10,22 @@ public struct SBJSelectionMenu<Content: View>: View {
 
     public init(
         _ title: LocalizedStringKey,
-        image: ImageReference,
-        @ViewBuilder content: @escaping () -> Content
-    ) {
-        self.content = content
-        self.collapsedContent = nil
-        self.menuLabel = { AnyView(Label(title, image: image)) }
-    }
-
-    public init(
-        _ title: LocalizedStringKey,
         symbol: SBJSymbol,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.content = content
         self.collapsedContent = nil
         self.menuLabel = { AnyView(Label(title, symbol: symbol)) }
+    }
+
+    /// Uses a custom menu label while retaining the standard single-action behavior.
+    public init<MenuLabel: View>(
+        @ViewBuilder content: @escaping () -> Content,
+        @ViewBuilder label: @escaping () -> MenuLabel
+    ) {
+        self.content = content
+        self.collapsedContent = nil
+        self.menuLabel = { AnyView(label()) }
     }
 
     /// Uses a custom menu label and, optionally, a separately-rendered form for the
@@ -42,14 +42,13 @@ public struct SBJSelectionMenu<Content: View>: View {
         self.menuLabel = { AnyView(label()) }
     }
 
-    /// Compatibility convenience for callers that currently name an SF Symbol directly.
-    /// Semantic callers should use the `symbol:` initializer; `image:` accepts any ImageReference.
+    /// Convenience for callers that name an SF Symbol directly.
     public init(
         _ title: LocalizedStringKey,
         systemImage: String,
         @ViewBuilder content: @escaping () -> Content
     ) {
-        self.init(title, image: .system(systemImage), content: content)
+        self.init(title, symbol: .system(systemImage), content: content)
     }
 
     @ViewBuilder

@@ -15,11 +15,11 @@ import SwiftUI
 // unbounded-input behavior; range endpoints alone may not represent editing text.
 // Coordinate shared measurement with the localization fitting pipeline.
 // TODO: editor only?
-enum SBJNumericFieldSizing {
-    static let unboundedInteger = SBJFieldSizing(minimum: 88, ideal: 120, maximum: 168)
-    static let unboundedNumber = SBJFieldSizing(minimum: 96, ideal: 140, maximum: 196)
+public enum SBJNumericFieldSizing {
+    public static let unboundedInteger = SBJFieldSizing(minimum: 88, ideal: 120, maximum: 168)
+    public static let unboundedNumber = SBJFieldSizing(minimum: 96, ideal: 140, maximum: 196)
 
-    static func integer(range: ClosedRange<Int>?, locale: Locale) -> SBJFieldSizing {
+    public static func integer(range: ClosedRange<Int>?, locale: Locale) -> SBJFieldSizing {
         guard let range, range.upperBound != Int.max else {
             return unboundedInteger
         }
@@ -33,7 +33,7 @@ enum SBJNumericFieldSizing {
         )
     }
 
-    static func number(range: ClosedRange<Double>?, locale: Locale) -> SBJFieldSizing {
+    public static func number(range: ClosedRange<Double>?, locale: Locale) -> SBJFieldSizing {
         guard let range, range.upperBound != Double.greatestFiniteMagnitude else {
             return unboundedNumber
         }

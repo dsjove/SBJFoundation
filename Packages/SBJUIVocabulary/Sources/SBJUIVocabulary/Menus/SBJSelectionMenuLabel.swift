@@ -1,6 +1,7 @@
 import SwiftUI
 
 import SBJDataDefinition
+import SBJLocalization
 /// Shared selection-menu label presentation.
 ///
 /// When `options` are supplied, the text column reserves the width of its
@@ -26,7 +27,7 @@ public struct SBJSelectionMenuLabel: View {
                 Text(text)
                     .lineLimit(1)
             }
-            Image(.system("chevron.up.chevron.down"))
+            Image(symbol: .system("chevron.up.chevron.down"))
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)

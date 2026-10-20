@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJHelp
 import Foundation
 import SBJDataDefinition

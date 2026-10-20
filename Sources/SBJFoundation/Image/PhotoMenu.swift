@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJCamera
 import SBJDataDefinition
 import SBJDocuments

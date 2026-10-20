@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit) && canImport(PencilKit)
 import Foundation
 import SBJDataDefinition

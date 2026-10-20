@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import Foundation
 import SBJHelp
 import SBJFileResources

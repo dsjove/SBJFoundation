@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJFileResources
 import SBJDataDefinition
 import Foundation
@@ -71,6 +72,19 @@ public extension Image {
             #else
             self = Image("")
             #endif
+        }
+    }
+}
+
+// ImageReference is Foundation-owned; keep this overload outside SBJUIVocabulary.
+public extension SBJSelectionMenu {
+    init(
+        _ title: LocalizedStringKey,
+        image: ImageReference,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.init(content: content) {
+            Label(title, image: image)
         }
     }
 }

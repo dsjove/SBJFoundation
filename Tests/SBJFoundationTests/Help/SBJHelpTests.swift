@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if !os(watchOS)
 import XCTest
 import SBJHelp

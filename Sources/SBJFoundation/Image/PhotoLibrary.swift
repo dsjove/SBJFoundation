@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if os(iOS)
 import Foundation
 import SBJDataDefinition

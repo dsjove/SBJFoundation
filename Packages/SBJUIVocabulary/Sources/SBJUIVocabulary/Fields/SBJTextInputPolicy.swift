@@ -5,7 +5,7 @@ import SBJDataDefinition
 /// Text-input configuration is explicit at the control boundary; no custom
 /// EnvironmentValues are installed in the view tree.
 extension View {
-    func sbjApplyTextInputPolicies(
+    public func sbjApplyTextInputPolicies(
         autocorrection: SBJTextAutocorrection,
         capitalization: SBJTextCapitalization
     ) -> some View {

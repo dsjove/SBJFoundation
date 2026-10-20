@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 import SBJDataDefinition
 /// Excludes a stored property from `SBJCodableEditor` field generation.
 ///

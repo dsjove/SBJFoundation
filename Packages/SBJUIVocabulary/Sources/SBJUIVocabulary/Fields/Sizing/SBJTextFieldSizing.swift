@@ -11,11 +11,11 @@ import SwiftUI
 // Share measurement infrastructure with localized candidate fitting, not the
 // semantic candidate-selection logic itself.
 // TODO: editor only?
-enum SBJTextFieldSizing {
+public enum SBJTextFieldSizing {
     /// Single-line text constraints are useful layout information, but maximum
     /// character count is not a literal pixel width. Use broad tiers so short
     /// domain values stay compact while ordinary prose remains flexible.
-    static func singleLine(maximumLength: Int?) -> SBJFieldSizing? {
+    public static func singleLine(maximumLength: Int?) -> SBJFieldSizing? {
         guard let maximumLength else { return nil }
         switch maximumLength {
         case ...12:

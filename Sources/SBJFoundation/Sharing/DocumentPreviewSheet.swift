@@ -1,3 +1,4 @@
+import SBJUIVocabulary
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
 import SBJFileResources
 import QuickLook
