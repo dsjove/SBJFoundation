@@ -9,7 +9,7 @@ import SBJLocalization
 /// converting the numeric value. Reinterpreting the same number in a different
 /// unit is intentionally not the behavior of this control.
 @MainActor
-public struct UnitValueControl<Unit: UnitType>: View {
+public struct UnitValueControl<Unit: UnitType & StringPresentable>: View {
     @Binding private var value: UnitValue<Unit>
     private let units: [Unit]
     private let accessibilityLabel: String?
@@ -40,7 +40,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
 #if os(iOS)
                 .keyboardType(.decimalPad)
 #endif
-                .accessibilityLabel(accessibilityLabel ?? propertyInfo?.accessibilityLabel ?? UnitValue<Unit>.propertyInfo(for: \UnitValue<Unit>.value)?.accessibilityLabel ?? "Value")
+                .accessibilityLabel(accessibilityLabel ?? propertyInfo?.accessibilityLabel ?? UnitValue<Unit>.valueInfo.accessibilityLabel ?? "Value")
 
             unitControl
         }
@@ -53,20 +53,9 @@ public struct UnitValueControl<Unit: UnitType>: View {
             Text(value.unit.symbol)
                 .foregroundStyle(.secondary)
                 .fixedSize()
-                .accessibilityLabel(UnitValue<Unit>.propertyInfo(for: \UnitValue<Unit>.unit)?.accessibilityLabel ?? "Unit")
-                .accessibilityValue(value.unit.displayName)
+                .accessibilityLabel(UnitValue<Unit>.unitInfo.accessibilityLabel ?? "Unit")
+                .accessibilityValue(value.unit.description)
         } else {
-#if os(watchOS)
-            Picker("Unit", selection: Binding(
-                get: { value.unit },
-                set: { value = value.converted(to: $0) }
-            )) {
-                ForEach(units) { option in
-                    Text(option.displayName).tag(option)
-                }
-            }
-            .accessibilityLabel(UnitValue<Unit>.propertyInfo(for: \UnitValue<Unit>.unit)?.accessibilityLabel ?? "Unit")
-#else
             SBJSelectionMenu(
                 selection: Binding<Int?>(
                     get: { units.firstIndex(of: value.unit) },
@@ -76,14 +65,13 @@ public struct UnitValueControl<Unit: UnitType>: View {
                     }
                 ),
                 choices: units.enumerated().map {
-                    SBJMenuChoice(id: $0.offset, title: $0.element.displayName)
+                    SBJMenuChoice(id: $0.offset, title: $0.element.description)
                 },
                 currentTitle: value.unit.symbol,
                 invalidSelection: !units.contains(value.unit)
             )
-            .accessibilityLabel(UnitValue<Unit>.propertyInfo(for: \UnitValue<Unit>.unit)?.accessibilityLabel ?? "Unit")
-            .accessibilityValue(value.unit.displayName)
-#endif
+            .accessibilityLabel(UnitValue<Unit>.unitInfo.accessibilityLabel ?? "Unit")
+            .accessibilityValue(value.unit.description)
         }
     }
 }

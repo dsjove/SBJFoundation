@@ -1,0 +1,28 @@
+import Foundation
+import SBJDataDefinition
+import SBJLocalization
+
+extension UnitValue: StringPresentable {
+    public var description: String {
+        "\(value.formatted())\(unit.symbol)"
+    }
+
+    public static var valueInfo: SBJPropertyInfo {
+        SBJPropertyInfo(
+                title: "Value",
+                summary: "Numeric amount expressed in the selected unit.",
+                details: "Changing the unit through UnitValueControl converts this number so the represented physical quantity is preserved.",
+                accessibilityLabel: "Value"
+            )
+    }
+
+    public static var unitInfo: SBJPropertyInfo {
+        SBJPropertyInfo(
+                title: "Unit",
+                summary: "Measurement unit used by this value.",
+                details: "Selecting another unit converts the numeric amount rather than reinterpreting it.",
+                accessibilityLabel: "Unit",
+                accessibilityHint: "Changes the unit while preserving the represented quantity."
+            )
+    }
+}

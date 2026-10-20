@@ -3,6 +3,8 @@ import SBJHelp
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
+import SBJHelp
+import SBJFileResources
 
 /// Semantic imagery used by unit controls and unit-conversion help.
 public enum SBJUnitSymbology {
@@ -21,8 +23,12 @@ public enum SBJUnitSymbology {
     public static let resetValue = image("resetValue")
     public static let swapUnits = image("swapUnits")
 
+    public static var unitConversionHelp: SBJBundledContentReference {
+        .help("Unit Conversion", bundle: .module)
+    }
+
     public static var helpConfiguration: SBJHelpConfiguration {
-        var configuration = SBJHelpConfiguration.foundation
+        var configuration = SBJHelpConfiguration.standard
         configuration.semanticImages = SBJSymbology.vocabulary(adding: all)
         return configuration
     }

@@ -1,10 +1,11 @@
 import SBJUIVocabulary
 import SBJHelp
 import SwiftUI
-
 import SBJDataDefinition
+import SBJLocalization
+
 @MainActor
-public struct UnitConversionView<Unit: UnitType>: View {
+public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
     @Bindable private var model: UnitConversionModel<Unit>
     private let units: [Unit]
     private let editingPolicy: UnitEditingPolicy<Unit>?
@@ -25,7 +26,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
                 UnitValueControl(
                     value: $model.source,
                     units: units,
-                    propertyInfo: UnitConversionModel<Unit>.propertyInfo(for: \UnitConversionModel<Unit>.source)
+                    propertyInfo: UnitConversionModel<Unit>.sourceInfo
                 )
 
 #if !os(tvOS) && !os(watchOS)
@@ -47,7 +48,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
             }
 
             HStack(spacing: 10) {
-                Text(model.source.unit.displayName)
+                Text(model.source.unit.description)
                     .foregroundStyle(.secondary)
 
                 SBJSymbolButton(
@@ -57,26 +58,22 @@ public struct UnitConversionView<Unit: UnitType>: View {
                     model.swap()
                 }
 
-#if os(watchOS)
-                Picker("To", selection: $model.destinationUnit) {
-                    ForEach(units) { unit in
-                        Text(unit.displayName).tag(unit)
-                    }
-                }
-                .accessibilityLabel(UnitConversionModel<Unit>.propertyInfo(for: \UnitConversionModel<Unit>.destinationUnit)?.accessibilityLabel ?? "To unit")
-#else
-                Menu {
-                    ForEach(units) { unit in
-                        Button(unit.displayName) {
-                            model.destinationUnit = unit
+                SBJSelectionMenu(
+                    selection: Binding<Int?>(
+                        get: { units.firstIndex(of: model.destinationUnit) },
+                        set: { index in
+                            guard let index, units.indices.contains(index) else { return }
+                            model.destinationUnit = units[index]
                         }
-                    }
-                } label: {
-                    SBJSelectionMenuLabel(text: model.destinationUnit.symbol, options: units.map(\.symbol))
-                }
-                .accessibilityLabel(UnitConversionModel<Unit>.propertyInfo(for: \UnitConversionModel<Unit>.destinationUnit)?.accessibilityLabel ?? "To unit")
-                .accessibilityValue(model.destinationUnit.displayName)
-#endif
+                    ),
+                    choices: units.enumerated().map {
+                        SBJMenuChoice(id: $0.offset, title: $0.element.description)
+                    },
+                    currentTitle: model.destinationUnit.symbol,
+                    invalidSelection: !units.contains(model.destinationUnit)
+                )
+                .accessibilityLabel(UnitConversionModel<Unit>.destinationUnitInfo.accessibilityLabel ?? "To unit")
+                .accessibilityValue(model.destinationUnit.description)
             }
 
             LabeledContent("Result") {
@@ -92,7 +89,7 @@ public struct UnitConversionView<Unit: UnitType>: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 SBJHelpLink(
-                    asset: .unitConversionHelp,
+                    asset: SBJUnitSymbology.unitConversionHelp,
                     configuration: SBJUnitSymbology.helpConfiguration
                 )
             }
@@ -195,6 +192,3 @@ public struct ConversionView: View {
         }
     }
 }
-
-@available(*, deprecated, renamed: "ConversionView")
-public typealias UnitConversionToolView = ConversionView

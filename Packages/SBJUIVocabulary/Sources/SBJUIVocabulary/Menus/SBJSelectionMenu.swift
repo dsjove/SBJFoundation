@@ -105,7 +105,6 @@ public struct SBJSelectionMenu<Content: View>: View {
         }
     }
 #endif
-
 }
 
 
@@ -160,6 +159,16 @@ private extension SBJSelectionMenu {
                 .buttonStyle(.plain)
                 .sbjActiveControl()
             } else {
+#if os(watchOS)
+                Picker("", selection: selection) {
+                    ForEach(choices) { choice in
+                        Text(choice.title)
+                            .tag(Optional(choice.id))
+                            .disabled(!choice.isEnabled)
+                    }
+                }
+                .labelsHidden()
+#else
                 Menu {
                     ForEach(choices) { choice in
                         Button(choice.title) { selection.wrappedValue = choice.id }
@@ -171,6 +180,7 @@ private extension SBJSelectionMenu {
                 .menuOrder(.fixed)
                 .buttonStyle(.plain)
                 .sbjActiveControl()
+#endif
             }
         }
         .foregroundColor(invalid ? .red : .primary)

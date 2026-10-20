@@ -1,28 +1,6 @@
-import SBJUIVocabulary
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
-
-/// Broad measurement-system classification for reusable units.
-///
-/// This is semantic classification, not formatting policy. Whether a value is
-/// shown as a fraction, decimal, compound measurement, abbreviation, and so on
-/// belongs to presentation policy rather than to the measurement system itself.
-@SBJEditable
-public enum MeasurementSystem: String, Codable, Equatable, Sendable, CaseIterable, Hashable {
-    case metric
-    case imperial
-    case universal
-}
-
-/// Reusable measurement dimensions supplied by SBJFoundation.
-@SBJEditable
-public enum UnitCategory: String, Codable, Equatable, Sendable, CaseIterable, Hashable {
-    case length
-    case mass
-    case duration
-    case volume
-}
 
 /// A strongly typed unit that delegates physical conversion to Foundation's
 /// `Dimension` / `Measurement` infrastructure.
@@ -30,7 +8,7 @@ public enum UnitCategory: String, Codable, Equatable, Sendable, CaseIterable, Ha
 /// Applications may define their own unit enums (for example game rounds) by
 /// conforming to this protocol. Unit identity and conversion belong here;
 /// editing increments and domain-specific preferred units do not.
-public protocol UnitType: Codable, Sendable, CaseIterable, Hashable, Identifiable {
+public protocol UnitType: Codable, Sendable, CaseIterable, Hashable, Identifiable, StringPresentable {
     associatedtype FoundationUnit: Dimension
 
     var foundationUnit: FoundationUnit { get }
@@ -39,11 +17,6 @@ public protocol UnitType: Codable, Sendable, CaseIterable, Hashable, Identifiabl
     /// Transitional numeric presentation policy. Each conforming unit declares
     /// its own policy so generic infrastructure never needs to inspect unit type.
     var numberFormat: UnitNumberFormat { get }
-
-    /// Temporary presentation vocabulary used by the pre-localization UI.
-    /// The localization/presentation-resource design will replace this String
-    /// boundary rather than making unit display names a permanent raw-string API.
-    var displayName: String { get }
 }
 
 public extension UnitType {

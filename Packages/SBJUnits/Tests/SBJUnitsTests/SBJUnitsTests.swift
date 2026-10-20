@@ -1,4 +1,34 @@
+import Foundation
 import Testing
-@testable import SBJUnits
+import SBJUnits
 
-@Test func scaffoldLoads() { #expect(true) }
+@Suite("SBJUnits model")
+struct SBJUnitsTests {
+    @Test func conversionRetainsSourceAndConvertsQuantity() {
+        let original = UnitValue<LengthUnit>(12, unit: .inch)
+        let converted = original.converted(to: .foot)
+        #expect(abs(converted.value - 1) < 0.000_001)
+        #expect(converted.unit == .foot)
+        #expect(original.unit == .inch)
+    }
+
+    @Test func codablePreservesSelectedUnit() throws {
+        let original = UnitValue<VolumeUnit>(2.5, unit: .tablespoon)
+        let encoded = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(UnitValue<VolumeUnit>.self, from: encoded)
+        #expect(decoded == original)
+    }
+    @Test func nomenclatureUsesUncamelCasedRawValues() {
+        #expect(VolumeUnit.fluidOunce.description == "Fluid Ounce")
+        #expect(VolumeUnit.fluidOunce.abbreviation == "fl oz")
+        #expect(MeasurementSystem.imperial.description == "Imperial")
+        #expect(UnitCategory.duration.description == "Duration")
+    }
+
+    @Test func nomenclatureExposesPropertyInfo() {
+        #expect(UnitValue<LengthUnit>.valueInfo.title == "Value")
+        #expect(UnitEditingPolicy<LengthUnit>.defaultStepInfo.title == "Default Step")
+        #expect(LengthUnit.millimeter.description == "Millimeter")
+        #expect(DurationUnit.day.abbreviation == "day")
+    }
+}

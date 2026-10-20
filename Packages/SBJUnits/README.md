@@ -1,12 +1,21 @@
-# SBJUnits (scaffold)
+# SBJUnits
 
-No unit implementation has moved from SBJFoundation.
+`SBJUnits` supplies a typed, Codable unit vocabulary and reusable conversion controls.
 
-## Codable gap
-Foundation Measurement/Dimension provide conversions, but the application's stored models need a stable, strongly typed Codable nomenclature for supported units and a Codable UnitValue that retains the chosen unit. The planned package fills that gap while still using Foundation for conversions.
+## Why this exists: the Codable gap
 
-## Planned organization
-Use the character model package's Nomenclature shape for unit identifiers and common units; keep model/validation separate from reusable UI. The editor adapter stays in SBJStructure. Model annotations use `@SBJStructure`, not `@SBJEditable`.
+Foundation’s `Dimension` and `Measurement` perform conversions but do not provide the domain-specific, stable, strongly typed Codable nomenclature our persisted models require. `UnitType` and the enums in `Nomenclature` define those identifiers, and `UnitValue<Unit>` encodes the amount *and its chosen unit*, rather than normalizing away the original unit. Conversion uses Foundation measurements. Do not change the encoded representation during package extraction.
 
-## Dependencies
-SBJDataDefinition, SBJLocalization, SBJUIVocabulary and SBJHelp; no dependency on editor.
+## Organization
+
+- `Nomenclature`: unit protocols, categories, and built-in unit names and string presentations
+- `Model`: `UnitValue`, editing policy, and conversion state
+- `Validation`: unit-specific structural invariant checks
+- `Controls`: reusable value and conversion UI, **not** structured-editor implementation
+- `Presentation`: shared unit symbols and help configuration
+
+## Dependencies and editor boundary
+
+`SBJUnits` depends on `SBJDataDefinition`, `SBJLocalization`, `SBJUIVocabulary`, and `SBJHelp`, **not** the editor. Model annotations use `@SBJStructure` rather than `@SBJEditable`.
+
+`SBJStructure/Editor/Controls/Values/SBJUnitValueEditor.swift` stays with the editor and adapts the reusable `UnitValueControl` to editor bindings and dispatch. `SBJStructuredEditor` depends on `SBJUnits`.

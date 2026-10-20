@@ -40,6 +40,4 @@ public struct SBJHelpConfiguration {
     }
 
     public static var standard: Self { .init() }
-
 }
-

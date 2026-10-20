@@ -1,4 +1,3 @@
-import SBJUIVocabulary
 import Foundation
 import SBJDataDefinition
 import SBJLocalization
@@ -6,7 +5,7 @@ import SBJLocalization
 /// Editing increments are presentation/application policy, not intrinsic unit
 /// semantics. Different apps can therefore step the same physical unit in
 /// different increments without changing conversion behavior.
-@SBJEditable
+@SBJStructure
 public struct UnitEditingPolicy<Unit: UnitType>: Codable, Equatable, Sendable {
     public var defaultStep: Double
     public var overrides: [Unit: Double]
@@ -14,25 +13,6 @@ public struct UnitEditingPolicy<Unit: UnitType>: Codable, Equatable, Sendable {
     public init(defaultStep: Double, overrides: [Unit: Double] = [:]) {
         self.defaultStep = defaultStep
         self.overrides = overrides
-    }
-
-    public static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
-        switch keyPath as AnyKeyPath {
-        case \Self.defaultStep:
-            return SBJPropertyInfo(
-                title: "Default Step",
-                summary: "Default increment used when stepping a unit value.",
-                details: "Per-unit overrides take precedence. Non-finite or non-positive steps are ignored."
-            )
-        case \Self.overrides:
-            return SBJPropertyInfo(
-                title: "Unit Step Overrides",
-                summary: "Per-unit editing increments.",
-                details: "Each entry replaces the default step for that unit."
-            )
-        default:
-            return nil
-        }
     }
 
     public func stepAmount(for unit: Unit) -> Double {

@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "Packages/SBJLocalization"),
         .package(path: "Packages/SBJDataDefinition"),
         .package(path: "Packages/SBJStructuredEditor"),
+        .package(path: "Packages/SBJUnits"),
         .package(path: "Packages/SBJUIVocabulary"),
         .package(path: "Packages/SBJCamera"),
         .package(path: "Packages/SBJDocuments"),
@@ -49,6 +50,7 @@ let package = Package(
                 "SBJFoundationMacros",
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
+                .product(name: "SBJUnits", package: "SBJUnits"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJCamera", package: "SBJCamera"),
@@ -78,6 +80,7 @@ let package = Package(
                 .product(name: "SBJStructureMacroSupport", package: "SBJDataDefinition"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
+                .product(name: "SBJUnits", package: "SBJUnits"),
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ],
             resources: [
