@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -17,7 +18,7 @@ struct SBJEditorTraversalNode: Identifiable {
     /// Footer decorations assigned by ancestor groups, deepest first.
     /// A divider is part of the final visible row, not a separate hierarchy node.
     var endDividerLevels: [Int] = []
-    private let includeRow: (SBJEditSearchCriteria) -> Bool
+    private let includeRow: (SBJStructuralSearchCriteria) -> Bool
 
 	nonisolated var id: SBJEditorItemIdentifier { context.itemIdentifier }
     var depth: Int { context.treeLevel }
@@ -29,7 +30,7 @@ struct SBJEditorTraversalNode: Identifiable {
         disclosureMode: SBJEditorDisclosureMode? = nil,
         isDisclosure: Bool = false,
         render: ((SBJEditTraversalContext) -> AnyView)? = nil,
-        isIncluded: @escaping (SBJEditSearchCriteria) -> Bool = { _ in true },
+        isIncluded: @escaping (SBJStructuralSearchCriteria) -> Bool = { _ in true },
         children: @escaping (SBJEditTraversalContext) -> [SBJEditorTraversalNode] = { _ in [] }
     ) {
         self.context = context.withBranch(context.branch.withDisclosureMode(disclosureMode ?? context.branch.disclosureMode))
@@ -44,7 +45,7 @@ struct SBJEditorTraversalNode: Identifiable {
 
     func renderedRow() -> AnyView? { renderRow?(context) }
 
-    func isIncluded(in criteria: SBJEditSearchCriteria) -> Bool { includeRow(criteria) }
+    func isIncluded(in criteria: SBJStructuralSearchCriteria) -> Bool { includeRow(criteria) }
 
 
 }
@@ -62,7 +63,7 @@ func sbjEditorRows(
     // discarded because its parent does not independently match the filter.
     func project(
         _ candidate: SBJEditorTraversalNode,
-        criteria: SBJEditSearchCriteria,
+        criteria: SBJStructuralSearchCriteria,
         expectedLevel: Int
     ) -> [SBJEditorTraversalNode] {
         var node = candidate

@@ -1,8 +1,6 @@
-import SBJUIVocabulary
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import Testing
-import SBJDataDefinition
 @testable import SBJFoundation
+#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 
 @Suite("Photo edit metadata")
 struct PhotoEditMetadataTests {

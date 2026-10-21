@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -6,7 +7,7 @@ import SwiftUI
 @MainActor
 struct SBJEditorSearchBar: View {
     @Binding var searchText: String
-    @Binding var criteria: SBJEditSearchCriteria
+    @Binding var criteria: SBJStructuralSearchCriteria
     let hasIssues: Bool?
     let showIssues: () -> Void
 

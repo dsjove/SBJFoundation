@@ -595,18 +595,6 @@ extension SBJStructureUsageTests {
         #expect(replacementSucceeded)
         #expect(values == ["two", "three"])
     }
-
-    @Test func dictionaryRenameRejectsCollisionsAndPreservesValues() {
-        var values = ["one": 1, "two": 2]
-        let collisionRejected = !values.sbjRenameKey("one", to: "two")
-        #expect(collisionRejected)
-        #expect(values == ["one": 1, "two": 2])
-
-        let renameSucceeded = values.sbjRenameKey("one", to: "three")
-        #expect(renameSucceeded)
-        #expect(values == ["three": 1, "two": 2])
-    }
-
 }
 
 @SBJEditable

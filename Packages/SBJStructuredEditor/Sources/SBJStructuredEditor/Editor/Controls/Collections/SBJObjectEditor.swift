@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -18,7 +19,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
     /// Renders only the object disclosure row; descendants belong to the flat renderer.
     var headerOnly: Bool = false
     @Environment(SBJEditorPresentationModel.self) private var presentationModel
-    private var searchCriteria: SBJEditSearchCriteria { context.branch.searchCriteria }
+    private var searchCriteria: SBJStructuralSearchCriteria { context.branch.searchCriteria }
     private var navigationTarget: SBJEditorNavigationTarget? { presentationModel.navigationTarget }
     private var hasContent: Bool? { context.branch.status.hasContent }
 

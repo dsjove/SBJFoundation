@@ -18,6 +18,7 @@ import SBJUnits
 @attached(extension,
     conformances:
         SBJMutableStructure, SBJSwiftUIEditable,
+        SBJDefaultValueCreatable,
         SBJEditableAssociatedEnum,
         SBJEnumCaseIdentifiable, SBJStructuredEnum)
 public macro SBJEditable() = #externalMacro(

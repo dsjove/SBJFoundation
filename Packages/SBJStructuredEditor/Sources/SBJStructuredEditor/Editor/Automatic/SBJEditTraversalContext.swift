@@ -1,3 +1,4 @@
+import SBJDataDefinition
 #if !os(tvOS) && !os(watchOS)
 import SBJUIVocabulary
 import SBJUnits
@@ -92,14 +93,14 @@ public enum SBJEditorPropertyInfoPlacement: Hashable, Sendable {
 }
 
 public struct SBJEditorBranchContext: Hashable, Sendable {
-    public var searchCriteria: SBJEditSearchCriteria
+    public var searchCriteria: SBJStructuralSearchCriteria
     public var placement: SBJEditorRowPlacement
     public var status: SBJEditorRowStatus
     public var disclosureMode: SBJEditorDisclosureMode
     public var propertyInfoPlacement: SBJEditorPropertyInfoPlacement
 
     public init(
-        searchCriteria: SBJEditSearchCriteria = .init(),
+        searchCriteria: SBJStructuralSearchCriteria = .init(),
         placement: SBJEditorRowPlacement = .normal,
         status: SBJEditorRowStatus = .init(),
         disclosureMode: SBJEditorDisclosureMode = .closed,
@@ -112,7 +113,7 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
         self.propertyInfoPlacement = propertyInfoPlacement
     }
 
-    public func withSearchCriteria(_ criteria: SBJEditSearchCriteria) -> Self {
+    public func withSearchCriteria(_ criteria: SBJStructuralSearchCriteria) -> Self {
         var result = self
         result.searchCriteria = criteria
         return result

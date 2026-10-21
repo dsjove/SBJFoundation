@@ -141,7 +141,7 @@ public struct SBJBundledContentReference: Hashable {
         }
     }
 
-    static func resolvedContentType(
+    public static func resolvedContentType(
         override: UTType?,
         assetTypeIdentifier: String?
     ) -> UTType? {

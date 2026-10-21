@@ -1,5 +1,3 @@
-import SBJUIVocabulary
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 import CoreLocation
 import Foundation
 import Testing
@@ -8,6 +6,8 @@ import UniformTypeIdentifiers
 import SBJDataDefinition
 import SBJFileResources
 @testable import SBJFoundation
+import SBJUIVocabulary
+#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 
 @Suite("Photo edit behavior")
 struct PhotoEditBehaviorTests {

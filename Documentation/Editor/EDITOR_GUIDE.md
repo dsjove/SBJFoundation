@@ -68,7 +68,7 @@ The point of those previews is not to create separate locale-specific layouts. S
 
 ## Search and filtering
 
-`SBJEditSearchCriteria` groups search/filter state so new criteria can be added without threading separate booleans throughout the recursive renderer.
+`SBJStructuralSearchCriteria` groups search/filter state so new criteria can be added without threading separate booleans throughout the recursive renderer.
 
 The stock search view supports:
 

@@ -24,7 +24,7 @@ public enum MassUnit: String, UnitType {
         }
     }
 
-    public var numberFormat: UnitNumberFormat {
+    public var numberFormat: SBJNumberFormatStyle {
         switch measurementSystem {
         case .imperial: .fraction(fallbackSignificantDigits: 4)
         case .metric, .universal: .decimal(significantDigits: 2)

@@ -31,6 +31,7 @@
     conformances:
         // Structural type
             SBJMutableStructure,
+            SBJDefaultValueCreatable,
         // Swift Code Encoder Enum / payload-enum marker
             SBJEnumCaseIdentifiable, SBJStructuredEnum)
 

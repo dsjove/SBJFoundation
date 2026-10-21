@@ -19,6 +19,6 @@ public enum DurationUnit: String, UnitType {
 
     public var measurementSystem: MeasurementSystem { .universal }
 
-    public var numberFormat: UnitNumberFormat { .decimal(significantDigits: 4) }
+    public var numberFormat: SBJNumberFormatStyle { .decimal(significantDigits: 4) }
 
 }

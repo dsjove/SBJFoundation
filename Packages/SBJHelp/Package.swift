@@ -17,6 +17,6 @@ let package = Package(
         .testTarget(name: "SBJHelpTests", dependencies: [
             "SBJHelp",
             .product(name: "SBJFileResources", package: "SBJFileResources"),
-        ]),
+        ], resources: [.process("Resources")]),
     ]
 )

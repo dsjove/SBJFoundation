@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -10,7 +11,7 @@ import SwiftUI
 @MainActor
 @Observable
 public final class SBJEditorPresentationModel {
-    public var searchCriteria: SBJEditSearchCriteria
+    public var searchCriteria: SBJStructuralSearchCriteria
     public var formattingOptions: SBJEditorFormattingOptions
     public let expansionOptions: SBJEditorExpansionOptions
 
@@ -24,7 +25,7 @@ public final class SBJEditorPresentationModel {
     var navigationRevision: UInt = 0
 
     public init(
-        searchCriteria: SBJEditSearchCriteria = .init(),
+        searchCriteria: SBJStructuralSearchCriteria = .init(),
         isShowingIssues: Bool = false,
         navigationTarget: SBJEditorNavigationTarget? = nil,
         formattingOptions: SBJEditorFormattingOptions = .init(),

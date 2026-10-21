@@ -15,7 +15,7 @@ public protocol UnitType: Codable, Sendable, CaseIterable, Hashable, Identifiabl
 
     /// Transitional numeric presentation policy. Each conforming unit declares
     /// its own policy so generic infrastructure never needs to inspect unit type.
-    var numberFormat: UnitNumberFormat { get }
+    var numberFormat: SBJNumberFormatStyle { get }
 }
 
 public extension UnitType {

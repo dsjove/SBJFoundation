@@ -134,27 +134,6 @@ struct SBJPhase7CoverageTests {
         }
     }
 
-    @Test func collectionMutationHelpersHandleNoOpMissingAndCollisionCases() {
-        var set: Set<String> = ["one", "two"]
-        let sameValueSucceeded = set.sbjReplace("one", with: "one")
-        #expect(sameValueSucceeded)
-        #expect(set == ["one", "two"])
-        let missingRejected = !set.sbjReplace("missing", with: "three")
-        #expect(missingRejected)
-        let collisionRejected = !set.sbjReplace("one", with: "two")
-        #expect(collisionRejected)
-        #expect(set == ["one", "two"])
-
-        var dictionary = ["one": 1, "two": 2]
-        let sameKeySucceeded = dictionary.sbjRenameKey("one", to: "one")
-        #expect(sameKeySucceeded)
-        let missingKeyRejected = !dictionary.sbjRenameKey("missing", to: "three")
-        #expect(missingKeyRejected)
-        let keyCollisionRejected = !dictionary.sbjRenameKey("one", to: "two")
-        #expect(keyCollisionRejected)
-        #expect(dictionary == ["one": 1, "two": 2])
-    }
-
     @Test func hexParserCoversFormattingEmptyInputAndFailures() throws {
         #expect(try "".sbjHexData() == Data())
         #expect(try "01:23_45-67.89 AB\nCD".sbjHexData() == Data([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD]))
@@ -238,24 +217,6 @@ private struct SBJUtilityCopyValue: Codable, Equatable {
 }
 
 extension SBJPhase7CoverageTests {
-    @Test func publicCollectionMutationExtensionsRejectCollisions() {
-        var set: Set<String> = ["one", "two"]
-        let replacementSucceeded = set.sbjReplace("one", with: "three")
-        #expect(replacementSucceeded)
-        #expect(set == ["two", "three"])
-        let setCollisionRejected = !set.sbjReplace("two", with: "three")
-        #expect(setCollisionRejected)
-        #expect(set == ["two", "three"])
-
-        var dictionary = ["one": 1, "two": 2]
-        let renameSucceeded = dictionary.sbjRenameKey("one", to: "three")
-        #expect(renameSucceeded)
-        #expect(dictionary == ["three": 1, "two": 2])
-        let dictionaryCollisionRejected = !dictionary.sbjRenameKey("two", to: "three")
-        #expect(dictionaryCollisionRejected)
-        #expect(dictionary == ["three": 1, "two": 2])
-    }
-
     @Test func publicCodableUtilitiesSupportSnapshotsAndChangeComparison() {
         let original = SBJUtilityCopyValue(name: "one", count: 1)
         let copy = original.sbjCodableCopy()

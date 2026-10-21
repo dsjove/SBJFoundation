@@ -56,10 +56,10 @@ public enum SBJStructureGeneration {
             let enumDecl = declaration.cast(EnumDeclSyntax.self)
             let hasPayload = enumCases(in: enumDecl).contains { !$0.parameters.isEmpty }
             conformance = hasPayload
-                ? (includingEditor
-                    ? "SBJEnumCaseIdentifiable, SBJEditableAssociatedEnum, SBJStructuredEnum"
-                    : "SBJEnumCaseIdentifiable, SBJStructuredEnum")
-                : "SBJEnumCaseIdentifiable"
+    ? (includingEditor
+        ? "SBJEnumCaseIdentifiable, SBJStructuredEnum, SBJDefaultValueCreatable, SBJEditableAssociatedEnum"
+        : "SBJEnumCaseIdentifiable, SBJStructuredEnum, SBJDefaultValueCreatable")
+    : "SBJEnumCaseIdentifiable"
         } else {
             throw SBJStructureMacroError.onlyStructsOrEnums
         }

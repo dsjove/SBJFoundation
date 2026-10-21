@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
@@ -15,19 +16,19 @@ struct SBJArrayEditorPresentationTests {
     @Test("reordering is disabled whenever the displayed array is filtered")
     func filteredSubsetDetection() {
         #expect(!SBJArrayEditorPresentation.isDisplayingFilteredSubset(
-            criteria: SBJEditSearchCriteria()
+            criteria: SBJStructuralSearchCriteria()
         ))
 
         #expect(SBJArrayEditorPresentation.isDisplayingFilteredSubset(
-            criteria: SBJEditSearchCriteria(searchQuery: "needle")
+            criteria: SBJStructuralSearchCriteria(searchQuery: "needle")
         ))
 
         #expect(SBJArrayEditorPresentation.isDisplayingFilteredSubset(
-            criteria: SBJEditSearchCriteria(showChangedOnly: true)
+            criteria: SBJStructuralSearchCriteria(showChangedOnly: true)
         ))
 
         #expect(SBJArrayEditorPresentation.isDisplayingFilteredSubset(
-            criteria: SBJEditSearchCriteria(showEmptyContentOnly: true)
+            criteria: SBJStructuralSearchCriteria(showEmptyContentOnly: true)
         ))
     }
 }

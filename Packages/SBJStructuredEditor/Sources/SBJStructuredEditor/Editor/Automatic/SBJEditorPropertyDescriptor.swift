@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -198,7 +199,7 @@ import SBJUnits
       root: Root,
       originalRoot: Root? = nil,
       registry: SBJEditorRegistry,
-      criteria: SBJEditSearchCriteria
+      criteria: SBJStructuralSearchCriteria
     ) -> Bool {
       criteria.includes(
         isChanged: editableField.hasChanged(in: root, from: originalRoot),
@@ -263,7 +264,7 @@ import SBJUnits
     let matchesSearch: (String) -> Bool
     let containsEmptyContent: () -> Bool
     let navigationPath: [String]
-    let searchCriteria: SBJEditSearchCriteria
+    let searchCriteria: SBJStructuralSearchCriteria
     @Environment(SBJEditorPresentationModel.self) private var sbjNavigationModel: SBJEditorPresentationModel?
     private var navigationTarget: SBJEditorNavigationTarget? { sbjNavigationModel?.navigationTarget }
 

@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -8,7 +9,7 @@ enum SBJArrayEditorPresentation {
         underlyingIndex + 1
     }
 
-    static func isDisplayingFilteredSubset(criteria: SBJEditSearchCriteria) -> Bool {
+    static func isDisplayingFilteredSubset(criteria: SBJStructuralSearchCriteria) -> Bool {
         !criteria.isEmpty
     }
 }
