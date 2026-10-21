@@ -20,7 +20,7 @@ public extension SBJHelpConfiguration {
             "PRIVACY_URL": AppInfo.privacyPolicyURL,
         ]
         #if canImport(UIKit)
-        config.applicationSubstitutions["ICON"] = AppInfo.icon?.pngData()?.base64EncodedString() ?? ""
+		config.applicationSubstitutions["ICON"] = AppInfo.icon?.resized(toFit: .init(width: 256, height: 256)).pngData()?.base64EncodedString() ?? ""
         #endif
         return config
     }
