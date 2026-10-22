@@ -1,10 +1,7 @@
-import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 import UIKit
-import SBJDataDefinition
-
-public typealias ExportPayload = Identified<[URL]>
+import SBJFileResources
 
 public struct DocumentExportView: UIViewControllerRepresentable {
 	let urls: [URL]
@@ -22,7 +19,4 @@ public struct DocumentExportView: UIViewControllerRepresentable {
 	public func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {
 	}
 }
-
-
-
 #endif

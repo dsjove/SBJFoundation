@@ -15,7 +15,9 @@ final class SBJAnnotationMacroExpansionTests: XCTestCase {
             """
             @SBJPropertyInfo
             extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                public static let nameInfo = SBJPropertyInfo(
+                	summary: "Name"
+                )
                 static var ageInfo: SBJPropertyInfo {
                     get { SBJPropertyInfo(summary: "Age") }
                 }
@@ -23,7 +25,9 @@ final class SBJAnnotationMacroExpansionTests: XCTestCase {
             """,
             expandedSource: """
             extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                public static let nameInfo = SBJPropertyInfo(
+                	summary: "Name"
+                )
                 static var ageInfo: SBJPropertyInfo {
                     get { SBJPropertyInfo(summary: "Age") }
                 }
@@ -52,7 +56,9 @@ final class SBJAnnotationMacroExpansionTests: XCTestCase {
             """
             @SBJPropertyInfo
             extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                public static let nameInfo = SBJPropertyInfo(
+                	summary: "Name"
+                )
                 static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
                     _extensionPropertyInfo(for: keyPath)
                 }
@@ -60,7 +66,9 @@ final class SBJAnnotationMacroExpansionTests: XCTestCase {
             """,
             expandedSource: """
             extension Example {
-                static let nameInfo = SBJPropertyInfo(summary: "Name")
+                public static let nameInfo = SBJPropertyInfo(
+                	summary: "Name"
+                )
                 static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
                     _extensionPropertyInfo(for: keyPath)
                 }

@@ -1,5 +1,7 @@
 import Foundation
 
+//This was a prototype
+
 public struct JargonFormatter: Sendable {
 	private let formatter: @Sendable (any Sendable) -> String?
 

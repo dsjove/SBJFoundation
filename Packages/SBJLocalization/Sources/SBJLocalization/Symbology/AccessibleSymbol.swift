@@ -1,5 +1,8 @@
 import Foundation
 
+//TODO: Delete?
+//It looks like I was expanding on the swiftUI's idea of label style
+
 /// Accessibility semantics for a symbol chosen to convey meaning in the interface.
 public protocol AccessibleSymbol: Accessible {
     var symbol: SBJSymbol { get }

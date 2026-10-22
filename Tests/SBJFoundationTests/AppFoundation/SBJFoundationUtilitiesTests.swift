@@ -12,11 +12,6 @@ struct SBJFoundationUtilitiesTests {
         #expect(grouped[2] == ["bb"])
     }
 
-    @Test func identifiedURLUsesGenericIdentityWrapper() {
-        let value: IdentifiedURL = Identified(URL(string: "https://example.com")!)
-        #expect(value.value.absoluteString == "https://example.com")
-    }
-
     @Test func dictionaryRenamePreservesOptionalNilValue() {
         var values: [String: Int?] = [:]
         values.updateValue(nil, forKey: "old")

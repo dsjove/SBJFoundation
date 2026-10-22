@@ -49,8 +49,8 @@ struct SBJStructureSampleNutrition: Codable {
 
   @SBJDesignatedInit
   init(caloriesPerServing: Int = 420, proteinGrams: Double = 14.5) {
-    self.caloriesPerServing = caloriesPerServing
-    self.proteinGrams = proteinGrams
+	self.caloriesPerServing = caloriesPerServing
+	self.proteinGrams = proteinGrams
   }
 }
 
@@ -90,7 +90,7 @@ struct SBJStructureSampleModel: Codable {
   @SBJString(minLength: 1, maxLength: 400)
   @SBJEditorString(.multiline)
   var summary =
-    "Roasted peppers, cauliflower, and onion tossed with pasta and a simple olive-oil dressing."
+	"Roasted peppers, cauliflower, and onion tossed with pasta and a simple olive-oil dressing."
 
   @SBJInteger(range: 1...24)
   var servings = 4
@@ -132,33 +132,33 @@ struct SBJStructureSampleModel: Codable {
   @SBJArray(reorderable: true, minCount: 1, maxCount: 30, uniqueBy: \SBJStructureSampleIngredient.id)
   @SBJEditorArray(title: \SBJStructureSampleIngredient.name)
   var ingredients = [
-    SBJStructureSampleIngredient(
-      name: "Red bell pepper", quantity: 2, unit: .item, preparation: "sliced"),
-    SBJStructureSampleIngredient(
-      name: "Cauliflower", quantity: 500, unit: .gram, preparation: "cut into florets"),
-    SBJStructureSampleIngredient(
-      name: "Yellow onion", quantity: 1, unit: .item, preparation: "sliced"),
-    SBJStructureSampleIngredient(name: "Olive oil", quantity: 2.5, unit: .tablespoon),
-    SBJStructureSampleIngredient(name: "Pasta", quantity: 340, unit: .gram),
+	SBJStructureSampleIngredient(
+	  name: "Red bell pepper", quantity: 2, unit: .item, preparation: "sliced"),
+	SBJStructureSampleIngredient(
+	  name: "Cauliflower", quantity: 500, unit: .gram, preparation: "cut into florets"),
+	SBJStructureSampleIngredient(
+	  name: "Yellow onion", quantity: 1, unit: .item, preparation: "sliced"),
+	SBJStructureSampleIngredient(name: "Olive oil", quantity: 2.5, unit: .tablespoon),
+	SBJStructureSampleIngredient(name: "Pasta", quantity: 340, unit: .gram),
   ]
 
   @SBJArray(reorderable: true, minCount: 1, maxCount: 20, uniqueBy: \SBJStructureSampleStep.id)
   @SBJEditorArray(title: \SBJStructureSampleStep.title)
   var steps = [
-    SBJStructureSampleStep(
-      title: "Roast the vegetables",
-      instruction:
-        "Roast the peppers, cauliflower, and onion until browned at the edges and tender."
-    ),
-    SBJStructureSampleStep(
-      title: "Cook the pasta",
-      instruction: "Cook the pasta until al dente, reserving a little cooking water."
-    ),
-    SBJStructureSampleStep(
-      title: "Combine",
-      instruction:
-        "Toss the pasta and roasted vegetables with olive oil. Add reserved cooking water as needed."
-    ),
+	SBJStructureSampleStep(
+	  title: "Roast the vegetables",
+	  instruction:
+		"Roast the peppers, cauliflower, and onion until browned at the edges and tender."
+	),
+	SBJStructureSampleStep(
+	  title: "Cook the pasta",
+	  instruction: "Cook the pasta until al dente, reserving a little cooking water."
+	),
+	SBJStructureSampleStep(
+	  title: "Combine",
+	  instruction:
+		"Toss the pasta and roasted vegetables with olive oil. Add reserved cooking water as needed."
+	),
   ]
 
   @SBJSet(minCount: 1, maxCount: 12)
@@ -166,8 +166,8 @@ struct SBJStructureSampleModel: Codable {
 
   @SBJDictionary(maxCount: 12)
   var substitutions: [String: String] = [
-    "Red bell pepper": "Orange bell pepper",
-    "Pasta": "Whole-wheat pasta",
+	"Red bell pepper": "Orange bell pepper",
+	"Pasta": "Whole-wheat pasta",
   ]
 
   @SBJString(maxLength: 1_000)
@@ -176,8 +176,8 @@ struct SBJStructureSampleModel: Codable {
 
   @SBJEditorProperty
   var editorDisplayName: String {
-    get { name }
-    set { name = newValue }
+	get { name }
+	set { name = newValue }
   }
 
   @SBJUUID(nonzero: true)
@@ -209,24 +209,4 @@ struct SBJStructureSampleModel: Codable {
   @SBJEditorExclude var editorDate = Date()
   @SBJEditorExclude var editorURL = URL(string: "https://example.com")!
 
-  static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
-    switch keyPath as AnyKeyPath {
-    case \Self.servings:
-      return SBJPropertyInfo(
-        title: "Servings",
-        summary: "The number of portions the recipe is intended to make.",
-        details:
-          "The structural constraint is 1 through 24. The editor uses that domain knowledge to keep this numeric field compact without fixing it to one point size.",
-        accessibilityLabel: "Recipe servings",
-        accessibilityHint: "Enter the number of portions this recipe makes"
-      )
-    case \Self.lastMade:
-      return SBJPropertyInfo(
-        summary: "Optional date of the most recent preparation.",
-        details: "The system date editor follows the user's locale and calendar preferences."
-      )
-    default:
-      return nil
-    }
-  }
 }

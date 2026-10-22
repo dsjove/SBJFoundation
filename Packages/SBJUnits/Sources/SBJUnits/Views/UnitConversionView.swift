@@ -40,7 +40,7 @@ public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
 
                 SBJSymbolButton(
                     SBJUnitSymbology.resetValue,
-                    propertyInfo: UnitConversionModel<Unit>.resetPropertyInfo
+                    propertyInfo: UnitConversionModel<Unit>.resetInfo
                 ) {
                     model.reset()
                 }
@@ -52,7 +52,7 @@ public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
 
                 SBJSymbolButton(
                     SBJUnitSymbology.swapUnits,
-                    propertyInfo: UnitConversionModel<Unit>.swapPropertyInfo
+                    propertyInfo: UnitConversionModel<Unit>.swapInfo
                 ) {
                     model.swap()
                 }

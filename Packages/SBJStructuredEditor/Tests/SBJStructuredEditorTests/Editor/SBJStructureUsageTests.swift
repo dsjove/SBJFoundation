@@ -969,7 +969,9 @@ extension SBJStructureUsageTests {
 private struct Phase1PropertyInfoExample: Codable {
     var title: String = "Example"
     var count: Int = 0
-    static let titleInfo = SBJPropertyInfo(summary: "Generated title documentation")
+    public static let titleInfo = SBJPropertyInfo(
+    	summary: "Generated title documentation"
+    )
 
     // The manually defined API can augment and delegate to the generated static lookup.
     static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
@@ -994,8 +996,15 @@ private enum TestCaseInfoEnum: Codable {
 
 @SBJPropertyInfoEnum
 extension TestCaseInfoEnum {
-    static let noneInfo = SBJPropertyInfo(title: "None", summary: "No payload")
-    static let adjustedInfo = SBJPropertyInfo(title: "Adjusted score", summary: "Score with an adjustment", details: "Enter a whole number.")
+    public static let noneInfo = SBJPropertyInfo(
+    	title: "None",
+    	summary: "No payload"
+    )
+    public static let adjustedInfo = SBJPropertyInfo(
+    	title: "Adjusted score",
+    	summary: "Score with an adjustment",
+    	details: "Enter a whole number."
+    )
 }
 
 extension SBJStructureUsageTests {

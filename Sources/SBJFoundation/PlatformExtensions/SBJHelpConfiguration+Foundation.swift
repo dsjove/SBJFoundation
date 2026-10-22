@@ -19,7 +19,7 @@ public extension SBJHelpConfiguration {
             "URL": AppInfo.supportURL,
             "PRIVACY_URL": AppInfo.privacyPolicyURL,
         ]
-        #if canImport(UIKit)
+        #if canImport(UIKit) && !os(watchOS)
 		config.applicationSubstitutions["ICON"] = AppInfo.icon?.resized(toFit: .init(width: 256, height: 256)).pngData()?.base64EncodedString() ?? ""
         #endif
         return config

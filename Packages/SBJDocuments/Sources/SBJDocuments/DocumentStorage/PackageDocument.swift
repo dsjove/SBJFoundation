@@ -1,5 +1,11 @@
-#if !os(watchOS)
 import Foundation
+
+public struct PackageDocumentWriteWarning: LocalizedError, Sendable, Equatable {
+	public let message: String
+
+	public init(_ message: String) { self.message = message }
+	public var errorDescription: String? { message }
+}
 
 public enum DocumentRole: Int, Codable, Equatable, Comparable, Sendable {
 	case user
@@ -8,6 +14,8 @@ public enum DocumentRole: Int, Codable, Equatable, Comparable, Sendable {
 
 	public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
 }
+
+#if !os(watchOS)
 
 /// URL identity contract for documents that support app/deep-link URLs.
 public protocol DocumentURLRouting {
@@ -54,13 +62,6 @@ public struct PackageDocumentNotice: Identifiable, Sendable, Equatable {
 		self.title = title
 		self.message = message
 	}
-}
-
-public struct PackageDocumentWriteWarning: LocalizedError, Sendable, Equatable {
-	public let message: String
-
-	public init(_ message: String) { self.message = message }
-	public var errorDescription: String? { message }
 }
 
 public struct PackageDocumentWriteResult {

@@ -6,9 +6,9 @@ import SBJUIVocabulary
 import SBJFileResources
 
 public extension SBJBundledContentReference {
-    static var editTags: SBJBundledContentReference {
-        .help("Edit Tags", bundle: .module)
-    }
+	static var editTags: SBJBundledContentReference {
+		.help("Edit Tags", bundle: .module)
+	}
 }
 
 public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
@@ -58,14 +58,14 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 										.onTapGesture {
 											editColorTag = tag
 										}
-                                        .applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityLabel) { view, label in
-                                            view.accessibilityLabel(label)
-                                        }
-                                        .applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityHint) { view, hint in
-                                            view.accessibilityHint(hint)
-                                        }
-                                        .accessibilityValue(tag.displayName)
-                                        .accessibilityAddTraits(.isButton)
+										.applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityLabel) { view, label in
+											view.accessibilityLabel(label)
+										}
+										.applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityHint) { view, hint in
+											view.accessibilityHint(hint)
+										}
+										.accessibilityValue(tag.displayName)
+										.accessibilityAddTraits(.isButton)
 									VStack(alignment: .leading, spacing: 2) {
 										TextField("Name", text: Binding(
 											get: { tag.name },
@@ -80,9 +80,9 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 	#endif
 										.disableAutocorrection(true)
 										.sbjFocusedControl(isFocused: $isTagFieldFocused, id: tag.id)
-                                        .applyIf(Tag.propertyInfo(for: \Tag.name)?.accessibilityLabel) { view, label in
-                                            view.accessibilityLabel(label)
-                                        }
+										.applyIf(Tag.propertyInfo(for: \Tag.name)?.accessibilityLabel) { view, label in
+											view.accessibilityLabel(label)
+										}
 
 										if !tag.isSoleUser(user) {
 											Text("(\(tag.userCount))")
@@ -103,27 +103,27 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 											}
 										)) {}
 										.toggleStyle(.sbjCheckbox)
-                                        .applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityLabel) { view, label in
-                                            view.accessibilityLabel(label)
-                                        }
-                                        .applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityHint) { view, hint in
-                                            view.accessibilityHint(hint)
-                                        }
-                                        .accessibilityValue(tag.displayName)
-                                        SBJSymbolButton(
-                                            user.isTagPrimary(tag)
-                                                ? SBJTagSymbology.primaryTag
-                                                : SBJTagSymbology.notPrimaryTag,
-                                            propertyInfo: T.propertyInfo(for: \T.__primaryTagID)
-                                                ?? SBJPropertyInfo(
-                                                    summary: "Primary tag",
-                                                    details: "Toggles the primary tag.",
-                                                    accessibilityLabel: "Primary tag"
-                                                )
-                                        ) {
-                                            user.togglePrimary(tag)
-                                        }
-                                        .accessibilityValue(tag.displayName)
+										.applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityLabel) { view, label in
+											view.accessibilityLabel(label)
+										}
+										.applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityHint) { view, hint in
+											view.accessibilityHint(hint)
+										}
+										.accessibilityValue(tag.displayName)
+										SBJSymbolButton(
+											user.isTagPrimary(tag)
+												? SBJTagSymbology.primaryTag
+												: SBJTagSymbology.notPrimaryTag,
+											propertyInfo: T.propertyInfo(for: \T.__primaryTagID)
+												?? SBJPropertyInfo(
+													summary: "Primary tag",
+													details: "Toggles the primary tag.",
+													accessibilityLabel: "Primary tag"
+												)
+										) {
+											user.togglePrimary(tag)
+										}
+										.accessibilityValue(tag.displayName)
 									}
 								}
 								.background(

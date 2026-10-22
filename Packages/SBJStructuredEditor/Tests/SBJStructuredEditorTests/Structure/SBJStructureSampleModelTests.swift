@@ -19,6 +19,17 @@ struct SBJStructureSampleModelTests {
     #expect(sourceURL?.kind == .optional)
   }
 
+  @Test func samplePropertyInfoUsesCustomExtensionAndStructuralFallback() {
+    #expect(SBJStructureSampleModel.propertyInfo(for: \SBJStructureSampleModel.preparationMinutes)
+      == SBJStructureSampleModel.customPreparationMetadata)
+    #expect(SBJStructureSampleModel.propertyInfo(for: \SBJStructureSampleModel.servings)
+      == SBJStructureSampleModel.servingsInfo)
+    #expect(SBJStructureSampleModel.propertyInfo(for: \SBJStructureSampleModel.lastMade)
+      == SBJStructureSampleModel.lastMadeInfo)
+    #expect(SBJStructureSampleModel.propertyInfo(for: \SBJStructureSampleModel.name)
+      == SBJStructureSampleModel._propertyInfo(for: \SBJStructureSampleModel.name))
+  }
+
   @MainActor
   @Test func canonicalSampleSeparatesAutomaticFieldsFromStandaloneDispatchCoverage() {
     let names = SBJStructureSampleModel.sbjEditorFields.map(\.name)
