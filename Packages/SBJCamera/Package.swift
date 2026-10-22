@@ -4,7 +4,10 @@ import PackageDescription
 let package = Package(
     name: "SBJCamera",
     platforms: [
-        .iOS(.v17), .watchOS(.v10), .visionOS(.v1), .tvOS(.v17),
+        .iOS(.v17),
+        .watchOS(.v10),
+        .visionOS(.v1),
+        .tvOS(.v17),
     ],
     products: [.library(name: "SBJCamera", targets: ["SBJCamera"])],
     targets: [

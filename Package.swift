@@ -26,6 +26,7 @@ let package = Package(
         .package(path: "Packages/SBJDocuments"),
         .package(path: "Packages/SBJFileResources"),
         .package(path: "Packages/SBJHelp"),
+        .package(path: "Packages/SBJLayout"),
     ],
     targets: [
         .target(
@@ -40,6 +41,7 @@ let package = Package(
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
+                .product(name: "SBJLayout", package: "SBJLayout"),
             ],
             resources: [
                 .process("Resources"),
@@ -53,15 +55,16 @@ let package = Package(
             name: "SBJFoundationTests",
             dependencies: [
                 "SBJFoundation",
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
+                .product(name: "SBJUnits", package: "SBJUnits"),
+                .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJCamera", package: "SBJCamera"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
-                .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
-                .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
-                .product(name: "SBJUnits", package: "SBJUnits"),
+                .product(name: "SBJLayout", package: "SBJLayout"),
             ],
             resources: [
                 .process("Resources"),

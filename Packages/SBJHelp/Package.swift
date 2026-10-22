@@ -3,7 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "SBJHelp",
-    platforms: [.iOS(.v17), .watchOS(.v10), .visionOS(.v1), .tvOS(.v17)],
+    platforms: [
+		.iOS(.v17),
+		.watchOS(.v10),
+		.visionOS(.v1),
+		.tvOS(.v17)
+	],
     products: [.library(name: "SBJHelp", targets: ["SBJHelp"])],
     dependencies: [
         .package(path: "../SBJFileResources"),
