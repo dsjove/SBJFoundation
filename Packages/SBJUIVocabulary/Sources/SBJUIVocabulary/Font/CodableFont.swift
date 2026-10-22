@@ -60,13 +60,13 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 
 	@SBJDesignatedInit
 	public init(
-		_ name: FontFamily? = nil,
+		_ family: FontFamily? = nil,
 		ofSize size: Double = 12.0,
 		weight: Weight = .regular,
 		italic: Bool = false,
 		width: Width = .standard
 	) {
-		self.family = name
+		self.family = family
 		self.size = size
 		self.weight = weight
 		self.italic = italic

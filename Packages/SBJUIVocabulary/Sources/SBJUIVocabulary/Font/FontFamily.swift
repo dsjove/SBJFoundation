@@ -1,12 +1,16 @@
 import Foundation
+import SBJDataDefinition
 
 /// A normalized font-family name. A nil `FontFamily?` represents the system font.
+///
+@SBJStructure
 public struct FontFamily: Hashable, Sendable, Codable, ExpressibleByStringLiteral,
 	CustomStringConvertible, CustomDebugStringConvertible {
 	public let name: String
 
 	/// Removes surrounding whitespace and applies Unicode canonical composition.
 	/// The original case is retained for display and font-family lookup.
+	@SBJDesignatedInit
 	public init(_ name: String) {
 		self.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
 			.precomposedStringWithCanonicalMapping
