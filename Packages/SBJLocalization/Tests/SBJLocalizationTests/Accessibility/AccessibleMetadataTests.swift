@@ -27,4 +27,16 @@ struct AccessibleMetadataTests {
         #expect(!item.isEmpty)
         #expect(AccessibleItem().isEmpty)
     }
+
+    @Test func accessibleImageItemRetainsOriginalAccessibilityBehavior() {
+        let decorative = AccessibleSymbolItem(symbol: .system("star"), label: "Favorite")
+        #expect(decorative.accessibilityLabel == nil)
+        #expect(!decorative.labeled)
+
+        #expect(decorative.accessibility.isEmpty)
+        let labeled = AccessibleSymbolItem(symbol: .system("star"), labeled: true, label: "Favorite")
+        #expect(labeled.accessibility == AccessibleItem(label: "Favorite"))
+        #expect(labeled.accessibilityLabel == "Favorite")
+        #expect(labeled.labeled)
+    }
 }

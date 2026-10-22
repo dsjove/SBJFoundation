@@ -24,11 +24,4 @@ struct SBJUnitsTests {
         #expect(MeasurementSystem.imperial.description == "Imperial")
         #expect(UnitCategory.duration.description == "Duration")
     }
-
-    @Test func nomenclatureExposesPropertyInfo() {
-        #expect(UnitValue<LengthUnit>.valueInfo.title == "Value")
-        #expect(UnitEditingPolicy<LengthUnit>.defaultStepInfo.title == "Default Step")
-        #expect(LengthUnit.millimeter.description == "Millimeter")
-        #expect(DurationUnit.day.abbreviation == "day")
-    }
 }

@@ -16,18 +16,6 @@ struct ImageReferenceTests {
         #expect(!ImageReference.file(URL(fileURLWithPath: "/tmp/image.png")).isEmpty)
     }
 
-    @Test func accessibleImageItemRetainsOriginalAccessibilityBehavior() {
-        let decorative = AccessibleImageItem(image: .system("star"), label: "Favorite")
-        #expect(decorative.accessibilityLabel == nil)
-        #expect(!decorative.labeled)
-
-        #expect(decorative.accessibility.isEmpty)
-        let labeled = AccessibleImageItem(image: .system("star"), labeled: true, label: "Favorite")
-        #expect(labeled.accessibility == AccessibleItem(label: "Favorite"))
-        #expect(labeled.accessibilityLabel == "Favorite")
-        #expect(labeled.labeled)
-    }
-
     @Test func presentationImageReferencesAreSendable() {
         func requireSendable<T: Sendable>(_: T) {}
         requireSendable(ImageReference.system("star"))

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SBJUIVocabulary
+@testable import SBJFileResources
 
 @Suite("Identified")
 struct IdentifiedTests {
