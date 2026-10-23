@@ -1,7 +1,5 @@
 import Foundation
-import SBJDataDefinition
-import SBJHelp
-import SBJUIVocabulary
+import SBJLocalization
 
 /// Semantic imagery used by attachment UI and attachment help.
 public enum SBJAttachmentSymbology {
@@ -19,10 +17,4 @@ public enum SBJAttachmentSymbology {
 
     public static let attachments = image("attachments")
     public static let previewAttachment = image("previewAttachment")
-
-    public static var helpConfiguration: SBJHelpConfiguration {
-        var configuration = SBJHelpConfiguration.foundation
-        configuration.semanticImages = SBJSymbology.vocabulary(adding: all)
-        return configuration
-    }
 }

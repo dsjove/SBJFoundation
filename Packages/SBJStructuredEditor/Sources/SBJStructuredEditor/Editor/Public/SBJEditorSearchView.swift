@@ -5,7 +5,7 @@ import SBJUIVocabulary
 import SBJUnits
 
 public extension SBJBundledContentReference {
-    static var structuredEditorSearch: SBJBundledContentReference {
+    static var structuredEditorSearchHelp: SBJBundledContentReference {
         .help("Structure Editor Search", resourceName: "SBJStructureEditorSearch", bundle: .module)
     }
 }

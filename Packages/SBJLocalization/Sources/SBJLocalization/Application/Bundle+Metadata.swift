@@ -1,7 +1,6 @@
+import Foundation
 import UIKit
-import SBJUIVocabulary
 
-import SBJDataDefinition
 public extension Bundle {
 	var displayName: String? {
 		self.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -45,7 +44,7 @@ public extension Bundle {
 		func image(named name: String) -> UIImage? {
 #if os(watchOS)
 			UIImage(named: name)
-			?? ImageReference.resource(name, bundle: self).image
+			?? SBJSymbol.bundleImage(name: name, bundle: self).uiImage
 #else
 			UIImage(named: name, in: self, compatibleWith: nil)
 			?? SBJSymbol.bundleImage(name: name, bundle: self).uiImage

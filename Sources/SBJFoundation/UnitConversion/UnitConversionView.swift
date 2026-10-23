@@ -1,8 +1,8 @@
 import SwiftUI
 import SBJDataDefinition
-import SBJHelp
-import SBJUIVocabulary
 import SBJUnits
+import SBJUIVocabulary
+import SBJHelp
 
 @MainActor
 public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
@@ -40,7 +40,7 @@ public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
 #endif
 
                 SBJSymbolButton(
-                    SBJUnitSymbology.resetValue,
+                    SBJUnitConversionSymbology.resetValue,
                     propertyInfo: UnitConversionModel<Unit>.resetInfo
                 ) {
                     model.reset()
@@ -52,7 +52,7 @@ public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
                     .foregroundStyle(.secondary)
 
                 SBJSymbolButton(
-                    SBJUnitSymbology.swapUnits,
+                    SBJUnitConversionSymbology.swapUnits,
                     propertyInfo: UnitConversionModel<Unit>.swapInfo
                 ) {
                     model.swap()
@@ -89,8 +89,8 @@ public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 SBJHelpLink(
-                    asset: SBJUnitSymbology.unitConversionHelp,
-                    configuration: SBJUnitSymbology.helpConfiguration
+                    asset: SBJUnitConversionSymbology.unitConversionHelp,
+                    configuration: SBJUnitConversionSymbology.helpConfiguration
                 )
             }
         }

@@ -1,8 +1,5 @@
 import Foundation
-import SBJDataDefinition
-import SBJDocuments
 import SBJFileResources
-import SBJUIVocabulary
 
 /// Package-backed attachment persistence shared by document-package clients.
 /// Attachment keys are filenames and may represent regular files or nested packages.

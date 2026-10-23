@@ -24,7 +24,8 @@ let package = Package(
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJUnits", package: "SBJUnits"),
-            ]
+            ],
+            resources: [.process("Resources")],
         ),
         .testTarget(name: "SBJUIVocabularyTests", dependencies: ["SBJUIVocabulary"]),
     ]

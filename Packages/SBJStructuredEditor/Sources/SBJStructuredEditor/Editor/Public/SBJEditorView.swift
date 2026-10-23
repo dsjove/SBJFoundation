@@ -5,7 +5,7 @@ import SBJUIVocabulary
 import SBJUnits
 
 public extension SBJBundledContentReference {
-    static var structuredEditorCore: SBJBundledContentReference {
+    static var structuredEditorCoreHelp: SBJBundledContentReference {
         .help("Structure Editor", resourceName: "SBJStructureEditorCore", bundle: .module)
     }
 }

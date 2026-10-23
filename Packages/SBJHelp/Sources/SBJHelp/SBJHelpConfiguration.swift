@@ -37,6 +37,18 @@ public struct SBJHelpConfiguration {
         self.substitutions = substitutions
         self.semanticImages = semanticImages
         self.embeddedAssets = embeddedAssets
+
+         self.applicationSubstitutions = [
+            "DISPLAY_NAME": AppInfo.displayName,
+            "VERSION": AppInfo.fullVersion,
+            "COMPANY_NAME": AppInfo.companyName,
+            "EMAIL": AppInfo.supportEmail,
+            "URL": AppInfo.supportURL,
+            "PRIVACY_URL": AppInfo.privacyPolicyURL,
+        ]
+        #if canImport(UIKit) && !os(watchOS)
+		self.applicationSubstitutions["ICON"] = AppInfo.icon?.resized(toFit: .init(width: 256, height: 256)).pngData()?.base64EncodedString() ?? ""
+        #endif
     }
 
     public static var standard: Self { .init() }

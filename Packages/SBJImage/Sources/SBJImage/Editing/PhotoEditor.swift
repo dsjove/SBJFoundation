@@ -13,7 +13,7 @@ import SBJUIVocabulary
 import SBJSharing
 
 public extension SBJBundledContentReference {
-    static var imageEdit: SBJBundledContentReference {
+    static var imageEditHelp: SBJBundledContentReference {
         .help("Image Edit", bundle: .module)
     }
 }
@@ -304,7 +304,7 @@ public struct PhotoEditor: View {
         if model.usesCompactToolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
 				SBJHelpLink(
-					asset: .imageEdit,
+					asset: .imageEditHelp,
 					auto: false,
 					configuration: .image
 				)

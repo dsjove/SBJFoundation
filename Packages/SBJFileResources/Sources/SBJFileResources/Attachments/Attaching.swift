@@ -1,9 +1,7 @@
 import Foundation
-import SBJDataDefinition
-import SBJFileResources
-import SBJUIVocabulary
+import SBJLocalization
 
-/// A named item presented by the standard attachment editor.
+/// A named, identifiable resource associated with an owning model.
 ///
 /// Storage is deliberately not part of this protocol. An attachment may be an
 /// embedded document resource, a bookmarked external file, or another app-owned

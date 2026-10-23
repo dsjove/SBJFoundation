@@ -10,7 +10,7 @@ import SBJUIVocabulary
 import SBJSharing
 
 public extension SBJBundledContentReference {
-    static var imageView: SBJBundledContentReference {
+    static var imageViewHelp: SBJBundledContentReference {
         .help("Image View", bundle: .module)
     }
 }
@@ -102,7 +102,7 @@ public struct PhotoViewer: View {
                         }
 
                         SBJHelpLink(
-                            asset: .imageView,
+                            asset: .imageViewHelp,
                             auto: false,
                             configuration: .image
                         )

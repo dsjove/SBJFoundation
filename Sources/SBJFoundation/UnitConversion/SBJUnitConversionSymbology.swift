@@ -1,11 +1,11 @@
 import Foundation
-import SBJDataDefinition
 import SBJFileResources
-import SBJHelp
+import SBJLocalization
 import SBJUIVocabulary
+import SBJHelp
 
 /// Semantic imagery used by unit controls and unit-conversion help.
-public enum SBJUnitSymbology {
+public enum SBJUnitConversionSymbology {
     public static let all: [String: SBJSymbol] = [
         "resetValue": .system("1.square"),
         "swapUnits": .system("arrow.left.arrow.right"),

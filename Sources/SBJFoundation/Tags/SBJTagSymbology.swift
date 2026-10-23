@@ -23,7 +23,7 @@ public enum SBJTagSymbology {
     public static let notPrimaryTag = image("notPrimaryTag")
 
     public static var helpConfiguration: SBJHelpConfiguration {
-        var configuration = SBJHelpConfiguration.foundation
+        var configuration = SBJHelpConfiguration.standard
         configuration.semanticImages = SBJSymbology.vocabulary(adding: all)
         return configuration
     }

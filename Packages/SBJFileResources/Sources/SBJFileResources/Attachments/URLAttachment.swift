@@ -1,22 +1,16 @@
 import Foundation
 import UniformTypeIdentifiers
-import SBJFileResources
-import SBJStructuredEditor
-import SBJUIVocabulary
+import SBJLocalization
 
 /// A concrete attachment presentation independent of attachment storage.
 ///
 /// URL-backed attachments keep their existing URL. Embedded attachments
 /// are materialized to a temporary file because Quick Look, sharing, and
 /// OS opening operate on file URLs.
-@SBJEditable
 public struct URLAttachment: Identifiable, Codable, Equatable, Sendable {
-	@SBJUUID(nonzero: true)
-	public let id: UUID
-	@SBJURL(allowed: [.file])
-	public let url: URL
-	@SBJString(minLength: 1)
-	public let displayName: String
+		public let id: UUID
+		public let url: URL
+		public let displayName: String
 
 	public init(
 		id: UUID = UUID(),
