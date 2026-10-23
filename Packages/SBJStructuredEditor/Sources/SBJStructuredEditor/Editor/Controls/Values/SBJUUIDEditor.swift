@@ -36,7 +36,7 @@ struct SBJUUIDEditor: View {
             .textInputAutocapitalization(.characters)
 #endif
             SBJSymbolButton(
-                SBJSymbology.regenerate,
+                SBJEditorSymbology.regenerate,
                 accessibilityLabel: "Generate new \(label)"
             ) {
                 value = UUID()

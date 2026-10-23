@@ -45,10 +45,16 @@ public struct SBJHelpConfiguration {
             "EMAIL": AppInfo.supportEmail,
             "URL": AppInfo.supportURL,
             "PRIVACY_URL": AppInfo.privacyPolicyURL,
-        ]
+        ].merging(applicationSubstitutions) { _, supplied in supplied }
         #if canImport(UIKit) && !os(watchOS)
 		self.applicationSubstitutions["ICON"] = AppInfo.icon?.resized(toFit: .init(width: 256, height: 256)).pngData()?.base64EncodedString() ?? ""
         #endif
+    }
+
+    /// Merge a domain's semantic symbols into this help configuration.
+    /// Later sets override duplicate keys; standard UI symbols are included by default.
+    public mutating func addSymbolSet<S: SBJSymbolSet>(_ type: S.Type) {
+        semanticImages.merge(type.all) { _, new in new }
     }
 
     public static var standard: Self { .init() }

@@ -34,9 +34,9 @@ enum SBJEditorStatusKind {
     var image: SBJSymbol {
         switch self {
         case .changed:
-            return SBJSymbology.changed
+            return SBJEditorSymbology.changed
         case .empty:
-            return SBJSymbology.empty
+            return SBJEditorSymbology.empty
         }
     }
 

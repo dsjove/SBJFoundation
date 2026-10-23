@@ -137,7 +137,7 @@ public struct SBJEditorIssueList: View {
 
                             if let navigate {
                                 SBJSymbolButton(
-                                    SBJSymbology.navigateToProperty,
+                                    SBJEditorSymbology.navigateToProperty,
                                     accessibilityLabel: "Go to \(issue.path)",
                                     accessibilityHint: "Closes the issue viewer and reveals this property in the editor"
                                 ) {
