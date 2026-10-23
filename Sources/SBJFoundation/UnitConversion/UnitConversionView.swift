@@ -2,6 +2,7 @@ import SwiftUI
 import SBJDataDefinition
 import SBJHelp
 import SBJUIVocabulary
+import SBJUnits
 
 @MainActor
 public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {

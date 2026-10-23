@@ -1,10 +1,8 @@
-import SBJUIVocabulary
 #if os(iOS) && canImport(MessageUI)
 import Foundation
 import MessageUI
 import SwiftUI
 import UIKit
-import SBJDataDefinition
 import SBJFileResources
 
 public struct ComposedMessage: Sendable {

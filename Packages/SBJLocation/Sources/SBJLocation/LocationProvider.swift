@@ -1,7 +1,5 @@
 import CoreLocation
-import SBJUIVocabulary
 
-import SBJDataDefinition
 /// Location capability used by clients that need an eagerly acquired, cached
 /// location without depending on a concrete Core Location implementation.
 public protocol LocationProvider: AnyObject {
@@ -18,7 +16,7 @@ public protocol LocationProvider: AnyObject {
 }
 
 /// Creates the standard Core Location-backed provider while keeping its
-/// implementation private to SBJFoundation.
+/// implementation private to SBJLocation.
 public enum LocationFactory {
 	@MainActor
 	public static func make() -> any LocationProvider {

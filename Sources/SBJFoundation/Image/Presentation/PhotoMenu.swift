@@ -11,6 +11,7 @@ import SBJDataDefinition
 import SBJDocuments
 import SBJFileResources
 import SBJUIVocabulary
+import SBJSharing
 
 public struct _DefaultPhotoMenuLabel: View {
     let isFilled: Bool

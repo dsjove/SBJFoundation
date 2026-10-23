@@ -8,6 +8,7 @@ import PencilKit
 #endif
 import SBJDataDefinition
 import SBJFileResources
+import SBJLocation
 import SBJUIVocabulary
 
 #if !os(watchOS)
@@ -332,7 +333,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         let location: CLLocation?
         if let descriptor = manifest.location,
            let locationData = data(at: descriptor.path) {
-            location = try JSONDecoder().decode(LocationJSON.self, from: locationData).location
+            location = try JSONDecoder().decode(LocationValue.self, from: locationData).location
         } else {
             location = nil
         }
@@ -563,7 +564,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         ]
         if let location {
             root["location.json"] = .init(
-                regularFileWithContents: try encoder.encode(LocationJSON(location))
+                regularFileWithContents: try encoder.encode(LocationValue(location))
             )
         }
 

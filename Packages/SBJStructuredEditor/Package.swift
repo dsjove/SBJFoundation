@@ -16,7 +16,6 @@ let package = Package(
         .package(path: "../SBJUIVocabulary"),
         .package(path: "../SBJLocalization"),
         .package(path: "../SBJUnits"),
-        .package(path: "../SBJHelp"),
         .package(path: "../SBJFileResources"),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "604.0.0-prerelease-2026-06-05"),
     ],
@@ -35,7 +34,6 @@ let package = Package(
             .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             .product(name: "SBJLocalization", package: "SBJLocalization"),
             .product(name: "SBJUnits", package: "SBJUnits"),
-            .product(name: "SBJHelp", package: "SBJHelp"),
             .product(name: "SBJFileResources", package: "SBJFileResources"),
         ],
             resources: [
@@ -47,7 +45,6 @@ let package = Package(
             .product(name: "SBJLocalization", package: "SBJLocalization"),
             .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             .product(name: "SBJUnits", package: "SBJUnits"),
-            .product(name: "SBJHelp", package: "SBJHelp"),
             .product(name: "SBJFileResources", package: "SBJFileResources"),
             .product(name: "SwiftSyntax", package: "swift-syntax"),
             .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),

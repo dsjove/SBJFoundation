@@ -14,6 +14,7 @@ let package = Package(
         .package(path: "../SBJLocalization"),
         .package(path: "../SBJDataDefinition"),
         .package(path: "../SBJFileResources"),
+        .package(path: "../SBJUnits"),
     ],
     targets: [
         .target(
@@ -22,6 +23,7 @@ let package = Package(
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJUnits", package: "SBJUnits"),
             ]
         ),
         .testTarget(name: "SBJUIVocabularyTests", dependencies: ["SBJUIVocabulary"]),

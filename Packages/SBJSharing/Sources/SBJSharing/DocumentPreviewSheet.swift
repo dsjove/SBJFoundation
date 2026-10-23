@@ -1,16 +1,18 @@
-import SBJUIVocabulary
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
 import QuickLook
 import SwiftUI
 import UIKit
-import SBJDataDefinition
+import SBJUIVocabulary
+import SBJLocalization
 import SBJFileResources
 
 public struct DocumentPreviewController: UIViewControllerRepresentable {
-    public let preview: URLAttachment
+    public let url: URL
+    public let displayName: String
 
-    public init(preview: URLAttachment) {
-        self.preview = preview
+    public init(url: URL, displayName: String) {
+        self.url = url
+        self.displayName = displayName
     }
 
     public func makeUIViewController(context: Context) -> QLPreviewController {
@@ -22,7 +24,7 @@ public struct DocumentPreviewController: UIViewControllerRepresentable {
     public func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) { }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(url: preview.url, displayName: preview.displayName)
+        Coordinator(url: url, displayName: displayName)
     }
 
     public final class Coordinator: NSObject, QLPreviewControllerDataSource {
@@ -58,17 +60,19 @@ public struct DocumentPreviewController: UIViewControllerRepresentable {
 public struct DocumentPreviewSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    public let preview: URLAttachment
+    public let url: URL
+    public let displayName: String
 
-    public init(preview: URLAttachment) {
-        self.preview = preview
+    public init(url: URL, displayName: String) {
+        self.url = url
+        self.displayName = displayName
     }
 
     public var body: some View {
         SBJSharePresentationHost { sharePresenter in
             NavigationStack {
-                DocumentPreviewController(preview: preview)
-                    .navigationTitle(preview.displayName)
+                DocumentPreviewController(url: url, displayName: displayName)
+                    .navigationTitle(displayName)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
@@ -81,12 +85,12 @@ public struct DocumentPreviewSheet: View {
                                 SBJSymbology.open,
                                 accessibilityLabel: "Open"
                             ) {
-                                preview.url.open()
+                                url.open()
                             }
 
                             SBJShareButton(
                                 presenter: sharePresenter,
-                                prepare: { SBJSharePayload(preview.url) }
+                                prepare: { SBJSharePayload(url) }
                             ) {
                                 Image(symbol: SBJSymbology.share)
                                     .accessibilityLabel("Share")

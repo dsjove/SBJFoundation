@@ -1,5 +1,6 @@
 import SBJUIVocabulary
 import SBJUnits
+
 /// Internal editor rendering mode. Model units are immutable; all automatic
 /// unit-value fields select `.fixedUnit`.
 public enum SBJUnitValueEditorMode: Sendable, Hashable {

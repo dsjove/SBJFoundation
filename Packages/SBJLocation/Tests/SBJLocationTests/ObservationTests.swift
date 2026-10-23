@@ -1,6 +1,6 @@
 import Observation
 import XCTest
-@testable import SBJFoundation
+@testable import SBJLocation
 
 @Observable
 private final class ObservationFixture {
@@ -15,7 +15,7 @@ final class ObservationTests: XCTestCase {
         let second = expectation(description: "second change")
         var received: [Int] = []
 
-        let token = SBJFoundation.observeValue(of: model, \ObservationFixture.value, initialPush: false) { _, value in
+        let token = SBJLocation.observeValue(of: model, \ObservationFixture.value, initialPush: false) { _, value in
             received.append(value)
             if value == 1 { first.fulfill() }
             if value == 2 { second.fulfill() }
@@ -37,7 +37,7 @@ final class ObservationTests: XCTestCase {
         let unexpected = expectation(description: "cancelled observer does not fire")
         unexpected.isInverted = true
 
-        let token = SBJFoundation.observeValue(of: model, \ObservationFixture.value, initialPush: false) { _, _ in
+        let token = SBJLocation.observeValue(of: model, \ObservationFixture.value, initialPush: false) { _, _ in
             unexpected.fulfill()
         }
         token.cancel()

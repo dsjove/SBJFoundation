@@ -1,7 +1,7 @@
 import Foundation
 import Observation
-import SBJDataDefinition
-import SBJUIVocabulary
+
+//TODO: find a better home, is there a builtin equivelent?
 
 /// Lifetime token for an observation installed by ``observeValue``.
 ///

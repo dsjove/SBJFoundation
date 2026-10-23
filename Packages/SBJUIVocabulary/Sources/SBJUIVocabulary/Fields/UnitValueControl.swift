@@ -1,6 +1,6 @@
 import SwiftUI
 import SBJDataDefinition
-import SBJUIVocabulary
+import SBJUnits
 
 /// Compact reusable control for a numeric value paired with a unit.
 ///

@@ -1,7 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 import UIKit
-import SBJFileResources
 
 public struct DocumentExportView: UIViewControllerRepresentable {
 	let urls: [URL]

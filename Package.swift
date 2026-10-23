@@ -17,6 +17,8 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "Packages/SBJLocation"),
+        .package(path: "Packages/SBJSharing"),
         .package(path: "Packages/SBJLocalization"),
         .package(path: "Packages/SBJDataDefinition"),
         .package(path: "Packages/SBJStructuredEditor"),
@@ -32,6 +34,8 @@ let package = Package(
         .target(
             name: "SBJFoundation",
             dependencies: [
+                .product(name: "SBJLocation", package: "SBJLocation"),
+                .product(name: "SBJSharing", package: "SBJSharing"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJUnits", package: "SBJUnits"),
@@ -55,6 +59,8 @@ let package = Package(
             name: "SBJFoundationTests",
             dependencies: [
                 "SBJFoundation",
+                .product(name: "SBJLocation", package: "SBJLocation"),
+                .product(name: "SBJSharing", package: "SBJSharing"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
                 .product(name: "SBJUnits", package: "SBJUnits"),

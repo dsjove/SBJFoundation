@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 import SBJDataDefinition
 import SBJFileResources
 import SBJUIVocabulary
+import SBJSharing
 
 public extension SBJBundledContentReference {
     static var attachmentsHelp: SBJBundledContentReference {
@@ -202,7 +203,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
         }
 #if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
         .fullScreenCover(item: $preview) { item in
-            DocumentPreviewSheet(preview: item)
+            DocumentPreviewSheet(url: item.url, displayName: item.displayName)
         }
 #endif
     }

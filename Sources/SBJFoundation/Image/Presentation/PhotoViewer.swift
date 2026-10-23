@@ -7,6 +7,7 @@ import SBJDocuments
 import SBJFileResources
 import SBJHelp
 import SBJUIVocabulary
+import SBJSharing
 
 public extension SBJBundledContentReference {
     static var imageView: SBJBundledContentReference {
