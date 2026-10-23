@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 import Testing
-@testable import SBJFoundation
+@testable import SBJImage
 
 @Suite("Image reference View APIs")
 struct ImageReferenceViewAPITests {

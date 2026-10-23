@@ -1,7 +1,7 @@
 import Foundation
-import SBJUIVocabulary
 
-import SBJDataDefinition
+//TODO: find a better place
+
 public enum MacFlavor {
 	case native
 	case catalyst

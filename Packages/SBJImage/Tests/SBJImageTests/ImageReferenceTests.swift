@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import SBJDataDefinition
-@testable import SBJFoundation
+@testable import SBJImage
 import SBJUIVocabulary
 
 @Suite("Image references")

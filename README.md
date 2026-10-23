@@ -9,3 +9,7 @@ Apply these files relative to `SBJFoundation/` in the latest consolidated source
 - Editor-owned macro expansion and unit editor integration tests remain in StructuredEditor, even though their fixtures involve DataDefinition types.
 
 Test human-readable output equivalence and imports across every file still require a separate exhaustive source-level review: this patch does not claim those are complete. Swift/Xcode builds have not been executed.
+
+## Image package
+
+Image functionality is now owned by `Packages/SBJImage`. Clients importing image APIs directly should `import SBJImage`; SBJFoundation depends on it for the `Bundle.icon` extension.

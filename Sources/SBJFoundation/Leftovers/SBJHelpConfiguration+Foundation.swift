@@ -2,6 +2,7 @@ import Foundation
 import SBJFileResources
 import SBJHelp
 import SBJUIVocabulary
+import SBJImage
 
 #if canImport(UIKit)
 import UIKit

@@ -29,6 +29,7 @@ let package = Package(
         .package(path: "Packages/SBJFileResources"),
         .package(path: "Packages/SBJHelp"),
         .package(path: "Packages/SBJLayout"),
+        .package(path: "Packages/SBJImage"),
     ],
     targets: [
         .target(
@@ -46,6 +47,7 @@ let package = Package(
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
                 .product(name: "SBJLayout", package: "SBJLayout"),
+                .product(name: "SBJImage", package: "SBJImage"),
             ],
             resources: [
                 .process("Resources"),
@@ -71,6 +73,7 @@ let package = Package(
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
                 .product(name: "SBJLayout", package: "SBJLayout"),
+                .product(name: "SBJImage", package: "SBJImage"),
             ],
             resources: [
                 .process("Resources"),

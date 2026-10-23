@@ -5,7 +5,7 @@ import UIKit
 import UniformTypeIdentifiers
 import SBJDataDefinition
 import SBJFileResources
-@testable import SBJFoundation
+@testable import SBJImage
 import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
 

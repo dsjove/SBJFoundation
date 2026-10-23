@@ -48,7 +48,7 @@ public extension Bundle {
 			?? ImageReference.resource(name, bundle: self).image
 #else
 			UIImage(named: name, in: self, compatibleWith: nil)
-			?? ImageReference.resource(name, bundle: self).image
+			?? SBJSymbol.bundleImage(name: name, bundle: self).uiImage
 #endif
 		}
 
@@ -76,7 +76,6 @@ public extension Bundle {
 				}
 			}
 		}
-
 		return nil
 	}
 }
