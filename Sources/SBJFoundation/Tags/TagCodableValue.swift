@@ -1,6 +1,6 @@
 import Foundation
-import SBJStructuredEditor
 import SBJUIVocabulary
+import SBJDataDefinition
 
 /// Codable value representation of the generic, user-visible portion of a tag.
 ///
@@ -8,7 +8,7 @@ import SBJUIVocabulary
 /// because their relationship graph belongs to the persistence layer. This value
 /// type provides a stable representation for export, recovery, interchange, and
 /// other serialization without coupling Codable to SwiftData relationships.
-@SBJEditable
+@SBJStructure
 public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable, StringPresentable {
 	public var id: ID
 	public var name: String

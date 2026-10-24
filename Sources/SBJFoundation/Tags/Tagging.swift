@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
-import SBJDataDefinition
+import SBJLocalization
 import SBJDocuments
 import SBJUIVocabulary
 
@@ -101,31 +101,6 @@ public extension Tagging {
 
 	var debugDescription: String {
 		"\(Self.self): \(name)\(self.color.debugDescription)"
-	}
-}
-
-public extension Tagging {
-	var foregroundColor: Color {
-		self.color.isLight ? .black : .white
-	}
-
-	var backgroundColor: Color {
-		self.color.swiftUIColor
-	}
-
-	@ViewBuilder
-	func label(isPrimary: Bool = false) -> some View {
-		Text(displayName)
-			.font(.caption).bold()
-			.padding(.horizontal, 8)
-			.padding(.vertical, 4)
-			.background(backgroundColor)
-			.foregroundColor(foregroundColor)
-			.cornerRadius(8)
-			.overlay(
-				RoundedRectangle(cornerRadius: 8)
-					.stroke(isPrimary ? Color.black : Color.clear, lineWidth: 2)
-			)
 	}
 }
 

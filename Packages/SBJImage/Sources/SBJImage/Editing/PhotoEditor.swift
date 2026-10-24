@@ -306,7 +306,7 @@ public struct PhotoEditor: View {
 				SBJHelpLink(
 					asset: .imageEditHelp,
 					auto: false,
-					configuration: .image
+					configuration: .imageHelp
 				)
                 doneButton
             }

@@ -7,5 +7,4 @@ public enum SBJAttachmentSymbology: SBJSymbolSet {
         "attachments": .system("paperclip"),
         "previewAttachment": .system("doc.text.magnifyingglass"),
     ]
-
 }

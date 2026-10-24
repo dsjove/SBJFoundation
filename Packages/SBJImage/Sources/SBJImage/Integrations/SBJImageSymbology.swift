@@ -34,5 +34,15 @@ public enum SBJImageSymbology: SBJSymbolSet {
         "undoMarkup": .system("arrow.uturn.backward"),
         "redoMarkup": .system("arrow.uturn.forward"),
     ]
+}
 
+import SBJHelp
+
+public extension SBJHelpConfiguration {
+    /// Help configuration for image import, viewing, and editing UI.
+    static var imageHelp: Self {
+        var configuration = Self.standard
+        configuration.addSymbolSet(SBJImageSymbology.self)
+        return configuration
+    }
 }

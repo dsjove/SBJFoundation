@@ -1,10 +1,6 @@
 import Foundation
 import Observation
 import SwiftData
-import SwiftUI
-import SBJDataDefinition
-import SBJDocuments
-import SBJUIVocabulary
 
 @MainActor
 @Observable

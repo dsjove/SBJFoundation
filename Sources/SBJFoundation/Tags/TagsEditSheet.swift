@@ -1,13 +1,28 @@
-import SwiftData
 import SwiftUI
-import SBJDataDefinition
-import SBJHelp
+import SBJLocalization
 import SBJUIVocabulary
 import SBJFileResources
+import SBJHelp
+
+public enum SBJTagSymbology: SBJSymbolSet {
+	public static let all: [String: SBJSymbol] = [
+		"tags": .system("tag.fill"),
+		"primaryTag": .system("star.fill"),
+		"notPrimaryTag": .system("star"),
+	]
+}
 
 public extension SBJBundledContentReference {
-	static var editTags: SBJBundledContentReference {
+	static var editTagsHelp: SBJBundledContentReference {
 		.help("Edit Tags", bundle: .module)
+	}
+}
+
+public extension SBJHelpConfiguration {
+	static var editTagsHelp: Self {
+		var configuration = SBJHelpConfiguration.standard
+		configuration.addSymbolSet(SBJTagSymbology.self)
+		return configuration
 	}
 }
 
@@ -169,7 +184,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 				ToolbarItemGroup(placement: .topBarTrailing) {
 					SBJAddButton("Tag", action: addTag)
 	#if !os(watchOS)
-					SBJHelpLink(asset: .editTags, configuration: SBJTagSymbology.helpConfiguration)
+					SBJHelpLink(asset: .editTagsHelp, configuration: .editTagsHelp)
 	#endif
 				}
 			}

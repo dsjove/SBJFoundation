@@ -1,8 +1,30 @@
 import SwiftUI
-import SBJDataDefinition
+import SBJFileResources
+import SBJLocalization
 import SBJUnits
 import SBJUIVocabulary
 import SBJHelp
+
+public enum SBJUnitConversionSymbology: SBJSymbolSet {
+    public static let all: [String: SBJSymbol] = [
+        "resetValue": .system("1.square"),
+        "swapUnits": .system("arrow.left.arrow.right"),
+    ]
+}
+
+public extension SBJBundledContentReference {
+    static var unitConversionHelp: SBJBundledContentReference {
+        .help("Unit Conversion", bundle: .module)
+    }
+}
+
+public extension SBJHelpConfiguration {
+    static var unitConversionHelp: SBJHelpConfiguration {
+        var configuration = SBJHelpConfiguration.standard
+        configuration.addSymbolSet(SBJUnitConversionSymbology.self)
+        return configuration
+    }
+}
 
 @MainActor
 public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
@@ -89,8 +111,8 @@ public struct UnitConversionView<Unit: UnitType & StringPresentable>: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 SBJHelpLink(
-                    asset: SBJUnitConversionSymbology.unitConversionHelp,
-                    configuration: SBJUnitConversionSymbology.helpConfiguration
+                    asset: .unitConversionHelp,
+                    configuration: .unitConversionHelp
                 )
             }
         }

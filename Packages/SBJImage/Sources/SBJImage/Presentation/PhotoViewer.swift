@@ -104,7 +104,7 @@ public struct PhotoViewer: View {
                         SBJHelpLink(
                             asset: .imageViewHelp,
                             auto: false,
-                            configuration: .image
+                            configuration: .imageHelp
                         )
                     }
 

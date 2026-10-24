@@ -1,7 +1,5 @@
 import SwiftUI
-import SBJUIVocabulary
 
-import SBJDataDefinition
 public struct TagsControlView<T: TagUser>: View {
 	private let user: T
 	private let showTagsSheet: (()->())?
