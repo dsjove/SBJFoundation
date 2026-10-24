@@ -613,3 +613,38 @@ Diagnostics are intentionally data, not presentation. A sheet in the stock edito
 
 ---
 
+
+## Collection traversal
+
+`SBJCollectionTraversal` supplies canonical array, set, and dictionary traversal entries.
+Each entry separates its logical identifier from its current location and contains a
+model-derived title. Arrays use a configured unique identifier when available and
+fall back to a slot identity for missing or duplicate identifiers. Unordered
+collections use deterministic ordering. Consumers such as editors project these
+entries into their own presentation and mutation abstractions.
+
+## Structural property traversal
+
+`SBJStructuralTraversal.properties(of:)` enumerates writable stored properties in declaration order, providing a stable property identity component and ordinal location independent of SwiftUI. Presentation-only computed properties are excluded. Consumers may use the associated `SBJMutableProperty` to read or update values.
+
+## Instance-free schema and value traversal
+
+`SBJStructuralTraversal.schema(of:)` returns the stored, writable property descriptors of an `SBJMutableStructure` without constructing an instance. The descriptors preserve source names, display names, declaration order, structural metadata (including constraints, hints, and property information), and the original declared Swift value type. `visitSchema(of:_:)` visits these descriptors in order. This supports schema-based consumers such as documentation generators that do not need a value.
+
+`visitValues(in:_:)` enumerates values using the same structural property descriptors. Property descriptors provide `withTypedValue(in:as:_:)` and `withWritableKeyPath(as:_:)` for consumers that already know the desired value type; both reject mismatched types rather than relying on name-based lookup. These accessors do not perform runtime dispatch to an arbitrary generic visitor.
+
+The current `schema(of:)` describes writable stored fields of one structure. Read-only structural metadata remains available through `SBJStructured.sbjProperties`. Recursive type-graph discovery and automatic presentation of arbitrary nested property types require a separate type-dispatch mechanism; this API does not claim to implement them.
+
+### Typed structural property visitors
+
+`SBJMutableProperty.visitTypedProperty(with:)` passes a stored writable property to
+`SBJTypedStructuralPropertyVisitor`. The visitor's generic `visit` method receives
+its actual `WritableKeyPath<Root, Value>` and associated metadata; `Value` retains
+its `Codable` constraint. This dispatch is independent of SwiftUI and does not
+require a sample instance. Editor-only properties outside the structural schema
+return `false` from this method. For complete documentation schemas, including
+immutable properties, use `SBJStructuralTraversal.definition(of:)`.
+
+### Array mutations
+
+`SBJArrayMutation` performs index-validated `move(from:to:in:)` and `remove(at:from:)` operations on a mutable array. Invalid indices and no-op moves return `false` without changing the array. Presentation, filtering, and user-interaction policy remain the responsibility of consumers, such as `SBJStructuredEditor`.

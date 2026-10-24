@@ -13,7 +13,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        try SBJStructureGeneration.members(of: declaration, in: context, includingEditor: false)
+        try SBJStructureGeneration.members(of: declaration, in: context, layers: [])
     }
 
     public static func expansion(
@@ -23,7 +23,7 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        try SBJStructureGeneration.extensions(of: declaration, type: type, includingEditor: false)
+        try SBJStructureGeneration.extensions(of: declaration, type: type, layers: [])
     }
 }
 

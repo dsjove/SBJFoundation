@@ -31,4 +31,17 @@ struct SBJArrayEditorPresentationTests {
             criteria: SBJStructuralSearchCriteria(showEmptyContentOnly: true)
         ))
     }
+    @Test("collection element removal remains independently actionable")
+    @MainActor
+    func collectionElementRemoval() {
+        var wasRemoved = false
+        let actions = SBJEditorItemActions(remove: { wasRemoved = true }, moveUp: nil, moveDown: nil)
+        // Construct the shared information-gutter control without requiring
+        // element-specific compile-time property metadata.
+        _ = actions.infoLaneView
+        _ = actions.trailingView
+        actions.remove()
+        #expect(wasRemoved)
+    }
+
 }

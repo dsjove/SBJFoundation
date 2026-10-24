@@ -33,9 +33,6 @@ struct SBJArrayEditor<Element: Codable>: View {
                 isExpanded: disclosureBinding,
                 leadingActions: AnyView(
                     HStack(spacing: 6) {
-                        if let itemActions {
-                            itemActions.leadingView
-                        }
                         SBJAddButton(
                             label,
                             accessibilityHint: "Adds a new item and moves focus into it"

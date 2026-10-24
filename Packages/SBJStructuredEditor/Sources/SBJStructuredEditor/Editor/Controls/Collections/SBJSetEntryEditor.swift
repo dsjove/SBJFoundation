@@ -12,6 +12,8 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
         var focusRequest: SBJEditorFocusRequest? = nil
     }
 
+    @Environment(SBJEditorPresentationModel.self) private var formattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { formattingModel?.formattingOptions ?? .init() }
     let element: Element
     let originalElement: Element?
     let title: String
@@ -59,7 +61,6 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .center, spacing: 8) {
-                SBJRemoveButton(accessibilityLabel: "Remove \(title)", action: remove)
 
                 SBJValueEditor.makeView(
                     label: title,
@@ -82,6 +83,12 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
                         collision = !replace(element, draft)
                     }
                 }
+            }
+            .padding(.trailing, sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing)
+            .overlay(alignment: .topTrailing) {
+                SBJConfirmedRemoveButton(accessibilityLabel: "Remove \(title)", remove: remove)
+                    .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
+                    .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
             }
             if collision {
                 Text("That value is already in the set.")

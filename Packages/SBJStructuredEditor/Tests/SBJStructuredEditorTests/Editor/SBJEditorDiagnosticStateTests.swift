@@ -27,6 +27,15 @@ struct SBJEditorDiagnosticStateTests {
         #expect(model.hasIssues == false)
     }
 
+    @Test("Structural font projects fields and supports font-family selection")
+    func fontSpecification() {
+        let font = CodableFont(nil, ofSize: 14)
+        #expect(SBJStructuralFieldProjection.fields(of: CodableFont.self).map(\.name) == ["family", "size", "weight", "italic", "width"])
+        #expect(SBJValueEditor.collectIssues(value: font, path: ["Font"], registry: .init()).isEmpty)
+        #expect(SBJValueEditor.collectIssues(value: font.family, path: ["Font", "Family"], registry: .init()).isEmpty)
+        #expect(SBJValueEditor.collectIssues(value: FontFamily("Helvetica"), path: ["Family"], registry: .init()).isEmpty)
+    }
+
     @Test("Row validity changes invalidate diagnostics without inventing issue entries")
     func validationInvalidation() {
         let model = SBJEditorPresentationModel(expansionOptions: .sessionOnly)

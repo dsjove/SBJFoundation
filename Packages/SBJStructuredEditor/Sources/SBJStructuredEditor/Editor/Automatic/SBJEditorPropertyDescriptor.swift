@@ -29,7 +29,7 @@ import SBJUnits
   /// as search/filtering, validation state, and type erasure; actual field rendering
   /// is delegated to `SBJEditField`.
   @MainActor
-  public struct SBJEditorPropertyDescriptor<Root: SBJSwiftUIEditable> {
+  public struct SBJEditorPropertyDescriptor<Root: SBJMutableStructure> {
     public let name: String
     let traversalDisclosureMode: SBJEditorDisclosureMode
     let isTraversalDisclosure: Bool
@@ -50,7 +50,7 @@ import SBJUnits
     ) {
       self.name = name
       self.traversalDisclosureMode = disclosureMode
-      self.isTraversalDisclosure = Value.self is any SBJSwiftUIEditable.Type
+      self.isTraversalDisclosure = Value.self is any SBJMutableStructure.Type
         || Value.self is any SBJEditorTraversableValue.Type
         || Value.self is any SBJEditableAssociatedEnum.Type
       let editableField = SBJMutableProperty<Root>(name: name, keyPath)
@@ -90,7 +90,8 @@ import SBJUnits
           context: context,
           registry: registry,
           itemTitleKey: configuration.collectionItemTitleKey,
-          itemIdentifierKey: configuration.collectionItemIdentifierKey
+          itemIdentifierKey: configuration.collectionItemIdentifierKey,
+          reorderable: configuration.collectionReorderable
         )
       }
       self.collectIssues = { root, path, registry in

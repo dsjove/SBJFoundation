@@ -149,7 +149,7 @@ import SBJUnits
     /// The label and presentation configuration are read from the property's
     /// generated structural metadata. Exact-key-path bindings and whole-line
     /// replacements registered in `registry` are honored as well.
-    public init<Root: SBJSwiftUIEditable>(
+    public init<Root: SBJMutableStructure>(
       root: Binding<Root>,
       keyPath: WritableKeyPath<Root, Value>,
       originalRoot: Root? = nil,
@@ -174,7 +174,7 @@ import SBJUnits
       )
     }
 
-    init<Root: SBJSwiftUIEditable>(
+    init<Root: SBJMutableStructure>(
       root: Binding<Root>,
       originalRoot: Root?,
       keyPath: WritableKeyPath<Root, Value>,
@@ -222,10 +222,12 @@ import SBJUnits
             binding: value,
             defaultContent: defaultContent
           ) ?? defaultContent
-        let visuallyIneffective = Root.sbjEditorFieldIsVisuallyIneffective(
-          keyPath,
-          in: root.wrappedValue
-        )
+        let visuallyIneffective = (Root.self as? any SBJSwiftUIEditable.Type)?
+          ._sbjEditorFieldIsVisuallyIneffective(
+            keyPath,
+            in: root.wrappedValue,
+            valueType: Value.self
+          ) ?? false
         return AnyView(
           SBJEditorPropertyInfoContainer(
             content: AnyView(content.opacity(visuallyIneffective ? 0.5 : 1.0)),
@@ -239,7 +241,7 @@ import SBJUnits
       }
     }
 
-    init<Root: SBJSwiftUIEditable>(
+    init<Root: SBJMutableStructure>(
       editorOnlyRoot root: Binding<Root>,
       originalRoot: Root?,
       keyPath: WritableKeyPath<Root, Value>,

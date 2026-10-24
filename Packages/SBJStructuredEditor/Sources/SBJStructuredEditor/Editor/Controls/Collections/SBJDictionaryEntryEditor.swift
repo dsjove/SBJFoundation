@@ -5,6 +5,8 @@ import Foundation
 import SwiftUI
 
 struct SBJDictionaryEntryEditor<Key: Codable & Hashable, Value: Codable>: View {
+    @Environment(SBJEditorPresentationModel.self) private var formattingModel: SBJEditorPresentationModel?
+    private var sbjFormatting: SBJEditorFormattingOptions { formattingModel?.formattingOptions ?? .init() }
     let key: Key
     @Binding var entryValue: Value
     let originalValue: Value?
@@ -59,7 +61,6 @@ struct SBJDictionaryEntryEditor<Key: Codable & Hashable, Value: Codable>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .center, spacing: 8) {
-                SBJRemoveButton(accessibilityLabel: "Remove dictionary entry", action: remove)
 
                 SBJValueEditor.makeView(
                     label: "Key",
@@ -74,6 +75,12 @@ struct SBJDictionaryEntryEditor<Key: Codable & Hashable, Value: Codable>: View {
                         collision = !rename(key, draftKey)
                     }
                 }
+            }
+            .padding(.trailing, sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing)
+            .overlay(alignment: .topTrailing) {
+                SBJConfirmedRemoveButton(accessibilityLabel: "Remove dictionary entry", remove: remove)
+                    .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
+                    .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
             }
 
             if collision {

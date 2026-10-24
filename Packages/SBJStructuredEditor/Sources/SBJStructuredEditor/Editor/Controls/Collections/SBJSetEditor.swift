@@ -36,7 +36,6 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
                 isExpanded: disclosureBinding,
                 leadingActions: AnyView(
                     HStack(spacing: 6) {
-                        if let itemActions { itemActions.leadingView }
                         SBJAddButton(label) {
                             guard let candidate = addCandidate else { return }
                             value.insert(candidate)

@@ -39,6 +39,27 @@ final class SBJStructureMacroTests: XCTestCase {
         "SBJColor": DataAnnotationMarker.self,
     ]
 
+    func testPresentationDescriptorGenerationLivesInEditorMacro() {
+        let strategy = SBJEditorGeneration()
+        XCTAssertEqual(
+            strategy.nonStructuralPropertyDescriptor(name: "computedTitle"),
+            #"SBJEditorPropertyDescriptor<Self>(nonStructuralName: "computedTitle".uncamelCased, \.computedTitle)"#
+        )
+        XCTAssertEqual(
+            strategy.storedPropertyDescriptor(name: "title", disclosure: ".open"),
+            #"SBJEditorPropertyDescriptor<Self>(name: "title".uncamelCased, \.title, disclosureMode: .open)"#
+        )
+    }
+
+    func testEditorLayerSuppliesOnlyEditorConformances() {
+        let layer = SBJEditorGeneration()
+        XCTAssertEqual(layer.additionalConformances(isStruct: true, hasEnumPayload: false), ["SBJSwiftUIEditable"])
+        XCTAssertEqual(layer.additionalConformances(isStruct: false, hasEnumPayload: true), ["SBJEditableAssociatedEnum"])
+        XCTAssertEqual(layer.additionalConformances(isStruct: false, hasEnumPayload: false), [])
+        XCTAssertEqual(layer.structMembers(access: "public ", fields: []).count, 1)
+        XCTAssertEqual(layer.enumMembers(access: "public ", cases: []).count, 1)
+    }
+
     func testEmptyStructureGeneratesPublicConsumptionHooksAndEditorConformance() {
         assertMacroExpansion(
             """

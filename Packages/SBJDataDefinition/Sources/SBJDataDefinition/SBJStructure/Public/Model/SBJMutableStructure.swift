@@ -9,6 +9,21 @@ public protocol SBJMutableStructure: SBJStructured {
     static var sbjMutableProperties: [SBJMutableProperty<Self>] { get }
 }
 
+/// A type-preserving consumer of a writable structural property.
+///
+/// Each visit opens the original property type through the generic witness
+/// captured when the descriptor was created. Consumers do not need to guess
+/// types from names or dynamically cast key paths. Only stored Codable
+/// properties participate; editor-only computed properties are not schema.
+public protocol SBJTypedStructuralPropertyVisitor<Root>: AnyObject {
+    associatedtype Root: SBJStructured
+
+    func visit<Value: Codable>(
+        _ keyPath: WritableKeyPath<Root, Value>,
+        metadata: SBJPropertyMetadata<Root>?
+    )
+}
+
 /// UI-independent, type-erased description of one writable property on `Root`.
 ///
 /// The descriptor intentionally contains no SwiftUI concepts. It exposes the
@@ -21,6 +36,7 @@ public struct SBJMutableProperty<Root: SBJStructured> {
     public let structuralMetadata: SBJPropertyMetadata<Root>?
     public let participatesInStructuralValidation: Bool
 
+    private let dispatchTypedProperty: ((any SBJTypedStructuralPropertyVisitor<Root>) -> Void)?
     private let getValue: (Root) -> Any
     private let assignValue: (inout Root, Any) -> Bool
     private let matchesSearchValue: (Root, String) -> Bool
@@ -39,6 +55,9 @@ public struct SBJMutableProperty<Root: SBJStructured> {
         let structuralMetadata = Root.propertyMetadata(for: keyPath)
         self.structuralMetadata = structuralMetadata
         self.participatesInStructuralValidation = true
+        self.dispatchTypedProperty = { visitor in
+            visitor.visit(keyPath, metadata: structuralMetadata)
+        }
         self.getValue = { $0[keyPath: keyPath] }
         self.assignValue = { root, value in
             guard let typed = value as? Value else { return false }
@@ -87,6 +106,7 @@ public struct SBJMutableProperty<Root: SBJStructured> {
         self.keyPath = keyPath
         self.structuralMetadata = nil
         self.participatesInStructuralValidation = false
+        self.dispatchTypedProperty = nil
         self.getValue = { $0[keyPath: keyPath] }
         self.assignValue = { root, value in
             guard let typed = value as? Value else { return false }
@@ -100,7 +120,41 @@ public struct SBJMutableProperty<Root: SBJStructured> {
         self.validationErrorValue = { _ in nil }
     }
 
+    /// Dispatches to a consumer with the property's actual generic Codable type.
+    /// Returns `false` for fields outside the structural schema.
+    @discardableResult
+    public func visitTypedProperty(
+        with visitor: any SBJTypedStructuralPropertyVisitor<Root>
+    ) -> Bool {
+        guard let dispatchTypedProperty else { return false }
+        dispatchTypedProperty(visitor)
+        return true
+    }
+
     public func value(in root: Root) -> Any { getValue(root) }
+
+    /// Accesses a property with its declared concrete type. A mismatch returns
+    /// `nil` rather than permitting an unchecked cast. The callback preserves
+    /// the Swift type and may be used without SwiftUI or an editor registry.
+    public func withTypedValue<Value, Result>(
+        in root: Root,
+        as type: Value.Type,
+        _ body: (Value) throws -> Result
+    ) rethrows -> Result? {
+        guard valueType == Value.self, let value = getValue(root) as? Value else { return nil }
+        return try body(value)
+    }
+
+    /// Exposes the original writable key path only to consumers expecting its
+    /// exact Swift value type. No String-based type lookup is involved.
+    public func withWritableKeyPath<Value, Result>(
+        as type: Value.Type,
+        _ body: (WritableKeyPath<Root, Value>) throws -> Result
+    ) rethrows -> Result? {
+        guard valueType == Value.self,
+              let typed = keyPath as? WritableKeyPath<Root, Value> else { return nil }
+        return try body(typed)
+    }
 
     /// Attempts to assign a type-erased value. Returns `false` if its runtime
     /// type does not match this field's declared Swift type.

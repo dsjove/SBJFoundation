@@ -1,3 +1,4 @@
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJUnits
 #if !os(tvOS) && !os(watchOS)
@@ -347,6 +348,23 @@ enum SBJValueEditor {
             )
         }
 
+        if Value.self == FontFamily.self {
+            let family = value.sbjBinding(as: FontFamily.self)
+            return wrapLeaf(
+                SBJFontFamilyEditor(
+                    label: label,
+                    value: Binding<FontFamily?>(
+                        get: { family.wrappedValue },
+                        set: { if let selected = $0 { family.wrappedValue = selected } }
+                    ),
+                    labelIsUnknown: labelIsUnknown,
+                    rowStatus: context.branch.status
+                ),
+                itemActions: itemActions,
+                context: context
+            )
+        }
+
         if let custom = registry.customEditor(label: label, binding: value) {
             return wrapLeaf(custom, itemActions: itemActions, context: context)
         }
@@ -517,6 +535,16 @@ enum SBJValueEditor {
                     headerOnly: headerOnly
             )
         }
+        if let structural = Value.self as? any SBJMutableStructure.Type {
+            return structural._sbjStructuralMakeEditor(
+                label: label, binding: erased, originalValue: originalValue,
+                registry: registry, itemActions: itemActions,
+                focusRequest: focusRequest, titleIsUnknown: labelIsUnknown,
+                promotedTitlePropertyName: promotedTitlePropertyName,
+                promotedTitlePrefix: promotedTitlePrefix,
+                context: context, headerOnly: headerOnly
+            )
+        }
         if let options = caseIterableOptions(for: Value.self) {
             return wrapLeaf(
                 SBJCaseIterableEditor(label: label, value: value, options: options, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
@@ -542,6 +570,8 @@ enum SBJValueEditor {
         collectionItemTitleKey: String? = nil
     ) -> [SBJEditorCapabilityIssue] {
         if registry.hasCustomEditor(Value.self) { return [] }
+        // Built-in font selection is a leaf editor, including its optional system-font form.
+        if Value.self == FontFamily?.self || Value.self == FontFamily.self { return [] }
         if Value.self is any SBJTypedEditorValue.Type { return [] }
 
         if let optional = Value.self as? any _SBJOptionalIssueValue.Type {
@@ -565,6 +595,9 @@ enum SBJValueEditor {
         }
         if let editable = Value.self as? any SBJSwiftUIEditable.Type {
             return editable._sbjCollectIssues(value: value, path: path, registry: registry)
+        }
+        if let structural = Value.self as? any SBJMutableStructure.Type {
+            return structural._sbjStructuralCollectIssues(value: value, path: path, registry: registry)
         }
         if caseIterableOptions(for: Value.self) != nil { return [] }
 
@@ -598,8 +631,8 @@ enum SBJValueEditor {
         AnyView(
             SBJEditorRow(
                 context: context,
-                elementAction: itemActions?.leadingView,
-                trailingActions: itemActions?.trailingView
+                trailingActions: itemActions?.trailingView,
+                infoAction: itemActions?.infoLaneView
             ) {
                 view
                     .frame(maxWidth: .infinity, alignment: .leading)

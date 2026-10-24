@@ -10,7 +10,7 @@ public struct SBJEditableMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        try SBJStructureGeneration.members(of: declaration, in: context, includingEditor: true)
+        try SBJStructureGeneration.members(of: declaration, in: context, layers: [SBJEditorGeneration()])
     }
 
     public static func expansion(
@@ -20,7 +20,7 @@ public struct SBJEditableMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        try SBJStructureGeneration.extensions(of: declaration, type: type, includingEditor: true)
+        try SBJStructureGeneration.extensions(of: declaration, type: type, layers: [SBJEditorGeneration()])
     }
 }
 

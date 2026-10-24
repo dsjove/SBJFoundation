@@ -132,6 +132,9 @@ private struct SBJEditorPropertyInfoSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(alignment: .firstTextBaseline) {
+                Image(symbol: info?.symbol ?? SBJSymbology.information)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
                 Text(title)
                     .font(.title2.weight(.semibold))
                 if showsDoneButton {

@@ -1,17 +1,55 @@
+import Foundation
 import SwiftSyntax
+import SBJStructureMacroSupport
 
 /// Editor-specific source generation. Structural analysis and conformance
 /// generation remain in SBJStructureGeneration and are reused by both macros.
-enum SBJEditorGeneration {
-    static func nonStructuralPropertyDescriptor(name: String) -> String {
+struct SBJEditorGeneration: SBJMacroGenerationLayer {
+    func additionalConformances(isStruct: Bool, hasEnumPayload: Bool) -> [String] {
+        if isStruct { return ["SBJSwiftUIEditable"] }
+        return hasEnumPayload ? ["SBJEditableAssociatedEnum"] : []
+    }
+
+    func nonStructuralProperty(name: String) -> String? { nonStructuralPropertyDescriptor(name: name) }
+    func storedProperty(name: String, disclosure: String) -> String? { storedPropertyDescriptor(name: name, disclosure: disclosure) }
+
+    func structMembers(access: String, fields: [String]) -> [DeclSyntax] {
+        [DeclSyntax(stringLiteral: """
+        @MainActor
+        \(access)static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
+            [
+                \(fields.joined(separator: ",\n"))
+            ]
+        }
+        """)]
+    }
+
+    func enumMembers(access: String, cases: [SBJStructureGeneration.EnumCaseInfo]) -> [DeclSyntax] {
+        let descriptors = cases.map { info in
+            enumCaseDescriptor(info).replacingOccurrences(
+                of: "name: \(info.displayNameExpression),",
+                with: "name: Self.sbjCaseInfo(for: \(String(reflecting: info.caseName)))?.title ?? \(info.displayNameExpression),"
+            )
+        }.joined(separator: ",\n            ")
+        return [DeclSyntax(stringLiteral: """
+        @MainActor
+        \(access)static var sbjEditorEnumCases: [SBJEditorEnumCase<Self>] {
+            [
+                \(descriptors)
+            ]
+        }
+        """)]
+    }
+
+    func nonStructuralPropertyDescriptor(name: String) -> String {
         "SBJEditorPropertyDescriptor<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
     }
 
-    static func storedPropertyDescriptor(name: String, disclosure: String) -> String {
+    func storedPropertyDescriptor(name: String, disclosure: String) -> String {
         "SBJEditorPropertyDescriptor<Self>(name: \"\(name)\".uncamelCased, \\.\(name), disclosureMode: \(disclosure))"
     }
 
-    static func enumCaseDescriptor(_ info: SBJStructureGeneration.EnumCaseInfo) -> String {
+    func enumCaseDescriptor(_ info: SBJStructureGeneration.EnumCaseInfo) -> String {
         let pattern = SBJStructureGeneration.casePattern(info)
         let defaultBody = SBJStructureGeneration.enumOptionalCreatorBody(for: info)
         let associated = info.parameters.enumerated().map { index, parameter in
@@ -35,7 +73,7 @@ enum SBJEditorGeneration {
         """
     }
 
-    static func enumAssociatedValueDescriptor(
+    func enumAssociatedValueDescriptor(
         info: SBJStructureGeneration.EnumCaseInfo,
         parameterIndex: Int,
         parameter: SBJStructureGeneration.EnumParameter

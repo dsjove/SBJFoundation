@@ -1,4 +1,5 @@
 import Foundation
+import SBJDataDefinition
 import SwiftUI
 import Testing
 @testable import SBJStructuredEditor
@@ -38,6 +39,25 @@ struct SBJStructureUsageTests {
         #expect(TestEditableValue.sbjProperties.map(\.displayName) == [
             "Name", "Level", "Nested", "Notes", "Nickname", "Transient State"
         ])
+    }
+
+    @MainActor
+    @Test func editorFieldLocationsUseStructuralSourceIdentity() {
+        let fields = TestEditableValue.sbjEditorFields
+        let schema = SBJStructuralTraversal.schema(of: TestEditableValue.self)
+        for (editorOrdinal, field) in fields.enumerated() {
+            let location = TestEditableValue._sbjFieldTraversalLocation(
+                field, editorOrdinal: editorOrdinal
+            )
+            let structural = schema.first {
+                $0.sourceName == field.editableField.structuralMetadata?.sourceName
+            }
+            #expect(structural != nil)
+            #expect(location.identity == structural?.identityComponent)
+            #expect(location.location == structural?.locationComponent)
+        }
+        // Display labels are not the model's stable identifiers.
+        #expect(TestEditableValue._sbjFieldTraversalLocation(fields[0], editorOrdinal: 0).identity == "property:name")
     }
 
     @MainActor

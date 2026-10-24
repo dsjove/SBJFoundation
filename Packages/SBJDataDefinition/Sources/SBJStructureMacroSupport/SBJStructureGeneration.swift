@@ -4,8 +4,26 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-/// Single implementation shared by the two macro entry points.
-/// When the packages split, this generator can move behind a shared macro target.
+/// A generation layer augments the structural declarations without changing them.
+/// Layers are ordered and may be composed by higher-level macro packages.
+/// No editor runtime types are referenced by the structural generator.
+public protocol SBJMacroGenerationLayer {
+    func additionalConformances(isStruct: Bool, hasEnumPayload: Bool) -> [String]
+    func nonStructuralProperty(name: String) -> String?
+    func storedProperty(name: String, disclosure: String) -> String?
+    func structMembers(access: String, fields: [String]) -> [DeclSyntax]
+    func enumMembers(access: String, cases: [SBJStructureGeneration.EnumCaseInfo]) -> [DeclSyntax]
+}
+
+public extension SBJMacroGenerationLayer {
+    func additionalConformances(isStruct: Bool, hasEnumPayload: Bool) -> [String] { [] }
+    func nonStructuralProperty(name: String) -> String? { nil }
+    func storedProperty(name: String, disclosure: String) -> String? { nil }
+    func structMembers(access: String, fields: [String]) -> [DeclSyntax] { [] }
+    func enumMembers(access: String, cases: [SBJStructureGeneration.EnumCaseInfo]) -> [DeclSyntax] { [] }
+}
+
+/// Structural generation shared by structural and presentation-aware macros.
 public enum SBJStructureGeneration {
     private static func hasBothAnnotations(_ declaration: some DeclGroupSyntax) -> Bool {
         let attributes: AttributeListSyntax
@@ -25,16 +43,16 @@ public enum SBJStructureGeneration {
     public static func members(
         of declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext,
-        includingEditor: Bool
+        layers: [any SBJMacroGenerationLayer] = []
     ) throws -> [DeclSyntax] {
         if hasBothAnnotations(declaration) {
             throw SBJStructureMacroError.conflictingAnnotations
         }
         if let structDecl = declaration.as(StructDeclSyntax.self) {
-            return structMembers(for: structDecl, in: context, includingEditor: includingEditor)
+            return structMembers(for: structDecl, in: context, layers: layers)
         }
         if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-            return enumMembers(for: enumDecl, in: context, includingEditor: includingEditor)
+            return enumMembers(for: enumDecl, in: context, layers: layers)
         }
         throw SBJStructureMacroError.onlyStructsOrEnums
     }
@@ -42,27 +60,22 @@ public enum SBJStructureGeneration {
     public static func extensions(
         of declaration: some DeclGroupSyntax,
         type: some TypeSyntaxProtocol,
-        includingEditor: Bool
+        layers: [any SBJMacroGenerationLayer] = []
     ) throws -> [ExtensionDeclSyntax] {
         if hasBothAnnotations(declaration) {
             return [] // The member expansion reports the conflict.
         }
-        let conformance: String
-        if declaration.is(StructDeclSyntax.self) {
-            conformance = includingEditor
-                ? "SBJMutableStructure, SBJSwiftUIEditable"
-                : "SBJMutableStructure"
-        } else if declaration.is(EnumDeclSyntax.self) {
-            let enumDecl = declaration.cast(EnumDeclSyntax.self)
-            let hasPayload = enumCases(in: enumDecl).contains { !$0.parameters.isEmpty }
-            conformance = hasPayload
-    ? (includingEditor
-        ? "SBJEnumCaseIdentifiable, SBJStructuredEnum, SBJDefaultValueCreatable, SBJEditableAssociatedEnum"
-        : "SBJEnumCaseIdentifiable, SBJStructuredEnum, SBJDefaultValueCreatable")
-    : "SBJEnumCaseIdentifiable"
-        } else {
+        let isStruct = declaration.is(StructDeclSyntax.self)
+        guard isStruct || declaration.is(EnumDeclSyntax.self) else {
             throw SBJStructureMacroError.onlyStructsOrEnums
         }
+        let hasPayload = !isStruct && enumCases(in: declaration.cast(EnumDeclSyntax.self)).contains { !$0.parameters.isEmpty }
+        var conformances = isStruct ? ["SBJMutableStructure"] :
+            (hasPayload ? ["SBJEnumCaseIdentifiable", "SBJStructuredEnum", "SBJDefaultValueCreatable"] : ["SBJEnumCaseIdentifiable"])
+        for layer in layers {
+            conformances.append(contentsOf: layer.additionalConformances(isStruct: isStruct, hasEnumPayload: hasPayload))
+        }
+        let conformance = conformances.joined(separator: ", ")
 
         let extensionDecl: DeclSyntax = """
         extension \(type.trimmed): \(raw: conformance) {}
@@ -75,7 +88,7 @@ public enum SBJStructureGeneration {
     private static func structMembers(
         for structDecl: StructDeclSyntax,
         in context: some MacroExpansionContext,
-        includingEditor: Bool
+        layers: [any SBJMacroGenerationLayer]
     ) -> [DeclSyntax] {
         let codedNames = codingKeyNames(in: structDecl)
         // Named static declarations (`nameInfo`, etc.) provide zero-boilerplate
@@ -139,14 +152,16 @@ public enum SBJStructureGeneration {
                         isStoredWithObservers = false
                     }
                     if !isStoredWithObservers {
-                        if includingEditor && hasAttribute(named: "SBJEditorProperty", on: variable) {
-                        editableEntries.append(
-                            "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
-                        )
-                        entries.append(
-                            SBJEditorGeneration.nonStructuralPropertyDescriptor(name: name)
-                        )
-                    }
+                        if hasAttribute(named: "SBJEditorProperty", on: variable) {
+                            for layer in layers {
+                                if let field = layer.nonStructuralProperty(name: name) {
+                                    editableEntries.append(
+                                        "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
+                                    )
+                                    entries.append(field)
+                                }
+                            }
+                        }
                         continue
                     }
                 }
@@ -320,10 +335,10 @@ public enum SBJStructureGeneration {
                 editableEntries.append(
                     "SBJMutableProperty<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
                 )
-                if includingEditor {
-                    entries.append(
-                        SBJEditorGeneration.storedPropertyDescriptor(name: name, disclosure: editorDisclosure(on: variable) ?? ".closed")
-                    )
+                for layer in layers {
+                    if let field = layer.storedProperty(name: name, disclosure: editorDisclosure(on: variable) ?? ".closed") {
+                        entries.append(field)
+                    }
                 }
             }
         }
@@ -340,7 +355,6 @@ public enum SBJStructureGeneration {
 
         let propertyBody = propertyEntries.joined(separator: ",\n")
         let editableBody = editableEntries.joined(separator: ",\n")
-        let body = entries.joined(separator: ",\n")
         var result: [DeclSyntax] = []
         if !hasExplicitGeneratedInfo {
             let generatedCases = conventionalEntries.map { name in
@@ -371,15 +385,8 @@ public enum SBJStructureGeneration {
             }
             """),
         ]
-        if includingEditor {
-            result.append(DeclSyntax(stringLiteral: """
-            @MainActor
-            \(access)static var sbjEditorFields: [SBJEditorPropertyDescriptor<Self>] {
-                [
-                    \(body)
-                ]
-            }
-            """))
+        for layer in layers {
+            result.append(contentsOf: layer.structMembers(access: access, fields: entries))
         }
 
         let contentExpression = contentMembers.isEmpty
@@ -501,23 +508,23 @@ public enum SBJStructureGeneration {
 
     // MARK: - Associated-value enums
 
-    struct EnumParameter {
-        let type: String
-        let fieldNameExpression: String
-        let constructorLabel: String?
-        let variableName: String
+    public struct EnumParameter {
+        public let type: String
+        public let fieldNameExpression: String
+        public let constructorLabel: String?
+        public let variableName: String
     }
 
-    struct EnumCaseInfo {
-        let caseName: String
-        let displayNameExpression: String
-        let parameters: [EnumParameter]
+    public struct EnumCaseInfo {
+        public let caseName: String
+        public let displayNameExpression: String
+        public let parameters: [EnumParameter]
     }
 
     private static func enumMembers(
         for enumDecl: EnumDeclSyntax,
         in context: some MacroExpansionContext,
-        includingEditor: Bool
+        layers: [any SBJMacroGenerationLayer]
     ) -> [DeclSyntax] {
         let access = effectiveAccessPrefix(modifiers: enumDecl.modifiers, in: context)
         let cases = enumCases(in: enumDecl)
@@ -580,21 +587,8 @@ public enum SBJStructureGeneration {
         // generic CaseIterable & Hashable editor, without associated-value APIs.
         guard hasPayload else { return result }
 
-        if includingEditor {
-            let caseEntries = cases.map { info in
-                SBJEditorGeneration.enumCaseDescriptor(info).replacingOccurrences(
-                    of: "name: \(info.displayNameExpression),",
-                    with: "name: Self.sbjCaseInfo(for: \(swiftStringLiteral(info.caseName)))?.title ?? \(info.displayNameExpression),"
-                )
-            }.joined(separator: ",\n            ")
-            result.append(DeclSyntax(stringLiteral: """
-            @MainActor
-            \(access)static var sbjEditorEnumCases: [SBJEditorEnumCase<Self>] {
-                [
-                    \(caseEntries)
-                ]
-            }
-            """))
+        for layer in layers {
+            result.append(contentsOf: layer.enumMembers(access: access, cases: cases))
         }
         result.append(DeclSyntax(stringLiteral: """
             \(access)static func sbjCreateDefaultValueIfPossible() -> Self? {
@@ -680,7 +674,7 @@ public enum SBJStructureGeneration {
         return result
     }
 
-    static func enumOptionalCreatorBody(for info: EnumCaseInfo) -> String {
+    public static func enumOptionalCreatorBody(for info: EnumCaseInfo) -> String {
         guard !info.parameters.isEmpty else { return "return Self.\(info.caseName)" }
         let guards = info.parameters.map { parameter in
             "guard let \(parameter.variableName) = SBJDefaultValue.value(for: \(parameter.type).self) else { return nil }"
@@ -723,17 +717,17 @@ public enum SBJStructureGeneration {
         return "case let (\(lhsPattern), \(rhsPattern)): return \(comparisons)"
     }
 
-    static func casePattern(_ info: EnumCaseInfo) -> String {
+    public static func casePattern(_ info: EnumCaseInfo) -> String {
         guard !info.parameters.isEmpty else { return ".\(info.caseName)" }
         return ".\(info.caseName)(\(Array(repeating: "_", count: info.parameters.count).joined(separator: ", ")))"
     }
 
-    static func caseLetPattern(_ info: EnumCaseInfo, names: [String]) -> String {
+    public static func caseLetPattern(_ info: EnumCaseInfo, names: [String]) -> String {
         guard !names.isEmpty else { return ".\(info.caseName)" }
         return ".\(info.caseName)(\(names.joined(separator: ", ")))"
     }
 
-    static func caseConstruction(_ info: EnumCaseInfo, values: [String]) -> String {
+    public static func caseConstruction(_ info: EnumCaseInfo, values: [String]) -> String {
         guard !values.isEmpty else { return ".\(info.caseName)" }
         let arguments = zip(info.parameters, values).map { parameter, value in
             if let label = parameter.constructorLabel {

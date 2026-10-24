@@ -37,7 +37,6 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
                 isExpanded: disclosureBinding,
                 leadingActions: AnyView(
                     HStack(spacing: 6) {
-                        if let itemActions { itemActions.leadingView }
                         SBJAddButton(label) {
                             guard let (key, entryValue) = addCandidate else { return }
                             value.updateValue(entryValue, forKey: key)

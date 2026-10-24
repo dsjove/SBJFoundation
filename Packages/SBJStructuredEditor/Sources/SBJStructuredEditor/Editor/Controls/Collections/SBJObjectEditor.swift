@@ -4,7 +4,8 @@ import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
-struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
+struct SBJObjectEditor<Value: SBJMutableStructure>: View {
+    let fields: [SBJEditorPropertyDescriptor<Value>]
     private var sbjFormatting: SBJEditorFormattingOptions { presentationModel.formattingOptions }
     let title: String
     @Binding var value: Value
@@ -37,7 +38,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
 
     private var promotedTitleField: SBJEditorPropertyDescriptor<Value>? {
         guard let promotedTitlePropertyName else { return nil }
-        return Value.sbjEditorFields.first { field in
+        return fields.first { field in
             field.editableField.structuralMetadata?.sourceName == promotedTitlePropertyName
         }
     }
@@ -63,8 +64,8 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
             if !headerOnly && searchCriteria.showEmptyContentOnly && hasContent == false && navigationIsExpanded == false {
                 SBJEditorRow(
                     context: context,
-                    elementAction: itemActions?.leadingView,
-                    trailingActions: itemActions?.trailingView
+                    trailingActions: itemActions?.trailingView,
+                    infoAction: itemActions?.infoLaneView
                 ) {
                     HStack(spacing: 8) {
                         if titleIsUnknown {
@@ -79,7 +80,7 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                 .padding(.vertical, 2)
                         .background(SBJUIAppearance.filteredEmptyFillColor)
                 .clipShape(RoundedRectangle(cornerRadius: SBJUIAppearance.fieldCornerRadius))
-            } else if !headerOnly && Value.sbjEditorFields.count == 1, let field = Value.sbjEditorFields.first {
+            } else if !headerOnly && fields.count == 1, let field = fields.first {
                 // A one-field object is visually one row. The outer row owns the
                 // item's status/indent/remove/reorder lanes; the field keeps only
                 // its local controls (for example Optional's clear/set button).
@@ -87,8 +88,8 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                 // grammar between the item action and its title.
                 SBJEditorRow(
                     context: context,
-                    elementAction: itemActions?.leadingView,
-                    trailingActions: itemActions?.trailingView
+                    trailingActions: itemActions?.trailingView,
+                    infoAction: itemActions?.infoLaneView
                 ) {
                     field.view(
                         root: $value,
@@ -108,9 +109,9 @@ struct SBJObjectEditor<Value: SBJSwiftUIEditable>: View {
                     title,
                     context: context,
                     isExpanded: disclosureBinding,
-                    leadingActions: itemActions?.leadingView ?? AnyView(EmptyView()),
+                    leadingActions: AnyView(EmptyView()),
                     trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
-                    infoAction: promotedTitleInfoAction,
+                    infoAction: promotedTitleInfoAction ?? itemActions?.infoLaneView,
                     titleIsUnknown: titleIsUnknown,
                     titleContent: promotedHeaderContent(rootValidation: rootValidation)
                 )

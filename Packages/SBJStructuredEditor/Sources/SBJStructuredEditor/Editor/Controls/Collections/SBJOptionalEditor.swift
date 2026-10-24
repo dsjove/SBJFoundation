@@ -33,10 +33,13 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     /// value is flattened, so its nil state must not reserve a disclosure column
     /// that disappears as soon as the value is created.
     private var wrappedNeedsDisclosure: Bool {
-        guard let editable = Wrapped.self as? any SBJSwiftUIEditable.Type else {
-            return false
+        if let editable = Wrapped.self as? any SBJSwiftUIEditable.Type {
+            return editable._sbjEditorFieldCount > 1
         }
-        return editable._sbjEditorFieldCount > 1
+        if let structural = Wrapped.self as? any SBJMutableStructure.Type {
+            return structural._sbjStructuralFieldCount > 1
+        }
+        return false
     }
 
     private var navigationIsExpanded: Bool {
@@ -52,13 +55,14 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
             if searchCriteria.showEmptyContentOnly && hasContent == false && navigationIsExpanded == false {
             SBJEditorRow(
                 context: context,
-                elementAction: itemActions?.leadingView,
+
                 optionalControl: value == nil ? AnyView(setButton) : AnyView(clearButton),
-                trailingActions: itemActions?.trailingView
+                trailingActions: itemActions?.trailingView,
+                    infoAction: itemActions?.infoLaneView
             ) {
                 HStack(spacing: 8) {
                     SBJEditorFieldName(text: label, isUnknown: false)
-                        .fontWeight((Wrapped.self as? any SBJSwiftUIEditable.Type) != nil ? .semibold : .regular)
+                        .fontWeight((Wrapped.self is any SBJMutableStructure.Type) ? .semibold : .regular)
                     Spacer(minLength: 0)
                 }
             }
@@ -80,9 +84,10 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                 if editable._sbjEditorFieldCount == 1 {
                     SBJEditorRow(
                         context: context,
-                        elementAction: itemActions?.leadingView,
+
                         optionalControl: AnyView(clearButton),
-                        trailingActions: itemActions?.trailingView
+                        trailingActions: itemActions?.trailingView,
+                    infoAction: itemActions?.infoLaneView
                     ) {
                         editable._sbjMakeEditor(
                             label: label,
@@ -99,17 +104,30 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                         label,
                         context: context,
                         isExpanded: disclosureBinding,
-                        leadingActions: itemActions?.leadingView ?? AnyView(EmptyView()),
+                        leadingActions: AnyView(EmptyView()),
                         optionalControl: AnyView(clearButton),
-                        trailingActions: itemActions?.trailingView ?? AnyView(EmptyView())
+                        trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
+                        infoAction: itemActions?.infoLaneView
                     )
                 }
+            } else if let structural = Wrapped.self as? any SBJMutableStructure.Type,
+                      structural._sbjStructuralFieldCount > 1 {
+                SBJEditorDisclosureHeader(
+                    label,
+                    context: context,
+                    isExpanded: disclosureBinding,
+                    leadingActions: AnyView(EmptyView()),
+                    optionalControl: AnyView(clearButton),
+                    trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
+                        infoAction: itemActions?.infoLaneView
+                )
             } else {
                 SBJEditorRow(
                     context: context,
-                    elementAction: itemActions?.leadingView,
+
                     optionalControl: AnyView(clearButton),
-                    trailingActions: itemActions?.trailingView
+                    trailingActions: itemActions?.trailingView,
+                    infoAction: itemActions?.infoLaneView
                 ) {
                     SBJValueEditor.makeView(
                         label: label,
@@ -133,13 +151,14 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
             SBJEditorRow(
                 context: context,
                 disclosureControl: wrappedNeedsDisclosure ? AnyView(Color.clear) : nil,
-                elementAction: itemActions?.leadingView,
+
                 optionalControl: AnyView(setButton),
-                trailingActions: itemActions?.trailingView
+                trailingActions: itemActions?.trailingView,
+                    infoAction: itemActions?.infoLaneView
             ) {
                 HStack(spacing: 8) {
                     SBJEditorFieldName(text: label, isUnknown: false)
-                        .fontWeight((Wrapped.self as? any SBJSwiftUIEditable.Type) != nil ? .semibold : .regular)
+                        .fontWeight((Wrapped.self is any SBJMutableStructure.Type) ? .semibold : .regular)
                     Spacer(minLength: 0)
                 }
             }

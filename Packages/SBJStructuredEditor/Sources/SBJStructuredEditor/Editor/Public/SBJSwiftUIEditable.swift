@@ -24,12 +24,35 @@ public protocol SBJSwiftUIEditable: SBJMutableStructure {
 }
 
 public extension SBJSwiftUIEditable {
+    /// Bridges optional editor-only appearance hints without imposing editor
+    /// conformance on structural models.
+    @MainActor
+    internal static func _sbjEditorFieldIsVisuallyIneffective<Value>(
+        _ keyPath: AnyKeyPath,
+        in root: Any,
+        valueType: Value.Type
+    ) -> Bool {
+        guard let property = keyPath as? WritableKeyPath<Self, Value>,
+              let typedRoot = root as? Self else { return false }
+        return sbjEditorFieldIsVisuallyIneffective(property, in: typedRoot)
+    }
+
     @MainActor
     static func sbjEditorFieldIsVisuallyIneffective<Value>(
         _ keyPath: WritableKeyPath<Self, Value>,
         in root: Self
     ) -> Bool {
         false
+    }
+
+    /// Canonical source-name and location for a field in the structural model.
+    /// Editor-only computed fields have no structural location and retain their
+    /// own editor-local index and label identity.
+    @MainActor
+    internal static func _sbjFieldTraversalLocation(
+        _ field: SBJEditorPropertyDescriptor<Self>, editorOrdinal: Int
+    ) -> (identity: String, location: String) {
+        SBJEditorStructuralLocations.resolve([field], of: Self.self, startingAt: editorOrdinal)[0]
     }
 
     /// Enumerates immediate structured child fields as logical nodes without
@@ -40,11 +63,14 @@ public extension SBJSwiftUIEditable {
         context: SBJEditTraversalContext
     ) -> [SBJEditorTraversalNode] {
         guard let root = value as? Self else { return [] }
-        return Self.sbjEditorFields.enumerated().map { offset, field in
+        let fields = Self.sbjEditorFields
+        let locations = SBJEditorStructuralLocations.resolve(fields, of: Self.self)
+        return fields.enumerated().map { offset, field in
+            let location = locations[offset]
             let childContext = SBJEditTraversalContext(
                 treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending("property:\(field.name)"),
-                indexPath: context.indexPath.appending("field:\(offset)"),
+                itemIdentifier: context.itemIdentifier.appending(location.identity),
+                indexPath: context.indexPath.appending(location.location),
                 navigationPath: context.navigationPath + [field.name],
                 branch: context.branch.child
             )
@@ -61,11 +87,14 @@ public extension SBJSwiftUIEditable {
         registry: SBJEditorRegistry,
         context: SBJEditTraversalContext = .root
     ) -> [SBJEditorTraversalNode] {
-        Self.sbjEditorFields.enumerated().map { offset, field in
+        let fields = Self.sbjEditorFields
+        let locations = SBJEditorStructuralLocations.resolve(fields, of: Self.self)
+        return fields.enumerated().map { offset, field in
+            let location = locations[offset]
             let childContext = SBJEditTraversalContext(
                 treeLevel: context.itemIdentifier == .root ? context.treeLevel : context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending("property:\(field.name)"),
-                indexPath: context.indexPath.appending("field:\(offset)"),
+                itemIdentifier: context.itemIdentifier.appending(location.identity),
+                indexPath: context.indexPath.appending(location.location),
                 navigationPath: context.navigationPath + [field.name],
                 branch: context.branch.child
             )
@@ -131,6 +160,7 @@ public extension SBJSwiftUIEditable {
 
         return AnyView(
             SBJObjectEditor(
+                fields: Self.sbjEditorFields,
                 title: label,
                 value: typedBinding,
                 originalValue: originalValue.map { $0.value(as: Self.self) },
@@ -163,6 +193,7 @@ public extension SBJSwiftUIEditable {
     ) -> AnyView {
         AnyView(
             SBJObjectEditor(
+                fields: Self.sbjEditorFields,
                 title: label,
                 value: binding.binding(as: Self.self),
                 originalValue: originalValue.map { $0.value(as: Self.self) },

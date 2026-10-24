@@ -94,6 +94,15 @@ public enum SBJEditorDiagnostics {
 
 import SwiftUI
 
+private extension String {
+    var sbjIssueUnCamelCase: String {
+        // Keep type-name formatting local to diagnostic presentation.
+        // Do not change the original machine-readable issue type name.
+        replacingOccurrences(of: "([a-z0-9])([A-Z])", with: "$1 $2", options: .regularExpression)
+            .replacingOccurrences(of: "([A-Z])([A-Z][a-z])", with: "$1 $2", options: .regularExpression)
+    }
+}
+
 public struct SBJEditorIssueList: View {
     public let issues: [SBJEditorIssue]
     private let navigate: ((SBJEditorIssue) -> Void)?
@@ -121,7 +130,9 @@ public struct SBJEditorIssueList: View {
                         HStack(alignment: .center, spacing: 10) {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(issue.path).fontWeight(.semibold)
-                                Text(issue.typeName).foregroundStyle(.secondary)
+                                Text(issue.kind == .unsupported
+                                    ? "Invalid type \(issue.typeName.sbjIssueUnCamelCase)"
+                                    : issue.typeName).foregroundStyle(.secondary)
                                 if let valueDescription = issue.valueDescription {
                                     if issue.kind == .validation {
                                         Text("Value: \(valueDescription)").foregroundStyle(.secondary)
