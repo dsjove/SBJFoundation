@@ -1,8 +1,8 @@
 import Foundation
-import SBJStructuredEditor
-import SBJUnits
+import SBJDataDefinition
+import SBJDataDefinition
 
-@SBJEditable
+@SBJStructure
 public enum PageSize: Sendable, Codable, Hashable, CustomStringConvertible, CaseIterable {
 	public enum Category: String, Sendable, Codable, CaseIterable, CustomStringConvertible {
 //		case special

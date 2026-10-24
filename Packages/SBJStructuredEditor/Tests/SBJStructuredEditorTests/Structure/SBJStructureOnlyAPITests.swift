@@ -1,16 +1,14 @@
 import XCTest
-import SBJStructuredEditor
+@testable import SBJStructuredEditor
 
-@SBJEditable
+@SBJStructure
 private struct EditableModel: Codable {
     var value: Int = 3
 }
 
 final class SBJStructureOnlyAPITests: XCTestCase {
     @MainActor
-    func testEditableIncludesStructuralAndEditorMetadata() {
-        XCTAssertEqual(EditableModel.sbjProperties.count, 1)
-        XCTAssertEqual(EditableModel.sbjMutableProperties.count, 1)
-        XCTAssertEqual(EditableModel.sbjEditorFields.count, 1)
+    func testStructuralProjectionUsesDataDefinitionMetadata() {
+        XCTAssertEqual(SBJStructuralFieldProjection.fields(of: EditableModel.self).count, 1)
     }
 }

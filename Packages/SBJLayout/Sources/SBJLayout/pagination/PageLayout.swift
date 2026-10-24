@@ -1,8 +1,8 @@
 import Foundation
-import SBJStructuredEditor
-import SBJUnits
+import SBJDataDefinition
+import SBJDataDefinition
 
-@SBJEditable
+@SBJStructure
 public struct PageLayout: Codable, Equatable, Sendable {
 	public var pageSize: PageSize {
 		didSet {

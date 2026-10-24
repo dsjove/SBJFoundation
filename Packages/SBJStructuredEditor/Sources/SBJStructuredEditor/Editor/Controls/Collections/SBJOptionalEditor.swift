@@ -1,6 +1,5 @@
 import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
@@ -33,9 +32,6 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     /// value is flattened, so its nil state must not reserve a disclosure column
     /// that disappears as soon as the value is created.
     private var wrappedNeedsDisclosure: Bool {
-        if let editable = Wrapped.self as? any SBJSwiftUIEditable.Type {
-            return editable._sbjEditorFieldCount > 1
-        }
         if let structural = Wrapped.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralFieldCount > 1
         }
@@ -80,37 +76,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                     value = newValue
                 }
             )
-            if let editable = Wrapped.self as? any SBJSwiftUIEditable.Type {
-                if editable._sbjEditorFieldCount == 1 {
-                    SBJEditorRow(
-                        context: context,
-
-                        optionalControl: AnyView(clearButton),
-                        trailingActions: itemActions?.trailingView,
-                    infoAction: itemActions?.infoLaneView
-                    ) {
-                        editable._sbjMakeEditor(
-                            label: label,
-                            binding: SBJAnyBinding(unwrapped),
-                            originalValue: originalWrapped.map { SBJEditorOriginalValue($0) },
-                            registry: registry,
-                            focusRequest: pendingFocus ?? focusRequest,
-                            context: context.descended().withBranch(context.branch.child.withPlacement(.contentOnly))
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                } else {
-                    SBJEditorDisclosureHeader(
-                        label,
-                        context: context,
-                        isExpanded: disclosureBinding,
-                        leadingActions: AnyView(EmptyView()),
-                        optionalControl: AnyView(clearButton),
-                        trailingActions: itemActions?.trailingView ?? AnyView(EmptyView()),
-                        infoAction: itemActions?.infoLaneView
-                    )
-                }
-            } else if let structural = Wrapped.self as? any SBJMutableStructure.Type,
+            if let structural = Wrapped.self as? any SBJMutableStructure.Type,
                       structural._sbjStructuralFieldCount > 1 {
                 SBJEditorDisclosureHeader(
                     label,

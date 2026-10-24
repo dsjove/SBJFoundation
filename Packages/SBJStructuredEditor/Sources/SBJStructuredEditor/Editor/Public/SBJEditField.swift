@@ -1,5 +1,4 @@
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
   import SwiftUI
 
@@ -68,7 +67,11 @@ import SBJUnits
           if case .colorSupportsAlpha(let value) = hint { return value }
           return nil
         }.first ?? true
-      unitEditor = .fixedUnit
+      let unitPresentation = metadata?.hints.compactMap { hint -> SBJPresentationUnitMode? in
+        if case .presentationUnit(let mode) = hint { return mode }
+        return nil
+      }.first ?? .fixedUnit
+      unitEditor = unitPresentation == .editable ? .editable : .fixedUnit
       collectionReorderable =
         metadata?.constraints.compactMap { constraint -> Bool? in
           if case .reorderable(let value) = constraint { return value }
@@ -91,14 +94,14 @@ import SBJUnits
 
   /// A reusable SBJFoundation editor for one bound value.
   ///
-  /// Use the binding initializer when the value is not part of an `@SBJEditable`
+  /// Use the binding initializer when the value is not part of an `@SBJStructure`
   /// model, or when a hand-built form wants to provide presentation hints directly:
   ///
   /// ```swift
   /// SBJEditField("Name", value: $name)
   /// ```
   ///
-  /// Use the root/key-path initializer for a property on an `SBJSwiftUIEditable`
+  /// Use the root/key-path initializer for a property on an `SBJMutableStructure`
   /// model. That form reuses the property's generated metadata and key-path-specific
   /// registry customizations, matching the field rendered by the automatic editor:
   ///
@@ -222,15 +225,9 @@ import SBJUnits
             binding: value,
             defaultContent: defaultContent
           ) ?? defaultContent
-        let visuallyIneffective = (Root.self as? any SBJSwiftUIEditable.Type)?
-          ._sbjEditorFieldIsVisuallyIneffective(
-            keyPath,
-            in: root.wrappedValue,
-            valueType: Value.self
-          ) ?? false
         return AnyView(
           SBJEditorPropertyInfoContainer(
-            content: AnyView(content.opacity(visuallyIneffective ? 0.5 : 1.0)),
+            content: AnyView(content),
             propertyName: propertyName,
             info: configuration.propertyInfo,
             caseInfo: { SBJEditorEnumCaseInformation.info(for: value.wrappedValue) },

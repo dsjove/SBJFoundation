@@ -69,6 +69,40 @@ struct SBJDefaultValueTests {
         #expect(SBJDefaultValue.value(for: PlainChoice.self) == .first)
     }
 
+    @Test func generatedAssociatedCaseMetadataCanReadAndReconstructPayload() {
+        let descriptors = AssociatedDefault.sbjAssociatedCases
+        #expect(descriptors.map(\.sourceName) == ["unavailable", "available"])
+        guard let selected = descriptors.first(where: { $0.sourceName == "available" }) else {
+            Issue.record("Expected case metadata")
+            return
+        }
+        #expect(selected.associatedValues.count == 2)
+        #expect(selected.matches(.available(17, label: "Before")))
+        #expect(!selected.matches(.unavailable(.init(name: "Other"))))
+
+        final class PayloadCollector: SBJTypedAssociatedValueVisitor {
+            typealias Root = AssociatedDefault
+            var names: [String] = []
+            var changed: AssociatedDefault = .available(17, label: "Before")
+            func visit<Value: Codable>(
+                name: String, get: @escaping (Root) -> Value,
+                set: @escaping (inout Root, Value) -> Void
+            ) {
+                names.append(name)
+                if let replacement = "After" as? Value { set(&changed, replacement) }
+            }
+        }
+        let collector = PayloadCollector()
+        for payload in selected.associatedValues { payload.visit(collector) }
+        #expect(collector.names.count == 2)
+        guard case let .available(number, label) = collector.changed else {
+            Issue.record("Expected original enum case after mutation")
+            return
+        }
+        #expect(number == 17)
+        #expect(label == "After")
+    }
+
     @Test func associatedEnumCreationIsStructuralAndSkipsUncreatableCases() {
         let value = AssociatedDefault.sbjCreateDefaultValueIfPossible()
         guard case let .available(number, label) = value else {

@@ -107,6 +107,7 @@ public enum SBJStructureGeneration {
 
         var propertyEntries: [String] = []
         var editableEntries: [String] = []
+        var presentationEntries: [String] = []
         var entries: [String] = []
         var contentMembers: [String] = []
         var invariantStatements: [String] = []
@@ -139,7 +140,7 @@ public enum SBJStructureGeneration {
                 let name = identifier.identifier.text
 
                 // Writable computed properties are normally outside the model
-                // structure. @SBJEditorProperty explicitly opts one into editor
+                // structure. @SBJPresentationProperty opts one into presentation
                 // generation only. It does not become structural metadata.
                 if let accessorBlock = binding.accessorBlock {
                     let isStoredWithObservers: Bool
@@ -152,7 +153,12 @@ public enum SBJStructureGeneration {
                         isStoredWithObservers = false
                     }
                     if !isStoredWithObservers {
-                        if hasAttribute(named: "SBJEditorProperty", on: variable) {
+                        if hasAttribute(named: "SBJPresentationProperty", on: variable) {
+                            presentationEntries.append(
+                                "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
+                            )
+                        }
+                        if (hasAttribute(named: "SBJPresentationProperty", on: variable) || hasAttribute(named: "SBJEditorProperty", on: variable)) {
                             for layer in layers {
                                 if let field = layer.nonStructuralProperty(name: name) {
                                     editableEntries.append(
@@ -180,14 +186,14 @@ public enum SBJStructureGeneration {
                 )
 
                 // Structural content and invariant generation is independent of
-                // editor eligibility. Read-only and @SBJEditorExclude properties
+                // presentation eligibility. Read-only and excluded properties
                 // remain part of the declared model and are validated when a
                 // consumer explicitly invokes the invariant.
                 contentMembers.append(name)
                 let arrayOptions = arrayOptions(on: variable)
-                let arrayTitle = editorTitle(on: variable, annotation: "SBJEditorArray")
+                let arrayTitle = (editorTitle(on: variable, annotation: "SBJPresentationArray") ?? editorTitle(on: variable, annotation: "SBJEditorArray"))
                 let setOptions = setOptions(on: variable)
-                let setTitle = editorTitle(on: variable, annotation: "SBJEditorSet")
+                let setTitle = (editorTitle(on: variable, annotation: "SBJPresentationSet") ?? editorTitle(on: variable, annotation: "SBJEditorSet"))
                 if let itemTitleKey = arrayTitle {
                     invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(swiftStringLiteral(itemTitleKey)))")
                 } else if let itemTitleKey = setTitle {
@@ -199,6 +205,15 @@ public enum SBJStructureGeneration {
                 let textConstraints = editorTextConstraints(on: variable)
                 if let textStyle = textStyle(on: variable) {
                     hintMetadata.append(".textStyle(\(textStyle))")
+                }
+                if let disclosure = editorDisclosure(on: variable) {
+                    hintMetadata.append(".presentationDisclosure(\(disclosure))")
+                }
+                if hasAttribute(named: "SBJPresentationExclude", on: variable) {
+                    hintMetadata.append(".presentationExcluded")
+                }
+                if let mode = presentationUnitMode(on: variable) {
+                    hintMetadata.append(".presentationUnit(\(mode))")
                 }
                 let textInputOptions = textInputOptions(on: variable)
                 if let autocorrect = textInputOptions.autocorrect {
@@ -325,8 +340,8 @@ public enum SBJStructureGeneration {
                     "SBJPropertyMetadata<Self>(sourceName: \"\(name)\", displayName: \"\(name)\".uncamelCased, keyPath: \\Self.\(name), kind: \(kind), constraints: [\(constraints)], hints: [\(hints)], info: Self.propertyInfo(for: \\Self.\(name)))"
                 )
 
-                // Everything below this point is editor-only.
-                if hasAttribute(named: "SBJEditorExclude", on: variable) { continue }
+                // Writable presentation eligibility is distinct from structural metadata.
+                if (hasAttribute(named: "SBJPresentationExclude", on: variable) || hasAttribute(named: "SBJEditorExclude", on: variable)) { continue }
 
                 // Immutable stored properties remain part of structure metadata,
                 // export, content checks, and invariants, but are simply not editable.
@@ -355,6 +370,7 @@ public enum SBJStructureGeneration {
 
         let propertyBody = propertyEntries.joined(separator: ",\n")
         let editableBody = editableEntries.joined(separator: ",\n")
+        let presentationBody = presentationEntries.joined(separator: ",\n")
         var result: [DeclSyntax] = []
         if !hasExplicitGeneratedInfo {
             let generatedCases = conventionalEntries.map { name in
@@ -381,6 +397,13 @@ public enum SBJStructureGeneration {
             \(access)static var sbjMutableProperties: [SBJMutableProperty<Self>] {
                 [
                     \(editableBody)
+                ]
+            }
+            """),
+            DeclSyntax(stringLiteral: """
+            \(access)static var sbjPresentationProperties: [SBJMutableProperty<Self>] {
+                [
+                    \(presentationBody)
                 ]
             }
             """),
@@ -587,6 +610,57 @@ public enum SBJStructureGeneration {
         // generic CaseIterable & Hashable editor, without associated-value APIs.
         guard hasPayload else { return result }
 
+        let associatedCases = cases.map { info in
+            let pattern = casePattern(info)
+            let creator = enumOptionalCreatorBody(for: info)
+            let payloads = info.parameters.enumerated().map { index, parameter in
+                let names = info.parameters.indices.map { $0 == index ? info.parameters[$0].variableName : "_" }
+                let getPattern = caseLetPattern(info, names: names)
+                let otherNames = info.parameters.indices.map { $0 == index ? "_" : info.parameters[$0].variableName }
+                let setPattern = caseLetPattern(info, names: otherNames)
+                let caseKeyword = otherNames.contains(where: { $0 != "_" }) ? "case let" : "case"
+                var replacement = info.parameters.map(\.variableName)
+                replacement[index] = "newValue"
+                let constructed = caseConstruction(info, values: replacement)
+                return """
+                SBJAssociatedValue<Self>(
+                    name: \(parameter.fieldNameExpression),
+                    get: { root in
+                        guard case let \(getPattern) = root else {
+                            preconditionFailure("Associated value accessed for the wrong enum case")
+                        }
+                        return \(parameter.variableName)
+                    },
+                    set: { root, newValue in
+                        guard \(caseKeyword) \(setPattern) = root else { return }
+                        root = \(constructed)
+                    }
+                )
+                """
+            }.joined(separator: ",\n")
+            return """
+            SBJAssociatedCase<Self>(
+                sourceName: \(swiftStringLiteral(info.caseName)),
+                matches: { value in
+                    if case \(pattern) = value { return true }
+                    return false
+                },
+                makeDefault: {
+                    \(creator)
+                },
+                associatedValues: [
+                    \(payloads)
+                ]
+            )
+            """
+        }.joined(separator: ",\n")
+        result.append(DeclSyntax(stringLiteral: """
+            \(access)static var sbjAssociatedCases: [SBJAssociatedCase<Self>] {
+                [
+                    \(associatedCases)
+                ]
+            }
+            """))
         for layer in layers {
             result.append(contentsOf: layer.enumMembers(access: access, cases: cases))
         }
@@ -773,7 +847,7 @@ public enum SBJStructureGeneration {
     private static func editorDisclosure(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element,
-                  attribute.attributeName.trimmedDescription == "SBJEditorDisclosure",
+                  (attribute.attributeName.trimmedDescription == "SBJPresentationDisclosure" || attribute.attributeName.trimmedDescription == "SBJEditorDisclosure"),
                   let arguments = attribute.arguments,
                   case .argumentList(let list) = arguments,
                   let first = list.first else { continue }
@@ -786,7 +860,7 @@ public enum SBJStructureGeneration {
     private static func textStyle(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJEditorString" else { continue }
+            guard (attribute.attributeName.trimmedDescription == "SBJPresentationString" || attribute.attributeName.trimmedDescription == "SBJEditorString") else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments,
                   let argument = arguments.first else {
@@ -811,7 +885,7 @@ public enum SBJStructureGeneration {
     private static func textInputOptions(on variable: VariableDeclSyntax) -> (autocorrect: String?, capitalization: String?) {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJEditorString" else { continue }
+            guard (attribute.attributeName.trimmedDescription == "SBJPresentationString" || attribute.attributeName.trimmedDescription == "SBJEditorString") else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else { return (nil, nil) }
 
@@ -868,6 +942,21 @@ public enum SBJStructureGeneration {
             }
         }
         return (nil, nil)
+    }
+
+    private static func presentationUnitMode(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJPresentationUnit"
+            else { continue }
+            guard let raw = attribute.arguments,
+                  case .argumentList(let arguments) = raw,
+                  let first = arguments.first
+            else { return ".fixedUnit" }
+            let mode = first.expression.trimmedDescription
+            return mode == ".editable" ? ".editable" : ".fixedUnit"
+        }
+        return nil
     }
 
     private static func unitValueImmutable(on variable: VariableDeclSyntax) -> String? {

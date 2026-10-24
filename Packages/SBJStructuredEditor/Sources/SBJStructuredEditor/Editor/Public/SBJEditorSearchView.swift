@@ -2,7 +2,6 @@
 import SwiftUI
 import SBJFileResources
 import SBJUIVocabulary
-import SBJUnits
 
 public extension SBJBundledContentReference {
     static var structuredEditorSearchHelp: SBJBundledContentReference {
@@ -14,7 +13,7 @@ public extension SBJBundledContentReference {
 ///
 /// This view deliberately does not own scrolling or editor content. Place it
 /// wherever the client wants the controls to remain visible.
-public struct SBJEditorSearchView<Value: SBJSwiftUIEditable>: View {
+public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
     private let value: Value
     private let presentationModel: SBJEditorPresentationModel
     private let registry: SBJEditorRegistry

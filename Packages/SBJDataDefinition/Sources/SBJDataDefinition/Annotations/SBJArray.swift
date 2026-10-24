@@ -1,4 +1,4 @@
-/// Adds Array business rules and editor presentation hints to a coded property in `@SBJEditable`.
+/// Adds Array business rules and editor presentation hints to a coded property in `@SBJStructure`.
 /// An ordinary Array requires no annotation.
 ///
 /// Arrays preserve their stored order. `reorderable` controls whether an editor

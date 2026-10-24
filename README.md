@@ -13,3 +13,6 @@ Test human-readable output equivalence and imports across every file still requi
 ## Image package
 
 Image functionality is now owned by `Packages/SBJImage`. Clients importing image APIs directly should `import SBJImage`; SBJFoundation depends on it for the `Bundle.icon` extension.
+
+
+Page-layout editing (`PageLayoutEditorCore` and `PageLayoutEditorView`) lives in the umbrella `SBJFoundation` module. `PageLayout`, `PageSize`, and `Insets` are structural models in `SBJLayout` and do not depend on `SBJStructuredEditor`.

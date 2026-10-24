@@ -1,7 +1,7 @@
 import CoreGraphics
-import SBJStructuredEditor
+import SBJDataDefinition
 
-@SBJEditable
+@SBJStructure
 public struct Insets: Sendable, Codable, Equatable, CustomStringConvertible {
 	public var left: CGFloat
 	public var right: CGFloat

@@ -4,21 +4,20 @@ import SwiftUI
 import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
-import SBJUnits
 
-@SBJEditable
+@SBJStructure
 private struct TestNestedValue: Codable {
     var note: String = ""
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestEditableValue: Codable {
     var name: String = ""
     var level: Int = 1
     var nested = TestNestedValue()
     var notes: [String] = []
     var nickname: String?
-    @SBJEditorExclude var transientState: String = ""
+    @SBJPresentationExclude var transientState: String = ""
     let immutableIdentifier: Int = 7
 
     enum CodingKeys: String, CodingKey {
@@ -43,12 +42,10 @@ struct SBJStructureUsageTests {
 
     @MainActor
     @Test func editorFieldLocationsUseStructuralSourceIdentity() {
-        let fields = TestEditableValue.sbjEditorFields
+        let fields = SBJStructuralFieldProjection.fields(of: TestEditableValue.self)
         let schema = SBJStructuralTraversal.schema(of: TestEditableValue.self)
         for (editorOrdinal, field) in fields.enumerated() {
-            let location = TestEditableValue._sbjFieldTraversalLocation(
-                field, editorOrdinal: editorOrdinal
-            )
+            let location = SBJEditorStructuralLocations.resolve([field], of: TestEditableValue.self, startingAt: editorOrdinal)[0]
             let structural = schema.first {
                 $0.sourceName == field.editableField.structuralMetadata?.sourceName
             }
@@ -57,12 +54,12 @@ struct SBJStructureUsageTests {
             #expect(location.location == structural?.locationComponent)
         }
         // Display labels are not the model's stable identifiers.
-        #expect(TestEditableValue._sbjFieldTraversalLocation(fields[0], editorOrdinal: 0).identity == "property:name")
+        #expect(SBJEditorStructuralLocations.resolve([fields[0]], of: TestEditableValue.self)[0].identity == "property:name")
     }
 
     @MainActor
     @Test func generatesFieldsFromCodedMutableProperties() {
-        #expect(TestEditableValue.sbjEditorFields.map(\.name) == [
+        #expect(SBJStructuralFieldProjection.fields(of: TestEditableValue.self).map(\.name) == [
             "Name", "Level", "Nested", "Notes", "Nickname"
         ])
     }
@@ -71,11 +68,11 @@ struct SBJStructureUsageTests {
 
 private final class TestEditorOnlyReference {}
 
-@SBJEditable
+@SBJStructure
 private struct TestEditorOnlyPropertyValue: Codable {
     var stored: String = ""
 
-    @SBJEditorProperty
+    @SBJPresentationProperty
     var editorReference: TestEditorOnlyReference? {
         get { nil }
         set {}
@@ -86,7 +83,7 @@ extension SBJStructureUsageTests {
     @MainActor
     @Test func editorPropertyCanExposeNonCodableComputedValueWithoutStructuralMetadata() {
         #expect(TestEditorOnlyPropertyValue.sbjProperties.map(\.sourceName) == ["stored"])
-        #expect(TestEditorOnlyPropertyValue.sbjEditorFields.map(\.name) == ["Stored", "Editor Reference"])
+        #expect(SBJStructuralFieldProjection.fields(of: TestEditorOnlyPropertyValue.self).map(\.name) == ["Stored", "Editor Reference"])
     }
 }
 
@@ -122,7 +119,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private enum TestPlainStructuredEnum: String, Codable, CaseIterable, Hashable {
     case firstChoice
     case secondChoice
@@ -132,11 +129,11 @@ extension SBJStructureUsageTests {
     @Test func plainEnumsRetainSourceIdentityWithoutAssociatedEditorConformance() {
         #expect(TestPlainStructuredEnum.sbjCaseNames == ["firstChoice", "secondChoice"])
         #expect(TestPlainStructuredEnum.firstChoice.sbjCaseName == "firstChoice")
-        #expect(!(TestPlainStructuredEnum.self is any SBJEditableAssociatedEnum.Type))
+        #expect(!(TestPlainStructuredEnum.self is any SBJStructuredEnum.Type))
     }
 }
 
-@SBJEditable
+@SBJStructure
 private enum TestAssociatedEnum: Codable {
     case automatic
     case adjusted(amount: Int, enabled: Bool)
@@ -153,7 +150,7 @@ extension SBJStructureUsageTests {
 
     @MainActor
     @Test func generatesAssociatedEnumCasesAndFields() {
-        let cases = TestAssociatedEnum.sbjEditorEnumCases
+        let cases = TestAssociatedEnum.sbjStructuralEditorCases
         #expect(cases.map(\.name) == ["Automatic", "Adjusted", "Fixed"])
         #expect(cases[0].associatedValues.isEmpty)
         #expect(cases[1].associatedValues.map(\.name) == ["Amount", "Enabled"])
@@ -168,7 +165,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestContentLeaf: Codable {
     var text: String = ""
 }
@@ -178,7 +175,7 @@ private enum TestPlainScalarEnum: Codable {
     case second
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestGeneratedContent: Codable {
     var scalar: Int = 1
     var text: String = ""
@@ -249,7 +246,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestValidatedValue: Codable {
     @SBJInteger(range: 1...20)
     var level: Int = 1
@@ -263,7 +260,7 @@ private struct TestValidatedValue: Codable {
     @SBJString(minLength: 1, trimming: .whitespaceAndNewlines)
     var trimmedCode: String = "ok"
 
-    @SBJEditorExclude
+    @SBJPresentationExclude
     @SBJString(minLength: 2)
     var hiddenCode: String = "ok"
 
@@ -341,7 +338,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestDocumentedValue: Codable {
     var name: String = ""
 
@@ -389,7 +386,7 @@ private struct TestUniqueItem: Codable, Hashable {
     var name: String
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestCollectionRules: Codable {
     @SBJArray(unique: true)
     var tags: [String] = []
@@ -470,13 +467,13 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestInvalidNestedValue: Codable, Hashable {
     @SBJString(minLength: 2)
     var code: String = "ok"
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestValidationContainers: Codable {
     var keyed: [String: TestInvalidNestedValue] = [:]
     var members: Set<TestInvalidNestedValue> = []
@@ -551,14 +548,14 @@ private struct TestDataConstraintHolder {
     var payload = Data()
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestPhase4Collections: Codable {
     @SBJArray(reorderable: false, minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
-    @SBJEditorArray(title: \TestUniqueItem.name)
+    @SBJPresentationArray(title: \TestUniqueItem.name)
     var items: [TestUniqueItem] = [TestUniqueItem(id: 1, name: "one")]
 
     @SBJSet(minCount: 1, maxCount: 2)
-    @SBJEditorSet(title: \TestUniqueItem.name)
+    @SBJPresentationSet(title: \TestUniqueItem.name)
     var members: Set<TestUniqueItem> = [TestUniqueItem(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
@@ -617,7 +614,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestScalarAnnotations: Codable {
     var url = URL(string: "https://example.com")!
     @SBJUUID(nonzero: true) var uuid = UUID()
@@ -668,13 +665,13 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestPhase6MetadataDrivenEditor: Codable {
     @SBJString(minLength: 2, maxLength: 20)
-    @SBJEditorString(.multiline, autocorrect: .disabled, capitalization: .sentences)
+    @SBJPresentationString(.multiline, autocorrect: .disabled, capitalization: .sentences)
     var notes: String = "ok"
 
-    @SBJEditorString(.sheetEdit)
+    @SBJPresentationString(.sheetEdit)
     var longNotes: String = "longer text"
 
     @SBJInteger(range: 1...9)
@@ -704,7 +701,7 @@ private enum TestCaseIterableChoice: String, Codable, CaseIterable, Hashable {
     case secondChoice
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestDefaultedInitializer: Codable {
     var name: String
 
@@ -713,7 +710,7 @@ private struct TestDefaultedInitializer: Codable {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestRequiresCreationContext: Codable {
     var name: String
 
@@ -781,13 +778,13 @@ private struct TestNonHashableCaseIterable: Codable, CaseIterable {
     static let allCases = [first, second]
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestEditorDiagnosticsOwnerConstraint: Codable {
     @SBJInteger(range: 1...3)
     var value: Int = 5
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestUnsupportedCaseIterableContainer: Codable {
     var choice: TestNonHashableCaseIterable = .first
 }
@@ -808,7 +805,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestExpandedScalarValidation: Codable {
     @SBJInteger(range: 1...9)
     var signedSmall: Int8 = 2
@@ -880,13 +877,13 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestNestedValidationLeaf: Codable {
     @SBJInteger(range: 1...3)
     var value: Int = 5
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestNestedValidationParent: Codable {
     var child: TestNestedValidationLeaf = .init()
 }
@@ -948,7 +945,7 @@ extension SBJStructureUsageTests {
     }
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestTitledValidationItem: Codable, Hashable {
     var name: String = ""
 
@@ -956,9 +953,9 @@ private struct TestTitledValidationItem: Codable, Hashable {
     var code: String = "ok"
 }
 
-@SBJEditable
+@SBJStructure
 private struct TestTitledValidationContainer: Codable {
-    @SBJEditorArray(title: \TestTitledValidationItem.name)
+    @SBJPresentationArray(title: \TestTitledValidationItem.name)
     var abilities: [TestTitledValidationItem] = []
 }
 
@@ -985,7 +982,7 @@ extension SBJStructureUsageTests {
 }
 
 
-@SBJEditable
+@SBJStructure
 private struct Phase1PropertyInfoExample: Codable {
     var title: String = "Example"
     var count: Int = 0
@@ -1007,9 +1004,9 @@ private struct Phase1PropertyInfoExample: Codable {
     #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.count)?.summary == "Override count documentation")
 }
 
-@SBJEditable
+@SBJStructure
 private enum TestCaseInfoEnum: Codable {
-    case none
+    case automatic
     case adjusted(amount: Int, enabled: Bool)
     case fixed(Int)
 }
@@ -1029,7 +1026,7 @@ extension TestCaseInfoEnum {
 
 extension SBJStructureUsageTests {
     @Test func annotatedEnumCasesRetainSourceNamesAndExposePropertyInfo() {
-        #expect(TestCaseInfoEnum.sbjCaseNames == ["none", "adjusted", "fixed"])
+        #expect(TestCaseInfoEnum.sbjCaseNames == ["automatic", "adjusted", "fixed"])
         #expect(TestCaseInfoEnum.adjusted(amount: 2, enabled: true).sbjCaseName == "adjusted")
         #expect(TestCaseInfoEnum.sbjCaseInfo(for: "adjusted")?.title == "Adjusted score")
         #expect(TestCaseInfoEnum.sbjCaseInfo(for: "adjusted")?.summary == "Score with an adjustment")
@@ -1038,6 +1035,6 @@ extension SBJStructureUsageTests {
 
     @MainActor
     @Test func annotatedCaseTitleAppearsInAssociatedValueEditor() {
-        #expect(TestCaseInfoEnum.sbjEditorEnumCases.map(\.name) == ["None", "Adjusted score", "Fixed"])
+        #expect(TestCaseInfoEnum.sbjStructuralEditorCases.map(\.name) == ["Automatic", "Adjusted score", "Fixed"])
     }
 }

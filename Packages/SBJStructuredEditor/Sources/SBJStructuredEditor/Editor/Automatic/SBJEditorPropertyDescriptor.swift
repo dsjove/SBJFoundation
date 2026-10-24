@@ -1,6 +1,5 @@
 import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
   import SwiftUI
 
@@ -23,7 +22,7 @@ import SBJUnits
 
   /// Type-erased property descriptor used by the generated SwiftUI editor.
   ///
-  /// `@SBJEditable` emits this type into client code, so it must remain public even
+  /// `@SBJStructure` emits this type into client code, so it must remain public even
   /// though applications normally use ``SBJEditField`` rather than constructing
   /// editor properties directly. The descriptor owns automatic-editor concerns such
   /// as search/filtering, validation state, and type erasure; actual field rendering
@@ -52,7 +51,7 @@ import SBJUnits
       self.traversalDisclosureMode = disclosureMode
       self.isTraversalDisclosure = Value.self is any SBJMutableStructure.Type
         || Value.self is any SBJEditorTraversableValue.Type
-        || Value.self is any SBJEditableAssociatedEnum.Type
+        || Value.self is any SBJStructuredEnum.Type
       let editableField = SBJMutableProperty<Root>(name: name, keyPath)
       self.editableField = editableField
       let configuration = SBJEditFieldConfiguration(metadata: editableField.structuralMetadata)

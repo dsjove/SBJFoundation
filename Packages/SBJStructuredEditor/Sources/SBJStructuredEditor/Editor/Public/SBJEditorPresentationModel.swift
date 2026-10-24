@@ -1,6 +1,5 @@
 import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import Observation
 import SwiftUI

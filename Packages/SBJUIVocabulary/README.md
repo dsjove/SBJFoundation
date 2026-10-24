@@ -23,3 +23,5 @@ The package also contains `SBJUIAppearance`, symbol buttons, fonts, controls, fi
 ## Tests
 
 Test selection decisions, disabled behavior, sizing policy and other independently observable results. Simple construction and accessors do not need runtime tests.
+
+The Codable models (`CodableFont`, `FontFamily`, `CodableColor`, and unit values) are defined in `SBJDataDefinition`. This package provides their SwiftUI/UIKit presentation and font caches, and re-exports DataDefinition for UI consumers. There is no dependency on `SBJUnits`.

@@ -2,7 +2,6 @@ import SBJDataDefinition
 import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
-import SBJUnits
 
 @Suite("SBJ edit traversal context")
 struct SBJEditTraversalContextTests {

@@ -10,6 +10,7 @@ final class SBJStructureOnlyAPITests: XCTestCase {
     func testStructureGeneratesDataMetadata() {
         XCTAssertEqual(DataOnlyModel.sbjProperties.count, 1)
         XCTAssertEqual(DataOnlyModel.sbjMutableProperties.count, 1)
+        XCTAssertEqual(DataOnlyModel.sbjMutableProperties[0].structuralMetadata?.sourceName, "value")
         XCTAssertEqual(DataOnlyModel().value, 3)
     }
 }

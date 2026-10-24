@@ -1,0 +1,2 @@
+
+extension MeasurementSystem: StringPresentable {}

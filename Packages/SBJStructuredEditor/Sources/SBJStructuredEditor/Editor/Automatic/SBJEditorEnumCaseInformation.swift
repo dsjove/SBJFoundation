@@ -1,7 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SBJUIVocabulary
-import SBJUnits
 
 /// The exact case identity travels with its presentation metadata so a missing
 /// custom title can fall back to the source case name.

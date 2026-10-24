@@ -1,7 +1,6 @@
 import Foundation
 import Testing
 @testable import SBJStructuredEditor
-import SBJUnits
 import SBJDataDefinition
 
 @Suite("Unit value editor integration")
@@ -17,7 +16,7 @@ struct UnitValueEditorTests {
 #endif
 }
 
-@SBJEditable
+@SBJStructure
 private struct UnitValueEditorFixture: Codable {
     @SBJUnitValue(min: 0)
     var length = UnitValue<LengthUnit>(5, unit: .foot)
@@ -40,7 +39,7 @@ extension UnitValueEditorTests {
     @Test func structuredEditorRecognizesUnitValuesWithoutCustomRegistry() {
         let issues = SBJEditorDiagnostics.issues(for: UnitValueEditorFixture())
         #expect(issues.isEmpty)
-        #expect(UnitValueEditorFixture.sbjEditorFields.map(\.name) == ["Length", "Optional Volume"])
+        #expect(SBJStructuralFieldProjection.fields(of: UnitValueEditorFixture.self).map(\.name) == ["Length", "Optional Volume"])
     }
 #endif
 }

@@ -4,8 +4,7 @@ import SwiftUI
 
 /// The automatic editor's projection of an ordinary structural model.
 /// The schema and typed property dispatch remain owned by DataDefinition.
-/// Editor annotations are resolved first by SBJSwiftUIEditable call sites;
-/// this fallback is used only for structural-only values.
+/// This is the sole projection for mutable structural object models.
 @MainActor
 extension SBJMutableStructure {
     private static var structuralFields: [SBJEditorPropertyDescriptor<Self>] {

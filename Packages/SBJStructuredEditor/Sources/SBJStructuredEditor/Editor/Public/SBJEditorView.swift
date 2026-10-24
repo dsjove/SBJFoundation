@@ -2,7 +2,6 @@
 import SwiftUI
 import SBJFileResources
 import SBJUIVocabulary
-import SBJUnits
 
 public extension SBJBundledContentReference {
     static var structuredEditorCoreHelp: SBJBundledContentReference {
@@ -14,7 +13,7 @@ public extension SBJBundledContentReference {
 ///
 /// The host owns layout and scrolling. Pair this with ``SBJEditorSearchView``
 /// when the stock search/filter UI is desired.
-public struct SBJEditorView<Value: SBJSwiftUIEditable>: View {
+public struct SBJEditorView<Value: SBJMutableStructure>: View {
     @Binding private var value: Value
     private let presentationModel: SBJEditorPresentationModel
     private let registry: SBJEditorRegistry
@@ -45,10 +44,11 @@ public struct SBJEditorView<Value: SBJSwiftUIEditable>: View {
     private var editorRows: [SBJEditorTraversalNode] {
         SBJEditorPerformanceDiagnostics.measure("Editor Row Projection") {
             sbjEditorRows(
-                roots: Value._sbjBoundRootNodes(
-                    binding: $value,
+                roots: Value._sbjStructuralBoundNodes(
+                    binding: SBJAnyBinding($value),
                     originalValue: originalValue,
-                    registry: registry
+                    registry: registry,
+                    context: .root
                 ),
                 presentationModel: presentationModel
             )
@@ -95,7 +95,7 @@ public struct SBJEditorView<Value: SBJSwiftUIEditable>: View {
 /// ``SBJEditorScrollView`` so issue navigation can reveal and scroll to a field.
 /// Clients that need independent placement or a custom scrolling policy should
 /// use ``SBJEditorSearchView`` and ``SBJEditorView`` directly.
-public struct SBJCodableEditorCore<Value: SBJSwiftUIEditable>: View {
+public struct SBJCodableEditorCore<Value: SBJMutableStructure>: View {
     @Binding private var value: Value
     private let registry: SBJEditorRegistry
     private let options: SBJEditorOptions
@@ -123,7 +123,7 @@ public struct SBJCodableEditorCore<Value: SBJSwiftUIEditable>: View {
 }
 
 /// Compatibility wrapper around ``SBJCodableEditorCore``.
-public struct SBJCodableEditor<Value: SBJSwiftUIEditable>: View {
+public struct SBJCodableEditor<Value: SBJMutableStructure>: View {
     @Binding private var value: Value
     private let registry: SBJEditorRegistry
     private let options: SBJEditorOptions

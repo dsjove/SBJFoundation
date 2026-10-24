@@ -1,7 +1,6 @@
 import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
-import SBJUnits
 
 @Suite("Editor field width policy")
 struct SBJFieldWidthPolicyTests {

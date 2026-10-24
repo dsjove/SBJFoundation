@@ -7,6 +7,12 @@ import SBJLocalization
 /// Normally this conformance is synthesized by ``SBJStructure()``.
 public protocol SBJMutableStructure: SBJStructured {
     static var sbjMutableProperties: [SBJMutableProperty<Self>] { get }
+    /// Writable computed fields explicitly opted into presentation; not part of the stored schema.
+    static var sbjPresentationProperties: [SBJMutableProperty<Self>] { get }
+}
+
+public extension SBJMutableStructure {
+    static var sbjPresentationProperties: [SBJMutableProperty<Self>] { [] }
 }
 
 /// A type-preserving consumer of a writable structural property.
@@ -15,6 +21,14 @@ public protocol SBJMutableStructure: SBJStructured {
 /// captured when the descriptor was created. Consumers do not need to guess
 /// types from names or dynamically cast key paths. Only stored Codable
 /// properties participate; editor-only computed properties are not schema.
+/// Visits a presentation-only writable field while preserving its concrete value type.
+/// This is distinct from schema visitation because computed presentation fields
+/// need not be Codable and never participate in structural validation.
+public protocol SBJTypedPresentationPropertyVisitor<Root>: AnyObject {
+    associatedtype Root: SBJStructured
+    func visit<Value>(_ keyPath: WritableKeyPath<Root, Value>, name: String)
+}
+
 public protocol SBJTypedStructuralPropertyVisitor<Root>: AnyObject {
     associatedtype Root: SBJStructured
 
@@ -37,6 +51,7 @@ public struct SBJMutableProperty<Root: SBJStructured> {
     public let participatesInStructuralValidation: Bool
 
     private let dispatchTypedProperty: ((any SBJTypedStructuralPropertyVisitor<Root>) -> Void)?
+    private let dispatchPresentationProperty: ((any SBJTypedPresentationPropertyVisitor<Root>) -> Void)?
     private let getValue: (Root) -> Any
     private let assignValue: (inout Root, Any) -> Bool
     private let matchesSearchValue: (Root, String) -> Bool
@@ -58,6 +73,7 @@ public struct SBJMutableProperty<Root: SBJStructured> {
         self.dispatchTypedProperty = { visitor in
             visitor.visit(keyPath, metadata: structuralMetadata)
         }
+        self.dispatchPresentationProperty = nil
         self.getValue = { $0[keyPath: keyPath] }
         self.assignValue = { root, value in
             guard let typed = value as? Value else { return false }
@@ -107,6 +123,9 @@ public struct SBJMutableProperty<Root: SBJStructured> {
         self.structuralMetadata = nil
         self.participatesInStructuralValidation = false
         self.dispatchTypedProperty = nil
+        self.dispatchPresentationProperty = { visitor in
+            visitor.visit(keyPath, name: name)
+        }
         self.getValue = { $0[keyPath: keyPath] }
         self.assignValue = { root, value in
             guard let typed = value as? Value else { return false }
@@ -128,6 +147,16 @@ public struct SBJMutableProperty<Root: SBJStructured> {
     ) -> Bool {
         guard let dispatchTypedProperty else { return false }
         dispatchTypedProperty(visitor)
+        return true
+    }
+
+    /// Opens a presentation-only property with its actual generic Swift type.
+    @discardableResult
+    public func visitTypedPresentationProperty(
+        with visitor: any SBJTypedPresentationPropertyVisitor<Root>
+    ) -> Bool {
+        guard let dispatchPresentationProperty else { return false }
+        dispatchPresentationProperty(visitor)
         return true
     }
 

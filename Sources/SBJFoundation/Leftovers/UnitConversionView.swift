@@ -1,7 +1,6 @@
 import SwiftUI
 import SBJFileResources
-import SBJLocalization
-import SBJUnits
+import SBJDataDefinition
 import SBJUIVocabulary
 import SBJHelp
 

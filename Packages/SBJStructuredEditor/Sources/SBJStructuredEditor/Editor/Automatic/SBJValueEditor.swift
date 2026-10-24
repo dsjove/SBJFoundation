@@ -1,6 +1,5 @@
 import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
@@ -504,7 +503,7 @@ enum SBJValueEditor {
                 headerOnly: headerOnly
             )
         }
-        if let associatedEnum = Value.self as? any SBJEditableAssociatedEnum.Type {
+        if let associatedEnum = Value.self as? any SBJStructuredEnum.Type {
             return wrapLeaf(
                 associatedEnum._sbjMakeAssociatedEnumEditor(
                     label: label,
@@ -518,21 +517,6 @@ enum SBJValueEditor {
                 ),
                 itemActions: itemActions,
                 context: context
-            )
-        }
-        if let editable = Value.self as? any SBJSwiftUIEditable.Type {
-            return editable._sbjMakeEditor(
-                label: label,
-                binding: erased,
-                originalValue: originalValue,
-                registry: registry,
-                itemActions: itemActions,
-                focusRequest: focusRequest,
-                titleIsUnknown: labelIsUnknown,
-                promotedTitlePropertyName: promotedTitlePropertyName,
-                promotedTitlePrefix: promotedTitlePrefix,
-                context: context,
-                    headerOnly: headerOnly
             )
         }
         if let structural = Value.self as? any SBJMutableStructure.Type {
@@ -590,11 +574,8 @@ enum SBJValueEditor {
                 itemTitleKey: collectionItemTitleKey
             )
         }
-        if let associatedEnum = Value.self as? any SBJEditableAssociatedEnum.Type {
+        if let associatedEnum = Value.self as? any SBJStructuredEnum.Type {
             return associatedEnum._sbjCollectAssociatedEnumIssues(value: value, path: path, registry: registry)
-        }
-        if let editable = Value.self as? any SBJSwiftUIEditable.Type {
-            return editable._sbjCollectIssues(value: value, path: path, registry: registry)
         }
         if let structural = Value.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralCollectIssues(value: value, path: path, registry: registry)

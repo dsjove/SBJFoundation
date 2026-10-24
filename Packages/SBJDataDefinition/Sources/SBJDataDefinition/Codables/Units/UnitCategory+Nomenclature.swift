@@ -1,0 +1,2 @@
+
+extension UnitCategory: StringPresentable {}

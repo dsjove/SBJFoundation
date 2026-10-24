@@ -35,3 +35,18 @@ SwiftPM compiles the shared support target for the **host toolchain** as a depen
 - [Package and source organization](Documentation/ORGANIZATION.md)
 
 Macro expansion tests and runtime tests live under `Tests/SBJDataDefinitionTests`.
+
+## Presentation declarations
+
+`SBJDataDefinition` defines the `@SBJPresentationString`, `@SBJPresentationArray`,
+`@SBJPresentationSet`, `@SBJPresentationDisclosure`, `@SBJPresentationExclude`,
+`@SBJPresentationProperty` annotations and `SBJPresentationDisclosureMode`.
+These are declarative presentation preferences, not SwiftUI implementations.
+`@SBJStructure` reads applicable annotations and generates the corresponding
+structural metadata and hints. Presentation consumers choose how to render them.
+
+The generated structural model and its traversal never require an editor instance.
+
+## Codable models and sample coverage
+
+The `Sources/SBJDataDefinition/Codables` directory owns Units, Fonts, and Colors model types. The accompanying model-specific structural adapters supply generated-metadata-equivalent traversal, validation, and source encoding behavior. The comprehensive Recipe fixture is in `Sources/SBJDataDefinition/Samples/Recipe` and is restricted to DEBUG configurations. Presentation annotations live in `Annotations`.

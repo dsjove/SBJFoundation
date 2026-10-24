@@ -648,3 +648,12 @@ immutable properties, use `SBJStructuralTraversal.definition(of:)`.
 ### Array mutations
 
 `SBJArrayMutation` performs index-validated `move(from:to:in:)` and `remove(at:from:)` operations on a mutable array. Invalid indices and no-op moves return `false` without changing the array. Presentation, filtering, and user-interaction policy remain the responsibility of consumers, such as `SBJStructuredEditor`.
+
+### Presentation-only computed fields
+
+A writable computed property annotated `@SBJPresentationProperty` is exposed
+through `sbjPresentationProperties` as a type-preserving descriptor. Such a
+property is **not** part of `sbjProperties`, Codable structure, or structural
+validation. `SBJTypedPresentationPropertyVisitor` lets presentation consumers
+construct typed controls without inspecting sample instances. Stored properties
+remain in `sbjMutableProperties` and retain their structural identities.

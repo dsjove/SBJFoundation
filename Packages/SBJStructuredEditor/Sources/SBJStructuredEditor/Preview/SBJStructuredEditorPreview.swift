@@ -1,5 +1,5 @@
+import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
   #if DEBUG
     import SwiftUI
@@ -67,6 +67,12 @@ import SBJUnits
           regressionMutation(&value)
         }
       }
+    }
+
+    #Preview("Recipe — Enum and Nested Stress") {
+      SBJStructuredEditorPreviewHost()
+        .padding()
+        .frame(width: 390, height: 1_000)
     }
 
     #Preview("SBJStructure Sample — Default") {

@@ -1,5 +1,5 @@
+import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
@@ -184,6 +184,23 @@ public struct SBJEditorEnumCase<Root> {
         createValue() != nil
     }
 
+    /// Adapt the compiler-generated, UI-independent DataDefinition case
+    /// description to the existing editor runtime until that runtime is
+    /// consolidated around SBJStructuredEnum directly.
+    public init(structuralCase: SBJAssociatedCase<Root>) {
+        let sourceName = structuralCase.sourceName
+        let caseInfo = (Root.self as? any SBJEnumCaseIdentifiable.Type)?
+            .sbjCaseInfo(for: sourceName)
+        self.name = caseInfo?.title ?? sourceName.uncamelCased
+        self.matchesValue = { structuralCase.matches($0) }
+        self.createValue = { structuralCase.makeDefaultValue() }
+        self.associatedValues = structuralCase.associatedValues.map { value in
+            let collector = SBJEditorAssociatedValueCollector<Root>()
+            value.visit(collector)
+            return collector.result!
+        }
+    }
+
     func issues(
         value: Root,
         path: [String],
@@ -196,31 +213,32 @@ public struct SBJEditorEnumCase<Root> {
     }
 }
 
-/// An enum whose cases and associated values can be edited recursively.
-///
-/// This conformance is normally synthesized by ``SBJStructure()`` when the
-/// macro is attached to an enum declaration.
-public protocol SBJEditableAssociatedEnum: Codable, HasContentCheckable, SBJDefaultValueCreatable, SBJStructuralComparable {
-    @MainActor
-    static var sbjEditorEnumCases: [SBJEditorEnumCase<Self>] { get }
+@MainActor
+private final class SBJEditorAssociatedValueCollector<Root>: @preconcurrency SBJTypedAssociatedValueVisitor {
+    var result: SBJEditorAssociatedValue<Root>?
 
+    func visit<Value: Codable>(
+        name: String,
+        get: @escaping (Root) -> Value,
+        set: @escaping (inout Root, Value) -> Void
+    ) {
+        result = SBJEditorAssociatedValue(name: name, get: get, set: set)
+    }
 }
 
-public extension SBJEditableAssociatedEnum {
-    /// An enum case with associated values aggregates its payload like a struct.
-    /// A case without payload is an atomic selection and always has content.
-    var hasContent: Bool {
-        let mirror = Mirror(reflecting: self)
-        guard let payload = mirror.children.first?.value else { return true }
-        return SBJContentCheck.hasContent(payload)
+/// Editor behavior projected directly from DataDefinition's generated enum metadata.
+/// No editor macro or editor-specific generated conformance is required.
+@MainActor
+extension SBJStructuredEnum {
+    static var sbjStructuralEditorCases: [SBJEditorEnumCase<Self>] {
+        sbjAssociatedCases.map(SBJEditorEnumCase.init(structuralCase:))
     }
-
     @MainActor
     internal static func _sbjAssociatedTraversalNodes(
         value: Any, context: SBJEditTraversalContext
     ) -> [SBJEditorTraversalNode] {
         guard let value = value as? Self,
-              let selected = sbjEditorEnumCases.first(where: { $0.matches(value) }) else { return [] }
+              let selected = sbjStructuralEditorCases.first(where: { $0.matches(value) }) else { return [] }
         return selected.associatedValues.enumerated().map { offset, field in
             let childContext = SBJEditTraversalContext(
                 treeLevel: context.treeLevel + 1,
@@ -241,7 +259,7 @@ public extension SBJEditableAssociatedEnum {
         context: SBJEditTraversalContext
     ) -> [SBJEditorTraversalNode] {
         let root = binding.binding(as: Self.self)
-        guard let selected = sbjEditorEnumCases.first(where: { $0.matches(root.wrappedValue) }) else {
+        guard let selected = sbjStructuralEditorCases.first(where: { $0.matches(root.wrappedValue) }) else {
             return []
         }
         let originalRoot = (originalValue as? Self).flatMap { selected.matches($0) ? $0 : nil }
@@ -292,7 +310,7 @@ public extension SBJEditableAssociatedEnum {
         registry: SBJEditorRegistry
     ) -> [SBJEditorCapabilityIssue] {
         guard let typed = value as? Self,
-              let selected = sbjEditorEnumCases.first(where: { $0.matches(typed) }) else {
+              let selected = sbjStructuralEditorCases.first(where: { $0.matches(typed) }) else {
             return [
                 SBJEditorCapabilityIssue(
                     path: path.joined(separator: " • "),
@@ -304,4 +322,5 @@ public extension SBJEditableAssociatedEnum {
         return selected.issues(value: typed, path: path, registry: registry)
     }
 }
+
 #endif

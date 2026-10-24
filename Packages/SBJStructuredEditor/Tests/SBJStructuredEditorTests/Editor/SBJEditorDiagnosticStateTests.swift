@@ -2,7 +2,6 @@ import SwiftUI
 import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 
 @MainActor
@@ -30,7 +29,7 @@ struct SBJEditorDiagnosticStateTests {
     @Test("Structural font projects fields and supports font-family selection")
     func fontSpecification() {
         let font = CodableFont(nil, ofSize: 14)
-        #expect(SBJStructuralFieldProjection.fields(of: CodableFont.self).map(\.name) == ["family", "size", "weight", "italic", "width"])
+        #expect(SBJStructuralFieldProjection.fields(of: CodableFont.self).map(\.name) == ["Family", "Size", "Weight", "Italic", "Width"])
         #expect(SBJValueEditor.collectIssues(value: font, path: ["Font"], registry: .init()).isEmpty)
         #expect(SBJValueEditor.collectIssues(value: font.family, path: ["Font", "Family"], registry: .init()).isEmpty)
         #expect(SBJValueEditor.collectIssues(value: FontFamily("Helvetica"), path: ["Family"], registry: .init()).isEmpty)

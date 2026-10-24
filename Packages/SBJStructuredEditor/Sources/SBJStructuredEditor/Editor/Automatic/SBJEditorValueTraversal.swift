@@ -1,6 +1,5 @@
 import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
@@ -37,11 +36,8 @@ enum SBJEditorValueTraversal {
         itemTitleKey: String? = nil,
         itemIdentifierKey: String? = nil
     ) -> [SBJEditorTraversalNode] {
-        if let associated = Value.self as? any SBJEditableAssociatedEnum.Type {
+        if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjAssociatedTraversalNodes(value: value, context: context)
-        }
-        if let structured = Value.self as? any SBJSwiftUIEditable.Type {
-            return structured._sbjTraversalNodes(value: value, context: context)
         }
         if let structural = Value.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralTraversalNodes(value: value, context: context)
@@ -61,13 +57,8 @@ enum SBJEditorValueTraversal {
         itemIdentifierKey: String? = nil,
         reorderable: Bool = true
     ) -> [SBJEditorTraversalNode] {
-        if let associated = Value.self as? any SBJEditableAssociatedEnum.Type {
+        if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjBoundAssociatedTraversalNodes(
-                binding: SBJAnyBinding(binding), originalValue: originalValue, registry: registry, context: context
-            )
-        }
-        if let structured = Value.self as? any SBJSwiftUIEditable.Type {
-            return structured._sbjBoundTraversalNodes(
                 binding: SBJAnyBinding(binding), originalValue: originalValue, registry: registry, context: context
             )
         }
@@ -93,7 +84,7 @@ enum SBJEditorValueTraversal {
             context: context, name: name,
             isDisclosure: Value.self is any SBJMutableStructure.Type
                 || Value.self is any SBJEditorTraversableValue.Type
-                || Value.self is any SBJEditableAssociatedEnum.Type,
+                || Value.self is any SBJStructuredEnum.Type,
             render: { renderedContext in
                 SBJValueEditor.makeView(
                     label: name, value: binding, registry: registry,
@@ -132,7 +123,7 @@ enum SBJEditorValueTraversal {
             name: name,
             isDisclosure: Value.self is any SBJMutableStructure.Type
                 || Value.self is any SBJEditorTraversableValue.Type
-                || Value.self is any SBJEditableAssociatedEnum.Type,
+                || Value.self is any SBJStructuredEnum.Type,
             children: { projectedContext in
                 children(of: value, context: projectedContext)
             }

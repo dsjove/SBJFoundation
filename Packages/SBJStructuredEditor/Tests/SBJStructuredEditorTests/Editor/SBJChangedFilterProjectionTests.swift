@@ -2,7 +2,6 @@ import SwiftUI
 import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 
 @MainActor

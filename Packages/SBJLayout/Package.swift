@@ -19,18 +19,19 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../SBJLocalization"),
+        .package(path: "../SBJFileResources"),
         .package(path: "../SBJDataDefinition"),
-        .package(path: "../SBJStructuredEditor"),
-        .package(path: "../SBJUnits"),
+        .package(path: "../SBJUIVocabulary"),
     ],
     targets: [
         .target(
             name: "SBJLayout",
             dependencies: [
-				.product(name: "SBJUnits", package: "SBJUnits"),
+				.product(name: "SBJLocalization", package: "SBJLocalization"),
 				.product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
-				.product(name: "SBJStructuredEditor", package: "SBJStructuredEditor"),
-				.product(name: "SBJLocalization", package: "SBJLocalization")],
+				.product(name: "SBJFileResources", package: "SBJFileResources"),
+				.product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
+			],
             resources: [.process("Resources")],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
@@ -39,7 +40,11 @@ let package = Package(
         ),
         .testTarget(
             name: "SBJLayoutTests",
-            dependencies: ["SBJLayout", .product(name: "SBJLocalization", package: "SBJLocalization")],
+            dependencies: [
+				"SBJLayout",
+				.product(name: "SBJLocalization", package: "SBJLocalization"),
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition")
+			],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
                 .defaultIsolation(nil),

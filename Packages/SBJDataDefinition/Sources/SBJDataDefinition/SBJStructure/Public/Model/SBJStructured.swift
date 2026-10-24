@@ -1,7 +1,7 @@
 import Foundation
 import SBJLocalization
 
-/// UI-independent description of a model annotated with `@SBJStructure` or `@SBJEditable`.
+/// UI-independent description of a model annotated with `@SBJStructure`.
 ///
 /// SBJStructure declarations describe the model; they do not intercept property
 /// access or automatically enforce invariants. Consumers explicitly choose when
@@ -224,6 +224,9 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
 /// Non-invariant usage or presentation information declared on a model property.
 /// Consumers may honor these hints, but they do not participate in validation.
 public enum SBJPropertyHint: Sendable, Equatable {
+    case presentationDisclosure(SBJPresentationDisclosureMode)
+    case presentationExcluded
+    case presentationUnit(SBJPresentationUnitMode)
     case textStyle(SBJStringStyle)
     case textAutocorrection(SBJTextAutocorrection)
     case textCapitalization(SBJTextCapitalization)

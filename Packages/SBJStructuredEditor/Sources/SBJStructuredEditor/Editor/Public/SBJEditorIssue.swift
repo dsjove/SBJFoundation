@@ -1,5 +1,4 @@
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 
@@ -23,12 +22,12 @@ public extension SBJIssue where Kind == SBJEditorCapabilityIssueKind {
 /// SwiftUI-specific capability diagnostics only.
 public enum SBJEditorCapabilityDiagnostics {
     @MainActor
-    public static func issues<Value: SBJSwiftUIEditable>(
+    public static func issues<Value: SBJMutableStructure>(
         for value: Value,
         registry: SBJEditorRegistry = .init()
     ) -> [SBJEditorCapabilityIssue] {
         var collection = SBJIssueCollection<SBJEditorCapabilityIssue>()
-        collection.append(contentsOf: Value.sbjEditorFields.flatMap { field in
+        collection.append(contentsOf: SBJStructuralFieldProjection.fields(of: Value.self).flatMap { field in
             field.issues(root: value, path: [], registry: registry)
         })
         return SBJEditorCapabilityIssue.removingRedundantIssues(from: collection.uniqued { $0 })
@@ -65,7 +64,7 @@ public extension SBJIssue where Kind == SBJEditorIssueKind {
 /// capability comes exclusively from `SBJEditorCapabilityDiagnostics`.
 public enum SBJEditorDiagnostics {
     @MainActor
-    public static func issues<Value: SBJSwiftUIEditable>(
+    public static func issues<Value: SBJMutableStructure>(
         for value: Value,
         registry: SBJEditorRegistry = .init()
     ) -> [SBJEditorIssue] {

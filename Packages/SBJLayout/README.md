@@ -233,4 +233,4 @@ Design and architecture documents live in `Documentation/`. The shared localizat
 
 ## Physical units
 
-The layout engine continues to store geometry in PDF/Core Graphics points. Page-layout presentation now uses SBJUnits `UnitValue<LengthUnit>` for conversion to inches or millimeters, and `PageLayout.pageWidth` / `pageHeight` expose physical dimensions as unit values. `PageLayoutEditorCore` also uses the shared `UnitValueControl` for margin editing, fixing the displayed unit to inches for North American/photo pages and millimeters for ISO A pages.
+The layout engine continues to store geometry in PDF/Core Graphics points. Page-layout presentation now uses SBJDataDefinition `UnitValue<LengthUnit>` for conversion to inches or millimeters, and `PageLayout.pageWidth` / `pageHeight` expose physical dimensions as unit values. `PageLayout`, `PageSize`, and `Insets` use `@SBJStructure` and have no editor dependency. `PageLayoutEditorCore` and `PageLayoutEditorView` belong to the SBJFoundation umbrella module, which supplies the editing UI.

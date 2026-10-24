@@ -1,10 +1,10 @@
+import SBJDataDefinition
 import SBJUIVocabulary
-import SBJUnits
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
 @MainActor
-struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
+struct SBJAssociatedEnumEditor<Value: SBJStructuredEnum>: View {
     let label: String
     @Binding var value: Value
     let originalValue: Value?
@@ -13,7 +13,7 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
     let labelIsUnknown: Bool
     let context: SBJEditTraversalContext
     private var selectedCase: SBJEditorEnumCase<Value>? {
-        Value.sbjEditorEnumCases.first(where: { $0.matches(value) })
+        Value.sbjStructuralEditorCases.first(where: { $0.matches(value) })
     }
 
     var rowStatus: SBJEditorRowStatus = .init()
@@ -25,15 +25,15 @@ struct SBJAssociatedEnumEditor<Value: SBJEditableAssociatedEnum>: View {
                 .accessibilityHidden(true)
             SBJSelectionMenu(
                 selection: Binding<Int?>(
-                    get: { Value.sbjEditorEnumCases.firstIndex(where: { $0.matches(value) }) },
+                    get: { Value.sbjStructuralEditorCases.firstIndex(where: { $0.matches(value) }) },
                     set: { index in
-                        guard let index, Value.sbjEditorEnumCases.indices.contains(index),
-                              let replacement = Value.sbjEditorEnumCases[index].makeDefaultValue()
+                        guard let index, Value.sbjStructuralEditorCases.indices.contains(index),
+                              let replacement = Value.sbjStructuralEditorCases[index].makeDefaultValue()
                         else { return }
                         value = replacement
                     }
                 ),
-                choices: Value.sbjEditorEnumCases.enumerated().map {
+                choices: Value.sbjStructuralEditorCases.enumerated().map {
                     SBJMenuChoice(id: $0.offset, title: $0.element.name, isEnabled: $0.element.canCreate)
                 },
                 currentTitle: selectedCase?.name ?? String(describing: value),

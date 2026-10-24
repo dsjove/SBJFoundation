@@ -23,7 +23,7 @@ struct SBJStructuralFieldProjectionTests {
     @Test @MainActor
     func structuralFieldsRetainSourceNamesAndTypedKeyPaths() {
         let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self)
-        #expect(fields.map(\.name) == ["first", "count"])
+        #expect(fields.map(\.name) == ["First", "Count"])
         #expect(fields.map { $0.editableField.structuralMetadata?.sourceName } == ["first", "count"])
         #expect(ObjectIdentifier(fields[0].editableField.valueType) == ObjectIdentifier(String.self))
         #expect(ObjectIdentifier(fields[1].editableField.valueType) == ObjectIdentifier(Int.self))
@@ -49,7 +49,7 @@ extension SBJStructuralFieldProjectionTests {
     func structuralOnlyObjectIsTraversableAndEditable() {
         let root = StructuralParentFixture()
         let fields = SBJStructuralFieldProjection.fields(of: StructuralParentFixture.self)
-        #expect(fields.map(\.name) == ["child", "children"])
+        #expect(fields.map(\.name) == ["Child", "Children"])
         let nodes = StructuralParentFixture._sbjStructuralTraversalNodes(value: root, context: .root)
         #expect(nodes.count == 2)
         #expect(StructuralChildFixture._sbjStructuralFieldCount == 1)
@@ -60,6 +60,14 @@ extension SBJStructuralFieldProjectionTests {
 #if canImport(SwiftUI) && !os(tvOS) && !os(watchOS)
 extension SBJStructuralFieldProjectionTests {
     @Test @MainActor
+    func bothPublicRootEditorNamesAcceptStructureOnlyModels() {
+        let binding = Binding.constant(StructuralProjectionFixture())
+        let presentation = SBJEditorPresentationModel()
+        _ = SBJEditorView(value: binding, presentationModel: presentation)
+        _ = SBJStructuralEditorView(value: binding, presentationModel: presentation)
+    }
+
+    @Test @MainActor
     func structuralOnlyFieldConstructsModelAwareEditor() {
         let model = StructuralProjectionFixture()
         _ = SBJEditField(root: .constant(model), keyPath: \.first)
@@ -69,7 +77,7 @@ extension SBJStructuralFieldProjectionTests {
 }
 #endif
 
-@SBJEditable
+@SBJStructure
 private struct MixedEditorLocationFixture: Codable {
     var userName: String = ""
     var count: Int = 0
@@ -78,7 +86,7 @@ private struct MixedEditorLocationFixture: Codable {
 extension SBJStructuralFieldProjectionTests {
     @Test @MainActor
     func editableAndStructuralLocationsAgree() {
-        let fields = MixedEditorLocationFixture.sbjEditorFields
+        let fields = SBJStructuralFieldProjection.fields(of: MixedEditorLocationFixture.self)
         let locations = SBJEditorStructuralLocations.resolve(fields, of: MixedEditorLocationFixture.self)
         let schema = SBJStructuralTraversal.schema(of: MixedEditorLocationFixture.self)
         #expect(locations.map(\.identity) == schema.map(\.identityComponent))
@@ -102,5 +110,51 @@ extension SBJStructuralFieldProjectionTests {
         let locations = SBJEditorStructuralLocations.resolve(fields, of: StructuralProjectionFixture.self)
         #expect(locations[0].identity == "editor-property:Temporary")
         #expect(locations[0].location == "editor-field:0")
+    }
+}
+
+@SBJStructure
+private struct PresentationProjectionFixture: Codable {
+    @SBJPresentationDisclosure(.alwaysOpen)
+    var child: StructuralChildFixture = .init()
+    @SBJPresentationExclude
+    var internalNote: String = "not an editor field"
+    @SBJPresentationString(.multiline)
+    var notes: String = ""
+}
+
+extension SBJStructuralFieldProjectionTests {
+    @Test @MainActor
+    func structuralProjectionHonorsPresentationAnnotations() {
+        let fields = SBJStructuralFieldProjection.fields(of: PresentationProjectionFixture.self)
+        #expect(fields.map(\.name) == ["Child", "Notes"])
+        #expect(fields[0].traversalDisclosureMode == .alwaysOpen)
+        #expect(fields[1].traversalDisclosureMode == .closed)
+        #expect(PresentationProjectionFixture.sbjProperties.contains { $0.sourceName == "internalNote" })
+        #expect(fields[1].editableField.structuralMetadata?.hints.contains {
+            if case .textStyle(.multiline) = $0 { return true }
+            return false
+        } == true)
+    }
+}
+
+@SBJStructure
+private struct ComputedProjectionFixture: Codable {
+    var stored: String = "first"
+
+    @SBJPresentationProperty
+    var computed: String {
+        get { stored }
+        set { stored = newValue }
+    }
+}
+
+extension SBJStructuralFieldProjectionTests {
+    @Test @MainActor
+    func computedPresentationFieldsRemainOutsideSchema() {
+        let fields = SBJStructuralFieldProjection.fields(of: ComputedProjectionFixture.self)
+        #expect(fields.map(\.name) == ["Stored", "Computed"])
+        #expect(fields[0].editableField.structuralMetadata != nil)
+        #expect(fields[1].editableField.structuralMetadata == nil)
     }
 }
