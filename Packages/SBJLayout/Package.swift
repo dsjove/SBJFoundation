@@ -43,7 +43,9 @@ let package = Package(
             dependencies: [
 				"SBJLayout",
 				.product(name: "SBJLocalization", package: "SBJLocalization"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition")
+				.product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+				.product(name: "SBJFileResources", package: "SBJFileResources"),
+				.product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
 			],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),

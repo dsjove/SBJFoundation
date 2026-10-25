@@ -95,14 +95,14 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
     public var searchCriteria: SBJStructuralSearchCriteria
     public var placement: SBJEditorRowPlacement
     public var status: SBJEditorRowStatus
-    public var disclosureMode: SBJEditorDisclosureMode
+    public var disclosureMode: SBJPresentationDisclosureMode
     public var propertyInfoPlacement: SBJEditorPropertyInfoPlacement
 
     public init(
         searchCriteria: SBJStructuralSearchCriteria = .init(),
         placement: SBJEditorRowPlacement = .normal,
         status: SBJEditorRowStatus = .init(),
-        disclosureMode: SBJEditorDisclosureMode = .closed,
+        disclosureMode: SBJPresentationDisclosureMode = .closed,
         propertyInfoPlacement: SBJEditorPropertyInfoPlacement = .overlay
     ) {
         self.searchCriteria = searchCriteria
@@ -130,7 +130,7 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
         return result
     }
 
-    public func withDisclosureMode(_ mode: SBJEditorDisclosureMode) -> Self {
+    public func withDisclosureMode(_ mode: SBJPresentationDisclosureMode) -> Self {
         var result = self
         result.disclosureMode = mode
         return result

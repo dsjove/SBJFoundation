@@ -21,12 +21,12 @@ struct SBJEditorTraversalNode: Identifiable {
 
 	nonisolated var id: SBJEditorItemIdentifier { context.itemIdentifier }
     var depth: Int { context.treeLevel }
-    var disclosureMode: SBJEditorDisclosureMode { context.branch.disclosureMode }
+    var disclosureMode: SBJPresentationDisclosureMode { context.branch.disclosureMode }
 
     init(
         context: SBJEditTraversalContext,
         name: String,
-        disclosureMode: SBJEditorDisclosureMode? = nil,
+        disclosureMode: SBJPresentationDisclosureMode? = nil,
         isDisclosure: Bool = false,
         render: ((SBJEditTraversalContext) -> AnyView)? = nil,
         isIncluded: @escaping (SBJStructuralSearchCriteria) -> Bool = { _ in true },

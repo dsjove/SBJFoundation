@@ -130,7 +130,7 @@ struct SBJObjectEditor<Value: SBJMutableStructure>: View {
             return nil
         }
         return AnyView(
-            SBJEditorPropertyInfoButton(propertyName: field.name, info: info)
+            SBJPropertyInfoButton(propertyName: field.name, info: info)
         )
     }
 

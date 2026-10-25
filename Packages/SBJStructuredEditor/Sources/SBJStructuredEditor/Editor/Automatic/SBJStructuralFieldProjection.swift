@@ -42,13 +42,9 @@ private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @pre
             return false
         }) == true { return }
 
-        let disclosure: SBJEditorDisclosureMode = metadata?.hints.compactMap { hint in
+        let disclosure: SBJPresentationDisclosureMode = metadata?.hints.compactMap { hint in
             guard case .presentationDisclosure(let mode) = hint else { return nil }
-            switch mode {
-            case .closed: return .closed
-            case .autoOpen: return .autoOpen
-            case .alwaysOpen: return .alwaysOpen
-            }
+            return mode
         }.first ?? .closed
 
         // Structural metadata, rather than a display title, is authoritative

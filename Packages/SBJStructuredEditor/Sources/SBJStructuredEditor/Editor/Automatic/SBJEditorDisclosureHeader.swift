@@ -22,7 +22,7 @@ struct SBJEditorDisclosureHeader: View {
     let titleIsUnknown: Bool
     let titleContent: AnyView?
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
-    private var disclosureMode: SBJEditorDisclosureMode { branch.disclosureMode }
+    private var disclosureMode: SBJPresentationDisclosureMode { branch.disclosureMode }
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(

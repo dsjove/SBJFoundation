@@ -68,11 +68,11 @@ public final class SBJEditorPresentationModel {
         return store.expansion(for: id, namespace: expansionOptions.namespace)
     }
 
-    func isUserExpanded(_ id: SBJEditorItemIdentifier, mode: SBJEditorDisclosureMode) -> Bool {
+    func isUserExpanded(_ id: SBJEditorItemIdentifier, mode: SBJPresentationDisclosureMode) -> Bool {
         savedChoice(for: id) ?? (mode == .autoOpen || mode == .alwaysOpen)
     }
 
-    func resolved(_ id: SBJEditorItemIdentifier, mode: SBJEditorDisclosureMode,
+    func resolved(_ id: SBJEditorItemIdentifier, mode: SBJPresentationDisclosureMode,
                   search: Bool, navigation: Bool) -> Bool {
         mode == .alwaysOpen || isUserExpanded(id, mode: mode) || search || navigation
     }

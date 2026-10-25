@@ -30,7 +30,7 @@ import SBJUIVocabulary
   @MainActor
   public struct SBJEditorPropertyDescriptor<Root: SBJMutableStructure> {
     public let name: String
-    let traversalDisclosureMode: SBJEditorDisclosureMode
+    let traversalDisclosureMode: SBJPresentationDisclosureMode
     let isTraversalDisclosure: Bool
     public let editableField: SBJMutableProperty<Root>
     private let makeView:
@@ -45,7 +45,7 @@ import SBJUIVocabulary
     public init<Value: Codable>(
       name: String,
       _ keyPath: WritableKeyPath<Root, Value>,
-      disclosureMode: SBJEditorDisclosureMode = .closed
+      disclosureMode: SBJPresentationDisclosureMode = .closed
     ) {
       self.name = name
       self.traversalDisclosureMode = disclosureMode

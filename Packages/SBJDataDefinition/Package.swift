@@ -32,7 +32,10 @@ let package = Package(
         ]),
         .target(
             name: "SBJDataDefinition",
-            dependencies: [.product(name: "SBJLocalization", package: "SBJLocalization"), "SBJDataDefinitionMacros"]
+            dependencies: [
+				.product(name: "SBJLocalization", package: "SBJLocalization"),
+				"SBJDataDefinitionMacros"
+			]
         ),
         .testTarget(
             name: "SBJDataDefinitionTests",
