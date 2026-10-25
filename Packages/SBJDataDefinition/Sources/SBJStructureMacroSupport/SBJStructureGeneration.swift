@@ -255,6 +255,9 @@ public enum SBJStructureGeneration {
                 if let immutableUnit = unitValueImmutable(on: variable) {
                     constraintMetadata.append(".immutableUnit(\(immutableUnit))")
                 }
+                if let defaultUnit = unitValueDefault(on: variable) {
+                    constraintMetadata.append(".defaultUnit(SBJDefaultUnit(\(defaultUnit)))")
+                }
                 if let unitMinimum = unitValueMinimum(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(unitMinimum), at: keyPath.appending(\\Self.\(name)))")
                 }
@@ -966,6 +969,17 @@ public enum SBJStructureGeneration {
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else { return "false" }
             return arguments.first(where: { $0.label?.text == "immutableUnit" })?.expression.trimmedDescription ?? "false"
+        }
+        return nil
+    }
+
+    private static func unitValueDefault(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJUnitValue",
+                  let rawArguments = attribute.arguments,
+                  case .argumentList(let arguments) = rawArguments else { continue }
+            return arguments.first(where: { $0.label?.text == "defaultUnit" })?.expression.trimmedDescription
         }
         return nil
     }

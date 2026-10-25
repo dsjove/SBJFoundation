@@ -18,10 +18,10 @@ struct UnitValueEditorTests {
 
 @SBJStructure
 private struct UnitValueEditorFixture: Codable {
-    @SBJUnitValue(min: 0)
+    @SBJUnitValue(min: 0, defaultUnit: LengthUnit.foot)
     var length = UnitValue<LengthUnit>(5, unit: .foot)
 
-    @SBJUnitValue(min: 0)
+    @SBJUnitValue(min: 0, defaultUnit: VolumeUnit.cup)
     var optionalVolume: UnitValue<VolumeUnit>? = .init(1, unit: .cup)
 }
 

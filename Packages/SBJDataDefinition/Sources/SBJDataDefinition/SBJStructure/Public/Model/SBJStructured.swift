@@ -208,6 +208,8 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
     case required(Bool)
     /// Whether changing the unit is prohibited by the property definition.
     case immutableUnit(Bool)
+    /// Preferred unit for creating a new measurement in this field.
+    case defaultUnit(SBJDefaultUnit)
     case count(min: Int?, max: Int?)
     /// Whether reordering the collection is a permitted data mutation.
     case reorderable(Bool)
