@@ -66,3 +66,32 @@ struct SBJDefinitionCatalogTests {
         #expect(cases[1].payloads[0].typeName.contains("Int"))
     }
 }
+
+@SBJStructure
+private struct ReportChild: Codable {
+    var name: String
+}
+
+@SBJStructure
+private struct ReportNestedRoot: Codable {
+    var child: ReportChild
+    var optional: ReportChild?
+    var children: [ReportChild]
+}
+
+@Suite("Recursive data definition discovery")
+struct SBJRecursiveCatalogTests {
+    @Test func discoversChildrenThroughContainersAndDeduplicates() {
+        let catalog = SBJDefinitionCatalog(ReportNestedRoot.self)
+        #expect(catalog.types.count == 2)
+        #expect(catalog.types.contains { $0.swiftName.contains("ReportChild") })
+        let alphabetic = catalog.sorted(using: .init(typeSort: .alphabetical,
+                                                    propertySort: .alphabetical,
+                                                    caseSort: .declaration))
+        let root = alphabetic.types.first { $0.swiftName.contains("ReportNestedRoot") }
+        guard let root, case .structure(let fields) = root.content else {
+            Issue.record("Missing nested root"); return
+        }
+        #expect(fields.map(\.swiftIdentifier) == ["child", "children", "optional"])
+    }
+}

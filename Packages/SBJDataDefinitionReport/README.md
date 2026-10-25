@@ -53,3 +53,24 @@ SBJDefinitionReportView(catalog: catalog) // displays generated PDF
 - `SBJDefinitionReportView.swift` hosts only `PDFPresentationView`, a toolbar using `PDFPageControlView`, a PDF share action, and a DEBUG Recipe preview.
 
 The share action exports the generated PDF to a temporary `.pdf` file. The viewer and static generator use the same catalog.
+
+## Recursive report and toolbar sorting update
+
+The catalog now follows `SBJStructured` references transitively, as well as
+`SBJStructuredEnum` associated-value payload references and types wrapped by
+`Optional`, `Array`, `Set`, and `Dictionary`. Recursion is deduplicated by type
+identity to protect recursive models. The PDF viewer includes **Sort report**
+with separate type, property, and enum case order selections. The live PDF and
+share file are regenerated when an ordering selection changes.
+
+This does **not** expose properties or enum cases that are not reported by the
+underlying SBJDataDefinition metadata, and does not enumerate arbitrary
+nonconforming types. For unsupported enum families, additional macro metadata
+or explicit registration remains necessary.
+
+## Property and enum-case descriptive information
+
+The PDF renders `SBJPropertyInfo.summary`, `SBJPropertyInfo.details`, and
+`SBJPropertyInfo.symbol` when present for each property and enum case. Long
+descriptions wrap and paginate with the normal SBJLayout flow. Accessibility
+metadata is deliberately omitted from the report.

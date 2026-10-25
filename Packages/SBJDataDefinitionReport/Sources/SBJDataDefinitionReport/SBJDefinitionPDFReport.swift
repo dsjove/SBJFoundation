@@ -54,9 +54,23 @@ public enum SBJDefinitionPDFReport {
                 for field in properties {
                     let label = field.title.map { "\($0) (\(field.swiftIdentifier))" } ?? field.swiftIdentifier
                     add("\(label): \(field.typeName)", font: .boldSystemFont(ofSize: 10))
+                    if field.displayName != field.swiftIdentifier && field.title == nil {
+                        add("Display name: \(field.displayName)", font: .systemFont(ofSize: 9))
+                    }
                     let details = ["Kind: \(field.kind)",
                                    field.isStored ? "Stored" : "Presentation-only"]
                     add(details.joined(separator: " · "), font: .systemFont(ofSize: 9))
+                    // Human-readable property documentation comes from the model's
+                    // SBJPropertyInfo. Intentionally do not emit accessibility copy.
+                    if let summary = field.info?.summary, !summary.isEmpty {
+                        add("Summary: \(summary)", font: .systemFont(ofSize: 9))
+                    }
+                    if let details = field.info?.details, !details.isEmpty {
+                        add("Detail: \(details)", font: .systemFont(ofSize: 9))
+                    }
+                    if let symbol = field.info?.symbol {
+                        add("Symbol: \(String(describing: symbol))", font: .systemFont(ofSize: 9))
+                    }
                     if !field.constraints.isEmpty {
                         add("Constraints: \(field.constraints.map { String(describing: $0) }.joined(separator: ", "))",
                             font: .systemFont(ofSize: 9))
@@ -72,6 +86,15 @@ public enum SBJDefinitionPDFReport {
                     let label = value.title.map { "\($0) (\(value.swiftIdentifier))" } ?? value.swiftIdentifier
                     add(label + (value.rawValueDescription.map { " = " + $0 } ?? ""),
                         font: .boldSystemFont(ofSize: 10))
+                    if let summary = value.info?.summary, !summary.isEmpty {
+                        add("Summary: \(summary)", font: .systemFont(ofSize: 9))
+                    }
+                    if let details = value.info?.details, !details.isEmpty {
+                        add("Detail: \(details)", font: .systemFont(ofSize: 9))
+                    }
+                    if let symbol = value.info?.symbol {
+                        add("Symbol: \(String(describing: symbol))", font: .systemFont(ofSize: 9))
+                    }
                     for payload in value.payloads {
                         add("    \(payload.name): \(payload.typeName)", font: .systemFont(ofSize: 9))
                     }

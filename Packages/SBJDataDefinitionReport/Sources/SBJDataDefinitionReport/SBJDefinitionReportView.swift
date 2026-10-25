@@ -13,10 +13,16 @@ public struct SBJDefinitionReportView: View {
 
     @State private var presentation = PDFPresentationController<String>()
     @State private var exportURL: URL?
+    @State private var typeSort: SBJDefinitionSort
+    @State private var propertySort: SBJDefinitionSort
+    @State private var caseSort: SBJDefinitionSort
 
     public init(catalog: SBJDefinitionCatalog, pageLayout: PageLayout = .init()) {
         self.catalog = catalog
         self.pageLayout = pageLayout
+        _typeSort = State(initialValue: catalog.options.typeSort)
+        _propertySort = State(initialValue: catalog.options.propertySort)
+        _caseSort = State(initialValue: catalog.options.caseSort)
     }
 
     public var body: some View {
@@ -24,6 +30,22 @@ public struct SBJDefinitionReportView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .automatic) {
                     PDFPageControlView(controller: presentation.continuousController)
+                    Menu {
+                        Picker("Types", selection: $typeSort) {
+                            Text("Alphabetical").tag(SBJDefinitionSort.alphabetical)
+                            Text("Declaration order").tag(SBJDefinitionSort.declaration)
+                        }
+                        Picker("Properties", selection: $propertySort) {
+                            Text("Alphabetical").tag(SBJDefinitionSort.alphabetical)
+                            Text("Declaration order").tag(SBJDefinitionSort.declaration)
+                        }
+                        Picker("Enum cases", selection: $caseSort) {
+                            Text("Alphabetical").tag(SBJDefinitionSort.alphabetical)
+                            Text("Declaration order").tag(SBJDefinitionSort.declaration)
+                        }
+                    } label: {
+                        Label("Sort report", systemImage: "arrow.up.arrow.down")
+                    }
                     if let exportURL {
                         ShareLink(item: exportURL, preview: SharePreview("Data Definition Report")) {
                             Label("Share PDF", systemImage: "square.and.arrow.up")
@@ -32,13 +54,17 @@ public struct SBJDefinitionReportView: View {
                     }
                 }
             }
-            .task {
+            .task(id: sortOptions) {
                 let result = SBJDefinitionPDFReport.makePDFResult(
-                    catalog: catalog, pageLayout: pageLayout)
+                    catalog: catalog.sorted(using: sortOptions), pageLayout: pageLayout)
                 presentation.update(PDFPresentationUpdate(
                     content: .init(document: result.document, positions: result.positions)))
                 exportURL = Self.exportFile(for: result.data)
             }
+    }
+
+    private var sortOptions: SBJDefinitionCatalogOptions {
+        SBJDefinitionCatalogOptions(typeSort: typeSort, propertySort: propertySort, caseSort: caseSort)
     }
 
     /// ShareLink needs a file URL so receiving apps see a PDF, not opaque bytes.

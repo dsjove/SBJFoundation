@@ -79,6 +79,34 @@ public struct SBJDefinitionCatalog {
     public let types: [SBJDefinitionType]
     public let options: SBJDefinitionCatalogOptions
 
+    /// Re-sorts the complete discovered catalog without reconstructing model values.
+    public func sorted(using options: SBJDefinitionCatalogOptions) -> SBJDefinitionCatalog {
+        let types = self.types.map { definition -> SBJDefinitionType in
+            let content: SBJDefinitionType.Content
+            switch definition.content {
+            case .structure(let fields):
+                content = .structure(options.propertySort == .alphabetical
+                    ? fields.sorted { Self.sortNames($0.swiftIdentifier, $0.declarationIndex, $1.swiftIdentifier, $1.declarationIndex) }
+                    : fields.sorted { $0.declarationIndex < $1.declarationIndex })
+            case .enumeration(let cases):
+                content = .enumeration(options.caseSort == .alphabetical
+                    ? cases.sorted { Self.sortNames($0.swiftIdentifier, $0.declarationIndex, $1.swiftIdentifier, $1.declarationIndex) }
+                    : cases.sorted { $0.declarationIndex < $1.declarationIndex })
+            }
+            return SBJDefinitionType(swiftType: definition.swiftType, swiftName: definition.swiftName,
+                                     content: content, declarationIndex: definition.declarationIndex)
+        }
+        let ordered = options.typeSort == .alphabetical
+            ? types.sorted { Self.sortNames($0.swiftName, $0.declarationIndex, $1.swiftName, $1.declarationIndex) }
+            : types.sorted { $0.declarationIndex < $1.declarationIndex }
+        return SBJDefinitionCatalog(types: ordered, options: options)
+    }
+
+    private static func sortNames(_ a: String, _ ai: Int, _ b: String, _ bi: Int) -> Bool {
+        let comparison = a.localizedStandardCompare(b)
+        return comparison == .orderedSame ? ai < bi : comparison == .orderedAscending
+    }
+
     public init<Root: SBJStructured>(_ root: Root.Type, options: SBJDefinitionCatalogOptions = .init()) {
         var builder = Builder(options: options)
         builder.add(root)
@@ -109,6 +137,9 @@ public struct SBJDefinitionCatalog {
             definitions[id] = SBJDefinitionType(swiftType: type, swiftName: String(reflecting: type),
                                                  content: .structure(fields), declarationIndex: order.count)
             order.append(id)
+            // Traverse declarations recursively; no model instances are created.
+            // Register the parent before its children to terminate recursive schemas.
+            for field in fields { discover(field.declaredType) }
         }
 
         /// Registers a plain or raw-value enum, including cases omitted by custom Codable.
@@ -146,7 +177,29 @@ public struct SBJDefinitionCatalog {
             definitions[id] = SBJDefinitionType(swiftType: type, swiftName: String(reflecting: type),
                                                 content: .enumeration(result), declarationIndex: order.count)
             order.append(id)
+            for enumCase in result {
+                for payload in enumCase.payloads { discover(payload.declaredType) }
+            }
         }
+
+        private mutating func discover(_ type: Any.Type) {
+            if let wrapped = type as? SBJReportTypeWrapper.Type {
+                for child in wrapped.sbjReportElementTypes { discover(child) }
+                return
+            }
+            // Associated-value enums must be tested before general structures.
+            if let enumType = type as? any SBJStructuredEnum.Type {
+                addAssociatedEnum(enumType)
+            } else if let structure = type as? any SBJStructured.Type {
+                addStructure(structure)
+            } else if let enumType = type as? any SBJEnumCaseIdentifiable.Type {
+                addPlainEnum(enumType)
+            }
+        }
+
+        private mutating func addStructure<T: SBJStructured>(_ type: T.Type) { add(type) }
+        private mutating func addAssociatedEnum<T: SBJStructuredEnum>(_ type: T.Type) { add(type) }
+        private mutating func addPlainEnum<T: SBJEnumCaseIdentifiable>(_ type: T.Type) { add(type) }
 
         private static func comesFirst(_ a: String, _ ai: Int, _ b: String, _ bi: Int) -> Bool {
             let comparison = a.localizedStandardCompare(b)
@@ -176,4 +229,25 @@ private final class PayloadCollector<Root>: SBJTypedAssociatedValueVisitor {
         payloads.append(SBJDefinitionPayload(name: name, declaredType: Value.self,
                                              declarationIndex: payloads.count))
     }
+}
+
+/// Exposes generic wrapper element types without constructing wrapped values.
+private protocol SBJReportTypeWrapper {
+    static var sbjReportElementTypes: [Any.Type] { get }
+}
+
+extension Optional: SBJReportTypeWrapper {
+    static var sbjReportElementTypes: [Any.Type] { [Wrapped.self] }
+}
+
+extension Array: SBJReportTypeWrapper {
+    static var sbjReportElementTypes: [Any.Type] { [Element.self] }
+}
+
+extension Set: SBJReportTypeWrapper {
+    static var sbjReportElementTypes: [Any.Type] { [Element.self] }
+}
+
+extension Dictionary: SBJReportTypeWrapper {
+    static var sbjReportElementTypes: [Any.Type] { [Key.self, Value.self] }
 }
