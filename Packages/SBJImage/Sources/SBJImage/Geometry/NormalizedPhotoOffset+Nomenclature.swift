@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension NormalizedPhotoOffset: StringPresentable {
-	public var description: String { "Horizontal offset \(x), vertical offset \(y)" }
+extension NormalizedPhotoOffset: SBJTextPresentable {
+	public var presentedValue: String { "Horizontal offset \(x), vertical offset \(y)" }
 	public static let xInfo = SBJPropertyInfo(
 		title: "Horizontal Placement",
 		summary: "Horizontal image placement normalized to the rendered image width.",

@@ -3,14 +3,18 @@ import Foundation
 /// Editing increments are presentation/application policy, not intrinsic unit
 /// semantics. Different apps can therefore step the same physical unit in
 /// different increments without changing conversion behavior.
+@SBJStructure
 public struct UnitEditingPolicy<Unit: UnitType>: Codable, Equatable, Sendable {
     public var defaultStep: Double
     public var overrides: [Unit: Double]
 
-    public init(defaultStep: Double, overrides: [Unit: Double] = [:]) {
+    @SBJDesignatedInit
+    public init(defaultStep: Double = 1, overrides: [Unit: Double] = [:]) {
         self.defaultStep = defaultStep
         self.overrides = overrides
     }
+
+    public var hasContent: Bool { true }
 
     public func stepAmount(for unit: Unit) -> Double {
         overrides[unit] ?? defaultStep

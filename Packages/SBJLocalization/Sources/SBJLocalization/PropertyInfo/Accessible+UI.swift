@@ -31,21 +31,26 @@ private struct SBJAccessibleValuesModifier: ViewModifier {
 }
 
 private struct SBJAccessibilityModifier: ViewModifier {
-    let item: any Accessible
+    let item: AccessibleItem?
 
     func body(content: Content) -> some View {
         content
             .modifier(SBJAccessibleValuesModifier(
-                label: item.accessibilityLabel,
-                hint: item.accessibilityHint,
-                value: item.accessibilityValue
+                label: item?.accessibilityLabel,
+                hint: item?.accessibilityHint,
+                value: item?.accessibilityValue
             ))
     }
 }
 
 public extension View {
-    func accessibility(_ item: any Accessible) -> some View {
+    func accessibility(_ item: AccessibleItem?) -> some View {
         modifier(SBJAccessibilityModifier(item: item))
+    }
+
+    /// Applies declaration-site metadata without inventing a runtime value.
+    func accessibility(_ info: SBJPropertyInfo) -> some View {
+        accessibility(Optional(info.accessibility))
     }
 
     func accessibility(

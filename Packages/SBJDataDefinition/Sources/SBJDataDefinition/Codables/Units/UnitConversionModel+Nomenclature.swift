@@ -1,7 +1,7 @@
 import Foundation
 
-extension UnitConversionModel: StringPresentable {
-	public var description: String {
+extension UnitConversionModel: SBJTextPresentable {
+	public var presentedValue: String {
 		"\(source.value.formatted()) \(source.unit.symbol) → \(result.value.formatted()) \(destinationUnit.symbol)"
 	}
 

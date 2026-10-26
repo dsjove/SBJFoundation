@@ -7,7 +7,7 @@ import SBJDataDefinition
 /// converting the numeric value. Reinterpreting the same number in a different
 /// unit is intentionally not the behavior of this control.
 @MainActor
-public struct UnitValueControl<Unit: UnitType & StringPresentable>: View {
+public struct UnitValueControl<Unit: UnitType>: View {
     @Binding private var value: UnitValue<Unit>
     private let units: [Unit]
     private let accessibilityLabel: String?
@@ -51,8 +51,7 @@ public struct UnitValueControl<Unit: UnitType & StringPresentable>: View {
             Text(value.unit.symbol)
                 .foregroundStyle(.secondary)
                 .fixedSize()
-                .accessibilityLabel(UnitValue<Unit>.unitInfo.accessibilityLabel ?? "Unit")
-                .accessibilityValue(value.unit.description)
+                .accessibility(value.accessibilityItem(for: \.unit))
         } else {
             SBJSelectionMenu(
                 selection: Binding<Int?>(
@@ -63,13 +62,12 @@ public struct UnitValueControl<Unit: UnitType & StringPresentable>: View {
                     }
                 ),
                 choices: units.enumerated().map {
-                    SBJMenuChoice(id: $0.offset, title: $0.element.description)
+                    SBJMenuChoice(id: $0.offset, title: $0.element.presentedValue)
                 },
                 currentTitle: value.unit.symbol,
                 invalidSelection: !units.contains(value.unit)
             )
-            .accessibilityLabel(UnitValue<Unit>.unitInfo.accessibilityLabel ?? "Unit")
-            .accessibilityValue(value.unit.description)
+            .accessibility(value.accessibilityItem(for: \.unit))
         }
     }
 }

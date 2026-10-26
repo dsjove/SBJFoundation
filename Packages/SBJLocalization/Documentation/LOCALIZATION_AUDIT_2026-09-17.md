@@ -1,3 +1,9 @@
+# Historical snapshot — not current implementation
+
+This September 17, 2026 inventory is preserved for its **app-by-app observations**, not its API names, counts, paths or migration status. The subsequent refactor removed `StringPresentable`, `Accessible`, and `AccessibilityValues`; current text presentation uses `SBJTextPresentable.presentedValue`, with optional `accessibilityValue` defaulting to `nil`. Counts are historical; re-audit before using them to scope work. The desired resolver remains unimplemented. For current APIs and forward design, see [README.md](README.md) and [LAYERED_CONTEXT_AWARE_LOCALIZATION.md](LAYERED_CONTEXT_AWARE_LOCALIZATION.md).
+
+---
+
 # Localization / Presentation Audit — 2026-09-17
 
 ## Design baseline

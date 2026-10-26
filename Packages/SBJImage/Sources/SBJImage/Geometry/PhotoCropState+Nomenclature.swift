@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension PhotoCropState: StringPresentable {
-	public var description: String { "\(option.title) crop, aspect ratio \(freeAspectRatio)" }
+extension PhotoCropState: SBJTextPresentable {
+	public var presentedValue: String { "\(option.title) crop, aspect ratio \(freeAspectRatio)" }
 	public static let optionInfo = SBJPropertyInfo(
 		title: "Crop",
 		summary: "Active crop mode.",

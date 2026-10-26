@@ -19,8 +19,8 @@ struct SBJUnitsTests {
         #expect(decoded == original)
     }
     @Test func nomenclatureUsesUncamelCasedRawValues() {
-        #expect(VolumeUnit.fluidOunce.description == "Fluid Ounce")
+        #expect(VolumeUnit.fluidOunce.presentedValue == "Fluid Ounce")
         #expect(VolumeUnit.fluidOunce.abbreviation == "fl oz")
-        #expect(MeasurementSystem.imperial.description == "Imperial")
+        #expect(MeasurementSystem.imperial.presentedValue == "Imperial")
     }
 }

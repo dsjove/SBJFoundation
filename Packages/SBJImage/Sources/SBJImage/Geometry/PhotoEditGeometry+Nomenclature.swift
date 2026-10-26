@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension PhotoEditGeometry: StringPresentable {
-	public var description: String { "\(crop.description), zoom \(magnification), \(rotation.description)" }
+extension PhotoEditGeometry: SBJTextPresentable {
+	public var presentedValue: String { "\(crop.presentedValue), zoom \(magnification), \(rotation.presentedValue)" }
 	public static let cropInfo = SBJPropertyInfo(
 		summary: "Crop selection and crop-specific geometry.",
 		details: "Contains the selected crop mode, free-crop aspect ratio, and width/height transpose state."

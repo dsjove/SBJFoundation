@@ -28,6 +28,29 @@ struct UnitValueTests {
         #expect(object["kind"] == nil)
     }
 
+    @Test func structureMacroDescribesQuantityAndImmutableUnit() throws {
+        typealias Value = UnitValue<LengthUnit>
+        #expect(Value.sbjProperties.map(\.sourceName) == ["value", "unit"])
+        #expect(Value.sbjMutableProperties.map(\.structuralMetadata?.sourceName) == ["value"])
+        #expect(Value.sbjDefaultValue()?.unit == LengthUnit.allCases.first)
+        let valid = Value(1, unit: .inch)
+        #expect(valid.sbjStructuralEquals(Value(1, unit: .inch)))
+        #expect(!valid.sbjStructuralEquals(Value(2, unit: .inch)))
+    }
+
+    @Test func structureMacroDescribesEditingPolicy() {
+        typealias Policy = UnitEditingPolicy<LengthUnit>
+        #expect(Policy.sbjProperties.map(\.sourceName) == ["defaultStep", "overrides"])
+        #expect(Policy.sbjMutableProperties.count == 2)
+        #expect(Policy.sbjDefaultValue()?.defaultStep == 1)
+    }
+
+    @Test func unitEnumsExposeMacroCaseNames() {
+        #expect(LengthUnit.sbjCaseNames.contains("millimeter"))
+        #expect(LengthUnit.millimeter.sbjCaseName == "millimeter")
+        #expect(MeasurementSystem.sbjCaseNames == ["metric", "imperial", "universal"])
+    }
+
     @Test func pointConversionMatchesPDFDefinition() {
         let inch = UnitValue<LengthUnit>(72, unit: .point).converted(to: .inch)
         #expect(abs(inch.value - 1) < 0.000_001)

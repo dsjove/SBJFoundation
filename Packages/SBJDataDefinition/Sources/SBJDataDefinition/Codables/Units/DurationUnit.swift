@@ -1,5 +1,6 @@
 import Foundation
 
+@SBJStructure
 public enum DurationUnit: String, UnitType {
     case second
     case minute
@@ -18,5 +19,4 @@ public enum DurationUnit: String, UnitType {
     public var measurementSystem: MeasurementSystem { .universal }
 
     public var numberFormat: SBJNumberFormatStyle { .decimal(significantDigits: 4) }
-
 }

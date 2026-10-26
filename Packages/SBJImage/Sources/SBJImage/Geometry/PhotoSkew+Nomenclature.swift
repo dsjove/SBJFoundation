@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoSkew: StringPresentable {
-	public var description: String { "Horizontal skew \(horizontalDegrees)°, vertical skew \(verticalDegrees)°" }
+extension PhotoSkew: SBJTextPresentable {
+	public var presentedValue: String { "Horizontal skew \(horizontalDegrees)°, vertical skew \(verticalDegrees)°" }
 }

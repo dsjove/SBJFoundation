@@ -254,6 +254,9 @@ public enum SBJStructureGeneration {
                 }
                 if let defaultUnit = unitValueDefault(on: variable) {
                     constraintMetadata.append(".defaultUnit(SBJDefaultUnit(\(defaultUnit)))")
+                    if unitValueMutable(on: variable) == "false" {
+                        invariantStatements.append("try SBJInvariantCheck.requireUnit(\(name), \(defaultUnit), at: keyPath.appending(\\Self.\(name)))")
+                    }
                 }
                 if let unitSystem = unitValueSystem(on: variable) {
                     constraintMetadata.append(".unitSystem(\(unitSystem))")
@@ -475,17 +478,59 @@ public enum SBJStructureGeneration {
             )
         }
 
-        if !hasExplicitDefaultValue, canInitializeWithoutArguments(structDecl) {
-            result.append(
-                DeclSyntax(stringLiteral: """
-                \(access)static func sbjDefaultValue() -> Self? {
-                    .init()
-                }
-                """)
-            )
+        if !hasExplicitDefaultValue {
+            if let generated = designatedDefaultFactory(for: structDecl, access: access) {
+                result.append(DeclSyntax(stringLiteral: generated))
+            } else if canInitializeWithoutArguments(structDecl) {
+                result.append(
+                    DeclSyntax(stringLiteral: """
+                    \(access)static func sbjDefaultValue() -> Self? {
+                        .init()
+                    }
+                    """)
+                )
+            }
         }
 
         return result
+    }
+
+    /// Synthesize a context-free factory from the source-level designated initializer.
+    /// Defaulted arguments are intentionally omitted: Swift evaluates their declared
+    /// defaults, while required arguments are resolved through SBJDefaultValue.
+    private static func designatedDefaultFactory(for structDecl: StructDeclSyntax, access: String) -> String? {
+        let designated = structDecl.memberBlock.members.compactMap {
+            $0.decl.as(InitializerDeclSyntax.self)
+        }.filter { initializer in
+            initializer.attributes.contains { element in
+                guard case .attribute(let attribute) = element else { return false }
+                return attribute.attributeName.trimmedDescription == "SBJDesignatedInit"
+            }
+        }
+        guard designated.count == 1, let initializer = designated.first else { return nil }
+        let signature = initializer.signature.trimmedDescription
+        guard !signature.contains("async"), !signature.contains("throws"),
+              !signature.contains("rethrows"), initializer.optionalMark == nil else { return nil }
+
+        var declarations: [String] = []
+        var arguments: [String] = []
+        for (index, parameter) in initializer.signature.parameterClause.parameters.enumerated() {
+            if parameter.defaultValue != nil { continue }
+            let type = parameter.type.trimmedDescription
+            // Inout, variadic and function arguments are not safely constructible
+            // through the context-free factory.
+            if type.hasPrefix("inout ") || parameter.ellipsis != nil { return nil }
+            let local = "sbjArg\(index)"
+            declarations.append("guard let \(local): \(type) = SBJDefaultValue.value(for: \(type).self) else { return nil }")
+            let external = parameter.firstName.text
+            arguments.append(external == "_" ? local : "\(external): \(local)")
+        }
+        let body = (declarations + ["return .init(\(arguments.joined(separator: ", ")))"]).joined(separator: "\n")
+        return """
+        \(access)static func sbjDefaultValue() -> Self? {
+            \(body)
+        }
+        """
     }
 
     private static func canInitializeWithoutArguments(_ structDecl: StructDeclSyntax) -> Bool {

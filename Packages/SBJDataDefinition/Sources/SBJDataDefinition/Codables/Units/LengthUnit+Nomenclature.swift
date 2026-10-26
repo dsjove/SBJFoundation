@@ -1,6 +1,6 @@
 import Foundation
 
-extension LengthUnit: StringPresentable {
+extension LengthUnit: SBJTextPresentable {
     public var abbreviation: String {
         switch self {
         case .point: "pt"

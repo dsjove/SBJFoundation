@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension PhotoRotation: StringPresentable {
-	public var description: String { "Rotation \(degrees)°" }
+extension PhotoRotation: SBJTextPresentable {
+	public var presentedValue: String { "Rotation \(degrees)°" }
 	public static let quarterTurnsInfo = SBJPropertyInfo(
 		summary: "Number of 90-degree clockwise rotations, normalized to zero through three.",
 		details: "Quarter-turn controls may rotate in either direction; the stored representation remains normalized modulo four.",

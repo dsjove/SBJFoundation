@@ -34,6 +34,19 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
 }
 
 public extension SBJStructured {
+    /// Assembles declaration-site metadata with the property's runtime accessibility.
+    /// Returns nil when neither source contributes accessibility semantics.
+    func accessibilityItem<Value>(for keyPath: KeyPath<Self, Value>) -> AccessibleItem? {
+        let info = Self.propertyInfo(for: keyPath)
+        let values = self[keyPath: keyPath] as? any SBJTextPresentable
+        guard info != nil || values != nil else { return nil }
+        return AccessibleItem(
+            label: info?.accessibilityLabel,
+            hint: info?.accessibilityHint,
+            value: values?.accessibilityValue
+        )
+    }
+
     static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
         _propertyInfo(for: keyPath)
     }

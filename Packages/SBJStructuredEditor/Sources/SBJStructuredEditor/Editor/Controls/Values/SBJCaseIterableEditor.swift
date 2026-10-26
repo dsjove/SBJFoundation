@@ -38,8 +38,8 @@ struct SBJCaseIterableEditor<Value>: View {
 }
 
 private func sbjCaseIterablePresentation<Value>(_ value: Value) -> String {
-    if let presentable = value as? any StringPresentable {
-        return presentable.description
+    if let presentable = value as? any SBJTextPresentable {
+        return presentable.presentedValue
     }
     return String(describing: value).uncamelCased
 }

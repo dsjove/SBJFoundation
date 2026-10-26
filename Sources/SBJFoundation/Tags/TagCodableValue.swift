@@ -9,7 +9,7 @@ import SBJDataDefinition
 /// type provides a stable representation for export, recovery, interchange, and
 /// other serialization without coupling Codable to SwiftData relationships.
 @SBJStructure
-public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable, StringPresentable {
+public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable, SBJTextPresentable {
 	public var id: ID
 	public var name: String
 	public var color: CodableColor
@@ -24,7 +24,7 @@ public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable, Stri
 		self.init(id: tag.id, name: tag.name, color: tag.color)
 	}
 
-	public var description: String { name }
+	public var presentedValue: String { name }
 
 	public static var nameInfo: SBJPropertyInfo { .init(
 		title: "Tag Name",

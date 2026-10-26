@@ -349,13 +349,21 @@ private struct TestDocumentedValue: Codable {
             summary: "A short name.",
             details: "Used to identify the value in user interfaces.",
             accessibilityLabel: "Name field",
-            accessibilityHint: "Enter a short name",
-            accessibilityValue: "Current name"
+            accessibilityHint: "Enter a short name"
         )
     }
 }
 
 extension SBJStructureUsageTests {
+    @Test func propertyAccessibilityAssemblesStaticMetadata() {
+        let model = TestDocumentedValue(name: "Example")
+        let item = model.accessibilityItem(for: \.name)
+        #expect(item?.accessibilityLabel == "Name field")
+        #expect(item?.accessibilityHint == "Enter a short name")
+        // String does not opt in to SBJTextPresentable.
+        #expect(item?.accessibilityValue == nil)
+    }
+
     @Test func structuralMetadataCarriesReusablePropertyInfo() {
         let property = TestDocumentedValue.propertyMetadata(for: \TestDocumentedValue.name)
         #expect(property?.sourceName == "name")

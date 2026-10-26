@@ -173,7 +173,7 @@ SBJStructure uses collection-view-style terminology for these concepts:
 - `SBJEditorItemIdentifier` — stable logical identity.
 - `SBJEditorIndexPath` — current presentation location.
 - `SBJEditorSnapshotItem` — item identifier + index path + current content.
-- `Accessible` / `AccessibleItem` — presentation-independent accessibility semantics.
+- `AccessibleItem` — presentation-independent accessibility semantics.
 
 An element can move from index 2 to index 0 while retaining the same item identifier. Search can produce a different visible snapshot without changing logical identity. These types are `Hashable` where identity/state systems need hashing, rather than using display position or current content as accidental identity.
 
@@ -513,7 +513,7 @@ extension MealRecipe {
 - `accessibilityHint`
 - `accessibilityValue`
 
-The lower-level `Accessible` protocol and `AccessibleItem` type are also UI-independent. SwiftUI adapters consume the same semantics, but other UI frameworks or documentation tools can do so as well.
+The `AccessibleItem` type is UI-independent. SwiftUI adapters consume the same semantics, but other UI frameworks or documentation tools can do so as well.
 
 This keeps property documentation DRY: the model declares what the property means once; each consumer chooses how to present it.
 

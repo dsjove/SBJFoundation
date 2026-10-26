@@ -8,7 +8,7 @@ User-facing names, descriptions, semantic symbols, accessibility metadata and re
 import SBJLocalization
 ```
 
-`StringPresentable` supplies textual presentation; for string-backed enums, its default description is derived by un-camel-casing the raw value. Use a model's `+Nomenclature.swift` extension for presentation conformance and named `SBJPropertyInfo` values. Supply explicit titles only when automatic naming is inadequate. `SBJPropertyInfo` is metadata for meaningful presentation rather than a duplicate of an already-readable name.
+`SBJTextPresentable` supplies textual presentation; for string-backed enums, its default description is derived by un-camel-casing the raw value. Use a model's `+Nomenclature.swift` extension for presentation conformance and named `SBJPropertyInfo` values. Supply explicit titles only when automatic naming is inadequate. `SBJPropertyInfo` is metadata for meaningful presentation rather than a duplicate of an already-readable name.
 
 `SBJSymbology` and `SBJSymbol` represent semantic symbols. Accessibility helpers and string/presentation transformations are also in this module. Refer to the public declarations for platform-specific modifiers.
 

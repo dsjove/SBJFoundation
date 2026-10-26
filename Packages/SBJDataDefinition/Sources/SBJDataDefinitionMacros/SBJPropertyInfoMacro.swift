@@ -19,7 +19,8 @@ public struct SBJPropertyInfoMacro: MemberMacro {
         var hasCustomPublicLookup = false
         for member in extensionDecl.memberBlock.members {
             if let function = member.decl.as(FunctionDeclSyntax.self),
-               function.name.text == "propertyInfo" {
+               function.name.text == "propertyInfo",
+               function.modifiers.contains(where: { $0.name.tokenKind == .keyword(.static) }) {
                 hasCustomPublicLookup = true
             }
             guard let variable = member.decl.as(VariableDeclSyntax.self),

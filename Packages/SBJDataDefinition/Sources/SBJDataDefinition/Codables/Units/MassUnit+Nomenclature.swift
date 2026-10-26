@@ -1,6 +1,6 @@
 import Foundation
 
-extension MassUnit: StringPresentable {
+extension MassUnit: SBJTextPresentable {
     public var abbreviation: String {
         switch self {
         case .gram: "g"

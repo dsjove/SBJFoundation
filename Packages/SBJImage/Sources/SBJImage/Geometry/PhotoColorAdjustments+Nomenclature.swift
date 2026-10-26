@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoColorAdjustments: StringPresentable {
-	public var description: String { "No color adjustments" }
+extension PhotoColorAdjustments: SBJTextPresentable {
+	public var presentedValue: String { "No color adjustments" }
 }

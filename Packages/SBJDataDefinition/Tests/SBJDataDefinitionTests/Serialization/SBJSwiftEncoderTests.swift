@@ -61,3 +61,48 @@ struct SBJSwiftEncoderTests {
         #expect(encoder.expression(for: Double.nan) == ".nan")
     }
 }
+
+@SBJStructure
+struct RequiredInitializerDefaultFixture: Codable, Equatable {
+    let name: String
+    var count: Int
+
+    @SBJDesignatedInit
+    init(_ name: String, count: Int = 7) {
+        self.name = name
+        self.count = count
+    }
+}
+
+@SBJStructure
+struct NoContextFreeDefaultFixture: Codable, Equatable {
+    let child: RequiredInitializerDefaultFixture
+
+    @SBJDesignatedInit
+    init(child: RequiredInitializerDefaultFixture) {
+        self.child = child
+    }
+}
+
+struct DesignatedInitializerDefaultsTests {
+    @Test func synthesizesRequiredArgumentDefaults() {
+        let result = RequiredInitializerDefaultFixture.sbjDefaultValue()
+        #expect(result?.name == "")
+        #expect(result?.count == 7)
+    }
+
+    @Test func exportsUnlabeledParameterInDesignatedOrder() {
+        let result = RequiredInitializerDefaultFixture("Alice", count: 3)
+        let expression = SBJSwiftEncoder().expression(for: result, nested: false)
+        #expect(expression.hasPrefix("RequiredInitializerDefaultFixture("))
+        #expect(expression.contains("\"Alice\""))
+        #expect(expression.contains("count: 3"))
+        #expect(!expression.contains("name:"))
+    }
+
+    @Test func synthesizesNestedStructuredDefaults() {
+        let result = NoContextFreeDefaultFixture.sbjDefaultValue()
+        #expect(result?.child.name == "")
+        #expect(result?.child.count == 7)
+    }
+}

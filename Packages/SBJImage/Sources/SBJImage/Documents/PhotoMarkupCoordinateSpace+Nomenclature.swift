@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoMarkupCoordinateSpace: StringPresentable {
-	public var description: String { rawValue }
+extension PhotoMarkupCoordinateSpace: SBJTextPresentable {
+	public var presentedValue: String { rawValue }
 }

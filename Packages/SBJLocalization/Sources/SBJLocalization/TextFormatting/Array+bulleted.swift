@@ -16,17 +16,17 @@ public extension Array where Element == String {
 	}
 }
 
-public extension Array where Element == Optional<StringPresentable> {
+public extension Array where Element == Optional<SBJTextPresentable> {
 	func bulleted(_ separator: String = " • ", prefix: String = "") -> String {
 		// Intentionally omit prefix when collapsing optional values: nil entries must not produce a prefix.
 		self.compactMap { $0 }.bulleted(separator)
 	}
 }
 
-public extension Array where Element == StringPresentable {
+public extension Array where Element == SBJTextPresentable {
 	func bulleted(_ separator: String = " • ", prefix: String = "") -> String {
 		self
-			.map(\.description)
+			.map(\.presentedValue)
 			.map(prefix.appending)
 			.filter { !$0.isEmpty }
 			.joined(separator: separator)

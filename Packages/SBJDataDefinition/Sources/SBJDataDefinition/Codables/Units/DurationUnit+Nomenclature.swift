@@ -1,6 +1,6 @@
 import Foundation
 
-extension DurationUnit: StringPresentable {
+extension DurationUnit: SBJTextPresentable {
     public var abbreviation: String {
         switch self {
         case .second: "s"

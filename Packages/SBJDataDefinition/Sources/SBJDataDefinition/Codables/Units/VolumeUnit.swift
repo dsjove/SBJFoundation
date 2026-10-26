@@ -1,5 +1,6 @@
 import Foundation
 
+@SBJStructure
 public enum VolumeUnit: String, UnitType {
     case milliliter
     case liter

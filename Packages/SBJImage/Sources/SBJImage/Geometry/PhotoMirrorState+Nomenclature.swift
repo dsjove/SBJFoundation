@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension PhotoMirrorState: StringPresentable {
-	public var description: String { horizontal && vertical ? "Mirrored horizontally and vertically" : horizontal ? "Mirrored horizontally" : vertical ? "Mirrored vertically" : "Not mirrored" }
+extension PhotoMirrorState: SBJTextPresentable {
+	public var presentedValue: String { horizontal && vertical ? "Mirrored horizontally and vertically" : horizontal ? "Mirrored horizontally" : vertical ? "Mirrored vertically" : "Not mirrored" }
 	public static let horizontalInfo = SBJPropertyInfo(
 		summary: "Whether the image is mirrored left-to-right.",
 		details: "False preserves the source orientation; true reflects the image across its vertical axis.",

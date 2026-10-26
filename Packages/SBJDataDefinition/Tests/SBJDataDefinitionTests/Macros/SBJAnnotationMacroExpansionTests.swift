@@ -165,4 +165,33 @@ final class SBJAnnotationMacroExpansionTests: XCTestCase {
             macros: macros
         )
     }
+    func testPreferredInitMapsMultilineDirectAssignment() {
+        assertMacroExpansion(
+            """
+            struct Example {
+                @SBJDesignatedInit
+                init(_ amount: Double) {
+                    self.value =
+                        amount
+                }
+            }
+            """,
+            expandedSource: """
+            struct Example {
+                init(_ amount: Double) {
+                    self.value =
+                        amount
+                }
+
+                public static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
+                    [
+                        .init(propertyName: "value", label: nil)
+                    ]
+                }
+            }
+            """,
+            macros: macros
+        )
+    }
+
 }

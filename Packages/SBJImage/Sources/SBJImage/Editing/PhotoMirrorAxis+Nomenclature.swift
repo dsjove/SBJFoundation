@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoMirrorAxis: StringPresentable {
-	public var description: String { rawValue }
+extension PhotoMirrorAxis: SBJTextPresentable {
+	public var presentedValue: String { rawValue }
 }

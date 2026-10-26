@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoPerspective: StringPresentable {
-	public var description: String { isIdentity ? "No perspective correction" : "Four-corner perspective correction" }
+extension PhotoPerspective: SBJTextPresentable {
+	public var presentedValue: String { isIdentity ? "No perspective correction" : "Four-corner perspective correction" }
 }

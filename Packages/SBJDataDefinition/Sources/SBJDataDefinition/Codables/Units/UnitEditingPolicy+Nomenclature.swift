@@ -1,7 +1,8 @@
 import Foundation
 
-extension UnitEditingPolicy: StringPresentable {
-	public var description: String {
+@SBJPropertyInfo
+extension UnitEditingPolicy: SBJTextPresentable {
+	public var presentedValue: String {
 		"Step: \(defaultStep.formatted())"
 	}
 

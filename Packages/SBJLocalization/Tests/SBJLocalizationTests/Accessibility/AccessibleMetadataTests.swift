@@ -3,23 +3,25 @@ import Testing
 
 @Suite("Accessible metadata")
 struct AccessibleMetadataTests {
-    @Test func propertyInfoUsesOriginalAccessibleProtocol() {
+    @Test func propertyInfoOnlyHoldsDeclarationMetadata() {
         let info = SBJPropertyInfo(
-            summary: "Summary",
-            details: "Details",
-            accessibilityLabel: "Label",
-            accessibilityHint: "Hint",
-            accessibilityValue: "Value"
+            summary: "Summary", details: "Details",
+            accessibilityLabel: "Label", accessibilityHint: "Hint"
         )
-        let accessible: any Accessible = info
-        #expect(accessible.accessibilityLabel == "Label")
-        #expect(accessible.accessibilityHint == "Hint")
-        #expect(accessible.accessibilityValue == "Value")
-        #expect(info.accessibility == AccessibleItem(label: "Label", hint: "Hint", value: "Value"))
-        #expect(SBJPropertyInfo(summary: "Summary", details: "Details", accessibility: info.accessibility) == info)
+        #expect(info.accessibilityLabel == "Label")
+        #expect(info.accessibilityHint == "Hint")
+        #expect(info.accessibility == AccessibleItem(label: "Label", hint: "Hint"))
     }
 
-    @Test func accessibleItemRetainsOriginalInitializer() {
+    @Test func textPresentableBridgesRuntimeAccessibility() {
+        struct Word: SBJTextPresentable {
+            let presentedValue = "Readable value"
+        }
+        #expect(Word().accessibilityValue == nil)
+        #expect(Word().presentedValue == "Readable value")
+    }
+
+    @Test func accessibleItemStoresAssembledSemantics() {
         let item = AccessibleItem(label: "Label", hint: "Hint", value: "Value")
         #expect(item.accessibilityLabel == "Label")
         #expect(item.accessibilityHint == "Hint")
@@ -28,15 +30,13 @@ struct AccessibleMetadataTests {
         #expect(AccessibleItem().isEmpty)
     }
 
-    @Test func accessibleImageItemRetainsOriginalAccessibilityBehavior() {
+    @Test func symbolItemProvidesAssembledAccessibility() {
         let decorative = AccessibleSymbolItem(symbol: .system("star"), label: "Favorite")
-        #expect(decorative.accessibilityLabel == nil)
         #expect(!decorative.labeled)
 
         #expect(decorative.accessibility.isEmpty)
         let labeled = AccessibleSymbolItem(symbol: .system("star"), labeled: true, label: "Favorite")
         #expect(labeled.accessibility == AccessibleItem(label: "Favorite"))
-        #expect(labeled.accessibilityLabel == "Favorite")
         #expect(labeled.labeled)
     }
 }

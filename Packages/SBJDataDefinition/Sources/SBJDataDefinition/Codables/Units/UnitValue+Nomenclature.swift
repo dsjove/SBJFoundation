@@ -1,7 +1,8 @@
 import Foundation
 
-extension UnitValue: StringPresentable {
-	public var description: String {
+@SBJPropertyInfo
+extension UnitValue: SBJTextPresentable {
+	public var presentedValue: String {
 		"\(value.formatted())\(unit.symbol)"
 	}
 

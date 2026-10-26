@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoCropOption: StringPresentable {
-	public var description: String { title }
+extension PhotoCropOption: SBJTextPresentable {
+	public var presentedValue: String { title }
 }

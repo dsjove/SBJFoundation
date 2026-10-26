@@ -1,6 +1,6 @@
 import Foundation
 
-extension VolumeUnit: StringPresentable {
+extension VolumeUnit: SBJTextPresentable {
     public var abbreviation: String {
         switch self {
         case .milliliter: "mL"

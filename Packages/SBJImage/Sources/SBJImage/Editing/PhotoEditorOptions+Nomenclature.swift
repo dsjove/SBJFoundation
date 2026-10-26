@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension PhotoEditorOptions: StringPresentable {
-	public var description: String { "\(cropOptions.count) crop options, maximum zoom \(maximumMagnification)" }
+extension PhotoEditorOptions: SBJTextPresentable {
+	public var presentedValue: String { "\(cropOptions.count) crop options, maximum zoom \(maximumMagnification)" }
 	public static let cropOptionsInfo = SBJPropertyInfo(
 		summary: "Crop modes offered by the photo editor.",
 		details: "Include None when uncropped editing is allowed. The order is the order presented in the crop menu."

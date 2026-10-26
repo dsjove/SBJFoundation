@@ -1,5 +1,5 @@
 import SBJLocalization
 
-extension PhotoMarkupCanvasSize: StringPresentable {
-	public var description: String { "\(width) × \(height)" }
+extension PhotoMarkupCanvasSize: SBJTextPresentable {
+	public var presentedValue: String { "\(width) × \(height)" }
 }

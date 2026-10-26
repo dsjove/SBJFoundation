@@ -14,14 +14,12 @@ public struct SBJDesignatedInitMacro: PeerMacro {
             return []
         }
 
-        let bodyLines = initializer.body?.description
-            .split(whereSeparator: \.isNewline)
-            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) } ?? []
+        let bodySource = initializer.body?.description ?? ""
 
         let parameters = initializer.signature.parameterClause.parameters.map { parameter -> String in
             let externalName = parameter.firstName.text
             let localName = parameter.secondName?.text ?? externalName
-            let propertyName = directlyAssignedProperty(for: localName, bodyLines: bodyLines) ?? localName
+            let propertyName = directlyAssignedProperty(for: localName, bodySource: bodySource) ?? localName
             let label = externalName == "_" ? "nil" : "\"\(externalName)\""
             if let defaultValue = parameter.defaultValue?.value.description {
                 let defaultExpression = String(
@@ -44,17 +42,22 @@ public struct SBJDesignatedInitMacro: PeerMacro {
 
     private static func directlyAssignedProperty(
         for parameterName: String,
-        bodyLines: [String]
+        bodySource: String
     ) -> String? {
-        for line in bodyLines where line.hasPrefix("self.") {
-            let pieces = line.split(separator: "=", maxSplits: 1).map {
-                String($0).trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            guard pieces.count == 2, pieces[1] == parameterName else { continue }
-            let lhs = pieces[0]
-            guard lhs.hasPrefix("self.") else { continue }
-            return String(lhs.dropFirst("self.".count))
+        // Initializer assignments are often formatted across multiple lines.
+        // Restrict the match to a direct self.property = parameter assignment;
+        // do not mistake comparisons or expressions for mappings.
+        let escaped = NSRegularExpression.escapedPattern(for: parameterName)
+        let pattern = #"\bself\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?![=])"#
+            + escaped + #"\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(
+                in: bodySource,
+                range: NSRange(bodySource.startIndex..<bodySource.endIndex, in: bodySource)
+              ),
+              let range = Range(match.range(at: 1), in: bodySource) else {
+            return nil
         }
-        return nil
+        return String(bodySource[range])
     }
 }

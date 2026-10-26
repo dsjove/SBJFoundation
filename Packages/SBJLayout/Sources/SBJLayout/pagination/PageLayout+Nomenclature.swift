@@ -2,8 +2,8 @@ import SBJDataDefinition
 import SBJLocalization
 
 @SBJPropertyInfo
-extension PageLayout: StringPresentable {
-	public var description: String {
+extension PageLayout: SBJTextPresentable {
+	public var presentedValue: String {
 		"\(pageSize), \(landscape ? "landscape" : "portrait"), margins: top \(top), bottom \(bottom), left \(left), right \(right)"
 	}
 	public static let pageSizeInfo = SBJPropertyInfo(

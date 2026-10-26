@@ -30,6 +30,19 @@ struct SBJStructureSampleModelTests {
   }
 
 
+  @Test func extensionPropertyInfoFlowsIntoStructuralMetadata() {
+    let servings = SBJStructureSampleModel.propertyMetadata(for: \SBJStructureSampleModel.servings)
+    #expect(servings?.info == SBJStructureSampleModel.servingsInfo)
+    let preparation = SBJStructureSampleModel.propertyMetadata(for: \SBJStructureSampleModel.preparationMinutes)
+    #expect(preparation?.info == SBJStructureSampleModel.customPreparationMetadata)
+  }
+
+  @Test func enumExtensionPropertyInfoUsesCaseNames() {
+    #expect(SBJStructureSampleCookingInstruction.sbjCaseInfo(for: "oven")
+      == SBJStructureSampleCookingInstruction.ovenInfo)
+    #expect(SBJStructureSampleCookingInstruction.sbjCaseInfo(for: "missing") == nil)
+  }
+
   @Test func canonicalSampleExercisesValidationAndStructuralComparison() {
     let original = SBJStructureSampleModel()
     var changed = original

@@ -1,5 +1,6 @@
 import Foundation
 
+@SBJStructure
 public enum MassUnit: String, UnitType {
     case gram
     case kilogram
@@ -28,5 +29,4 @@ public enum MassUnit: String, UnitType {
         case .metric, .universal: .decimal(significantDigits: 2)
         }
     }
-
 }

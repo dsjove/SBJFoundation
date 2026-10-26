@@ -1,5 +1,6 @@
 import Foundation
 
+@SBJStructure
 public enum LengthUnit: String, UnitType {
     case point
     case millimeter
@@ -39,5 +40,4 @@ public enum LengthUnit: String, UnitType {
         case .metric, .universal: .decimal(significantDigits: 2)
         }
     }
-
 }
