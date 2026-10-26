@@ -15,6 +15,7 @@ import SBJUIVocabulary
     let dateRange: ClosedRange<Date>?
     let colorSupportsAlpha: Bool
     let unitEditor: SBJUnitValueEditorMode
+    let unitSystem: MeasurementSystem?
     let collectionReorderable: Bool
     let collectionItemTitleKey: String?
     let collectionItemIdentifierKey: String?
@@ -67,11 +68,14 @@ import SBJUIVocabulary
           if case .colorSupportsAlpha(let value) = hint { return value }
           return nil
         }.first ?? true
-      let unitPresentation = metadata?.hints.compactMap { hint -> SBJPresentationUnitMode? in
-        if case .presentationUnit(let mode) = hint { return mode }
+      unitEditor = metadata?.constraints.compactMap { constraint -> SBJUnitValueEditorMode? in
+        if case .unitMutable(let value) = constraint { return value ? .editable : .fixedUnit }
         return nil
-      }.first ?? .fixedUnit
-      unitEditor = unitPresentation == .editable ? .editable : .fixedUnit
+      }.first ?? .editable
+      unitSystem = metadata?.constraints.compactMap { constraint -> MeasurementSystem? in
+        if case .unitSystem(let system) = constraint { return system }
+        return nil
+      }.first
       collectionReorderable =
         metadata?.constraints.compactMap { constraint -> Bool? in
           if case .reorderable(let value) = constraint { return value }
@@ -127,7 +131,8 @@ import SBJUIVocabulary
       numberRange: ClosedRange<Double>? = nil,
       dateRange: ClosedRange<Date>? = nil,
       colorSupportsAlpha: Bool = true,
-      unitEditor: SBJUnitValueEditorMode = .fixedUnit,
+      unitEditor: SBJUnitValueEditorMode = .editable,
+      unitSystem: MeasurementSystem? = nil,
       collectionReorderable: Bool = true
     ) {
       render = {
@@ -142,6 +147,7 @@ import SBJUIVocabulary
           dateRange: dateRange,
           colorSupportsAlpha: colorSupportsAlpha,
           unitEditor: unitEditor,
+          unitSystem: unitSystem,
           collectionReorderable: collectionReorderable
         )
       }
@@ -210,6 +216,7 @@ import SBJUIVocabulary
           dateRange: configuration.dateRange,
           colorSupportsAlpha: configuration.colorSupportsAlpha,
           unitEditor: configuration.unitEditor,
+          unitSystem: configuration.unitSystem,
           collectionReorderable: configuration.collectionReorderable,
           collectionItemTitleKey: configuration.collectionItemTitleKey,
           collectionItemIdentifierKey: configuration.collectionItemIdentifierKey,

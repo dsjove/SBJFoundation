@@ -212,9 +212,6 @@ public enum SBJStructureGeneration {
                 if hasAttribute(named: "SBJPresentationExclude", on: variable) {
                     hintMetadata.append(".presentationExcluded")
                 }
-                if let mode = presentationUnitMode(on: variable) {
-                    hintMetadata.append(".presentationUnit(\(mode))")
-                }
                 let textInputOptions = textInputOptions(on: variable)
                 if let autocorrect = textInputOptions.autocorrect {
                     hintMetadata.append(".textAutocorrection(\(autocorrect))")
@@ -252,11 +249,15 @@ public enum SBJStructureGeneration {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(numberMinimum), at: keyPath.appending(\\Self.\(name)))")
                     constraintMetadata.append(".numberMinimum(\(numberMinimum))")
                 }
-                if let immutableUnit = unitValueImmutable(on: variable) {
-                    constraintMetadata.append(".immutableUnit(\(immutableUnit))")
+                if let unitMutable = unitValueMutable(on: variable) {
+                    constraintMetadata.append(".unitMutable(\(unitMutable))")
                 }
                 if let defaultUnit = unitValueDefault(on: variable) {
                     constraintMetadata.append(".defaultUnit(SBJDefaultUnit(\(defaultUnit)))")
+                }
+                if let unitSystem = unitValueSystem(on: variable) {
+                    constraintMetadata.append(".unitSystem(\(unitSystem))")
+                    invariantStatements.append("try SBJInvariantCheck.requireUnitSystem(\(name), \(unitSystem), at: keyPath.appending(\\Self.\(name)))")
                 }
                 if let unitMinimum = unitValueMinimum(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(unitMinimum), at: keyPath.appending(\\Self.\(name)))")
@@ -947,28 +948,13 @@ public enum SBJStructureGeneration {
         return (nil, nil)
     }
 
-    private static func presentationUnitMode(on variable: VariableDeclSyntax) -> String? {
+    private static func unitValueMutable(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element,
-                  attribute.attributeName.trimmedDescription == "SBJPresentationUnit"
-            else { continue }
+                  attribute.attributeName.trimmedDescription == "SBJUnitValue" else { continue }
             guard let raw = attribute.arguments,
-                  case .argumentList(let arguments) = raw,
-                  let first = arguments.first
-            else { return ".fixedUnit" }
-            let mode = first.expression.trimmedDescription
-            return mode == ".editable" ? ".editable" : ".fixedUnit"
-        }
-        return nil
-    }
-
-    private static func unitValueImmutable(on variable: VariableDeclSyntax) -> String? {
-        for element in variable.attributes {
-            guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJUnitValue" else { continue }
-            guard let rawArguments = attribute.arguments,
-                  case .argumentList(let arguments) = rawArguments else { return "false" }
-            return arguments.first(where: { $0.label?.text == "immutableUnit" })?.expression.trimmedDescription ?? "false"
+                  case .argumentList(let arguments) = raw else { return "true" }
+            return arguments.first(where: { $0.label?.text == "unitMutable" })?.expression.trimmedDescription ?? "true"
         }
         return nil
     }
@@ -980,6 +966,17 @@ public enum SBJStructureGeneration {
                   let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else { continue }
             return arguments.first(where: { $0.label?.text == "defaultUnit" })?.expression.trimmedDescription
+        }
+        return nil
+    }
+
+    private static func unitValueSystem(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJUnitValue",
+                  let rawArguments = attribute.arguments,
+                  case .argumentList(let arguments) = rawArguments else { continue }
+            return arguments.first(where: { $0.label?.text == "unitSystem" })?.expression.trimmedDescription
         }
         return nil
     }

@@ -15,13 +15,13 @@ public struct PageLayout: Codable, Equatable, Sendable {
 		}
 	}
 	public var landscape: Bool
-	@SBJUnitValue(immutableUnit: true, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
 	public var left: UnitValue<LengthUnit>
-	@SBJUnitValue(immutableUnit: true, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
 	public var right: UnitValue<LengthUnit>
-	@SBJUnitValue(immutableUnit: true, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
 	public var top: UnitValue<LengthUnit>
-	@SBJUnitValue(immutableUnit: true, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
 	public var bottom: UnitValue<LengthUnit>
 
 	public init(

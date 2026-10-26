@@ -207,9 +207,10 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
     case numberMinimum(Double)
     case required(Bool)
     /// Whether changing the unit is prohibited by the property definition.
-    case immutableUnit(Bool)
+    case unitMutable(Bool)
     /// Preferred unit for creating a new measurement in this field.
     case defaultUnit(SBJDefaultUnit)
+    case unitSystem(MeasurementSystem)
     case count(min: Int?, max: Int?)
     /// Whether reordering the collection is a permitted data mutation.
     case reorderable(Bool)
@@ -228,7 +229,6 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
 public enum SBJPropertyHint: Sendable, Equatable {
     case presentationDisclosure(SBJPresentationDisclosureMode)
     case presentationExcluded
-    case presentationUnit(SBJPresentationUnitMode)
     case textStyle(SBJStringStyle)
     case textAutocorrection(SBJTextAutocorrection)
     case textCapitalization(SBJTextCapitalization)

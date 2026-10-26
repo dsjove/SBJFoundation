@@ -151,10 +151,9 @@ public struct SBJStructureSampleModel: Codable {
   public var vegetarian = true
   public var rating = SBJStructureSampleRating(value: 4)
 
-  @SBJUnitValue(min: 0)
-  @SBJPresentationUnit(.editable)
+  @SBJUnitValue(min: 0, unitMutable: true)
   public var servingVolume = UnitValue<VolumeUnit>(1.5, unit: .cup)
-  @SBJPresentationUnit(.fixedUnit)
+  @SBJUnitValue(unitMutable: false)
   public var packageWeight = UnitValue<MassUnit>(340, unit: .gram)
   public var simmerTime = UnitValue<DurationUnit>(45, unit: .minute)
   public var panDepth: UnitValue<LengthUnit>? = .init(2, unit: .inch)
@@ -176,7 +175,6 @@ public struct SBJStructureSampleModel: Codable {
   public var recipeCardFont = CodableFont(nil, ofSize: 14)
   public var preferredVolumeSteps = UnitEditingPolicy<VolumeUnit>(defaultStep: 0.25)
   public var preferredMeasurementSystem: MeasurementSystem = .metric
-  public var primaryUnitCategory: UnitCategory = .volume
 
   @SBJPresentationDisclosure(.closed)
   public var nutrition = SBJStructureSampleNutrition()

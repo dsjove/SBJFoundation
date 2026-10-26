@@ -25,5 +25,4 @@ extension LengthUnit: SBJStructuredEnum {}
 extension MassUnit: SBJStructuredEnum {}
 extension VolumeUnit: SBJStructuredEnum {}
 extension DurationUnit: SBJStructuredEnum {}
-extension UnitCategory: SBJStructuredEnum {}
 extension MeasurementSystem: SBJStructuredEnum {}

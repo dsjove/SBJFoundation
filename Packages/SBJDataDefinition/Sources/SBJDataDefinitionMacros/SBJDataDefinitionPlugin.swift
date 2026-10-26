@@ -27,7 +27,6 @@ struct SBJDataDefinitionPlugin: CompilerPlugin {
         SBJPresentationPropertyMacro.self,
         SBJPresentationDisclosureMacro.self,
         SBJPresentationStringMacro.self,
-        SBJPresentationUnitMacro.self,
 
     ]
 }

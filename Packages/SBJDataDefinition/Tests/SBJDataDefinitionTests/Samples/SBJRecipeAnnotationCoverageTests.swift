@@ -8,8 +8,6 @@ struct SBJRecipeAnnotationCoverageTests {
         let type = SBJStructureSampleModel.self
         #expect(type.propertyMetadata(for: \.name)?.constraints.contains(.textLength(min: 1, max: 80)) == true)
         #expect(type.propertyMetadata(for: \.servings)?.constraints.contains(.integerRange(1...24)) == true)
-        #expect(type.propertyMetadata(for: \.servingVolume)?.hints.contains(.presentationUnit(.editable)) == true)
-        #expect(type.propertyMetadata(for: \.packageWeight)?.hints.contains(.presentationUnit(.fixedUnit)) == true)
         #expect(type.propertyMetadata(for: \.cookingStages)?.hints.contains(.presentationDisclosure(.autoOpen)) == true)
         #expect(type.propertyMetadata(for: \.importSource)?.hints.contains(.presentationExcluded) == true)
         #expect(type.propertyMetadata(for: \.recipeCardTint)?.hints.contains(.colorSupportsAlpha(false)) == true)

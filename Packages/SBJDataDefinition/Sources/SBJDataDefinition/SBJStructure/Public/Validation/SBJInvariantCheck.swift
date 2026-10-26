@@ -254,6 +254,21 @@ public enum SBJInvariantCheck {
         }
     }
 
+    /// Validates a selected unit against a measurement-system restriction.
+    /// Universal units are valid for either metric or imperial fields.
+    public static func requireUnitSystem<U: UnitType>(
+        _ value: UnitValue<U>, _ system: MeasurementSystem, at keyPath: SBJValidationKeyPath
+    ) throws {
+        try require(value.unit.measurementSystem == .universal || value.unit.measurementSystem == system,
+                    value: value, at: keyPath, "unit must belong to the permitted measurement system")
+    }
+
+    public static func requireUnitSystem<U: UnitType>(
+        _ value: UnitValue<U>?, _ system: MeasurementSystem, at keyPath: SBJValidationKeyPath
+    ) throws {
+        if let value { try requireUnitSystem(value, system, at: keyPath) }
+    }
+
     public static func requirePresent<T>(_ value: T?, required: Bool, at keyPath: SBJValidationKeyPath) throws {
         if required { try require(value != nil, value: value, at: keyPath, "must be present") }
     }

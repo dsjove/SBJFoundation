@@ -1,8 +1,7 @@
 import SBJDataDefinition
 import SBJUIVocabulary
 
-/// Internal editor rendering mode. Model units are immutable; all automatic
-/// unit-value fields select `.fixedUnit`.
+/// Presentation mode derived from the SBJUnitValue unitMutable constraint.
 public enum SBJUnitValueEditorMode: Sendable, Hashable {
     case editable
     case fixedUnit
@@ -17,7 +16,8 @@ protocol _SBJUnitValueEditorValue {
         label: String,
         binding: SBJAnyBinding,
         labelIsUnknown: Bool,
-        editor: SBJUnitValueEditorMode
+        editor: SBJUnitValueEditorMode,
+        unitSystem: MeasurementSystem?
     ) -> AnyView
 }
 
@@ -27,14 +27,16 @@ extension UnitValue: _SBJUnitValueEditorValue {
         label: String,
         binding: SBJAnyBinding,
         labelIsUnknown: Bool,
-        editor: SBJUnitValueEditorMode
+        editor: SBJUnitValueEditorMode,
+        unitSystem: MeasurementSystem?
     ) -> AnyView {
         AnyView(
             SBJUnitValueEditor(
                 label: label,
                 value: binding.binding(as: Self.self),
                 labelIsUnknown: labelIsUnknown,
-                editor: editor
+                editor: editor,
+                unitSystem: unitSystem
             )
         )
     }
@@ -47,11 +49,15 @@ struct SBJUnitValueEditor<Unit: UnitType>: View {
     @Binding var value: UnitValue<Unit>
     let labelIsUnknown: Bool
     let editor: SBJUnitValueEditorMode
+    let unitSystem: MeasurementSystem?
 
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             UnitValueControl(
                 value: $value,
+                units: Array(Unit.allCases).filter { unit in
+                    unitSystem == nil || unit.measurementSystem == .universal || unit.measurementSystem == unitSystem
+                },
                 accessibilityLabel: label,
                 unitEditable: editor == .editable
             )

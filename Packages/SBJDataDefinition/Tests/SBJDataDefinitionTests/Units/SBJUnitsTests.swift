@@ -22,6 +22,5 @@ struct SBJUnitsTests {
         #expect(VolumeUnit.fluidOunce.description == "Fluid Ounce")
         #expect(VolumeUnit.fluidOunce.abbreviation == "fl oz")
         #expect(MeasurementSystem.imperial.description == "Imperial")
-        #expect(UnitCategory.duration.description == "Duration")
     }
 }
