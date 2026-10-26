@@ -1,6 +1,4 @@
 import Foundation
-import SBJDataDefinition
-import SBJUIVocabulary
 
 public extension Dictionary {
     /// Renames a key without overwriting an existing entry.

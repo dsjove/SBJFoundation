@@ -1,5 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
 import SBJUIVocabulary
 
 /// A checkbox presentation for `Toggle` that keeps the normal Toggle binding contract while

@@ -1,6 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
-import SBJUIVocabulary
 
 //TODO: rectify with SBJRemoveButton
 

@@ -1,7 +1,5 @@
 import Foundation
-import SBJUIVocabulary
 
-import SBJDataDefinition
 public extension Error {
 	func printAsNSError() {
 		let nsError = self as NSError
