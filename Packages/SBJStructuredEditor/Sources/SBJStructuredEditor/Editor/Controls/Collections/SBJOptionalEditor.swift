@@ -34,6 +34,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     /// value is flattened, so its nil state must not reserve a disclosure column
     /// that disappears as soon as the value is created.
     private var wrappedNeedsDisclosure: Bool {
+        if Wrapped.self is any SBJTypedEditorValue.Type { return false }
         if let structural = Wrapped.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralFieldCount > 1
         }
@@ -78,7 +79,26 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                     value = newValue
                 }
             )
-            if let structural = Wrapped.self as? any SBJMutableStructure.Type,
+            if Wrapped.self is any SBJEditorBoundTraversableValue.Type,
+               !(Wrapped.self is any SBJMutableStructure.Type) {
+                // Collections need their own disclosure/add header. Wrapping
+                // them in a generic optional row hides the collection actions.
+                    SBJValueEditor.makeView(
+                        label: label, value: unwrapped,
+                        originalValue: originalWrapped.map { SBJEditorOriginalValue($0) },
+                        registry: registry, textStyle: textStyle,
+                        integerRange: integerRange, numberRange: numberRange,
+                        dateRange: dateRange, colorSupportsAlpha: colorSupportsAlpha,
+                        unitEditor: unitEditor, unitSystem: unitSystem,
+                        collectionReorderable: collectionReorderable,
+                        collectionItemTitleKey: collectionItemTitleKey,
+                        collectionItemIdentifierKey: collectionItemIdentifierKey,
+                        optionalCollectionControl: AnyView(clearButton),
+                        context: context
+                    )
+
+            } else if !(Wrapped.self is any SBJTypedEditorValue.Type),
+                      let structural = Wrapped.self as? any SBJMutableStructure.Type,
                       structural._sbjStructuralFieldCount > 1 {
                 SBJEditorDisclosureHeader(
                     label,

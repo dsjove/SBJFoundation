@@ -121,11 +121,39 @@ public struct SBJEditorRegistry {
     }
 
     func createArrayElement<Value>(_ type: Value.Type, existing: [Value]) -> Value? {
-        if let arrayCreatableType = type as? any SBJCollectionElementCreatable.Type,
-           let value = arrayCreatableType._sbjCreateValue(existing: existing) as? Value {
-            return value
+        if let arrayCreatableType = type as? any SBJCollectionElementCreatable.Type {
+            // A nil result is intentional (e.g. every enum case is already used).
+            // Do not fall back to default construction and create a duplicate.
+            return arrayCreatableType._sbjCreateValue(existing: existing) as? Value
         }
         return create(type)
+    }
+
+    /// Creates a set member that is not already present.
+    /// Finite CaseIterable domains use their declared ordering; other types
+    /// retain exact-type registration and default creation behavior.
+    func createSetElement<Element: Hashable>(_ type: Element.Type, existing: Set<Element>) -> Element? {
+        if let cases = caseIterableOptions(for: type) {
+            return cases.first { !existing.contains($0) }
+        }
+        guard let candidate = create(type), !existing.contains(candidate) else { return nil }
+        return candidate
+    }
+
+    /// Creates a dictionary entry with an unused key and a constructible value.
+    /// Exhausted CaseIterable key domains must not fall through to defaults.
+    func createDictionaryEntry<Key: Hashable, Value>(
+        key: Key.Type, value: Value.Type, existing: [Key: Value]
+    ) -> (Key, Value)? {
+        let candidate: Key?
+        if let cases = caseIterableOptions(for: key) {
+            candidate = cases.first { existing[$0] == nil }
+        } else {
+            candidate = create(key)
+        }
+        guard let candidate, existing[candidate] == nil,
+              let newValue = create(value) else { return nil }
+        return (candidate, newValue)
     }
 
     func create<Value>(_ type: Value.Type) -> Value? {

@@ -58,6 +58,10 @@ struct SBJStructureSampleModelTests {
     let source = SBJSwiftEncoder().encode(SBJStructureSampleModel(), named: "sample")
     #expect(source.contains("sample"))
     #expect(source.contains("Roasted Vegetable Pasta"))
+    #expect(source.contains("var value = SBJStructureSampleModel()"))
+    #expect(source.contains("value.name ="))
+    #expect(source.contains("return value"))
+    #expect(!source.contains("JSONDecoder"))
   }
 }
 

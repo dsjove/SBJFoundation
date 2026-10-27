@@ -107,6 +107,7 @@ public enum SBJStructureGeneration {
 
         var propertyEntries: [String] = []
         var editableEntries: [String] = []
+        var writableCodedNames: [String] = []
         var presentationEntries: [String] = []
         var entries: [String] = []
         var contentMembers: [String] = []
@@ -347,6 +348,10 @@ public enum SBJStructureGeneration {
                     "SBJPropertyMetadata<Self>(sourceName: \"\(name)\", displayName: \"\(name)\".uncamelCased, keyPath: \\Self.\(name), kind: \(kind), constraints: [\(constraints)], hints: [\(hints)], info: Self.propertyInfo(for: \\Self.\(name)))"
                 )
 
+                if variable.bindingSpecifier.tokenKind != .keyword(.let) {
+                    writableCodedNames.append(name)
+                }
+
                 // Writable presentation eligibility is distinct from structural metadata.
                 if (hasAttribute(named: "SBJPresentationExclude", on: variable) || hasAttribute(named: "SBJEditorExclude", on: variable)) { continue }
 
@@ -377,6 +382,7 @@ public enum SBJStructureGeneration {
 
         let propertyBody = propertyEntries.joined(separator: ",\n")
         let editableBody = editableEntries.joined(separator: ",\n")
+        let writableCodedBody = writableCodedNames.map { swiftStringLiteral($0) }.joined(separator: ", ")
         let presentationBody = presentationEntries.joined(separator: ",\n")
         var result: [DeclSyntax] = []
         if !hasExplicitGeneratedInfo {
@@ -393,6 +399,11 @@ public enum SBJStructureGeneration {
             """))
         }
         result += [
+            DeclSyntax(stringLiteral: """
+            \(access)static var sbjSwiftWritablePropertyNames: Set<String> {
+                [\(writableCodedBody)]
+            }
+            """),
             DeclSyntax(stringLiteral: """
             \(access)static var sbjProperties: [SBJPropertyMetadata<Self>] {
                 [
@@ -478,6 +489,12 @@ public enum SBJStructureGeneration {
             )
         }
 
+        // Source-export selection is independent of default construction. An explicit
+        // @SBJDesignatedInit remains the override when multiple complete signatures exist.
+        if let inferred = inferredSwiftInitializerParameters(for: structDecl, properties: contentMembers, access: access, context: context) {
+            result.append(DeclSyntax(stringLiteral: inferred))
+        }
+
         if !hasExplicitDefaultValue {
             if let generated = designatedDefaultFactory(for: structDecl, access: access) {
                 result.append(DeclSyntax(stringLiteral: generated))
@@ -493,6 +510,67 @@ public enum SBJStructureGeneration {
         }
 
         return result
+    }
+
+    /// Infer export metadata only when exactly one initializer covers all coded
+    /// stored properties by internal or external parameter names. Do not guess
+    /// when overloaded signatures are equally complete.
+    private static func inferredSwiftInitializerParameters(
+        for declaration: StructDeclSyntax,
+        properties: [String],
+        access: String,
+        context: some MacroExpansionContext
+    ) -> String? {
+        let initializers = declaration.memberBlock.members.compactMap { $0.decl.as(InitializerDeclSyntax.self) }
+        // A peer macro on the designated initializer already emits this member.
+        if initializers.contains(where: { initializer in
+            initializer.attributes.contains(where: { element in
+                element.as(AttributeSyntax.self)?.attributeName.trimmedDescription == "SBJDesignatedInit"
+            })
+        }) { return nil }
+        let names = Set(properties)
+        let candidates = initializers.compactMap { initializer -> [String]? in
+            guard initializer.optionalMark == nil,
+                  initializer.signature.effectSpecifiers == nil else { return nil }
+            let parameters = initializer.signature.parameterClause.parameters
+            guard parameters.count == properties.count else { return nil }
+            var matched = Set<String>()
+            var result: [String] = []
+            for parameter in parameters {
+                let external = parameter.firstName.text
+                let internalName = parameter.secondName?.text ?? external
+                let property: String
+                if names.contains(internalName) { property = internalName }
+                else if external != "_" && names.contains(external) { property = external }
+                else { return nil }
+                guard matched.insert(property).inserted else { return nil }
+                let label = external == "_" ? "nil" : swiftStringLiteral(external)
+                let defaultArg = parameter.defaultValue.map {
+                    ", defaultExpression: " + swiftStringLiteral($0.value.trimmedDescription)
+                } ?? ""
+                result.append(".init(propertyName: \(swiftStringLiteral(property)), label: \(label)\(defaultArg))")
+            }
+            return matched == names ? result : nil
+        }
+        if candidates.count > 1 {
+            context.diagnose(Diagnostic(
+                node: Syntax(declaration.name),
+                message: AmbiguousReconstructionInitializerDiagnostic(count: candidates.count)
+            ))
+        }
+        // With explicit initializers, never pretend Swift's memberwise initializer
+        // exists. An empty mapping requests a Codable reconstruction fallback.
+        if !initializers.isEmpty && candidates.count != 1 {
+            return """
+            \(access)static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] { [] }
+            """
+        }
+        guard candidates.count == 1, let parameters = candidates.first else { return nil }
+        return """
+        \(access)static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
+            [\(parameters.joined(separator: ",\n"))]
+        }
+        """
     }
 
     /// Synthesize a context-free factory from the source-level designated initializer.
@@ -1540,6 +1618,17 @@ public enum SBJStructureGeneration {
     }
 }
 
+
+private struct AmbiguousReconstructionInitializerDiagnostic: DiagnosticMessage {
+    let count: Int
+    var message: String {
+        "Found \(count) complete reconstruction initializers; annotate the intended initializer with @SBJDesignatedInit or use Codable reconstruction"
+    }
+    var diagnosticID: MessageID {
+        MessageID(domain: "SBJStructure.Initialization", id: "ambiguous-reconstruction")
+    }
+    var severity: DiagnosticSeverity { .warning }
+}
 
 private struct ConflictingArrayUniquenessDiagnostic: DiagnosticMessage {
     let name: String

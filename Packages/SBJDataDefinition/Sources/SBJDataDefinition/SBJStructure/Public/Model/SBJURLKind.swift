@@ -1,6 +1,6 @@
 import Foundation
 
-/// Broad URL categories that can be declared as valid for an `@SBJEditable` property.
+/// Broad URL categories that can be declared as valid for an `@SBJStructure` property.
 ///
 /// `.file` accepts file URLs. `.network` accepts absolute, non-file URLs with a
 /// scheme. The declaration is a model invariant only; it does not restrict direct

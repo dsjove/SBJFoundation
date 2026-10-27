@@ -3,7 +3,6 @@ import CoreGraphics
 import Foundation
 import SBJLocalization
 
-
 /// Canonical integration/sample model for SBJStructure.
 ///
 /// This model is intentionally broader than a normal application model. It is
@@ -288,7 +287,6 @@ public struct SBJStructureSampleModel: Codable {
   @SBJPresentationExclude public var editorDecimal: Decimal = 12.34
   @SBJPresentationExclude public var editorDate = Date()
   @SBJPresentationExclude public var editorURL = URL(string: "https://example.com")!
-
 }
 
 #endif

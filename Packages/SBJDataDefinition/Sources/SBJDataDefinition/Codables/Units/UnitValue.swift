@@ -6,7 +6,8 @@ import Foundation
 /// Conversion is explicit and non-mutating, which preserves the vocabulary of
 /// imported/domain data while still using Foundation `Measurement` for math.
 @SBJStructure
-public struct UnitValue<Unit: UnitType>: Codable, Equatable, Sendable, Hashable {
+public struct UnitValue<U: UnitType>: Codable, Equatable, Sendable, Hashable {
+	public typealias Unit = U
     public var value: Double
     public let unit: Unit
 

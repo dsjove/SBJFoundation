@@ -41,7 +41,7 @@ private struct SBJStructuralSearchMatcher {
 
         // Search-leaf types own this boundary. The matcher depends on the
         // capability rather than maintaining knowledge of concrete value types.
-        if value is any SBJStructuralSearchLeaf {
+        if value is any SBJStructuralSearchAtomic {
             if let description = SBJValueDescription.describe(value) {
                 return matchesText(description)
             }

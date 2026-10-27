@@ -47,13 +47,22 @@ public struct SBJSwiftArgument {
     }
 }
 
-
-/// Exports populated `@SBJEditable` values as reconstructable Swift source.
+/// Exports populated `@SBJStructure` values as reconstructable Swift source.
 ///
-/// This first version deliberately uses fixed formatting. Formatting policy can
-/// be added independently after the source-generation behavior is validated.
+/// Formatting is kept independent of initializer selection and reconstruction.
 public struct SBJSwiftEncoder {
     public init() {}
+
+    /// A lossless source-expression fallback when a structure's Codable contract
+    /// is available but no complete Swift initializer is selected.
+    /// The generated expression requires Foundation at its call site.
+    func codableReconstructionExpression(for value: Any) -> String? {
+        guard let encodable = value as? any Encodable,
+              type(of: value) is any Decodable.Type,
+              let bytes = try? JSONEncoder().encode(encodable) else { return nil }
+        let encoded = bytes.base64EncodedString()
+        return "try! JSONDecoder().decode(\(String(describing: type(of: value))).self, from: Data(base64Encoded: \(String(reflecting: encoded)))!)"
+    }
 
     /// Produces a named declaration such as `let sample = Model(...)`.
     public func encode<T: SBJStructured>(_ value: T, named name: String) -> String {
@@ -71,12 +80,7 @@ public struct SBJSwiftEncoder {
         label: String?,
         info: SBJPropertyInfo?
     ) -> SBJSwiftArgument {
-        let summary = info?.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return SBJSwiftArgument(
-            label: label,
-            expression: expression(forAny: value, nested: true),
-            summary: summary?.isEmpty == false ? summary : nil
-        )
+        makeArgument(value, label: label, info: info)
     }
 
     func argument(
@@ -85,16 +89,38 @@ public struct SBJSwiftEncoder {
         info: SBJPropertyInfo?
     ) -> SBJSwiftArgument {
         let expression = expression(forAny: value, nested: true)
-        let summary = info?.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return SBJSwiftArgument(
-            label: parameter.label,
+        return makeArgument(
             expression: expression,
-            summary: summary?.isEmpty == false ? summary : nil,
+            label: parameter.label,
+            info: info,
             matchesDefault: matchesDefault(
                 value,
                 expression: expression,
                 defaultExpression: parameter.defaultExpression
             )
+        )
+    }
+
+    private func makeArgument(
+        _ value: Any,
+        label: String?,
+        info: SBJPropertyInfo?
+    ) -> SBJSwiftArgument {
+        makeArgument(expression: expression(forAny: value, nested: true), label: label, info: info)
+    }
+
+    private func makeArgument(
+        expression: String,
+        label: String?,
+        info: SBJPropertyInfo?,
+        matchesDefault: Bool = false
+    ) -> SBJSwiftArgument {
+        let summary = info?.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return SBJSwiftArgument(
+            label: label,
+            expression: expression,
+            summary: summary?.isEmpty == false ? summary : nil,
+            matchesDefault: matchesDefault
         )
     }
 
@@ -137,6 +163,18 @@ public struct SBJSwiftEncoder {
 
         let body = arguments.map(render(argument:)).joined(separator: ",\n")
         return "\(constructor)(\n\(indent(body))\n)"
+    }
+
+    /// A standalone expression that recreates a default-constructible mutable
+    /// structure by assigning all its coded stored properties.
+    func mutableStructureExpression(
+        typeName: String,
+        assignments: [(name: String, expression: String)]
+    ) -> String {
+        let statements = ["var value = \(typeName)()"]
+            + assignments.map { "value.\($0.name) = \($0.expression)" }
+            + ["return value"]
+        return "{\n\(indent(statements.joined(separator: "\n")))\n}()"
     }
 
     private func expression(forAny value: Any, nested: Bool) -> String {

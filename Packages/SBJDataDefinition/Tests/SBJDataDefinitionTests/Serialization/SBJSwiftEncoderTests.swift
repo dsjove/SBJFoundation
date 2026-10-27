@@ -106,3 +106,138 @@ struct DesignatedInitializerDefaultsTests {
         #expect(result?.child.count == 7)
     }
 }
+
+// Automatically resolved without @SBJDesignatedInit.
+@SBJStructure
+struct InferredInitializerFixture: Codable, Equatable {
+    var x: Double
+    var y: Double
+
+    init(x horizontal: Double, _ y: Double = 2) {
+        self.x = horizontal
+        self.y = y
+    }
+}
+
+@SBJStructure
+struct InferredInitializerWithConvenienceFixture: Codable, Equatable {
+    var name: String
+    var count: Int
+
+    init(name: String, count: Int) {
+        self.name = name
+        self.count = count
+    }
+
+    init(name: String) {
+        self.init(name: name, count: 0)
+    }
+}
+
+struct InferredInitializerTests {
+    @Test func mapsExternalAndUnlabeledParameters() {
+        let parameters = InferredInitializerFixture.sbjSwiftInitializerParameters
+        #expect(parameters.map(\.propertyName) == ["x", "y"])
+        #expect(parameters.map(\.label) == ["x", nil])
+        let source = SBJSwiftEncoder().expression(for: InferredInitializerFixture(x: 4, 5), nested: false)
+        #expect(source.contains("x: 4"))
+        #expect(!source.contains("y:"))
+    }
+
+    @Test func prefersUniqueCompleteSignatureOverConvenienceInitializer() {
+        let parameters = InferredInitializerWithConvenienceFixture.sbjSwiftInitializerParameters
+        #expect(parameters.map(\.propertyName) == ["name", "count"])
+        let source = SBJSwiftEncoder().expression(for: InferredInitializerWithConvenienceFixture(name: "Test", count: 3), nested: false)
+        #expect(source.contains("count: 3"))
+    }
+}
+
+// No complete source initializer: the Codable contract is used rather than
+// emitting a call to a nonexistent memberwise initializer.
+@SBJStructure
+struct CodableOnlyReconstructionFixture: Codable, Equatable {
+    var name: String
+    var score: Int
+
+    init(name: String) {
+        self.name = name
+        self.score = name.count
+    }
+}
+
+struct CodableReconstructionFallbackTests {
+    @Test func usesCodableForIncompleteInitializer() throws {
+        let value = CodableOnlyReconstructionFixture(name: "test")
+        let expression = SBJSwiftEncoder().expression(for: value, nested: false)
+        #expect(expression.contains("JSONDecoder().decode(CodableOnlyReconstructionFixture.self"))
+        #expect(expression.contains("Data(base64Encoded:"))
+        // Verify that the emitted payload reconstructs the actual value.
+        let bytes = try JSONEncoder().encode(value)
+        let copy = try JSONDecoder().decode(CodableOnlyReconstructionFixture.self, from: bytes)
+        #expect(copy == value)
+    }
+}
+
+@SBJStructure
+struct DefaultMutableReconstructionFixture: Codable, Equatable {
+    var name = "default"
+    var count = 0
+    init() {}
+}
+
+@SBJStructure
+struct DefaultImmutableReconstructionFixture: Codable, Equatable {
+    let id: Int
+    var name: String
+    init() {
+        id = 42
+        name = "default"
+    }
+}
+
+struct ClosureReconstructionTests {
+    @Test func defaultMutableStructureUsesInvokedClosure() {
+        var value = DefaultMutableReconstructionFixture()
+        value.name = "Changed"
+        value.count = 12
+        let source = SBJSwiftEncoder().expression(for: value, nested: false)
+        #expect(source.hasPrefix("{\n"))
+        #expect(source.contains("var value = DefaultMutableReconstructionFixture()"))
+        #expect(source.contains("value.name = \"Changed\""))
+        #expect(source.contains("value.count = 12"))
+        #expect(source.hasSuffix("}()"))
+        #expect(!source.contains("JSONDecoder"))
+    }
+
+    @Test func immutableStoredPropertyPreventsAssignmentReconstruction() {
+        let source = SBJSwiftEncoder().expression(for: DefaultImmutableReconstructionFixture(), nested: false)
+        #expect(source.contains("JSONDecoder().decode(DefaultImmutableReconstructionFixture.self"))
+        #expect(!source.contains("value.id ="))
+    }
+}
+
+
+// A closure reconstruction must remain an expression when nested in another
+// collection; callers should not need a statement-oriented special case.
+struct NestedClosureReconstructionTests {
+    @Test func nestedMutableStructureRemainsAnExpression() {
+        var item = DefaultMutableReconstructionFixture()
+        item.name = "Nested"
+        item.count = 17
+        let source = SBJSwiftEncoder().expression(for: [item], nested: false)
+        #expect(source.contains("var value = DefaultMutableReconstructionFixture()"))
+        #expect(source.contains("value.name = \"Nested\""))
+        #expect(source.contains("value.count = 17"))
+        #expect(source.contains("return value"))
+        #expect(source.contains("}()"))
+        #expect(!source.contains("JSONDecoder"))
+    }
+
+    @Test func namedMutableClosureRemainsAnExpression() {
+        let value = DefaultMutableReconstructionFixture()
+        let source = SBJSwiftEncoder().encode(value, named: "example")
+        #expect(source.hasPrefix("let example = {\n"))
+        #expect(source.contains("var value = DefaultMutableReconstructionFixture()"))
+        #expect(source.hasSuffix("}()"))
+    }
+}

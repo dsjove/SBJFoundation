@@ -1,6 +1,3 @@
-// TODO: Decide the shared ownership of these Codable snapshot/comparison helpers.
-// SBJFoundation also declares them. Avoid two public implementations once the
-// Foundation-facing API and importer compatibility have been accounted for.
 import Foundation
 
 public extension Encodable {

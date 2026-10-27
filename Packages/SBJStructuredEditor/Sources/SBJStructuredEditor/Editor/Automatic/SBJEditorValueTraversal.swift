@@ -39,6 +39,9 @@ enum SBJEditorValueTraversal {
         if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjAssociatedTraversalNodes(value: value, context: context)
         }
+        // A typed leaf editor owns the complete presentation of its value.
+        // Do not traverse structural implementation details (e.g. UnitValue.value).
+        if Value.self is any SBJTypedEditorValue.Type { return [] }
         if let structural = Value.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralTraversalNodes(value: value, context: context)
         }
@@ -62,6 +65,7 @@ enum SBJEditorValueTraversal {
                 binding: SBJAnyBinding(binding), originalValue: originalValue, registry: registry, context: context
             )
         }
+        if registry.hasCustomEditor(Value.self) || Value.self is any SBJTypedEditorValue.Type { return [] }
         if let structural = Value.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralBoundNodes(binding: SBJAnyBinding(binding), originalValue: originalValue, registry: registry, context: context)
         }
@@ -82,9 +86,10 @@ enum SBJEditorValueTraversal {
     ) -> SBJEditorTraversalNode {
         SBJEditorTraversalNode(
             context: context, name: name,
-            isDisclosure: Value.self is any SBJMutableStructure.Type
+            isDisclosure: !(Value.self is any SBJTypedEditorValue.Type) &&
+                (Value.self is any SBJMutableStructure.Type
                 || Value.self is any SBJEditorTraversableValue.Type
-                || Value.self is any SBJStructuredEnum.Type,
+                || Value.self is any SBJStructuredEnum.Type),
             render: { renderedContext in
                 SBJValueEditor.makeView(
                     label: name, value: binding, registry: registry,
@@ -121,9 +126,10 @@ enum SBJEditorValueTraversal {
         SBJEditorTraversalNode(
             context: context,
             name: name,
-            isDisclosure: Value.self is any SBJMutableStructure.Type
+            isDisclosure: !(Value.self is any SBJTypedEditorValue.Type) &&
+                (Value.self is any SBJMutableStructure.Type
                 || Value.self is any SBJEditorTraversableValue.Type
-                || Value.self is any SBJStructuredEnum.Type,
+                || Value.self is any SBJStructuredEnum.Type),
             children: { projectedContext in
                 children(of: value, context: projectedContext)
             }
@@ -156,12 +162,8 @@ extension Array: SBJEditorTraversableValue {
         return SBJCollectionTraversal.array(
             elements, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey
         ).map { item in
-            let childContext = SBJEditTraversalContext(
-                treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending(item.identifier),
-                indexPath: context.indexPath.appending(item.location),
-                navigationPath: context.navigationPath + [item.title],
-                branch: context.branch.child
+            let childContext = context.collectionChild(
+                identifier: item.identifier, location: item.location, title: item.title
             )
             return SBJEditorValueTraversal.node(named: item.title, value: item.value, context: childContext)
         }
@@ -179,12 +181,8 @@ extension Set: SBJEditorTraversableValue {
         return SBJCollectionTraversal.set(values, itemTitleKey: itemTitleKey).map { item in
             let element = item.value
             let title = item.title
-            let childContext = SBJEditTraversalContext(
-                treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending(item.identifier),
-                indexPath: context.indexPath.appending(item.location),
-                navigationPath: context.navigationPath + [title],
-                branch: context.branch.child
+            let childContext = context.collectionChild(
+                identifier: item.identifier, location: item.location, title: title
             )
             return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
         }
@@ -202,12 +200,8 @@ extension Dictionary: SBJEditorTraversableValue {
         return SBJCollectionTraversal.dictionary(values).map { item in
             let title = item.title
             let element = item.value.value
-            let childContext = SBJEditTraversalContext(
-                treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending(item.identifier),
-                indexPath: context.indexPath.appending(item.location),
-                navigationPath: context.navigationPath + [title],
-                branch: context.branch.child
+            let childContext = context.collectionChild(
+                identifier: item.identifier, location: item.location, title: title
             )
             return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
         }
@@ -249,12 +243,8 @@ extension Array: SBJEditorBoundTraversableValue {
             let element = item.value
             guard let index = item.index else { preconditionFailure("Array traversal entries always have an index") }
             let title = item.title
-            let childContext = SBJEditTraversalContext(
-                treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending(item.identifier),
-                indexPath: context.indexPath.appending(item.location),
-                navigationPath: context.navigationPath + [title],
-                branch: context.branch.child
+            let childContext = context.collectionChild(
+                identifier: item.identifier, location: item.location, title: title
             )
             // A configured item identifier denotes logical identity, not the
             // position occupied when this descriptor was created. Resolve its
@@ -262,10 +252,13 @@ extension Array: SBJEditorBoundTraversableValue {
             // redirect edits to an unrelated item.
             let resolvedIndex: () -> Int? = {
                 let values = parent.wrappedValue
-                if let itemIdentifierKey {
-                    guard let identifier = SBJCollectionItemIdentification.stableIdentifier(
-                        for: element, itemIdentifierKey: itemIdentifierKey
-                    ) else { return nil }
+                // Match SBJCollectionTraversal.array's identity policy. If the
+                // identifier was ambiguous when the row was created, it is a
+                // positional row; do not silently refuse its edits or removal.
+                if item.identifier != "item:slot:\(index)", let itemIdentifierKey,
+                   let identifier = SBJCollectionItemIdentification.stableIdentifier(
+                       for: element, itemIdentifierKey: itemIdentifierKey
+                   ) {
                     return SBJCollectionItemIdentification.uniqueIndex(
                         in: values, identifier: identifier, itemIdentifierKey: itemIdentifierKey
                     )
@@ -317,8 +310,8 @@ extension Array: SBJEditorBoundTraversableValue {
 
 // Set members are edited as drafts and committed atomically. Exposing a direct
 // element Binding would silently bypass collision detection and Apply semantics.
-// Keep each set entry as one independently renderable row until a future flat
-// renderer can explicitly model its draft editor and nested contents.
+// Set entries remain independently renderable so draft editing and
+// collision validation are preserved.
 extension Set: SBJEditorBoundTraversableValue where Element: Codable {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
@@ -328,12 +321,8 @@ extension Set: SBJEditorBoundTraversableValue where Element: Codable {
         return SBJCollectionTraversal.set(parent.wrappedValue, itemTitleKey: itemTitleKey).map { item in
             let element = item.value
             let title = item.title
-            let childContext = SBJEditTraversalContext(
-                treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending(item.identifier),
-                indexPath: context.indexPath.appending(item.location),
-                navigationPath: context.navigationPath + [title],
-                branch: context.branch.child
+            let childContext = context.collectionChild(
+                identifier: item.identifier, location: item.location, title: title
             )
             return SBJEditorTraversalNode(
                 context: childContext, name: title,
@@ -384,12 +373,8 @@ extension Dictionary: SBJEditorBoundTraversableValue {
             let key = item.value.key
             let title = item.title
             let entryValue = item.value.value
-            let childContext = SBJEditTraversalContext(
-                treeLevel: context.treeLevel + 1,
-                itemIdentifier: context.itemIdentifier.appending(item.identifier),
-                indexPath: context.indexPath.appending(item.location),
-                navigationPath: context.navigationPath + [title],
-                branch: context.branch.child
+            let childContext = context.collectionChild(
+                identifier: item.identifier, location: item.location, title: title
             )
             let valueBinding = Binding<Value>(
                 get: { parent.wrappedValue[key] ?? entryValue },

@@ -12,6 +12,10 @@ import Foundation
 /// structural-search classification.
 public protocol SBJTypedEditorValue {}
 
+// An optional atomic value stays atomic when populated.
+// Its optional set/clear actions are rendered by SBJOptionalEditor.
+extension Optional: SBJTypedEditorValue where Wrapped: SBJTypedEditorValue {}
+
 extension String: SBJTypedEditorValue {}
 extension Bool: SBJTypedEditorValue {}
 extension Int: SBJTypedEditorValue {}

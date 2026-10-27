@@ -44,3 +44,20 @@ struct SBJArrayEditorPresentationTests {
     }
 
 }
+
+private struct DuplicateIdentifierFixture {
+    var name: String
+}
+
+extension SBJArrayEditorPresentationTests {
+    @Test("duplicate collection identifiers receive distinct slot identities")
+    func duplicatedIdentifiersUsePositionalIdentity() {
+        let items = [
+            DuplicateIdentifierFixture(name: "Strength"),
+            DuplicateIdentifierFixture(name: "Strength")
+        ]
+        let nodes = SBJCollectionTraversal.array(items, itemIdentifierKey: "name")
+        #expect(nodes.map(\.identifier) == ["item:slot:0", "item:slot:1"])
+        #expect(nodes.map(\.index) == [0, 1])
+    }
+}

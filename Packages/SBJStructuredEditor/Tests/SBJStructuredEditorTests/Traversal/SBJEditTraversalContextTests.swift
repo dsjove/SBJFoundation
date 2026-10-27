@@ -79,3 +79,33 @@ struct SBJEditorBranchContextTests {
         #expect(updated.status.isChanged)
     }
 }
+
+@Suite("Editor collection child traversal")
+struct SBJEditorCollectionChildContextTests {
+    @Test("collection child preserves logical identity separate from location")
+    func logicalIdentity() {
+        let root = SBJEditTraversalContext.root.property("abilities")
+        let before = root.collectionChild(identifier: "item:strength", location: "index:0", title: "Strength")
+        let after = root.collectionChild(identifier: "item:strength", location: "index:4", title: "Strength")
+
+        #expect(before.itemIdentifier == after.itemIdentifier)
+        #expect(before.indexPath != after.indexPath)
+        #expect(before.treeLevel == root.treeLevel + 1)
+        #expect(before.navigationPath == ["abilities", "Strength"])
+    }
+
+    @Test("collection child inherits search but resets transient row state")
+    func inheritedBranch() {
+        let criteria = SBJStructuralSearchCriteria(searchQuery: "Strength", showChangedOnly: true)
+        let root = SBJEditTraversalContext.root.withBranch(
+            SBJEditorBranchContext(searchCriteria: criteria)
+                .withStatus(.init(isChanged: true, isInvalid: true))
+                .withPlacement(.embedded)
+        )
+        let child = root.collectionChild(identifier: "item:slot:0", location: "index:0", title: "Strength")
+        #expect(child.branch.searchCriteria == criteria)
+        #expect(child.branch.status == .init())
+        #expect(child.branch.placement == .normal)
+        #expect(root.branch.status.isChanged)
+    }
+}

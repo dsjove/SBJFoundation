@@ -1,9 +1,7 @@
 import Foundation
 
-/// UI-independent search and filter criteria for structured editing.
-///
-/// Keeping the criteria together lets editors add new filters without threading
-/// additional independent flags through every recursive editor view.
+/// UI-independent search and filtering criteria for structured values.
+/// Change and empty-content predicates are model concepts; disclosure belongs to the consumer.
 public struct SBJStructuralSearchCriteria: Hashable, Sendable {
     public var searchQuery: String
     public var showChangedOnly: Bool
@@ -22,10 +20,6 @@ public struct SBJStructuralSearchCriteria: Hashable, Sendable {
     /// Whether no search or filter criteria are currently enabled.
     public var isEmpty: Bool {
         searchQuery.isEmpty && !showChangedOnly && !showEmptyContentOnly
-    }
-
-    public func forcesExpansion(hasContent: Bool?) -> Bool {
-        !searchQuery.isEmpty || showChangedOnly || (showEmptyContentOnly && hasContent != false)
     }
 
     /// Returns criteria appropriate for descendants when an ancestor label has

@@ -40,7 +40,9 @@ public enum SBJCollectionItemIdentification {
         index: Int,
         itemTitleKey: String? = nil
     ) -> String {
-        configuredTitle(for: element, itemTitleKey: itemTitleKey) ?? "[\(index)]"
+        configuredTitle(for: element, itemTitleKey: itemTitleKey)
+            ?? ((element as? any SBJTextPresentable)?.presentedValue).flatMap { $0.isEmpty ? nil : $0 }
+            ?? "[\(index)]"
     }
 
     /// Stable string token for a configured collection item identifier property.

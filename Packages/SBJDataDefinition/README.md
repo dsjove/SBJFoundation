@@ -33,6 +33,7 @@ SwiftPM compiles the shared support target for the **host toolchain** as a depen
 - [Structural model guide](Documentation/STRUCTURAL_MODEL_GUIDE.md)
 - [Data annotations and values](Documentation/ANNOTATIONS_AND_VALUES.md)
 - [Package and source organization](Documentation/ORGANIZATION.md)
+- [Swift source encoding](Documentation/SWIFT_SOURCE_ENCODING.md)
 
 Macro expansion tests and runtime tests live under `Tests/SBJDataDefinitionTests`.
 
@@ -49,4 +50,4 @@ The generated structural model and its traversal never require an editor instanc
 
 ## Codable models and sample coverage
 
-The `Sources/SBJDataDefinition/Codables` directory owns Units, Fonts, and Colors model types. The accompanying model-specific structural adapters supply generated-metadata-equivalent traversal, validation, and source encoding behavior. The comprehensive Recipe fixture is in `Sources/SBJDataDefinition/Samples/Recipe` and is restricted to DEBUG configurations. Presentation annotations live in `Annotations`.
+The `Sources/SBJDataDefinition/Codables` directory owns Units, Fonts, and Colors model types. The accompanying model-specific structural adapters supply generated-metadata-equivalent traversal, validation, and source encoding behavior. The DEBUG-only comprehensive sample fixture is in `Sources/SBJDataDefinition/Codables/Sample`. Presentation annotations live in `Annotations`.

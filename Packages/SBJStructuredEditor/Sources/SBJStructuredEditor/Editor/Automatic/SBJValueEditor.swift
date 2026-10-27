@@ -42,6 +42,7 @@ private protocol _SBJCollectionValue {
         itemTitleKey: String?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
+        optionalCollectionControl: AnyView?,
         focusRequest: SBJEditorFocusRequest?,
         context: SBJEditTraversalContext,
         headerOnly: Bool
@@ -211,6 +212,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
         itemTitleKey: String?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
+        optionalCollectionControl: AnyView?,
         focusRequest: SBJEditorFocusRequest?,
         context: SBJEditTraversalContext,
         headerOnly: Bool
@@ -229,6 +231,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
                 itemTitleKey: itemTitleKey,
                 itemIdentifierKey: itemIdentifierKey,
                 itemActions: itemActions,
+                optionalControl: optionalCollectionControl,
                 focusRequest: focusRequest,
                 context: context
             )
@@ -251,6 +254,7 @@ extension Set: _SBJCollectionValue where Element: Codable {
         itemTitleKey: String?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
+        optionalCollectionControl: AnyView?,
         focusRequest: SBJEditorFocusRequest?,
         context: SBJEditTraversalContext,
         headerOnly: Bool
@@ -267,6 +271,7 @@ extension Set: _SBJCollectionValue where Element: Codable {
                 numberRange: numberRange,
                 itemTitleKey: itemTitleKey,
                 itemActions: itemActions,
+                optionalControl: optionalCollectionControl,
                 focusRequest: focusRequest,
                 context: context
             )
@@ -288,6 +293,7 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
         itemTitleKey: String?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
+        optionalCollectionControl: AnyView?,
         focusRequest: SBJEditorFocusRequest?,
         context: SBJEditTraversalContext,
         headerOnly: Bool
@@ -303,6 +309,7 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
                 integerRange: integerRange,
                 numberRange: numberRange,
                 itemActions: itemActions,
+                optionalControl: optionalCollectionControl,
                 focusRequest: focusRequest,
                 context: context
             )
@@ -333,6 +340,7 @@ enum SBJValueEditor {
         promotedTitlePropertyName: String? = nil,
         promotedTitlePrefix: String? = nil,
         itemActions: SBJEditorItemActions? = nil,
+        optionalCollectionControl: AnyView? = nil,
         focusRequest: SBJEditorFocusRequest? = nil,
         labelIsUnknown: Bool = false,
         context: SBJEditTraversalContext = .root,
@@ -508,6 +516,7 @@ enum SBJValueEditor {
                 itemTitleKey: collectionItemTitleKey,
                 itemIdentifierKey: collectionItemIdentifierKey,
                 itemActions: itemActions,
+                optionalCollectionControl: optionalCollectionControl,
                 focusRequest: focusRequest,
                 context: context,
                 headerOnly: headerOnly

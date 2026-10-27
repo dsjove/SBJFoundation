@@ -15,6 +15,7 @@ struct SBJArrayEditor<Element: Codable>: View {
     let itemTitleKey: String?
     let itemIdentifierKey: String?
     let itemActions: SBJEditorItemActions?
+    let optionalControl: AnyView?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
     @Environment(SBJEditorPresentationModel.self) private var presentationModel
@@ -30,20 +31,20 @@ struct SBJArrayEditor<Element: Codable>: View {
                 "\(label) (\(value.count))",
                 context: context,
                 isExpanded: disclosureBinding,
-                leadingActions: AnyView(
-                    HStack(spacing: 6) {
-                        SBJAddButton(
-                            label,
-                            accessibilityHint: "Adds a new item and moves focus into it"
-                        ) {
-                            if let newValue = registry.createArrayElement(Element.self, existing: value) {
-                                value.append(newValue)
-                                presentationModel.open(context.itemIdentifier)
-                            }
-                        }
-                        .disabled(!canAdd)
-                    }
-                ),
+				leadingActions: AnyView(
+					HStack(spacing: 6) {
+						SBJAddButton(
+							label,
+							accessibilityHint: "Adds a new item and moves focus into it"
+						) {
+							if let newValue = registry.createArrayElement(Element.self, existing: value) {
+								value.append(newValue)
+								presentationModel.open(context.itemIdentifier)
+							}
+						}
+						.disabled(!canAdd)
+					}
+				), optionalControl: optionalControl,
                 trailingActions: AnyView(
                     HStack(spacing: 6) {
                         if let itemActions {

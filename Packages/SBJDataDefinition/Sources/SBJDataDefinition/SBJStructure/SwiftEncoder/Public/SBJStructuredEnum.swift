@@ -1,7 +1,7 @@
 import SBJLocalization
 
 /// Source-level case identity of an enum, independently of its raw values or
-/// localized display text. Generated for every enum annotated @SBJEditable.
+/// localized display text. Generated for every enum annotated @SBJStructure.
 public protocol SBJEnumCaseIdentifiable {
     static var sbjCaseNames: [String] { get }
     var sbjCaseName: String { get }

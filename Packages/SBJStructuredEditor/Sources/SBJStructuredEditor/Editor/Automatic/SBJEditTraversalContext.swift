@@ -224,6 +224,19 @@ public struct SBJEditTraversalContext: Hashable, Sendable {
         )
     }
 
+    /// Creates a collection descendant using the identity and location supplied
+    /// by structural collection traversal. Logical identity and display location
+    /// are deliberately independent so a moved item retains its identity.
+    func collectionChild(identifier: String, location: String, title: String) -> Self {
+        .init(
+            treeLevel: treeLevel + 1,
+            itemIdentifier: itemIdentifier.appending(identifier),
+            indexPath: indexPath.appending(location),
+            navigationPath: navigationPath + [title],
+            branch: branch.child
+        )
+    }
+
     /// Rebase a projected node onto its parent-assigned visual level.
     /// The tree projection owns hierarchy depth; identity and navigation paths
     /// are unchanged by this visual normalization.

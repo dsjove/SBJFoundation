@@ -1,5 +1,4 @@
 #if DEBUG
-
 import SBJLocalization
 
 @SBJPropertyInfo

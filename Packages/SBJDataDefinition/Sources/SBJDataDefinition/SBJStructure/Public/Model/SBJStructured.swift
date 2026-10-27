@@ -18,12 +18,15 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
     static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo?
 
     /// Returns a sensible default instance when the structured type can be
-    /// constructed without application-specific context. `@SBJEditable`
+    /// constructed without application-specific context. `@SBJStructure`
     /// synthesizes this when a zero-argument initialization is provably valid.
     static func sbjDefaultValue() -> Self?
 
     /// Initializer parameter mapping used by Swift source export.
     static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] { get }
+
+    /// Stored coded properties that can be assigned after default construction.
+    static var sbjSwiftWritablePropertyNames: Set<String> { get }
 
     /// Recursively reports whether any structural property contains empty content.
     /// Consumers may treat application-defined types as atomic traversal leaves.
@@ -72,6 +75,8 @@ public extension SBJStructured {
         }
     }
 
+    static var sbjSwiftWritablePropertyNames: Set<String> { [] }
+
     static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
         sbjProperties.map {
             .init(propertyName: $0.sourceName, label: $0.sourceName)
@@ -82,8 +87,33 @@ public extension SBJStructured {
         let propertiesByName = Dictionary(uniqueKeysWithValues: Self.sbjProperties.map {
             ($0.sourceName, $0)
         })
-        let arguments = Self.sbjSwiftInitializerParameters.compactMap { parameter -> SBJSwiftArgument? in
-            guard let metadata = propertiesByName[parameter.propertyName] else { return nil }
+        let parameters = Self.sbjSwiftInitializerParameters
+        // Source construction must cover every coded property exactly once.
+        // An unavailable or incomplete constructor can use Codable instead.
+        let covered = parameters.map(\.propertyName)
+        guard !parameters.isEmpty,
+              covered.count == propertiesByName.count,
+              Set(covered).count == covered.count,
+              covered.allSatisfy({ propertiesByName[$0] != nil }) else {
+            // A default-constructible model can be reconstructed using a
+            // self-contained Swift closure, provided its entire coded schema is
+            // writable. Do not attempt assignments to `let` properties.
+            if Self.sbjDefaultValue() != nil,
+               Set(propertiesByName.keys).isSubset(of: Self.sbjSwiftWritablePropertyNames) {
+                let assignments = Self.sbjProperties.map { property in
+                    let value = self[keyPath: property.keyPath]
+                    return (property.sourceName, encoder.expression(for: value))
+                }
+                return encoder.mutableStructureExpression(
+                    typeName: String(describing: Self.self),
+                    assignments: assignments
+                )
+            }
+            return encoder.codableReconstructionExpression(for: self)
+                ?? "/* No complete reconstruction for \(Self.self) */"
+        }
+        let arguments = parameters.map { parameter -> SBJSwiftArgument in
+            let metadata = propertiesByName[parameter.propertyName]!
             let value = self[keyPath: metadata.keyPath]
             return encoder.argument(value, parameter: parameter, info: metadata.info)
         }

@@ -1,6 +1,5 @@
 import Foundation
 
-
 public struct CodableColor: Codable, Equatable, Comparable, CustomDebugStringConvertible {
 	public var red: Double
 	public var green: Double
@@ -20,8 +19,6 @@ public struct CodableColor: Codable, Equatable, Comparable, CustomDebugStringCon
 		self.blue = 1.0
 		self.opacity = 1.0
 	}
-
-
 
 	public static func < (lhs: CodableColor, rhs: CodableColor) -> Bool {
 		if lhs.red != rhs.red { return lhs.red < rhs.red }

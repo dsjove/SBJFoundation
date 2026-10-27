@@ -49,9 +49,10 @@ import SBJUIVocabulary
     ) {
       self.name = name
       self.traversalDisclosureMode = disclosureMode
-      self.isTraversalDisclosure = Value.self is any SBJMutableStructure.Type
+      self.isTraversalDisclosure = !(Value.self is any SBJTypedEditorValue.Type) &&
+        (Value.self is any SBJMutableStructure.Type
         || Value.self is any SBJEditorTraversableValue.Type
-        || Value.self is any SBJStructuredEnum.Type
+        || Value.self is any SBJStructuredEnum.Type)
       let editableField = SBJMutableProperty<Root>(name: name, keyPath)
       self.editableField = editableField
       let configuration = SBJEditFieldConfiguration(metadata: editableField.structuralMetadata)

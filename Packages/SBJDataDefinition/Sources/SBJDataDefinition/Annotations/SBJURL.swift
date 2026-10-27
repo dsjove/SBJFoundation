@@ -1,6 +1,6 @@
 import Foundation
 
-/// Declares which broad URL categories are valid for an `@SBJEditable` property.
+/// Declares which broad URL categories are valid for an `@SBJStructure` property.
 ///
 /// Plain `URL` properties require no annotation. Use this annotation only when the
 /// model distinguishes file URLs from network URLs. The allowed kinds are checked

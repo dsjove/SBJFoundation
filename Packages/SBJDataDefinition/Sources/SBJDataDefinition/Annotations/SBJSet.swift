@@ -1,4 +1,4 @@
-/// Adds Set business rules and editor presentation metadata in `@SBJEditable`.
+/// Adds Set business rules and editor presentation metadata in `@SBJStructure`.
 /// An ordinary Set requires no annotation.
 ///
 /// Sets are inherently unique and have no stored order, so there are no

@@ -12,6 +12,7 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let itemActions: SBJEditorItemActions?
+    let optionalControl: AnyView?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
     @Environment(SBJEditorPresentationModel.self) private var presentationModel
@@ -21,10 +22,7 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
     }
 
     private var addCandidate: (Key, Value)? {
-        guard let key = registry.create(Key.self),
-              !value.keys.contains(key),
-              let entryValue = registry.create(Value.self) else { return nil }
-        return (key, entryValue)
+        registry.createDictionaryEntry(key: Key.self, value: Value.self, existing: value)
     }
 
     var body: some View {
@@ -34,16 +32,16 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
                 "\(label) (\(value.count))",
                 context: context,
                 isExpanded: disclosureBinding,
-                leadingActions: AnyView(
-                    HStack(spacing: 6) {
-                        SBJAddButton(label) {
-                            guard let (key, entryValue) = addCandidate else { return }
-                            value.updateValue(entryValue, forKey: key)
-                            presentationModel.open(context.itemIdentifier)
-                        }
-                        .disabled(!canAdd)
-                    }
-                ),
+				leadingActions: AnyView(
+					HStack(spacing: 6) {
+						SBJAddButton(label) {
+							guard let (key, entryValue) = addCandidate else { return }
+							value.updateValue(entryValue, forKey: key)
+							presentationModel.open(context.itemIdentifier)
+						}
+						.disabled(!canAdd)
+					}
+				), optionalControl: optionalControl,
                 trailingActions: AnyView(
                     HStack(spacing: 6) {
                         if let itemActions { itemActions.trailingView }

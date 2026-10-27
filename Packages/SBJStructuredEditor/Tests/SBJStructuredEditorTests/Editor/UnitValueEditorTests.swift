@@ -44,3 +44,15 @@ extension UnitValueEditorTests {
 #endif
 }
 
+
+#if !os(tvOS) && !os(watchOS)
+extension UnitValueEditorTests {
+    @MainActor
+    @Test func unitValueIsAtomicInStructuralTraversal() {
+        let height = UnitValue<LengthUnit>(5.9, unit: .foot)
+        #expect(SBJEditorValueTraversal.children(of: height, context: .root).isEmpty)
+        let optionalHeight: UnitValue<LengthUnit>? = height
+        #expect(SBJEditorValueTraversal.children(of: optionalHeight, context: .root).isEmpty)
+    }
+}
+#endif

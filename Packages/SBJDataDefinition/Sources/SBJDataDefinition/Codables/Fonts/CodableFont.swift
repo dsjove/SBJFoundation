@@ -1,6 +1,5 @@
 import Foundation
 
-
 public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, CustomDebugStringConvertible {
 	public enum Weight: String, Codable, Equatable, CaseIterable, Comparable, Sendable {
 		case ultraLight
@@ -96,4 +95,3 @@ public struct CodableFont: Codable, Equatable, Comparable, Hashable, Sendable, C
 		"\(family.map { $0.debugDescription } ?? "System") \(size) \(weight.rawValue) \(width.rawValue)\(italic ? " italic" : "")"
 	}
 }
-

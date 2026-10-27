@@ -13,6 +13,7 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
     let numberRange: ClosedRange<Double>?
     let itemTitleKey: String?
     let itemActions: SBJEditorItemActions?
+    let optionalControl: AnyView?
     let focusRequest: SBJEditorFocusRequest?
     let context: SBJEditTraversalContext
     @Environment(SBJEditorPresentationModel.self) private var presentationModel
@@ -22,8 +23,7 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
     }
 
     private var addCandidate: Element? {
-        guard let candidate = registry.create(Element.self), !value.contains(candidate) else { return nil }
-        return candidate
+        registry.createSetElement(Element.self, existing: value)
     }
 
     var body: some View {
@@ -33,16 +33,16 @@ struct SBJSetEditor<Element: Codable & Hashable>: View {
                 "\(label) (\(value.count))",
                 context: context,
                 isExpanded: disclosureBinding,
-                leadingActions: AnyView(
-                    HStack(spacing: 6) {
-                        SBJAddButton(label) {
-                            guard let candidate = addCandidate else { return }
-                            value.insert(candidate)
-                            presentationModel.open(context.itemIdentifier)
-                        }
-                        .disabled(!canAdd)
-                    }
-                ),
+				leadingActions: AnyView(
+					HStack(spacing: 6) {
+						SBJAddButton(label) {
+							guard let candidate = addCandidate else { return }
+							value.insert(candidate)
+							presentationModel.open(context.itemIdentifier)
+						}
+						.disabled(!canAdd)
+					}
+				), optionalControl: optionalControl,
                 trailingActions: AnyView(
                     HStack(spacing: 6) {
                         if let itemActions { itemActions.trailingView }

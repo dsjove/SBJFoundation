@@ -1,4 +1,4 @@
-/// Adds integer constraints to a coded property handled by `@SBJEditable`.
+/// Adds integer constraints to a coded property handled by `@SBJStructure`.
 /// An ordinary integer property requires no annotation.
 ///
 /// A closed `range` constrains both bounds. `min` constrains only the lower
