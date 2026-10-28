@@ -78,7 +78,7 @@ The photo migration now uses SBJFoundation `PhotoMenu`/resource-content UI and t
 
 ### Jove's TODOs
 
-This has the densest small-app UI/action vocabulary and accessibility surface. It is a good Phase-2 consumer after SBJFoundation text resources exist. Project/task names and notes are user-authored verbatim values; action phrases, field labels, menus, validation, and accessibility instructions are localizable.
+This has the densest small-app UI/action vocabulary and accessibility surface. It is a good later consumer after SBJFoundation text resources exist. Project/task names and notes are user-authored verbatim values; action phrases, field labels, menus, validation, and accessibility instructions are localizable.
 
 Do not construct localized grammar from independently translated pieces (for example Add/Delete + noun). The existing Foundation TODO on grammatical action resources applies directly here.
 
@@ -129,6 +129,6 @@ Do **not** snapshot or assert English copy, exact localized wording, or chosen S
 - image semantic references resolve, without asserting which concrete SF Symbol currently implements them.
 
 
-## Phase 2 update (2026-10-16)
+## Subsequent update (2026-10-16)
 
-See `PHASE2_ACCESSIBILITY_DESIGN.md` for current protocol separation, shared metadata composition, and the deferred SBJLocalization extraction boundary. `SBJPropertyInfo` and `SBJAccessibilityModifier` now reside under Localization in the existing SBJFoundation target. Existing tests stay in SBJFoundationTests until Phase 5.
+See `PHASE2_ACCESSIBILITY_DESIGN.md` for current protocol separation, shared metadata composition, and the deferred SBJLocalization extraction boundary. `SBJPropertyInfo` and `SBJAccessibilityModifier` now reside under Localization in the existing SBJFoundation target. Existing tests stay in SBJFoundationTests until the framework migration.

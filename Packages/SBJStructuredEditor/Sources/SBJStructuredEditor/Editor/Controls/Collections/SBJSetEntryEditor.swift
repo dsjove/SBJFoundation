@@ -20,7 +20,7 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
     let configuration: Configuration
     let context: SBJEditTraversalContext
     let replace: (Element, Element) -> Bool
-    let remove: () -> Void
+    let remove: (() -> Void)?
     @State private var draft: Element
     @State private var collision = false
 
@@ -32,7 +32,7 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
         context: SBJEditTraversalContext,
         configuration: Configuration = .init(),
         replace: @escaping (Element, Element) -> Bool,
-        remove: @escaping () -> Void
+        remove: (() -> Void)?
     ) {
         self.element = element
         self.originalElement = originalElement
@@ -85,9 +85,11 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
             }
             .padding(.trailing, sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing)
             .overlay(alignment: .topTrailing) {
-                SBJConfirmedRemoveButton(accessibilityLabel: "Remove \(title)", remove: remove)
-                    .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
-                    .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
+                if let remove {
+                    SBJConfirmedRemoveButton(accessibilityLabel: "Remove \(title)", remove: remove)
+                        .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
+                        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
+                }
             }
             if collision {
                 Text("That value is already in the set.")

@@ -80,7 +80,8 @@ import SBJUIVocabulary
           of: root[keyPath: keyPath],
           context: context,
           itemTitleKey: configuration.collectionItemTitleKey,
-          itemIdentifierKey: configuration.collectionItemIdentifierKey
+          itemIdentifierKey: configuration.collectionItemIdentifierKey,
+          elementPresentation: configuration.collectionElementPresentation
         )
       }
       self.traverseBoundChildren = { root, originalRoot, registry, context in
@@ -91,7 +92,10 @@ import SBJUIVocabulary
           registry: registry,
           itemTitleKey: configuration.collectionItemTitleKey,
           itemIdentifierKey: configuration.collectionItemIdentifierKey,
-          reorderable: configuration.collectionReorderable
+          elementPresentation: configuration.collectionElementPresentation,
+          dictionaryPresentation: configuration.dictionaryPresentation,
+          reorderable: configuration.collectionReorderable,
+          removable: configuration.collectionRemovable
         )
       }
       self.collectIssues = { root, path, registry in

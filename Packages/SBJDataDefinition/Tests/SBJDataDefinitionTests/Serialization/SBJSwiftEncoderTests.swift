@@ -134,7 +134,41 @@ struct InferredInitializerWithConvenienceFixture: Codable, Equatable {
     }
 }
 
+// A convenience overload can use the same parameter names while accepting
+// different types. Only the signature that reconstructs the stored values
+// directly is eligible for source export.
+@SBJStructure
+struct OverloadedInitializerReconstructionFixture: Codable, Equatable {
+    var name: String
+    var sections: [String]
+
+    init(_ name: String = "", _ sections: [String] = []) {
+        self.name = name
+        self.sections = sections
+    }
+
+    init(_ name: String = "", _ sections: [Int]) {
+        self.name = name
+        self.sections = sections.map(String.init)
+    }
+
+    init<T: CustomStringConvertible>(_ name: T, _ sections: [String] = []) {
+        self.name = name.description
+        self.sections = sections
+    }
+}
+
 struct InferredInitializerTests {
+    @Test func reconstructsStoredTypesInsteadOfConversionOverloads() {
+        let parameters = OverloadedInitializerReconstructionFixture.sbjSwiftInitializerParameters
+        #expect(parameters.map(\.propertyName) == ["name", "sections"])
+        #expect(parameters.map(\.label) == [nil, nil])
+        let value = OverloadedInitializerReconstructionFixture("notes", ["one", "two"])
+        let source = SBJSwiftEncoder().expression(for: value, nested: false)
+        #expect(source.contains("OverloadedInitializerReconstructionFixture("))
+        #expect(!source.contains("JSONDecoder().decode("))
+    }
+
     @Test func mapsExternalAndUnlabeledParameters() {
         let parameters = InferredInitializerFixture.sbjSwiftInitializerParameters
         #expect(parameters.map(\.propertyName) == ["x", "y"])

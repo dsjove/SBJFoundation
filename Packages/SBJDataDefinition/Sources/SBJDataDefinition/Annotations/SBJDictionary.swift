@@ -7,5 +7,7 @@
 @attached(peer)
 public macro SBJDictionary(
     minCount: Int? = nil,
-    maxCount: Int? = nil
+    maxCount: Int? = nil,
+    key: [any SBJDictionaryMemberRule] = [],
+    value: [any SBJDictionaryMemberRule] = []
 ) = #externalMacro(module: "SBJDataDefinitionMacros", type: "SBJDictionaryMacro")

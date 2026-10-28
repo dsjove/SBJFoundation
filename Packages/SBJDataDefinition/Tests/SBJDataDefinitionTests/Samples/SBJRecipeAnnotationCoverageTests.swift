@@ -6,11 +6,11 @@ import Testing
 struct SBJRecipeAnnotationCoverageTests {
     @Test func structuralAndPresentationMetadataStayDistinct() {
         let type = SBJStructureSampleModel.self
-        #expect(type.propertyMetadata(for: \.name)?.constraints.contains(.textLength(min: 1, max: 80)) == true)
-        #expect(type.propertyMetadata(for: \.servings)?.constraints.contains(.integerRange(1...24)) == true)
-        #expect(type.propertyMetadata(for: \.cookingStages)?.hints.contains(.presentationDisclosure(.autoOpen)) == true)
-        #expect(type.propertyMetadata(for: \.importSource)?.hints.contains(.presentationExcluded) == true)
-        #expect(type.propertyMetadata(for: \.recipeCardTint)?.hints.contains(.colorSupportsAlpha(false)) == true)
+        #expect(type.propertyMetadata(for: \.name)?.constraints.contains(.stringRules(SBJStringRules(minLength: 1, maxLength: 80))) == true)
+        #expect(type.propertyMetadata(for: \.servings)?.constraints.contains(.integerRules(SBJIntegerRules(range: 1...24))) == true)
+        #expect(type.propertyMetadata(for: \.cookingStages)?.hints.contains(.fieldPresentation(SBJFieldPresentationValue(autoExpand: true))) == true)
+        #expect(type.propertyMetadata(for: \.importSource)?.hints.contains(.fieldPresentation(SBJFieldPresentationValue(exclude: true))) == true)
+        #expect(type.propertyMetadata(for: \.recipeCardTint)?.hints.contains(.colorPresentation(SBJColorPresentationValue(alpha: false))) == true)
         #expect(type.propertyMetadata(for: \.ingredients)?.kind == .array)
         #expect(type.propertyMetadata(for: \.tags)?.kind == .set)
         #expect(type.propertyMetadata(for: \.substitutions)?.kind == .dictionary)

@@ -115,11 +115,11 @@ extension SBJStructuralFieldProjectionTests {
 
 @SBJStructure
 private struct PresentationProjectionFixture: Codable {
-    @SBJPresentationDisclosure(.alwaysOpen)
+    @SBJFieldPresentation(autoExpand: true)
     var child: StructuralChildFixture = .init()
-    @SBJPresentationExclude
+    @SBJFieldPresentation(exclude: true)
     var internalNote: String = "not an editor field"
-    @SBJPresentationString(.multiline)
+    @SBJStringPresentation(.multiline)
     var notes: String = ""
 }
 
@@ -128,11 +128,11 @@ extension SBJStructuralFieldProjectionTests {
     func structuralProjectionHonorsPresentationAnnotations() {
         let fields = SBJStructuralFieldProjection.fields(of: PresentationProjectionFixture.self)
         #expect(fields.map(\.name) == ["Child", "Notes"])
-        #expect(fields[0].traversalDisclosureMode == .alwaysOpen)
+        #expect(fields[0].traversalDisclosureMode == .autoOpen)
         #expect(fields[1].traversalDisclosureMode == .closed)
         #expect(PresentationProjectionFixture.sbjProperties.contains { $0.sourceName == "internalNote" })
         #expect(fields[1].editableField.structuralMetadata?.hints.contains {
-            if case .textStyle(.multiline) = $0 { return true }
+            if case .stringPresentation(let value) = $0 { return value.style == .multiline }
             return false
         } == true)
     }
@@ -142,7 +142,7 @@ extension SBJStructuralFieldProjectionTests {
 private struct ComputedProjectionFixture: Codable {
     var stored: String = "first"
 
-    @SBJPresentationProperty
+    @SBJFieldPresentation()
     var computed: String {
         get { stored }
         set { stored = newValue }

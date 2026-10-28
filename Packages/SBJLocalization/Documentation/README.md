@@ -1,6 +1,6 @@
 # SBJLocalization — current implementation
 
-**Status:** This describes the implemented APIs in SBJFoundation after the Phase 5A runtime-localization refactor, not the proposed context-aware resource system. The package-level `README.md` is separate; this is the documentation-directory entry point.
+**Status:** This describes the implemented APIs in SBJFoundation after the the current implementation runtime-localization refactor, not the proposed context-aware resource system. The package-level `README.md` is separate; this is the documentation-directory entry point.
 
 ## Responsibilities today
 

@@ -11,7 +11,8 @@ protocol SBJEditorTraversableValue {
         of value: Any,
         context: SBJEditTraversalContext,
         itemTitleKey: String?,
-        itemIdentifierKey: String?
+        itemIdentifierKey: String?,
+        elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode]
 }
 
@@ -24,7 +25,9 @@ protocol SBJEditorBoundTraversableValue {
         registry: SBJEditorRegistry,
         itemTitleKey: String?,
         itemIdentifierKey: String?,
-        reorderable: Bool
+        elementPresentation: SBJFieldPresentationValue?,
+        dictionaryPresentation: SBJDictionaryPresentationValue?,
+        reorderable: Bool, removable: Bool
     ) -> [SBJEditorTraversalNode]
 }
 
@@ -34,7 +37,8 @@ enum SBJEditorValueTraversal {
         of value: Value,
         context: SBJEditTraversalContext,
         itemTitleKey: String? = nil,
-        itemIdentifierKey: String? = nil
+        itemIdentifierKey: String? = nil,
+        elementPresentation: SBJFieldPresentationValue? = nil
     ) -> [SBJEditorTraversalNode] {
         if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjAssociatedTraversalNodes(value: value, context: context)
@@ -46,7 +50,7 @@ enum SBJEditorValueTraversal {
             return structural._sbjStructuralTraversalNodes(value: value, context: context)
         }
         if let compound = Value.self as? any SBJEditorTraversableValue.Type {
-            return compound.sbjTraversalChildren(of: value, context: context, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey)
+            return compound.sbjTraversalChildren(of: value, context: context, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey, elementPresentation: elementPresentation)
         }
         return []
     }
@@ -58,7 +62,9 @@ enum SBJEditorValueTraversal {
         registry: SBJEditorRegistry,
         itemTitleKey: String? = nil,
         itemIdentifierKey: String? = nil,
-        reorderable: Bool = true
+        elementPresentation: SBJFieldPresentationValue? = nil,
+        dictionaryPresentation: SBJDictionaryPresentationValue? = nil,
+        reorderable: Bool = true, removable: Bool = true
     ) -> [SBJEditorTraversalNode] {
         if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjBoundAssociatedTraversalNodes(
@@ -73,7 +79,7 @@ enum SBJEditorValueTraversal {
             return compound.sbjBoundTraversalChildren(
                 binding: SBJAnyBinding(binding), originalValue: originalValue, context: context,
                 registry: registry, itemTitleKey: itemTitleKey,
-                itemIdentifierKey: itemIdentifierKey, reorderable: reorderable
+                itemIdentifierKey: itemIdentifierKey, elementPresentation: elementPresentation, dictionaryPresentation: dictionaryPresentation, reorderable: reorderable, removable: removable
             )
         }
         return []
@@ -142,12 +148,13 @@ extension Optional: SBJEditorTraversableValue {
         of value: Any,
         context: SBJEditTraversalContext,
         itemTitleKey: String?,
-        itemIdentifierKey: String?
+        itemIdentifierKey: String?,
+        elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
         guard let optional = value as? Wrapped?, let wrapped = optional else { return [] }
         // An optional's wrapped value is rendered at the optional's own depth
         // in the recursive editor. Its descendants retain their normal paths.
-        return SBJEditorValueTraversal.children(of: wrapped, context: context, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey)
+        return SBJEditorValueTraversal.children(of: wrapped, context: context, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey, elementPresentation: elementPresentation)
     }
 }
 
@@ -156,16 +163,21 @@ extension Array: SBJEditorTraversableValue {
         of value: Any,
         context: SBJEditTraversalContext,
         itemTitleKey: String?,
-        itemIdentifierKey: String?
+        itemIdentifierKey: String?,
+        elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
         guard let elements = value as? [Element] else { return [] }
         return SBJCollectionTraversal.array(
             elements, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey
-        ).map { item in
+        ).compactMap { item in
+            guard elementPresentation?.exclude != true else { return nil }
+            let rowTitle = elementPresentation?.name.map { name in
+                itemTitleKey == nil ? "\(name) \((item.index ?? 0) + 1)" : "\(name): \(item.title)"
+            } ?? item.title
             let childContext = context.collectionChild(
-                identifier: item.identifier, location: item.location, title: item.title
-            )
-            return SBJEditorValueTraversal.node(named: item.title, value: item.value, context: childContext)
+                identifier: item.identifier, location: item.location, title: rowTitle
+            ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
+            return SBJEditorValueTraversal.node(named: rowTitle, value: item.value, context: childContext)
         }
     }
 }
@@ -175,15 +187,17 @@ extension Set: SBJEditorTraversableValue {
         of value: Any,
         context: SBJEditTraversalContext,
         itemTitleKey: String?,
-        itemIdentifierKey: String?
+        itemIdentifierKey: String?,
+        elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
         guard let values = value as? Set<Element> else { return [] }
-        return SBJCollectionTraversal.set(values, itemTitleKey: itemTitleKey).map { item in
+        return SBJCollectionTraversal.set(values, itemTitleKey: itemTitleKey).compactMap { item in
+            guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
-            let title = item.title
+            let title = elementPresentation?.name.map { "\($0): \(item.title)" } ?? item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
-            )
+            ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
             return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
         }
     }
@@ -194,7 +208,8 @@ extension Dictionary: SBJEditorTraversableValue {
         of value: Any,
         context: SBJEditTraversalContext,
         itemTitleKey: String?,
-        itemIdentifierKey: String?
+        itemIdentifierKey: String?,
+        elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
         guard let values = value as? [Key: Value] else { return [] }
         return SBJCollectionTraversal.dictionary(values).map { item in
@@ -213,7 +228,7 @@ extension Dictionary: SBJEditorTraversableValue {
 extension Optional: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, reorderable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, reorderable: Bool, removable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: Optional<Wrapped>.self)
         guard let capturedWrappedValue = parent.wrappedValue else { return [] }
@@ -225,7 +240,7 @@ extension Optional: SBJEditorBoundTraversableValue {
         )
         return SBJEditorValueTraversal.boundChildren(
             of: child, originalValue: (originalValue as? Wrapped?) ?? nil, context: context, registry: registry,
-            itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey, reorderable: reorderable
+            itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey, elementPresentation: elementPresentation, dictionaryPresentation: dictionaryPresentation, reorderable: reorderable, removable: removable
         )
     }
 }
@@ -233,16 +248,19 @@ extension Optional: SBJEditorBoundTraversableValue {
 extension Array: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, reorderable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, reorderable: Bool, removable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: [Element].self)
         let snapshot = parent.wrappedValue
         return SBJCollectionTraversal.array(
             snapshot, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey
-        ).map { item in
+        ).compactMap { item in
+            guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
             guard let index = item.index else { preconditionFailure("Array traversal entries always have an index") }
-            let title = item.title
+            let title = elementPresentation?.name.map { name in
+                itemTitleKey == nil ? "\(name) \(index + 1)" : "\(name): \(item.title)"
+            } ?? item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             )
@@ -298,6 +316,7 @@ extension Array: SBJEditorBoundTraversableValue {
             let actions = SBJArrayElementActions.make(
                 parent: parent, index: index, count: snapshot.count,
                 canReorder: reorderable && context.branch.searchCriteria.isEmpty,
+                canRemove: removable,
                 resolvedIndex: resolvedIndex
             )
             return SBJEditorValueTraversal.boundNode(
@@ -315,15 +334,16 @@ extension Array: SBJEditorBoundTraversableValue {
 extension Set: SBJEditorBoundTraversableValue where Element: Codable {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, reorderable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, reorderable: Bool, removable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: Set<Element>.self)
-        return SBJCollectionTraversal.set(parent.wrappedValue, itemTitleKey: itemTitleKey).map { item in
+        return SBJCollectionTraversal.set(parent.wrappedValue, itemTitleKey: itemTitleKey).compactMap { item in
+            guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
-            let title = item.title
+            let title = elementPresentation?.name.map { "\($0): \(item.title)" } ?? item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
-            )
+            ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
             return SBJEditorTraversalNode(
                 context: childContext, name: title,
                 render: { renderedContext in
@@ -339,11 +359,11 @@ extension Set: SBJEditorBoundTraversableValue where Element: Codable {
                             if replaced { parent.wrappedValue = values }
                             return replaced
                         },
-                        remove: {
+                        remove: removable ? {
                             var values = parent.wrappedValue
                             values.remove(element)
                             parent.wrappedValue = values
-                        }
+                        } : nil
                     ))
                 },
                     isIncluded: { criteria in
@@ -366,16 +386,22 @@ extension Set: SBJEditorBoundTraversableValue where Element: Codable {
 extension Dictionary: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, reorderable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, reorderable: Bool, removable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: [Key: Value].self)
-        return SBJCollectionTraversal.dictionary(parent.wrappedValue).map { item in
+        return SBJCollectionTraversal.dictionary(parent.wrappedValue).compactMap { item in
+            guard dictionaryPresentation?.value?.exclude != true else { return nil }
             let key = item.value.key
-            let title = item.title
+            let title = dictionaryPresentation?.key?.exclude == true
+                ? (dictionaryPresentation?.value?.name ?? "Value")
+                : (dictionaryPresentation?.key?.name.map { "\($0): \(item.title)" } ?? item.title)
+            let valueLabel = dictionaryPresentation?.key?.exclude == true
+                ? (dictionaryPresentation?.value?.name ?? "Value")
+                : (dictionaryPresentation?.value?.name.map { "\($0) (\(item.title))" } ?? title)
             let entryValue = item.value.value
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
-            )
+            ).withBranch(context.branch.withDisclosureMode(dictionaryPresentation?.value?.autoExpand == true ? .autoOpen : .closed))
             let valueBinding = Binding<Value>(
                 get: { parent.wrappedValue[key] ?? entryValue },
                 set: { newValue in
@@ -385,10 +411,18 @@ extension Dictionary: SBJEditorBoundTraversableValue {
                     parent.wrappedValue = values
                 }
             )
+            let actions: SBJEditorItemActions? = removable ? SBJEditorItemActions(
+                remove: {
+                    var values = parent.wrappedValue
+                    values.removeValue(forKey: key)
+                    parent.wrappedValue = values
+                },
+                moveUp: nil, moveDown: nil
+            ) : nil
             return SBJEditorValueTraversal.boundNode(
-                named: title, binding: valueBinding,
+                named: valueLabel, binding: valueBinding,
                 originalValue: (originalValue as? [Key: Value])?[key],
-                context: childContext, registry: registry
+                context: childContext, registry: registry, itemActions: actions
             )
         }
     }

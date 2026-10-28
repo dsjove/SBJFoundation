@@ -122,7 +122,7 @@ public struct SBJStructureSampleStep: Codable, Hashable {
   public var title = "New step"
 
   @SBJString(minLength: 1, maxLength: 600)
-  @SBJPresentationString(.multiline)
+  @SBJStringPresentation(.multiline)
   public var instruction = "Describe what to do."
 }
 
@@ -133,7 +133,7 @@ public struct SBJStructureSampleModel: Codable {
   public var name = "Roasted Vegetable Pasta"
 
   @SBJString(minLength: 1, maxLength: 400)
-  @SBJPresentationString(.multiline)
+  @SBJStringPresentation(.multiline)
   public var summary =
 	"Roasted peppers, cauliflower, and onion tossed with pasta and a simple olive-oil dressing."
 
@@ -167,7 +167,7 @@ public struct SBJStructureSampleModel: Codable {
   @SBJData(min: 4, max: 16, modulo: 4)
   public var importFingerprint = Data([0x52, 0x43, 0x50, 0x45])
 
-  @SBJColor(alpha: false)
+  @SBJColorPresentation(alpha: false)
   public var recipeCardTint = CodableColor(0.85, 0.35, 0.15, 1.0)
 
   public var recipeCardFontFamily: FontFamily? = nil
@@ -175,7 +175,7 @@ public struct SBJStructureSampleModel: Codable {
   public var preferredVolumeSteps = UnitEditingPolicy<VolumeUnit>(defaultStep: 0.25)
   public var preferredMeasurementSystem: MeasurementSystem = .metric
 
-  @SBJPresentationDisclosure(.closed)
+  @SBJFieldPresentation(autoExpand: false)
   public var nutrition = SBJStructureSampleNutrition()
   public var heatSetting: SBJStructureSampleHeatSetting = .oven(celsius: 220, convection: true)
 
@@ -201,14 +201,14 @@ public struct SBJStructureSampleModel: Codable {
   public var cookingPlan: SBJStructureSampleCookingPlan = .alternatives(
     primary: .adjustTemperature(8), backup: nil)
   public var cookingStage: SBJStructureSampleCookingStage = .init()
-  @SBJPresentationDisclosure(.autoOpen)
+  @SBJFieldPresentation(autoExpand: true)
   public var cookingStages: [SBJStructureSampleCookingStage] = [.init(), .init()]
   public var optionalCourse: SBJStructureSampleCourse? = nil
   public var optionalServings: Int? = 4
   public var optionalChefNote: String? = nil
 
-  @SBJArray(reorderable: true, minCount: 1, maxCount: 30, uniqueBy: \SBJStructureSampleIngredient.id)
-  @SBJPresentationArray(title: \SBJStructureSampleIngredient.name)
+  @SBJArray(minCount: 1, maxCount: 30, uniqueBy: \SBJStructureSampleIngredient.id)
+  @SBJArrayPresentation(title: \SBJStructureSampleIngredient.name, reorderable: true)
   public var ingredients = [
 	SBJStructureSampleIngredient(
 	  name: "Red bell pepper", quantity: 2, unit: .item, preparation: "sliced"),
@@ -220,8 +220,8 @@ public struct SBJStructureSampleModel: Codable {
 	SBJStructureSampleIngredient(name: "Pasta", quantity: 340, unit: .gram),
   ]
 
-  @SBJArray(reorderable: true, minCount: 1, maxCount: 20, uniqueBy: \SBJStructureSampleStep.id)
-  @SBJPresentationArray(title: \SBJStructureSampleStep.title)
+  @SBJArray(minCount: 1, maxCount: 20, uniqueBy: \SBJStructureSampleStep.id)
+  @SBJArrayPresentation(title: \SBJStructureSampleStep.title, reorderable: true)
   public var steps = [
 	SBJStructureSampleStep(
 	  title: "Roast the vegetables",
@@ -240,7 +240,7 @@ public struct SBJStructureSampleModel: Codable {
   ]
 
   @SBJSet(minCount: 1, maxCount: 12)
-  @SBJPresentationSet()
+  @SBJSetPresentation()
   public var tags: Set<String> = ["Weeknight", "Vegetarian", "Roasted"]
 
   @SBJDictionary(maxCount: 12)
@@ -250,10 +250,10 @@ public struct SBJStructureSampleModel: Codable {
   ]
 
   @SBJString(maxLength: 1_000)
-  @SBJPresentationString(.sheetEdit)
+  @SBJStringPresentation(.sheetEdit)
   public var notes: String? = "Add red-pepper flakes at the table for anyone who wants more heat."
 
-  @SBJPresentationProperty
+  @SBJFieldPresentation()
   public var editorDisplayName: String {
 	get { name }
 	set { name = newValue }
@@ -262,7 +262,7 @@ public struct SBJStructureSampleModel: Codable {
   @SBJUUID(nonzero: true)
   public var identifier = UUID()
 
-  @SBJPresentationExclude
+  @SBJFieldPresentation(exclude: true)
   public var importSource = "Canonical SBJStructure sample fixture"
 
   // MARK: - Standalone editor dispatch coverage
@@ -272,21 +272,21 @@ public struct SBJStructureSampleModel: Codable {
   // directly to cover stock editor selection paths that a recipe would not
   // naturally need.
 
-  @SBJPresentationExclude public var editorSheetText = "This string uses the sheet-edit presentation."
-  @SBJPresentationExclude public var editorInt8: Int8 = 8
-  @SBJPresentationExclude public var editorInt16: Int16 = 16
-  @SBJPresentationExclude public var editorInt32: Int32 = 32
-  @SBJPresentationExclude public var editorInt64: Int64 = 64
-  @SBJPresentationExclude public var editorUInt: UInt = 1
-  @SBJPresentationExclude public var editorUInt8: UInt8 = 8
-  @SBJPresentationExclude public var editorUInt16: UInt16 = 16
-  @SBJPresentationExclude public var editorUInt32: UInt32 = 32
-  @SBJPresentationExclude public var editorUInt64: UInt64 = 64
-  @SBJPresentationExclude public var editorFloat: Float = 2.5
-  @SBJPresentationExclude public var editorCGFloat: CGFloat = 1.25
-  @SBJPresentationExclude public var editorDecimal: Decimal = 12.34
-  @SBJPresentationExclude public var editorDate = Date()
-  @SBJPresentationExclude public var editorURL = URL(string: "https://example.com")!
+  @SBJFieldPresentation(exclude: true) public var editorSheetText = "This string uses the sheet-edit presentation."
+  @SBJFieldPresentation(exclude: true) public var editorInt8: Int8 = 8
+  @SBJFieldPresentation(exclude: true) public var editorInt16: Int16 = 16
+  @SBJFieldPresentation(exclude: true) public var editorInt32: Int32 = 32
+  @SBJFieldPresentation(exclude: true) public var editorInt64: Int64 = 64
+  @SBJFieldPresentation(exclude: true) public var editorUInt: UInt = 1
+  @SBJFieldPresentation(exclude: true) public var editorUInt8: UInt8 = 8
+  @SBJFieldPresentation(exclude: true) public var editorUInt16: UInt16 = 16
+  @SBJFieldPresentation(exclude: true) public var editorUInt32: UInt32 = 32
+  @SBJFieldPresentation(exclude: true) public var editorUInt64: UInt64 = 64
+  @SBJFieldPresentation(exclude: true) public var editorFloat: Float = 2.5
+  @SBJFieldPresentation(exclude: true) public var editorCGFloat: CGFloat = 1.25
+  @SBJFieldPresentation(exclude: true) public var editorDecimal: Decimal = 12.34
+  @SBJFieldPresentation(exclude: true) public var editorDate = Date()
+  @SBJFieldPresentation(exclude: true) public var editorURL = URL(string: "https://example.com")!
 }
 
 #endif

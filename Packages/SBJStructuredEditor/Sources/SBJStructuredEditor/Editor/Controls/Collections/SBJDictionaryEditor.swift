@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
+    let insertable: Bool
     let label: String
     @Binding var value: [Key: Value]
     let originalValue: [Key: Value]?

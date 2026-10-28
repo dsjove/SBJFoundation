@@ -11,6 +11,7 @@ struct SBJArrayEditor<Element: Codable>: View {
     let textStyle: SBJStringStyle?
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
+    let insertable: Bool
     let reorderable: Bool
     let itemTitleKey: String?
     let itemIdentifierKey: String?

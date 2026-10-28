@@ -11,8 +11,7 @@ struct SBJMultilineTextEditor: View {
     @FocusState private var isFocused: Bool
 
     var rowStatus: SBJEditorRowStatus = .init()
-    var textAutocorrection: SBJTextAutocorrection = .automatic
-    var textCapitalization: SBJTextCapitalization = .automatic
+    var presentation: SBJStringPresentationValue = .init()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -20,10 +19,7 @@ struct SBJMultilineTextEditor: View {
                 .accessibilityHidden(true)
             TextEditor(text: $value)
                 .sbjMultilineField(isFocused: $isFocused, minHeight: 84)
-                .sbjApplyTextInputPolicies(
-                autocorrection: textAutocorrection,
-                capitalization: textCapitalization
-            )
+                .sbjTextInput(presentation)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
         }
         .onAppear(perform: claimFocus)

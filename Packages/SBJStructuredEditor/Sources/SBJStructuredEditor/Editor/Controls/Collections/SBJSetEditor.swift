@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 struct SBJSetEditor<Element: Codable & Hashable>: View {
+    let insertable: Bool
     let label: String
     @Binding var value: Set<Element>
     let originalValue: Set<Element>?

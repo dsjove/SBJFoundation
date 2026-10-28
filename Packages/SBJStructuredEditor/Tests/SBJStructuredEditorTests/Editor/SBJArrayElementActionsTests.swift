@@ -17,7 +17,7 @@ struct SBJArrayElementActionsTests {
         #expect(actions.moveDown != nil)
         actions.moveUp?()
         #expect(values == ["second", "first", "third"])
-        actions.remove()
+        actions.remove?()
         #expect(values == ["second", "third"])
     }
 
@@ -42,7 +42,7 @@ struct SBJArrayElementActionsTests {
         var values = ["one", "two"]
         let binding = Binding<[String]>(get: { values }, set: { values = $0 })
         let actions = SBJArrayElementActions.make(parent: binding, index: 1, count: 2, canReorder: true, resolvedIndex: { nil })
-        actions.remove()
+        actions.remove?()
         actions.moveUp?()
         #expect(values == ["one", "two"])
     }

@@ -17,6 +17,8 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     let colorSupportsAlpha: Bool
     let unitEditor: SBJUnitValueEditorMode
     let unitSystem: MeasurementSystem?
+    let collectionInsertable: Bool
+    let collectionRemovable: Bool
     let collectionReorderable: Bool
     let collectionItemTitleKey: String?
     let collectionItemIdentifierKey: String?
@@ -90,6 +92,8 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                         integerRange: integerRange, numberRange: numberRange,
                         dateRange: dateRange, colorSupportsAlpha: colorSupportsAlpha,
                         unitEditor: unitEditor, unitSystem: unitSystem,
+                        collectionInsertable: collectionInsertable,
+                        collectionRemovable: collectionRemovable,
                         collectionReorderable: collectionReorderable,
                         collectionItemTitleKey: collectionItemTitleKey,
                         collectionItemIdentifierKey: collectionItemIdentifierKey,
@@ -129,6 +133,8 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                         colorSupportsAlpha: colorSupportsAlpha,
                         unitEditor: unitEditor,
                         unitSystem: unitSystem,
+                        collectionInsertable: collectionInsertable,
+                        collectionRemovable: collectionRemovable,
                         collectionReorderable: collectionReorderable,
                         collectionItemTitleKey: collectionItemTitleKey,
                         focusRequest: pendingFocus ?? focusRequest,

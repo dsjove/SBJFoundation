@@ -8,8 +8,7 @@ struct SBJUUIDEditor: View {
     @Binding var value: UUID
     let focusRequest: SBJEditorFocusRequest?
     let labelIsUnknown: Bool
-    @State private var text = ""
-    @State private var isValid = true
+    @State private var draft = SBJParsedTextDraft()
     @FocusState private var isFocused: Bool
 
     var rowStatus: SBJEditorRowStatus = .init()
@@ -17,20 +16,16 @@ struct SBJUUIDEditor: View {
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", text: Binding(
-                get: { text },
+                get: { draft.text },
                 set: { newValue in
-                    text = newValue
-                    if let parsed = newValue.sbjUUID {
+                    if let parsed = draft.edit(newValue, parse: { $0.sbjUUID }) {
                         value = parsed
-                        isValid = true
-                    } else {
-                        isValid = false
                     }
                 }
             ))
-            .oneLiner(isFocused: $isFocused)
+            .sbjSingleLineField(isFocused: $isFocused)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
-            .invalidDecoration(!isValid)
+            .invalidDecoration(!draft.isValid)
 #if os(iOS)
             .textInputAutocapitalization(.characters)
 #endif
@@ -39,27 +34,24 @@ struct SBJUUIDEditor: View {
                 accessibilityLabel: "Generate new \(label)"
             ) {
                 value = UUID()
-                text = value.uuidString
-                isValid = true
+                draft.reset(to: value.uuidString)
             }
         }
         .accessibilityValue(value.uuidString)
         .onAppear {
-            text = value.uuidString
+            draft.reset(to: value.uuidString)
             focusRequest?.claim($isFocused)
         }
         .onChange(of: value) { _, newValue in
             // An external model update must not leave an unfocused field stale.
             // Preserve the user's draft while the control has focus.
             if !isFocused {
-                text = newValue.uuidString
-                isValid = true
+                draft.reset(to: newValue.uuidString)
             }
         }
         .onChange(of: isFocused) { _, focused in
             if !focused {
-                text = value.uuidString
-                isValid = true
+                draft.reset(to: value.uuidString)
             }
         }
     }

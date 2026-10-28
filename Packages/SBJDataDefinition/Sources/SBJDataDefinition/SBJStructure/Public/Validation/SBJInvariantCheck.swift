@@ -362,6 +362,19 @@ public enum SBJInvariantCheck {
         }
     }
 
+    /// Checks the current array snapshot without sorting or modifying it.
+    /// Requires Comparable elements at compile time.
+    public static func requireSorted<Element: Comparable>(
+        _ values: [Element],
+        direction: SBJSortDirection,
+        at keyPath: SBJValidationKeyPath
+    ) throws {
+        if let index = values.firstOutOfOrderIndex(direction: direction) {
+            throw SBJValidationError(values[index], at: keyPath.appending(index: index),
+                                     "must be sorted \(direction.rawValue)")
+        }
+    }
+
     public static func requireUnique<C: Collection>(
         _ values: C,
         at keyPath: SBJValidationKeyPath,

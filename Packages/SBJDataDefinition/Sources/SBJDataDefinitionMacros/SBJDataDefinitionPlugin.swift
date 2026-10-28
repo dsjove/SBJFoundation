@@ -20,13 +20,13 @@ struct SBJDataDefinitionPlugin: CompilerPlugin {
         SBJUUIDMacro.self,
         SBJDateMacro.self,
         SBJDataMacro.self,
-        SBJColorMacro.self,
-        SBJPresentationArrayMacro.self,
-        SBJPresentationSetMacro.self,
-        SBJPresentationExcludeMacro.self,
-        SBJPresentationPropertyMacro.self,
-        SBJPresentationDisclosureMacro.self,
-        SBJPresentationStringMacro.self,
+        SBJColorPresentationMacro.self,
+        SBJArrayPresentationMacro.self,
+        SBJDictionaryPresentationMacro.self,
+        SBJSetPresentationMacro.self,
+        SBJFieldPresentationMacro.self,
+        SBJStringPresentationMacro.self,
+        SBJUnitValuePresentationMacro.self,
 
     ]
 }

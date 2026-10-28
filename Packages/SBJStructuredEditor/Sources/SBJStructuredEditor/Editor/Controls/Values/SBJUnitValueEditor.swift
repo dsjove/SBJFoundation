@@ -81,6 +81,14 @@ extension PairedUnitValue: _SBJUnitValueEditorValue {
 
 extension PairedUnitValue: SBJTypedEditorValue {}
 
+/// Returns the unit choices available under a declared measurement system.
+/// This affects editor choices only; it does not modify or validate stored values.
+private func sbjAvailableUnits<Unit: UnitType>(for system: MeasurementSystem?) -> [Unit] {
+    Array(Unit.allCases).filter { unit in
+        system == nil || unit.measurementSystem == .universal || unit.measurementSystem == system
+    }
+}
+
 struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
     let label: String
     @Binding var value: PairedUnitValue<Unit>
@@ -92,7 +100,7 @@ struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             HStack(spacing: 8) {
                 TextField("", value: $value.first, format: .number)
-                    .textFieldStyle(.roundedBorder)
+                    .sbjSingleLineField()
                     .frame(width: 92)
                     .multilineTextAlignment(.trailing)
                     .accessibilityLabel("\(label) first")
@@ -102,7 +110,7 @@ struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
                     TextField("", value: Binding<Double>(
                         get: { value.second ?? 0 },
                         set: { value.second = $0 }), format: .number)
-                        .textFieldStyle(.roundedBorder)
+                        .sbjSingleLineField()
                         .frame(width: 92)
                         .multilineTextAlignment(.trailing)
                         .accessibilityLabel("\(label) second")
@@ -134,9 +142,7 @@ struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
     }
 
     private var availableUnits: [Unit] {
-        Array(Unit.allCases).filter {
-            unitSystem == nil || $0.measurementSystem == .universal || $0.measurementSystem == unitSystem
-        }
+        sbjAvailableUnits(for: unitSystem)
     }
 }
 
@@ -170,10 +176,7 @@ struct SBJMixedUnitValueEditor<Unit: UnitType>: View {
     }
 
     private var availableUnits: [Unit] {
-        Array(Unit.allCases).filter { unit in
-            unitSystem == nil || unit.measurementSystem == .universal
-                || unit.measurementSystem == unitSystem
-        }
+        sbjAvailableUnits(for: unitSystem)
     }
 }
 
@@ -189,9 +192,7 @@ struct SBJUnitValueEditor<Unit: UnitType>: View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             UnitValueControl(
                 value: $value,
-                units: Array(Unit.allCases).filter { unit in
-                    unitSystem == nil || unit.measurementSystem == .universal || unit.measurementSystem == unitSystem
-                },
+                units: sbjAvailableUnits(for: unitSystem),
                 accessibilityLabel: label,
                 unitEditable: editor == .editable
             )

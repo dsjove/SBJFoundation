@@ -1,6 +1,6 @@
 # SBJDataDefinitionReport
 
-Phase 9A provides an instance-free catalog of compiled structural declarations.
+The package provides an instance-free catalog of compiled structural declarations.
 The package has no dependency on SBJStructuredEditor and does not create model instances.
 
 Use `SBJDefinitionCatalog(Recipe.self)` for a single structured root. Use
@@ -11,18 +11,13 @@ Use `SBJDefinitionCatalog(Recipe.self)` for a single structured root. Use
 Type ordering is alphabetical by default. Property and case ordering preserve
 source declaration order. All three are independently configurable.
 
-The schema presently exposes stored structural properties, their actual Swift
+The schema exposes stored structural properties, their actual Swift
 identifiers and declared types, constraint and presentation hints, and PropertyInfo.
 Associated-value enums expose payload names and types via typed metadata dispatch.
 
-## Explicitly deferred until declaration metadata is extended
+## Metadata limitations
 
-Automatic transitive discovery of referenced types, raw-value enum literals,
-static/computed PropertyInfo-only declaration inventory, and fully qualified
-references through Optional/collection wrappers are not available from current
-DataDefinition type metadata. They are *not* inferred from constructed values.
-These capabilities must be added to DataDefinition macro output before marking
-Phase 9A complete. The report is PDF-only; there is no independent SwiftUI report layout.
+Raw-value enum literals and static/computed PropertyInfo-only declaration inventories are not available from existing structural metadata. The catalog does not infer declarations from model instances. Transitive discovery of supported `SBJStructured` and `SBJStructuredEnum` types, including types wrapped in Optional and collections, is implemented as described below. The report renders to PDF; the SwiftUI view is a PDF host, not a separate report layout.
 
 ## Native SBJLayout PDF output
 
@@ -33,8 +28,7 @@ by `type-0`, `type-1`, etc. `SBJDefinitionReportView` (also available as `SBJDef
 using `PDFPresentationController` and `PDFPresentationView` from SBJLayout.
 
 PDF content reflects **registered catalog metadata only**. Transitive discovery,
-raw-value declarations, and annotated static/computed members remain subject
-to the catalog's documented 9A limitations.
+raw-value declarations, and annotated static/computed members remain limited by the available declaration metadata.
 
 The report has no custom SwiftUI catalog views, navigation stacks, lists, or rows.
 The only view is a thin SwiftUI host for SBJLayout’s `PDFPresentationView`;

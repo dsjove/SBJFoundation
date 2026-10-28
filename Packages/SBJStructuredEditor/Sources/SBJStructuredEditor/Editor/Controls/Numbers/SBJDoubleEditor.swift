@@ -17,7 +17,7 @@ struct SBJDoubleEditor: View {
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", value: $value, format: .number)
-                .oneLiner(isFocused: $isFocused)
+                .sbjSingleLineField(isFocused: $isFocused)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
                 .sbjPreferredFieldWidth(SBJNumericFieldSizing.number(range: range, locale: locale))
                 .invalidDecoration(range.map { !$0.contains(value) } ?? false)

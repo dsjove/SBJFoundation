@@ -58,11 +58,11 @@ private extension View {
 }
 
 public extension View {
-    func oneLiner() -> some View {
+    func sbjSingleLineField() -> some View {
         modifier(SBJOneLineFieldModifier())
     }
 
-    func oneLiner(isFocused: FocusState<Bool>.Binding) -> some View {
+    func sbjSingleLineField(isFocused: FocusState<Bool>.Binding) -> some View {
         modifier(SBJFocusableOneLineFieldModifier(isFocused: isFocused))
     }
 

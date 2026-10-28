@@ -12,6 +12,8 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
     @Binding var text: String
     let placeholder: Placeholder
     let numberOfLines: Int
+    let presentation: SBJStringPresentationValue
+    let requestInitialFocus: (@MainActor () -> Bool)?
 
     @State private var showSheet = false
     @FocusState private var isFocused: Bool
@@ -20,20 +22,28 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
     public init(
         @ViewBuilder _ placeholder: () -> Placeholder,
         text: Binding<String>,
-        numberOfLines: Int = 3
+        numberOfLines: Int = 3,
+        presentation: SBJStringPresentationValue = .init(style: .sheetEdit),
+        requestInitialFocus: (@MainActor () -> Bool)? = nil
     ) {
         self._text = text
         self.numberOfLines = numberOfLines
+        self.presentation = presentation
+        self.requestInitialFocus = requestInitialFocus
         self.placeholder = placeholder()
     }
 
     public init(
         _ placeholder: String,
         text: Binding<String>,
-        numberOfLines: Int = 3
+        numberOfLines: Int = 3,
+        presentation: SBJStringPresentationValue = .init(style: .sheetEdit),
+        requestInitialFocus: (@MainActor () -> Bool)? = nil
     ) where Placeholder == Text {
         self._text = text
         self.numberOfLines = numberOfLines
+        self.presentation = presentation
+        self.requestInitialFocus = requestInitialFocus
         self.placeholder = Text(placeholder)
     }
 
@@ -41,7 +51,7 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $text)
                 .sbjMultilineField(isFocused: $isFocused, minHeight: estimatedHeight)
-                .sbjApplyTextInputPolicies(autocorrection: .automatic, capitalization: .automatic)
+                .sbjTextInput(presentation)
                 .padding(.trailing, 32)
 
             if text.isEmpty {
@@ -64,11 +74,14 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
                 .padding(.top, 8)
             }
         }
+        .onAppear {
+            if requestInitialFocus?() == true { isFocused = true }
+        }
         .sheet(isPresented: $showSheet) {
             NavigationStack {
                 TextEditor(text: $text)
                     .sbjMultilineField(isFocused: $sheetIsFocused, minHeight: 220)
-                    .sbjApplyTextInputPolicies(autocorrection: .automatic, capitalization: .automatic)
+                    .sbjTextInput(presentation)
                     .padding()
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {

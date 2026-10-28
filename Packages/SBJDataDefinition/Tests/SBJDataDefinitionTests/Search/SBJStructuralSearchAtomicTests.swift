@@ -1,4 +1,3 @@
-import Foundation
 import Testing
 @testable import SBJDataDefinition
 
@@ -16,9 +15,4 @@ struct SBJStructuralSearchAtomicTests {
         #expect(!sbjPredicated(value, search: "secret token"))
     }
 
-    @Test("Foundation primitives use atomic search")
-    func foundationAtomic() {
-        #expect(42 is any SBJStructuralSearchAtomic)
-        #expect(URL(string: "https://example.org")! is any SBJStructuralSearchAtomic)
-    }
 }

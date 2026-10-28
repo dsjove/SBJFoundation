@@ -8,12 +8,11 @@ struct SBJURLEditor: View {
     @Binding var value: URL
     let focusRequest: SBJEditorFocusRequest?
     let labelIsUnknown: Bool
-    @State private var text = ""
-    @State private var isValid = true
+    @State private var draft = SBJParsedTextDraft()
     @FocusState private var isFocused: Bool
 
     private var parsedURL: URL? {
-        text.sbjURL
+        draft.text.sbjURL
     }
 
     private var openableURL: URL? {
@@ -26,20 +25,16 @@ struct SBJURLEditor: View {
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", text: Binding(
-                get: { text },
+                get: { draft.text },
                 set: { newValue in
-                    text = newValue
-                    if let parsed = newValue.sbjURL {
+                    if let parsed = draft.edit(newValue, parse: { $0.sbjURL }) {
                         value = parsed
-                        isValid = true
-                    } else {
-                        isValid = false
                     }
                 }
             ))
-            .oneLiner(isFocused: $isFocused)
+            .sbjSingleLineField(isFocused: $isFocused)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
-            .invalidDecoration(!isValid)
+            .invalidDecoration(!draft.isValid)
 #if os(iOS)
             .keyboardType(.URL)
             .textInputAutocapitalization(.never)
@@ -48,21 +43,19 @@ struct SBJURLEditor: View {
         }
         .accessibilityValue(value.absoluteString)
         .onAppear {
-            text = value.absoluteString
+            draft.reset(to: value.absoluteString)
             focusRequest?.claim($isFocused)
         }
         .onChange(of: value) { _, newValue in
             // An external model update must not leave an unfocused field stale.
             // Preserve the user's draft while the control has focus.
             if !isFocused {
-                text = newValue.absoluteString
-                isValid = true
+                draft.reset(to: newValue.absoluteString)
             }
         }
         .onChange(of: isFocused) { _, focused in
             if !focused {
-                text = value.absoluteString
-                isValid = true
+                draft.reset(to: value.absoluteString)
             }
         }
     }

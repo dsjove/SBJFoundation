@@ -32,7 +32,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
     public var body: some View {
         HStack(spacing: 6) {
             TextField("", value: $value.value, format: .number)
-                .oneLiner(isFocused: $isFocused)
+                .sbjSingleLineField(isFocused: $isFocused)
                 .multilineTextAlignment(.trailing)
                 .frame(minWidth: 72, idealWidth: 96, maxWidth: 132)
 #if os(iOS)

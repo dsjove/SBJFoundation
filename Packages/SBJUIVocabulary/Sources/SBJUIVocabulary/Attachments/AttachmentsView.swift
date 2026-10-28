@@ -126,7 +126,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                             "Name",
                             text: editableNameBinding(for: id)
                         )
-                        .oneLiner()
+                        .sbjSingleLineField()
                         .applyIf(Attachment.propertyInfo(for: \Attachment.name)?.accessibilityLabel) { view, label in
                             view.accessibilityLabel(label)
                         }

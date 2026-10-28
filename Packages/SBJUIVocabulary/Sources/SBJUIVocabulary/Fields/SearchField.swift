@@ -28,7 +28,7 @@ public struct SearchField<S: SearchProtocol>: View {
 
     private var searchField: some View {
         TextField(titleKey, text: $searching.text)
-            .oneLiner()
+            .sbjSingleLineField()
 #if !os(watchOS)
             .autocapitalization(.none)
 #endif

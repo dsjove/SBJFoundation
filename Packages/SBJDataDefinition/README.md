@@ -39,9 +39,8 @@ Macro expansion tests and runtime tests live under `Tests/SBJDataDefinitionTests
 
 ## Presentation declarations
 
-`SBJDataDefinition` defines the `@SBJPresentationString`, `@SBJPresentationArray`,
-`@SBJPresentationSet`, `@SBJPresentationDisclosure`, `@SBJPresentationExclude`,
-`@SBJPresentationProperty` annotations and `SBJPresentationDisclosureMode`.
+`SBJDataDefinition` defines the `@SBJStringPresentation`, `@SBJArrayPresentation`,
+`@SBJSetPresentation`, `@SBJFieldPresentation` annotation and `SBJPresentationDisclosureMode`.
 These are declarative presentation preferences, not SwiftUI implementations.
 `@SBJStructure` reads applicable annotations and generates the corresponding
 structural metadata and hints. Presentation consumers choose how to render them.

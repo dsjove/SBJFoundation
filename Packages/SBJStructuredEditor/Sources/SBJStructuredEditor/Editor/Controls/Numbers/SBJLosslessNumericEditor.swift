@@ -14,8 +14,7 @@ struct SBJLosslessNumericEditor<Value: FixedWidthInteger & LosslessStringConvert
     let focusRequest: SBJEditorFocusRequest?
     let labelIsUnknown: Bool
     @Environment(\.locale) private var locale
-    @State private var text: String = ""
-    @State private var isValid = true
+    @State private var draft = SBJParsedTextDraft()
     @FocusState private var isFocused: Bool
 
     var rowStatus: SBJEditorRowStatus = .init()
@@ -23,46 +22,40 @@ struct SBJLosslessNumericEditor<Value: FixedWidthInteger & LosslessStringConvert
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", text: Binding(
-                get: { text.isEmpty && !isFocused ? formatted(value) : text },
+                get: { draft.text.isEmpty && !isFocused ? formatted(value) : draft.text },
                 set: { newValue in
-                    text = newValue
-                    if let parsed = parsedValue(newValue) {
+                    if let parsed = draft.edit(newValue, parse: { parsedValue($0) }) {
                         value = parsed
-                        isValid = true
-                    } else {
-                        isValid = false
                     }
                 }
             ))
-            .oneLiner(isFocused: $isFocused)
+            .sbjSingleLineField(isFocused: $isFocused)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
             .sbjPreferredFieldWidth(SBJNumericFieldSizing.unboundedInteger)
-            .invalidDecoration(!isValid)
+            .invalidDecoration(!draft.isValid)
 #if os(iOS)
             .keyboardType(.numbersAndPunctuation)
 #endif
         }
         .onAppear {
-            text = formatted(value)
+            draft.reset(to: formatted(value))
             focusRequest?.claim($isFocused)
         }
         .onChange(of: value) { _, newValue in
             // An external model update must not leave an unfocused field stale.
             // Preserve the user's draft while the control has focus.
             if !isFocused {
-                text = formatted(newValue)
-                isValid = true
+                draft.reset(to: formatted(newValue))
             }
         }
         .onChange(of: isFocused) { _, focused in
             if !focused {
-                text = formatted(value)
-                isValid = true
+                draft.reset(to: formatted(value))
             }
         }
         .onChange(of: locale.identifier) { _, _ in
             if !isFocused {
-                text = formatted(value)
+                draft.reset(to: formatted(value))
             }
         }
     }

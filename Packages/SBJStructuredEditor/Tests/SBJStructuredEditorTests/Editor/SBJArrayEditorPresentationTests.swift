@@ -39,7 +39,7 @@ struct SBJArrayEditorPresentationTests {
         // element-specific compile-time property metadata.
         _ = actions.infoLaneView
         _ = actions.trailingView
-        actions.remove()
+        actions.remove?()
         #expect(wasRemoved)
     }
 

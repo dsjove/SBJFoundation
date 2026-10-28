@@ -32,7 +32,7 @@ struct SBJCollectionAndUnitInteractionTests {
             canReorder: true, resolvedIndex: { livePosition }
         )
         livePosition = 2
-        actions.remove()
+        actions.remove?()
         #expect(values == ["first", "second"])
     }
 
@@ -44,8 +44,29 @@ struct SBJCollectionAndUnitInteractionTests {
             parent: binding, index: 1, count: 2,
             canReorder: true, resolvedIndex: { 99 }
         )
-        actions.remove()
+        actions.remove?()
         actions.moveUp?()
         #expect(values == ["first", "second"])
+    }
+}
+
+
+extension SBJCollectionAndUnitInteractionTests {
+    @Test("Array element field presentation filters rows without modifying values")
+    func arrayElementPresentationTraversal() {
+        let values = ["first", "second"]
+        let hidden = SBJEditorValueTraversal.children(
+            of: values, context: .root,
+            elementPresentation: SBJFieldPresentationValue(exclude: true)
+        )
+        #expect(hidden.isEmpty)
+        #expect(values == ["first", "second"])
+
+        let visible = SBJEditorValueTraversal.children(
+            of: values, context: .root,
+            elementPresentation: SBJFieldPresentationValue(autoExpand: true, name: "Entry")
+        )
+        #expect(visible.map(\.name) == ["Entry 1", "Entry 2"])
+        #expect(visible.allSatisfy { $0.disclosureMode == .autoOpen })
     }
 }

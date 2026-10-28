@@ -52,9 +52,18 @@ struct SBJDataEditor: View {
             text = value.sbjHexFormat()
             focusRequest?.claim($isFocused)
         }
+        .onChange(of: value) { _, newValue in
+            // An external model change should be reflected unless the user is editing.
+            if !isFocused {
+                text = newValue.sbjHexFormat()
+                errorMessage = nil
+            }
+        }
         .onChange(of: isFocused) { _, focused in
-            if !focused, errorMessage == nil {
+            if !focused {
+                // Restore the last valid model value after an invalid draft.
                 text = value.sbjHexFormat()
+                errorMessage = nil
             }
         }
     }

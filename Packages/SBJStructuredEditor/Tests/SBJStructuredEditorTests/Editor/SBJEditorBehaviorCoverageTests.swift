@@ -3,7 +3,7 @@ import Testing
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
 
-struct SBJPhase7CoverageTests {
+struct SBJEditorBehaviorTests {
 
 
 
@@ -42,7 +42,7 @@ struct SBJPhase7CoverageTests {
 
 }
 
-extension SBJPhase7CoverageTests {
+extension SBJEditorBehaviorTests {
     @Test func smartURLParsingIsPermissiveAndTrimsWhitespace() {
         #expect(" https://example.com/path ".sbjURL?.absoluteString == "https://example.com/path")
         #expect("mailto:test@example.com".sbjURL?.scheme == "mailto")
@@ -68,7 +68,7 @@ private struct SBJUtilityCopyValue: Codable, Equatable {
     var count: Int
 }
 
-extension SBJPhase7CoverageTests {
+extension SBJEditorBehaviorTests {
     @Test func publicCodableUtilitiesSupportSnapshotsAndChangeComparison() {
         let original = SBJUtilityCopyValue(name: "one", count: 1)
         let copy = original.sbjCodableCopy()
@@ -80,7 +80,7 @@ extension SBJPhase7CoverageTests {
     }
 }
 
-extension SBJPhase7CoverageTests {
+extension SBJEditorBehaviorTests {
 
 
 

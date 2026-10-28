@@ -17,7 +17,7 @@ private struct TestEditableValue: Codable {
     var nested = TestNestedValue()
     var notes: [String] = []
     var nickname: String?
-    @SBJPresentationExclude var transientState: String = ""
+    @SBJFieldPresentation(exclude: true) var transientState: String = ""
     let immutableIdentifier: Int = 7
 
     enum CodingKeys: String, CodingKey {
@@ -72,7 +72,7 @@ private final class TestEditorOnlyReference {}
 private struct TestEditorOnlyPropertyValue: Codable {
     var stored: String = ""
 
-    @SBJPresentationProperty
+    @SBJFieldPresentation()
     var editorReference: TestEditorOnlyReference? {
         get { nil }
         set {}
@@ -260,7 +260,7 @@ private struct TestValidatedValue: Codable {
     @SBJString(minLength: 1, trimming: .whitespaceAndNewlines)
     var trimmedCode: String = "ok"
 
-    @SBJPresentationExclude
+    @SBJFieldPresentation(exclude: true)
     @SBJString(minLength: 2)
     var hiddenCode: String = "ok"
 
@@ -283,23 +283,23 @@ extension SBJStructureUsageTests {
     @Test func generatedMetadataDescribesDeclaredBusinessRules() {
         let level = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.level)
         #expect(level?.kind == .integer)
-        #expect(level?.constraints == [.integerRange(1...20)])
+        #expect(level?.constraints == [.integerRules(SBJIntegerRules(range: 1...20))])
 
         let code = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.code)
         #expect(code?.kind == .text)
-        #expect(code?.constraints == [.textLength(min: 2, max: 5)])
+        #expect(code?.constraints == [.stringRules(SBJStringRules(minLength: 2, maxLength: 5))])
 
         let nickname = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.nickname)
         #expect(nickname?.kind == .optional)
-        #expect(nickname?.constraints == [.required(true)])
+        #expect(nickname?.constraints == [.optionalRules(SBJOptionalRules(required: true))])
 
         let names = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.names)
         #expect(names?.kind == .array)
-        #expect(names?.constraints == [.count(min: 1, max: 2), .reorderable(true)])
+        #expect(names?.constraints == [.arrayRules(SBJArrayRules(minCount: 1, maxCount: 2))])
 
         let minimumNumber = TestValidatedValue.propertyMetadata(for: \TestValidatedValue.minimumNumber)
         #expect(minimumNumber?.kind == .number)
-        #expect(minimumNumber?.constraints == [.numberMinimum(0.0)])
+        #expect(minimumNumber?.constraints == [.numberRules(SBJNumberRules(min: 0.0))])
     }
 
     @Test func generatedInvariantUsesDeclaredBusinessRules() throws {
@@ -406,10 +406,10 @@ private struct TestCollectionRules: Codable {
 extension SBJStructureUsageTests {
     @Test func arrayUniquenessRulesAreGeneratedAndDescribed() throws {
         let tags = TestCollectionRules.propertyMetadata(for: \TestCollectionRules.tags)
-        #expect(tags?.constraints == [.unique, .reorderable(true)])
+        #expect(tags?.constraints == [.unique])
 
         let items = TestCollectionRules.propertyMetadata(for: \TestCollectionRules.items)
-        #expect(items?.constraints == [.uniqueBy("\\TestUniqueItem.id"), .reorderable(true)])
+        #expect(items?.constraints == [.uniqueBy("\\TestUniqueItem.id")])
 
         try TestCollectionRules(
             tags: ["a", "b"],
@@ -557,13 +557,13 @@ private struct TestDataConstraintHolder {
 }
 
 @SBJStructure
-private struct TestPhase4Collections: Codable {
-    @SBJArray(reorderable: false, minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
-    @SBJPresentationArray(title: \TestUniqueItem.name)
+private struct CollectionRuleFixture: Codable {
+    @SBJArray(minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
+    @SBJArrayPresentation(title: \TestUniqueItem.name, reorderable: false)
     var items: [TestUniqueItem] = [TestUniqueItem(id: 1, name: "one")]
 
     @SBJSet(minCount: 1, maxCount: 2)
-    @SBJPresentationSet(title: \TestUniqueItem.name)
+    @SBJSetPresentation(title: \TestUniqueItem.name)
     var members: Set<TestUniqueItem> = [TestUniqueItem(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
@@ -571,42 +571,45 @@ private struct TestPhase4Collections: Codable {
 }
 
 extension SBJStructureUsageTests {
-    @Test func phase4CollectionAnnotationsGenerateKindsRulesAndHints() {
-        let items = TestPhase4Collections.propertyMetadata(for: \TestPhase4Collections.items)
+    @Test func collectionAnnotationsGenerateKindsRulesAndPresentation() {
+        let items = CollectionRuleFixture.propertyMetadata(for: \CollectionRuleFixture.items)
         #expect(items?.kind == .array)
         #expect(items?.constraints == [
-            .count(min: 1, max: 3),
+            .arrayRules(SBJArrayRules(minCount: 1, maxCount: 3)),
             .uniqueBy("\\TestUniqueItem.id"),
-            .reorderable(false),
         ])
         #expect(items?.hints == [
+            .arrayPresentation(SBJArrayPresentationValue(reorderable: false)),
             .itemTitle("name"),
         ])
 
-        let members = TestPhase4Collections.propertyMetadata(for: \TestPhase4Collections.members)
+        let members = CollectionRuleFixture.propertyMetadata(for: \CollectionRuleFixture.members)
         #expect(members?.kind == .set)
-        #expect(members?.constraints == [.count(min: 1, max: 2)])
-        #expect(members?.hints == [.itemTitle("name")])
+        #expect(members?.constraints == [.setRules(SBJSetRules(minCount: 1, maxCount: 2))])
+        #expect(members?.hints == [
+            .setPresentation(SBJSetPresentationValue()),
+            .itemTitle("name"),
+        ])
 
-        let labels = TestPhase4Collections.propertyMetadata(for: \TestPhase4Collections.labels)
+        let labels = CollectionRuleFixture.propertyMetadata(for: \CollectionRuleFixture.labels)
         #expect(labels?.kind == .dictionary)
-        #expect(labels?.constraints == [.count(min: 1, max: 2)])
+        #expect(labels?.constraints == [.dictionaryRules(SBJDictionaryRules(minCount: 1, maxCount: 2))])
         #expect(labels?.hints.isEmpty == true)
     }
 
-    @Test func phase4SetAndDictionaryCountsParticipateInExplicitInvariant() throws {
-        try TestPhase4Collections().invariant(at: \TestPhase4Collections.self)
+    @Test func setAndDictionaryCountRulesReportInvariantViolations() throws {
+        try CollectionRuleFixture().invariant(at: \CollectionRuleFixture.self)
 
         #expect(throws: SBJValidationError.self) {
-            try TestPhase4Collections(members: []).invariant(at: \TestPhase4Collections.self)
+            try CollectionRuleFixture(members: []).invariant(at: \CollectionRuleFixture.self)
         }
         #expect(throws: SBJValidationError.self) {
-            try TestPhase4Collections(labels: [:]).invariant(at: \TestPhase4Collections.self)
+            try CollectionRuleFixture(labels: [:]).invariant(at: \CollectionRuleFixture.self)
         }
         #expect(throws: SBJValidationError.self) {
-            try TestPhase4Collections(
+            try CollectionRuleFixture(
                 labels: ["one": 1, "two": 2, "three": 3]
-            ).invariant(at: \TestPhase4Collections.self)
+            ).invariant(at: \CollectionRuleFixture.self)
         }
     }
 
@@ -628,7 +631,7 @@ private struct TestScalarAnnotations: Codable {
     @SBJUUID(nonzero: true) var uuid = UUID()
     @SBJDate(range: Date(timeIntervalSince1970: 0)...Date(timeIntervalSince1970: 100)) var date = Date(timeIntervalSince1970: 0)
     @SBJData(min: 4, max: 8, modulo: 4) var data = Data([0, 1, 2, 3])
-    @SBJColor(alpha: false) var color = CodableColor(1, 0, 0)
+    @SBJColorPresentation(alpha: false) var color = CodableColor(1, 0, 0)
 }
 
 extension SBJStructureUsageTests {
@@ -638,13 +641,13 @@ extension SBJStructureUsageTests {
         #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.date)?.kind == .date)
         #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.color)?.kind == .color)
         #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.data)?.constraints == [
-            .dataSize(min: 4, max: 8, modulo: 4)
+            .dataRules(SBJDataRules(min: 4, max: 8, modulo: 4))
         ])
-        #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.uuid)?.constraints == [.uuidNonzero])
+        #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.uuid)?.constraints == [.uuidRules(SBJUUIDRules(nonzero: true))])
         #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.date)?.constraints == [
-            .dateRange(Date(timeIntervalSince1970: 0)...Date(timeIntervalSince1970: 100))
+            .dateRules(SBJDateRules(range: Date(timeIntervalSince1970: 0)...Date(timeIntervalSince1970: 100)))
         ])
-        #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.color)?.hints == [.colorSupportsAlpha(false)])
+        #expect(TestScalarAnnotations.propertyMetadata(for: \TestScalarAnnotations.color)?.hints == [.colorPresentation(SBJColorPresentationValue(alpha: false))])
 
         try TestScalarAnnotations().invariant(at: \TestScalarAnnotations.self)
         #expect(throws: SBJValidationError.self) {
@@ -674,12 +677,12 @@ extension SBJStructureUsageTests {
 }
 
 @SBJStructure
-private struct TestPhase6MetadataDrivenEditor: Codable {
+private struct MetadataDrivenEditorFixture: Codable {
     @SBJString(minLength: 2, maxLength: 20)
-    @SBJPresentationString(.multiline, autocorrect: .disabled, capitalization: .sentences)
+    @SBJStringPresentation(.multiline, autocorrect: .disabled, capitalization: .sentences)
     var notes: String = "ok"
 
-    @SBJPresentationString(.sheetEdit)
+    @SBJStringPresentation(.sheetEdit)
     var longNotes: String = "longer text"
 
     @SBJInteger(range: 1...9)
@@ -687,20 +690,18 @@ private struct TestPhase6MetadataDrivenEditor: Codable {
 }
 
 extension SBJStructureUsageTests {
-    @Test func phase6PresentationAndConstraintsAreAvailableThroughStructuralMetadata() {
-        let notes = TestPhase6MetadataDrivenEditor.propertyMetadata(for: \TestPhase6MetadataDrivenEditor.notes)
+    @Test func presentationAndConstraintsAvailableThroughStructuralMetadata() {
+        let notes = MetadataDrivenEditorFixture.propertyMetadata(for: \MetadataDrivenEditorFixture.notes)
         #expect(notes?.hints == [
-            .textStyle(.multiline),
-            .textAutocorrection(.disabled),
-            .textCapitalization(.sentences),
+            .stringPresentation(SBJStringPresentationValue(style: .multiline, autocorrect: .disabled, capitalization: .sentences)),
         ])
-        #expect(notes?.constraints == [.textLength(min: 2, max: 20)])
+        #expect(notes?.constraints == [.stringRules(SBJStringRules(minLength: 2, maxLength: 20))])
 
-        let longNotes = TestPhase6MetadataDrivenEditor.propertyMetadata(for: \TestPhase6MetadataDrivenEditor.longNotes)
-        #expect(longNotes?.hints == [.textStyle(.sheetEdit)])
+        let longNotes = MetadataDrivenEditorFixture.propertyMetadata(for: \MetadataDrivenEditorFixture.longNotes)
+        #expect(longNotes?.hints == [.stringPresentation(SBJStringPresentationValue(style: .sheetEdit))])
 
-        let count = TestPhase6MetadataDrivenEditor.propertyMetadata(for: \TestPhase6MetadataDrivenEditor.count)
-        #expect(count?.constraints == [.integerRange(1...9)])
+        let count = MetadataDrivenEditorFixture.propertyMetadata(for: \MetadataDrivenEditorFixture.count)
+        #expect(count?.constraints == [.integerRules(SBJIntegerRules(range: 1...9))])
     }
 }
 
@@ -963,7 +964,7 @@ private struct TestTitledValidationItem: Codable, Hashable {
 
 @SBJStructure
 private struct TestTitledValidationContainer: Codable {
-    @SBJPresentationArray(title: \TestTitledValidationItem.name)
+    @SBJArrayPresentation(title: \TestTitledValidationItem.name)
     var abilities: [TestTitledValidationItem] = []
 }
 
@@ -991,7 +992,7 @@ extension SBJStructureUsageTests {
 
 
 @SBJStructure
-private struct Phase1PropertyInfoExample: Codable {
+private struct PropertyInfoExample: Codable {
     var title: String = "Example"
     var count: Int = 0
     public static let titleInfo = SBJPropertyInfo(
@@ -1007,9 +1008,9 @@ private struct Phase1PropertyInfoExample: Codable {
     }
 }
 
-@Test func phase1PropertyInfoConventionAndOverride() {
-    #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.title)?.summary == "Generated title documentation")
-    #expect(Phase1PropertyInfoExample.propertyInfo(for: \Phase1PropertyInfoExample.count)?.summary == "Override count documentation")
+@Test func propertyInfoSupportsConventionAndOverride() {
+    #expect(PropertyInfoExample.propertyInfo(for: \PropertyInfoExample.title)?.summary == "Generated title documentation")
+    #expect(PropertyInfoExample.propertyInfo(for: \PropertyInfoExample.count)?.summary == "Override count documentation")
 }
 
 @SBJStructure

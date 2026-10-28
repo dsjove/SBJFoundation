@@ -10,8 +10,7 @@ struct SBJDecimalEditor: View {
     let focusRequest: SBJEditorFocusRequest?
     let labelIsUnknown: Bool
     @Environment(\.locale) private var locale
-    @State private var text = ""
-    @State private var isValid = true
+    @State private var draft = SBJParsedTextDraft()
     @FocusState private var isFocused: Bool
 
     var rowStatus: SBJEditorRowStatus = .init()
@@ -19,48 +18,42 @@ struct SBJDecimalEditor: View {
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
             TextField("", text: Binding(
-                get: { text },
+                get: { draft.text },
                 set: { newValue in
-                    text = newValue
-                    if let parsed = parsedDecimal(newValue) {
+                    if let parsed = draft.edit(newValue, parse: { parsedDecimal($0) }) {
                         value = parsed
-                        isValid = true
-                    } else {
-                        isValid = false
                     }
                 }
             ))
-            .oneLiner(isFocused: $isFocused)
+            .sbjSingleLineField(isFocused: $isFocused)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
             .sbjPreferredFieldWidth(SBJNumericFieldSizing.number(range: range, locale: locale))
             .invalidDecoration(
-                !isValid || (range.map { !$0.contains(NSDecimalNumber(decimal: value).doubleValue) } ?? false)
+                !draft.isValid || (range.map { !$0.contains(NSDecimalNumber(decimal: value).doubleValue) } ?? false)
             )
 #if os(iOS)
             .keyboardType(.decimalPad)
 #endif
         }
         .onAppear {
-            text = formattedDecimal(value)
+            draft.reset(to: formattedDecimal(value))
             focusRequest?.claim($isFocused)
         }
         .onChange(of: value) { _, newValue in
             // An external model update must not leave an unfocused field stale.
             // Preserve the user's draft while the control has focus.
             if !isFocused {
-                text = formattedDecimal(newValue)
-                isValid = true
+                draft.reset(to: formattedDecimal(newValue))
             }
         }
         .onChange(of: isFocused) { _, focused in
             if !focused {
-                text = formattedDecimal(value)
-                isValid = true
+                draft.reset(to: formattedDecimal(value))
             }
         }
         .onChange(of: locale.identifier) { _, _ in
             if !isFocused {
-                text = formattedDecimal(value)
+                draft.reset(to: formattedDecimal(value))
             }
         }
     }

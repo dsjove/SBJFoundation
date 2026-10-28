@@ -141,7 +141,7 @@ public enum SBJStructureGeneration {
                 let name = identifier.identifier.text
 
                 // Writable computed properties are normally outside the model
-                // structure. @SBJPresentationProperty opts one into presentation
+                // structure. @SBJFieldPresentation opts one into presentation
                 // generation only. It does not become structural metadata.
                 if let accessorBlock = binding.accessorBlock {
                     let isStoredWithObservers: Bool
@@ -154,16 +154,16 @@ public enum SBJStructureGeneration {
                         isStoredWithObservers = false
                     }
                     if !isStoredWithObservers {
-                        if hasAttribute(named: "SBJPresentationProperty", on: variable) {
+                        if hasAttribute(named: "SBJFieldPresentation", on: variable) {
                             presentationEntries.append(
-                                "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
+                                "SBJMutableProperty<Self>(nonStructuralName: \(fieldDisplayName(on: variable, fallback: name)), \\.\(name))"
                             )
                         }
-                        if (hasAttribute(named: "SBJPresentationProperty", on: variable) || hasAttribute(named: "SBJEditorProperty", on: variable)) {
+                        if (hasAttribute(named: "SBJFieldPresentation", on: variable) || hasAttribute(named: "SBJEditorProperty", on: variable)) {
                             for layer in layers {
                                 if let field = layer.nonStructuralProperty(name: name) {
                                     editableEntries.append(
-                                        "SBJMutableProperty<Self>(nonStructuralName: \"\(name)\".uncamelCased, \\.\(name))"
+                                        "SBJMutableProperty<Self>(nonStructuralName: \(fieldDisplayName(on: variable, fallback: name)), \\.\(name))"
                                     )
                                     entries.append(field)
                                 }
@@ -192,9 +192,9 @@ public enum SBJStructureGeneration {
                 // consumer explicitly invokes the invariant.
                 contentMembers.append(name)
                 let arrayOptions = arrayOptions(on: variable)
-                let arrayTitle = (editorTitle(on: variable, annotation: "SBJPresentationArray") ?? editorTitle(on: variable, annotation: "SBJEditorArray"))
+                let arrayTitle = (editorTitle(on: variable, annotation: "SBJArrayPresentation") ?? editorTitle(on: variable, annotation: "SBJEditorArray"))
                 let setOptions = setOptions(on: variable)
-                let setTitle = (editorTitle(on: variable, annotation: "SBJPresentationSet") ?? editorTitle(on: variable, annotation: "SBJEditorSet"))
+                let setTitle = (editorTitle(on: variable, annotation: "SBJSetPresentation") ?? editorTitle(on: variable, annotation: "SBJEditorSet"))
                 if let itemTitleKey = arrayTitle {
                     invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(swiftStringLiteral(itemTitleKey)))")
                 } else if let itemTitleKey = setTitle {
@@ -203,23 +203,26 @@ public enum SBJStructureGeneration {
                     invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)))")
                 }
 
+                let fieldPresentations = fieldPresentations(on: variable)
+                if let presentation = fieldPresentations.first {
+                    hintMetadata.append(".fieldPresentation(SBJFieldPresentationValue(autoExpand: \(presentation.autoExpand), exclude: \(presentation.exclude), name: \(presentation.name)))")
+                }
+                if (isArrayType(binding.typeAnnotation?.type.trimmedDescription ?? "") || isSetType(binding.typeAnnotation?.type.trimmedDescription ?? "")), fieldPresentations.count > 1 {
+                    let element = fieldPresentations[1]
+                    hintMetadata.append(".elementFieldPresentation(SBJFieldPresentationValue(autoExpand: \(element.autoExpand), exclude: \(element.exclude), name: \(element.name)))")
+                }
+                if hasAnnotation("SBJStringPresentation", on: variable) {
+                    let textInput = textInputOptions(on: variable)
+                    let style = textStyle(on: variable) ?? ".singleLine"
+                    let autocorrect = textInput.autocorrect ?? ".automatic"
+                    let capitalization = textInput.capitalization ?? ".automatic"
+                    hintMetadata.append(".stringPresentation(SBJStringPresentationValue(style: \(style), autocorrect: \(autocorrect), capitalization: \(capitalization)))")
+                }
+                if hasAnnotation("SBJUnitValuePresentation", on: variable) {
+                    let mode = unitValuePresentationMode(on: variable) ?? ".fixedUnit"
+                    hintMetadata.append(".unitValuePresentation(SBJUnitValuePresentationValue(mode: \(mode)))")
+                }
                 let textConstraints = editorTextConstraints(on: variable)
-                if let textStyle = textStyle(on: variable) {
-                    hintMetadata.append(".textStyle(\(textStyle))")
-                }
-                if let disclosure = editorDisclosure(on: variable) {
-                    hintMetadata.append(".presentationDisclosure(\(disclosure))")
-                }
-                if hasAttribute(named: "SBJPresentationExclude", on: variable) {
-                    hintMetadata.append(".presentationExcluded")
-                }
-                let textInputOptions = textInputOptions(on: variable)
-                if let autocorrect = textInputOptions.autocorrect {
-                    hintMetadata.append(".textAutocorrection(\(autocorrect))")
-                }
-                if let capitalization = textInputOptions.capitalization {
-                    hintMetadata.append(".textCapitalization(\(capitalization))")
-                }
                 if textConstraints.minLength != nil || textConstraints.maxLength != nil || textConstraints.trimming != nil {
                     let minLength = textConstraints.minLength ?? "nil"
                     let maxLength = textConstraints.maxLength ?? "nil"
@@ -228,27 +231,27 @@ public enum SBJStructureGeneration {
                     } else {
                         invariantStatements.append("try SBJInvariantCheck.requireText(\(name), minLength: \(minLength), maxLength: \(maxLength), at: keyPath.appending(\\Self.\(name)))")
                     }
-                    if textConstraints.minLength != nil || textConstraints.maxLength != nil {
-                        constraintMetadata.append(".textLength(min: \(minLength), max: \(maxLength))")
-                    }
+                }
+                if hasAnnotation("SBJString", on: variable) {
+                    constraintMetadata.append(".stringRules(SBJStringRules(minLength: \(textConstraints.minLength ?? "nil"), maxLength: \(textConstraints.maxLength ?? "nil"), trimming: \(textConstraints.trimming ?? ".none")))")
                 }
                 let integerConstraints = editorIntegerConstraints(on: variable)
                 if let integerRange = integerConstraints.range {
                     invariantStatements.append("try SBJInvariantCheck.requireRange(\(name), \(integerRange), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".integerRange(\(integerRange))")
+                    constraintMetadata.append(".integerRules(SBJIntegerRules(range: \(integerRange)))")
                 }
                 if let integerMinimum = integerConstraints.min {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(integerMinimum), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".integerMinimum(\(integerMinimum))")
+                    constraintMetadata.append(".integerRules(SBJIntegerRules(min: \(integerMinimum)))")
                 }
                 let numberConstraints = editorNumberConstraints(on: variable)
                 if let numberRange = numberConstraints.range {
                     invariantStatements.append("try SBJInvariantCheck.requireRange(\(name), \(numberRange), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".numberRange(\(numberRange))")
+                    constraintMetadata.append(".numberRules(SBJNumberRules(range: \(numberRange)))")
                 }
                 if let numberMinimum = numberConstraints.min {
                     invariantStatements.append("try SBJInvariantCheck.requireMinimum(\(name), \(numberMinimum), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".numberMinimum(\(numberMinimum))")
+                    constraintMetadata.append(".numberRules(SBJNumberRules(min: \(numberMinimum)))")
                 }
                 if let unitMutable = unitValueMutable(on: variable) {
                     constraintMetadata.append(".unitMutable(\(unitMutable))")
@@ -268,7 +271,7 @@ public enum SBJStructureGeneration {
                 }
                 if let required = editorOptionalRequired(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requirePresent(\(name), required: \(required), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".required(\(required))")
+                    constraintMetadata.append(".optionalRules(SBJOptionalRules(required: \(required)))")
                 }
                 if arrayOptions.unique == "true", arrayOptions.uniqueBy != nil {
                     context.diagnose(
@@ -278,11 +281,17 @@ public enum SBJStructureGeneration {
                         )
                     )
                 }
-                if arrayOptions.minCount != nil || arrayOptions.maxCount != nil {
+                if arrayOptions.minCount != nil || arrayOptions.maxCount != nil || arrayOptions.sorted != nil {
                     let minCount = arrayOptions.minCount ?? "nil"
                     let maxCount = arrayOptions.maxCount ?? "nil"
-                    invariantStatements.append("try SBJInvariantCheck.requireCount(\(name), minCount: \(minCount), maxCount: \(maxCount), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".count(min: \(minCount), max: \(maxCount))")
+                    if arrayOptions.minCount != nil || arrayOptions.maxCount != nil {
+                        invariantStatements.append("try SBJInvariantCheck.requireCount(\(name), minCount: \(minCount), maxCount: \(maxCount), at: keyPath.appending(\\Self.\(name)))")
+                    }
+                    let sorted = arrayOptions.sorted ?? "nil"
+                    constraintMetadata.append(".arrayRules(SBJArrayRules(minCount: \(minCount), maxCount: \(maxCount), sorted: \(sorted)))")
+                    if let sorted = arrayOptions.sorted {
+                        invariantStatements.append("try SBJInvariantCheck.requireSorted(\(name), direction: \(sorted), at: keyPath.appending(\\Self.\(name)))")
+                    }
                 }
                 if arrayOptions.unique == "true", arrayOptions.uniqueBy == nil {
                     invariantStatements.append("try SBJInvariantCheck.requireUnique(\(name), at: keyPath.appending(\\Self.\(name)))")
@@ -297,15 +306,30 @@ public enum SBJStructureGeneration {
                     let minCount = setOptions.minCount ?? "nil"
                     let maxCount = setOptions.maxCount ?? "nil"
                     invariantStatements.append("try SBJInvariantCheck.requireCount(\(name), minCount: \(minCount), maxCount: \(maxCount), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".count(min: \(minCount), max: \(maxCount))")
+                    constraintMetadata.append(".setRules(SBJSetRules(minCount: \(minCount), maxCount: \(maxCount)))")
                 }
 
                 let dictionaryOptions = dictionaryOptions(on: variable)
+                for (target, rules) in [("key", dictionaryOptions.key), ("value", dictionaryOptions.value)] {
+                    for rule in rules {
+                        // Preserve each member rule in the public structural schema.
+                        // The Swift type checker still validates the generated invariant.
+                        if let metadata = dictionaryMemberRuleMetadata(rule) {
+                            let role = target == "key" ? "dictionaryKeyRule" : "dictionaryValueRule"
+                            constraintMetadata.append(".\(role)(\(metadata))")
+                        }
+                        // The generated overloaded call accepts only rule types
+                        // compatible with the dictionary's actual member type.
+                        let entry = target == "key" ? "entry.key" : "entry.value"
+                        let path = "keyPath.appending(\\Self.\(name)).appending(key: entry.key)"
+                        invariantStatements.append("for entry in \(name) { try SBJInvariantCheck.requireDictionaryMember(\(entry), rule: \(rule), at: \(path)) }")
+                    }
+                }
                 if dictionaryOptions.minCount != nil || dictionaryOptions.maxCount != nil {
                     let minCount = dictionaryOptions.minCount ?? "nil"
                     let maxCount = dictionaryOptions.maxCount ?? "nil"
                     invariantStatements.append("try SBJInvariantCheck.requireCount(\(name), minCount: \(minCount), maxCount: \(maxCount), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".count(min: \(minCount), max: \(maxCount))")
+                    constraintMetadata.append(".dictionaryRules(SBJDictionaryRules(minCount: \(minCount), maxCount: \(maxCount)))")
                 }
 
                 let dataOptions = dataOptions(on: variable)
@@ -314,29 +338,42 @@ public enum SBJStructureGeneration {
                     let max = dataOptions.max ?? "nil"
                     let modulo = dataOptions.modulo ?? "nil"
                     invariantStatements.append("try SBJInvariantCheck.requireData(\(name), min: \(min), max: \(max), modulo: \(modulo), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".dataSize(min: \(min), max: \(max), modulo: \(modulo))")
+                    constraintMetadata.append(".dataRules(SBJDataRules(min: \(min), max: \(max), modulo: \(modulo)))")
                 }
 
                 if uuidNonzero(on: variable) == "true" {
                     invariantStatements.append("try SBJInvariantCheck.requireNonzero(\(name), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".uuidNonzero")
+                    constraintMetadata.append(".uuidRules(SBJUUIDRules(nonzero: true))")
                 }
 
                 if let dateRange = dateRange(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireRange(\(name), \(dateRange), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".dateRange(\(dateRange))")
+                    constraintMetadata.append(".dateRules(SBJDateRules(range: \(dateRange)))")
                 }
                 if let allowedURLKinds = urlAllowedKinds(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireURL(\(name), allowed: \(allowedURLKinds), at: keyPath.appending(\\Self.\(name)))")
-                    constraintMetadata.append(".urlKinds(\(allowedURLKinds))")
+                    constraintMetadata.append(".urlRules(SBJURLRules(allowed: \(allowedURLKinds)))")
                 }
 
                 if let colorAlpha = colorAlpha(on: variable) {
-                    hintMetadata.append(".colorSupportsAlpha(\(colorAlpha))")
+                    hintMetadata.append(".colorPresentation(SBJColorPresentationValue(alpha: \(colorAlpha)))")
                 }
 
-                if let reorderable = arrayOptions.reorderable {
-                    constraintMetadata.append(".reorderable(\(reorderable))")
+                if hasAnnotation("SBJDictionaryPresentation", on: variable) {
+                    let presentation = dictionaryPresentationOptions(on: variable)
+                    hintMetadata.append(".dictionaryPresentation(SBJDictionaryPresentationValue(key: \(presentation.key), value: \(presentation.value), insertable: \(presentation.insertable), removable: \(presentation.removable), sort: \(presentation.sort), sortBy: \(presentation.sortBy)))")
+                }
+                if hasAnnotation("SBJSetPresentation", on: variable) {
+                    let insertable = collectionPresentationOption("insertable", annotation: "SBJSetPresentation", on: variable) ?? "true"
+                    let removable = collectionPresentationOption("removable", annotation: "SBJSetPresentation", on: variable) ?? "true"
+                    let sort = collectionPresentationOption("sort", annotation: "SBJSetPresentation", on: variable) == "true" ? "nil" : (collectionPresentationOption("sort", annotation: "SBJSetPresentation", on: variable) ?? "nil")
+                    hintMetadata.append(".setPresentation(SBJSetPresentationValue(insertable: \(insertable), removable: \(removable), sort: \(sort)))")
+                }
+                if hasAnnotation("SBJArrayPresentation", on: variable) {
+                    let insertable = collectionPresentationOption("insertable", on: variable) ?? "true"
+                    let removable = collectionPresentationOption("removable", on: variable) ?? "true"
+                    let reorderable = collectionPresentationOption("reorderable", on: variable) ?? "true"
+                    hintMetadata.append(".arrayPresentation(SBJArrayPresentationValue(insertable: \(insertable), removable: \(removable), reorderable: \(reorderable)))")
                 }
                 if let title = arrayTitle ?? setTitle {
                     hintMetadata.append(".itemTitle(\"\(title)\")")
@@ -345,7 +382,7 @@ public enum SBJStructureGeneration {
                 let constraints = constraintMetadata.joined(separator: ", ")
                 let hints = hintMetadata.joined(separator: ", ")
                 propertyEntries.append(
-                    "SBJPropertyMetadata<Self>(sourceName: \"\(name)\", displayName: \"\(name)\".uncamelCased, keyPath: \\Self.\(name), kind: \(kind), constraints: [\(constraints)], hints: [\(hints)], info: Self.propertyInfo(for: \\Self.\(name)))"
+                    "SBJPropertyMetadata<Self>(sourceName: \"\(name)\", displayName: \(fieldDisplayName(on: variable, fallback: name)), keyPath: \\Self.\(name), kind: \(kind), constraints: [\(constraints)], hints: [\(hints)], info: Self.propertyInfo(for: \\Self.\(name)))"
                 )
 
                 if variable.bindingSpecifier.tokenKind != .keyword(.let) {
@@ -353,14 +390,14 @@ public enum SBJStructureGeneration {
                 }
 
                 // Writable presentation eligibility is distinct from structural metadata.
-                if (hasAttribute(named: "SBJPresentationExclude", on: variable) || hasAttribute(named: "SBJEditorExclude", on: variable)) { continue }
+                if (fieldIsExcluded(on: variable) || hasAttribute(named: "SBJEditorExclude", on: variable)) { continue }
 
                 // Immutable stored properties remain part of structure metadata,
                 // export, content checks, and invariants, but are simply not editable.
                 if variable.bindingSpecifier.tokenKind == .keyword(.let) { continue }
 
                 editableEntries.append(
-                    "SBJMutableProperty<Self>(name: \"\(name)\".uncamelCased, \\.\(name))"
+                    "SBJMutableProperty<Self>(name: \(fieldDisplayName(on: variable, fallback: name)), \\.\(name))"
                 )
                 for layer in layers {
                     if let field = layer.storedProperty(name: name, disclosure: editorDisclosure(on: variable) ?? ".closed") {
@@ -496,9 +533,7 @@ public enum SBJStructureGeneration {
         }
 
         if !hasExplicitDefaultValue {
-            if let generated = designatedDefaultFactory(for: structDecl, access: access) {
-                result.append(DeclSyntax(stringLiteral: generated))
-            } else if canInitializeWithoutArguments(structDecl) {
+            if canInitializeWithoutArguments(structDecl) {
                 result.append(
                     DeclSyntax(stringLiteral: """
                     \(access)static func sbjDefaultValue() -> Self? {
@@ -506,6 +541,8 @@ public enum SBJStructureGeneration {
                     }
                     """)
                 )
+            } else if let generated = designatedDefaultFactory(for: structDecl, access: access) {
+                result.append(DeclSyntax(stringLiteral: generated))
             }
         }
 
@@ -529,9 +566,23 @@ public enum SBJStructureGeneration {
             })
         }) { return nil }
         let names = Set(properties)
+        // A reconstruction initializer must accept the stored property's type,
+        // not merely reuse its name. Convenience overloads often transform
+        // strings into richer values or accept generic presentation inputs.
+        let propertyTypes: [String: String] = Dictionary(uniqueKeysWithValues:
+            declaration.memberBlock.members.compactMap { $0.decl.as(VariableDeclSyntax.self) }
+                .flatMap { variable in
+                    variable.bindings.compactMap { binding -> (String, String)? in
+                        guard let name = binding.pattern.as(IdentifierPatternSyntax.self)?.identifier.text,
+                              names.contains(name), let type = binding.typeAnnotation?.type else { return nil }
+                        return (name, type.trimmedDescription.replacingOccurrences(of: " ", with: ""))
+                    }
+                }
+        )
         let candidates = initializers.compactMap { initializer -> [String]? in
             guard initializer.optionalMark == nil,
-                  initializer.signature.effectSpecifiers == nil else { return nil }
+                  initializer.signature.effectSpecifiers == nil,
+                  initializer.genericParameterClause == nil else { return nil }
             let parameters = initializer.signature.parameterClause.parameters
             guard parameters.count == properties.count else { return nil }
             var matched = Set<String>()
@@ -543,7 +594,20 @@ public enum SBJStructureGeneration {
                 if names.contains(internalName) { property = internalName }
                 else if external != "_" && names.contains(external) { property = external }
                 else { return nil }
-                guard matched.insert(property).inserted else { return nil }
+                // Without a type match, parameter-name coincidence is not
+                // sufficient to reconstruct the stored value. Inference is
+                // conservative; complex conversions require designation.
+                guard let storedType = propertyTypes[property] else { return nil }
+                let parameterType = parameter.type.trimmedDescription.replacingOccurrences(of: " ", with: "")
+                // A stored T can be passed to an initializer accepting T?.
+                // This supports default-substituting initializers (e.g. PageLayout
+                // margins) without admitting unrelated convenience overloads.
+                let isDirectType = parameterType == storedType
+                let isOptionalInput = parameter.type.as(OptionalTypeSyntax.self).map {
+                    $0.wrappedType.trimmedDescription.replacingOccurrences(of: " ", with: "") == storedType
+                } ?? false
+                guard (isDirectType || isOptionalInput),
+                      matched.insert(property).inserted else { return nil }
                 let label = external == "_" ? "nil" : swiftStringLiteral(external)
                 let defaultArg = parameter.defaultValue.map {
                     ", defaultExpression: " + swiftStringLiteral($0.value.trimmedDescription)
@@ -971,15 +1035,62 @@ public enum SBJStructureGeneration {
 
 
 
-    private static func editorDisclosure(on variable: VariableDeclSyntax) -> String? {
+    private static func fieldPresentations(on variable: VariableDeclSyntax) -> [(autoExpand: String, exclude: String, name: String)] {
+        var result: [(autoExpand: String, exclude: String, name: String)] = []
         for element in variable.attributes {
             guard case .attribute(let attribute) = element,
-                  (attribute.attributeName.trimmedDescription == "SBJPresentationDisclosure" || attribute.attributeName.trimmedDescription == "SBJEditorDisclosure"),
-                  let arguments = attribute.arguments,
-                  case .argumentList(let list) = arguments,
-                  let first = list.first else { continue }
-            let mode = first.expression.trimmedDescription
-            if mode == ".closed" || mode == ".autoOpen" || mode == ".alwaysOpen" { return mode }
+                  attribute.attributeName.trimmedDescription == "SBJFieldPresentation" else { continue }
+            var values = ["autoExpand": "false", "exclude": "false", "name": "nil"]
+            if let arguments = attribute.arguments, case .argumentList(let list) = arguments {
+                for argument in list {
+                    guard let label = argument.label?.text, values[label] != nil else { continue }
+                    values[label] = argument.expression.trimmedDescription
+                }
+            }
+            result.append((values["autoExpand"]!, values["exclude"]!, values["name"]!))
+        }
+        return result
+    }
+
+    private static func fieldPresentation(on variable: VariableDeclSyntax) -> (autoExpand: String, exclude: String, name: String)? {
+        fieldPresentations(on: variable).first
+    }
+
+    private static func editorDisclosure(on variable: VariableDeclSyntax) -> String? {
+        guard let presentation = fieldPresentation(on: variable) else { return nil }
+        return presentation.autoExpand == "true" ? ".autoOpen" : ".closed"
+    }
+
+    private static func fieldIsExcluded(on variable: VariableDeclSyntax) -> Bool {
+        fieldPresentation(on: variable)?.exclude == "true"
+    }
+
+    private static func fieldDisplayName(on variable: VariableDeclSyntax, fallback name: String) -> String {
+        guard let presentation = fieldPresentation(on: variable), presentation.name != "nil" else {
+            return "\"\(name)\".uncamelCased"
+        }
+        return presentation.name
+    }
+
+    private static func hasAnnotation(_ name: String, on variable: VariableDeclSyntax) -> Bool {
+        variable.attributes.contains { element in
+            guard case .attribute(let attribute) = element else { return false }
+            return attribute.attributeName.trimmedDescription == name
+        }
+    }
+
+    private static func unitValuePresentationMode(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJUnitValuePresentation" else { continue }
+            guard let rawArguments = attribute.arguments,
+                  case .argumentList(let arguments) = rawArguments,
+                  let argument = arguments.first else { return nil }
+            switch argument.expression.trimmedDescription {
+            case ".fixedUnit", "SBJUnitValuePresentationMode.fixedUnit": return ".fixedUnit"
+            case ".editable", "SBJUnitValuePresentationMode.editable": return ".editable"
+            default: return nil
+            }
         }
         return nil
     }
@@ -987,7 +1098,7 @@ public enum SBJStructureGeneration {
     private static func textStyle(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard (attribute.attributeName.trimmedDescription == "SBJPresentationString" || attribute.attributeName.trimmedDescription == "SBJEditorString") else { continue }
+            guard (attribute.attributeName.trimmedDescription == "SBJStringPresentation" || attribute.attributeName.trimmedDescription == "SBJEditorString") else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments,
                   let argument = arguments.first else {
@@ -1012,7 +1123,7 @@ public enum SBJStructureGeneration {
     private static func textInputOptions(on variable: VariableDeclSyntax) -> (autocorrect: String?, capitalization: String?) {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard (attribute.attributeName.trimmedDescription == "SBJPresentationString" || attribute.attributeName.trimmedDescription == "SBJEditorString") else { continue }
+            guard (attribute.attributeName.trimmedDescription == "SBJStringPresentation" || attribute.attributeName.trimmedDescription == "SBJEditorString") else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else { return (nil, nil) }
 
@@ -1170,35 +1281,76 @@ public enum SBJStructureGeneration {
         return nil
     }
 
-    private static func arrayOptions(on variable: VariableDeclSyntax) -> (reorderable: String?, title: String?, minCount: String?, maxCount: String?, unique: String?, uniqueBy: String?) {
+    private static func dictionaryPresentationOptions(
+        on variable: VariableDeclSyntax
+    ) -> (key: String, value: String, insertable: String, removable: String, sort: String, sortBy: String) {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJDictionaryPresentation" else { continue }
+            var key = "nil"
+            var value = "nil"
+            var insertable = "true"
+            var removable = "true"
+            var sort = "nil"
+            var sortBy = ".key"
+            if let arguments = attribute.arguments, case .argumentList(let list) = arguments {
+                for argument in list {
+                    switch argument.label?.text {
+                    case "key": key = argument.expression.trimmedDescription
+                    case "value": value = argument.expression.trimmedDescription
+                    case "insertable": insertable = argument.expression.trimmedDescription
+                    case "removable": removable = argument.expression.trimmedDescription
+                    case "sort": sort = argument.expression.trimmedDescription
+                    case "sortBy": sortBy = argument.expression.trimmedDescription
+                    default: break
+                    }
+                }
+            }
+            return (key, value, insertable, removable, sort, sortBy)
+        }
+        return ("nil", "nil", "true", "true", "nil", ".key")
+    }
+
+    private static func collectionPresentationOption(_ name: String, annotation: String = "SBJArrayPresentation", on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == annotation else { continue }
+            guard let arguments = attribute.arguments,
+                  case .argumentList(let list) = arguments else { return "true" }
+            for argument in list where argument.label?.text == name {
+                return argument.expression.trimmedDescription
+            }
+            return "true"
+        }
+        return nil
+    }
+
+    private static func arrayOptions(on variable: VariableDeclSyntax) -> (title: String?, minCount: String?, maxCount: String?, unique: String?, uniqueBy: String?, sorted: String?) {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
             guard attribute.attributeName.trimmedDescription == "SBJArray" else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else {
-                return ("true", nil, nil, nil, "false", nil)
+                return (nil, nil, nil, "false", nil, nil)
             }
 
-            var reorderable: String? = "true"
             var title: String?
             var minCount: String?
             var maxCount: String?
             var unique: String? = "false"
             var uniqueBy: String?
+            var sorted: String?
             for argument in arguments {
                 switch argument.label?.text {
-                case "reorderable":
-                    switch argument.expression.trimmedDescription {
-                    case "false": reorderable = "false"
-                    case "true": reorderable = "true"
-                    default: reorderable = nil
-                    }
                 case "title":
                     let expression = argument.expression.trimmedDescription
                     title = expression == "nil" ? nil : keyPathPropertyName(from: expression)
                 case "minCount": minCount = argument.expression.trimmedDescription
                 case "maxCount": maxCount = argument.expression.trimmedDescription
                 case "unique": unique = argument.expression.trimmedDescription
+                case "sorted":
+                    let expression = argument.expression.trimmedDescription
+                    sorted = expression == "nil" ? nil : expression
                 case "uniqueBy":
                     let expression = argument.expression.trimmedDescription
                     uniqueBy = expression == "nil" ? nil : expression
@@ -1206,7 +1358,7 @@ public enum SBJStructureGeneration {
                     continue
                 }
             }
-            return (reorderable, title, minCount, maxCount, unique, uniqueBy)
+            return (title, minCount, maxCount, unique, uniqueBy, sorted)
         }
         return (nil, nil, nil, nil, nil, nil)
     }
@@ -1237,26 +1389,49 @@ public enum SBJStructureGeneration {
         return (nil, nil, nil)
     }
 
-    private static func dictionaryOptions(on variable: VariableDeclSyntax) -> (minCount: String?, maxCount: String?) {
+    private static func dictionaryMemberRuleMetadata(_ expression: String) -> String? {
+        let mapping: [(String, String)] = [
+            ("SBJStringRules", "string"), ("SBJIntegerRules", "integer"),
+            ("SBJNumberRules", "number"), ("SBJUUIDRules", "uuid"),
+            ("SBJURLRules", "url"), ("SBJDateRules", "date"),
+            ("SBJDataRules", "data")
+        ]
+        for (type, name) in mapping where expression.hasPrefix(type + "(") {
+            return ".\(name)(\(expression))"
+        }
+        return nil
+    }
+
+    private static func dictionaryOptions(on variable: VariableDeclSyntax) -> (minCount: String?, maxCount: String?, key: [String], value: [String]) {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
             guard attribute.attributeName.trimmedDescription == "SBJDictionary" else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else {
-                return (nil, nil)
+                return (nil, nil, [], [])
             }
             var minCount: String?
             var maxCount: String?
+            var key: [String] = []
+            var value: [String] = []
             for argument in arguments {
                 switch argument.label?.text {
                 case "minCount": minCount = argument.expression.trimmedDescription
                 case "maxCount": maxCount = argument.expression.trimmedDescription
+                case "key":
+                    if let array = argument.expression.as(ArrayExprSyntax.self) {
+                        key = array.elements.map { $0.expression.trimmedDescription }
+                    }
+                case "value":
+                    if let array = argument.expression.as(ArrayExprSyntax.self) {
+                        value = array.elements.map { $0.expression.trimmedDescription }
+                    }
                 default: continue
                 }
             }
-            return (minCount, maxCount)
+            return (minCount, maxCount, key, value)
         }
-        return (nil, nil)
+        return (nil, nil, [], [])
     }
 
 
@@ -1281,7 +1456,7 @@ public enum SBJStructureGeneration {
                 ("SBJDate", { supportsLeafType($0, allowed: dateTypes) }, "Date or Date?"),
                 ("SBJURL", { supportsLeafType($0, allowed: ["URL", "Foundation.URL"]) }, "URL or URL?"),
                 ("SBJData", { supportsLeafType($0, allowed: dataTypes) }, "Data or Data?"),
-                ("SBJColor", { supportsLeafType($0, allowed: colorTypes) }, "CodableColor or CodableColor?")
+                ("SBJColorPresentation", { supportsLeafType($0, allowed: colorTypes) }, "CodableColor or CodableColor?")
             ]
             for (annotation, accepts, expectation) in checks where hasAttribute(named: annotation, on: variable) {
                 if !accepts(type), isKnownSBJTypeSyntax(type) {
@@ -1304,6 +1479,22 @@ public enum SBJStructureGeneration {
         diagnoseMinMax(annotation: "SBJArray", propertyName: propertyName, min: array.minCount, max: array.maxCount, identifier: identifier, context: context)
         let set = setOptions(on: variable)
         diagnoseMinMax(annotation: "SBJSet", propertyName: propertyName, min: set.minCount, max: set.maxCount, identifier: identifier, context: context)
+        if hasAnnotation("SBJDictionary", on: variable) {
+            for element in variable.attributes {
+                guard case .attribute(let attr) = element,
+                      attr.attributeName.trimmedDescription == "SBJDictionary",
+                      let args = attr.arguments,
+                      case .argumentList(let arguments) = args else { continue }
+                for argument in arguments where argument.label?.text == "key" || argument.label?.text == "value" {
+                    if argument.expression.as(ArrayExprSyntax.self) == nil {
+                        context.diagnose(Diagnostic(node: Syntax(argument.expression),
+                            message: InvalidAnnotationDeclarationDiagnostic(
+                                annotation: "SBJDictionary", propertyName: propertyName,
+                                detail: "requires a literal array for \(argument.label?.text ?? "member") rules")))
+                    }
+                }
+            }
+        }
         let dictionary = dictionaryOptions(on: variable)
         diagnoseMinMax(annotation: "SBJDictionary", propertyName: propertyName, min: dictionary.minCount, max: dictionary.maxCount, identifier: identifier, context: context)
         let data = dataOptions(on: variable)
@@ -1517,7 +1708,7 @@ public enum SBJStructureGeneration {
     private static func colorAlpha(on variable: VariableDeclSyntax) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element else { continue }
-            guard attribute.attributeName.trimmedDescription == "SBJColor" else { continue }
+            guard attribute.attributeName.trimmedDescription == "SBJColorPresentation" else { continue }
             guard let rawArguments = attribute.arguments,
                   case .argumentList(let arguments) = rawArguments else { return nil }
             for argument in arguments where argument.label?.text == "alpha" {
@@ -1539,7 +1730,7 @@ public enum SBJStructureGeneration {
             ("SBJString", ".text"), ("SBJInteger", ".integer"), ("SBJNumber", ".number"),
             ("SBJOptional", ".optional"), ("SBJArray", ".array"), ("SBJSet", ".set"),
             ("SBJDictionary", ".dictionary"), ("SBJURL", ".url"), ("SBJUUID", ".uuid"),
-            ("SBJDate", ".date"), ("SBJData", ".data"), ("SBJColor", ".color")
+            ("SBJDate", ".date"), ("SBJData", ".data")
         ]
         if let match = annotationKinds.first(where: { hasAttribute(named: $0.0, on: variable) }) {
             return match.1

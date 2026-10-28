@@ -6,7 +6,7 @@ private struct MutablePropertyModel: Codable {
     var title: String
     var count: Int
 
-    @SBJPresentationProperty
+    @SBJFieldPresentation()
     var summary: String {
         get { "\(title): \(count)" }
         set { title = newValue }

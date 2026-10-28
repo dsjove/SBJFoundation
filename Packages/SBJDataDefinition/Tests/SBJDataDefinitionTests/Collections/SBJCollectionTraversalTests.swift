@@ -27,3 +27,23 @@ struct SBJCollectionTraversalTests {
         #expect(SBJCollectionTraversal.dictionary(["b": 2, "a": 1]).map { $0.value.key } == ["a", "b"])
     }
 }
+
+@Suite("Comparable collection presentation ordering")
+struct SBJCollectionPresentationSortingTests {
+    @Test("set presentation orders comparable elements without mutating the set")
+    func setPresentationOrder() {
+        let values: Set<Int> = [2, 4, 1]
+        #expect(values.sortedForPresentation(direction: .ascending) == [1, 2, 4])
+        #expect(values.sortedForPresentation(direction: .descending) == [4, 2, 1])
+        #expect(values == Set([2, 4, 1]))
+    }
+
+    @Test("dictionary value presentation breaks equal values by key")
+    func dictionaryValueOrder() {
+        let values = ["b": 2, "a": 2, "c": 1]
+        #expect(values.sortedForPresentation(direction: .ascending, by: .value).map(\.key) == ["c", "a", "b"])
+        #expect(values.sortedForPresentation(direction: .descending, by: .value).map(\.key) == ["b", "a", "c"])
+        #expect(values.sortedForPresentation(direction: .ascending, by: .key).map(\.key) == ["a", "b", "c"])
+        #expect(values.count == 3)
+    }
+}

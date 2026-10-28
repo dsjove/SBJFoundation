@@ -1,6 +1,6 @@
 # Data annotations and value semantics
 
-The `@SBJStructure` and property metadata annotations are declared in SBJDataDefinition. `@SBJEditable` is an SBJFoundation umbrella macro that includes structural generation. Editor-specific annotations are declared in SBJFoundation.
+The `@SBJStructure` and property metadata annotations are declared in SBJDataDefinition. `@SBJEditable` is an SBJFoundation umbrella macro that includes structural generation. Presentation annotations are declared in SBJDataDefinition; UIVocabulary and StructuredEditor consume their configuration values.
 
 # Annotation reference
 
@@ -17,17 +17,17 @@ For structs:
 
 For enums, associated-value case metadata is generated for recursive editing and source export.
 
-## `@SBJString`
+## `@SBJString` and `@SBJStringPresentation`
 
-Adds String length constraints and/or text presentation.
+`@SBJString` describes String constraints. `@SBJStringPresentation` independently describes text presentation.
 
 ```swift
 @SBJString(minLength: 1, maxLength: 40)
-@SBJEditorString(.singleLine)
+@SBJStringPresentation(.singleLine)
 var name: String
 
 @SBJString(maxLength: 2_000)
-@SBJEditorString(.multiline)
+@SBJStringPresentation(.multiline)
 var notes: String
 ```
 
@@ -79,21 +79,22 @@ The requirement is checked only during explicit validation.
 Adds array constraints and usage hints.
 
 ```swift
-@SBJArray(reorderable: true, minCount: 1, maxCount: 10, uniqueBy: \RecipeIngredient.id)
-@SBJEditorArray(title: \RecipeIngredient.name)
+@SBJArray(minCount: 1, maxCount: 10, uniqueBy: \RecipeIngredient.id)
+@SBJArrayPresentation(reorderable: true)
+@SBJArrayPresentation(title: \RecipeIngredient.name)
 var ingredients: [RecipeIngredient]
 ```
 
 Parameters:
 
-- `reorderable` — whether a consumer may expose stored-order changes.
+- `@SBJArrayPresentation(reorderable:)` — whether an editor may expose stored-order changes.
 - `title` — element key path used for human-readable item presentation.
 - `minCount`
 - `maxCount`
 - `unique` — requires Hashable elements to be unique.
 - `uniqueBy` — uniqueness by a Hashable element key path and a natural stable identity source for editor collection items.
 
-`unique` and `uniqueBy` are mutually exclusive. Arrays always preserve stored order; `reorderable` does not imply sorting.
+`unique` and `uniqueBy` are mutually exclusive. Arrays always preserve stored order; Presentation reordering does not imply sorting.
 
 ## `@SBJSet`
 
@@ -101,22 +102,22 @@ Adds Set count constraints and item-title metadata.
 
 ```swift
 @SBJSet(minCount: 1, maxCount: 20)
-@SBJEditorSet(title: \Proficiency.name)
+@SBJSetPresentation(title: \Proficiency.name)
 var proficiencies: Set<Proficiency>
 ```
 
-Sets have no stored ordering, so the stock editor presents them deterministically rather than offering reordering.
+Sets have no stored positional ordering and do not offer reordering controls. `@SBJSetPresentation(sort:)` can request ascending or descending display sorting, but sorted editor-row integration remains outstanding.
 
 ## `@SBJDictionary`
 
-Adds dictionary entry-count constraints.
+Adds dictionary entry-count constraints and optional typed key/value rule arrays; these are tested only by explicit invariant invocation.
 
 ```swift
 @SBJDictionary(minCount: 0, maxCount: 20)
 var modifiers: [String: Int]
 ```
 
-The generic editor stages key renames and rejects collisions instead of overwriting another entry.
+The generic editor stages key renames and rejects collisions instead of overwriting another entry. `@SBJDictionaryPresentation` also configures key/value labels, insert/remove controls, and optional sort direction/target; presentation sorting is not yet integrated into StructuredEditor rows.
 
 ## `@SBJDate`
 
@@ -173,12 +174,12 @@ Parameters operate on bytes:
 
 The built-in editor presents Data as multiline hexadecimal and does not mutate the model while textual input is incomplete or invalid.
 
-## `@SBJColor`
+## `@SBJColorPresentation`
 
-Adds usage information to `CodableColor`.
+Adds presentation information to `CodableColor`.
 
 ```swift
-@SBJColor(alpha: false)
+@SBJColorPresentation(alpha: false)
 var accent: CodableColor
 ```
 

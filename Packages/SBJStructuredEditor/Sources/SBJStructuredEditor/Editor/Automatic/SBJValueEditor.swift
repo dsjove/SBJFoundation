@@ -18,6 +18,8 @@ private protocol _SBJOptionalValue {
         colorSupportsAlpha: Bool,
         unitEditor: SBJUnitValueEditorMode,
         unitSystem: MeasurementSystem?,
+        collectionInsertable: Bool,
+        collectionRemovable: Bool,
         collectionReorderable: Bool,
         collectionItemTitleKey: String?,
         collectionItemIdentifierKey: String?,
@@ -38,6 +40,8 @@ private protocol _SBJCollectionValue {
         textStyle: SBJStringStyle?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
+        insertable: Bool,
+        removable: Bool,
         reorderable: Bool,
         itemTitleKey: String?,
         itemIdentifierKey: String?,
@@ -165,6 +169,8 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
         colorSupportsAlpha: Bool,
         unitEditor: SBJUnitValueEditorMode,
         unitSystem: MeasurementSystem?,
+        collectionInsertable: Bool,
+        collectionRemovable: Bool,
         collectionReorderable: Bool,
         collectionItemTitleKey: String?,
         collectionItemIdentifierKey: String?,
@@ -187,6 +193,8 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
                 colorSupportsAlpha: colorSupportsAlpha,
                 unitEditor: unitEditor,
                 unitSystem: unitSystem,
+                collectionInsertable: collectionInsertable,
+                collectionRemovable: collectionRemovable,
                 collectionReorderable: collectionReorderable,
                 collectionItemTitleKey: collectionItemTitleKey,
                 collectionItemIdentifierKey: collectionItemIdentifierKey,
@@ -208,6 +216,8 @@ extension Array: _SBJCollectionValue where Element: Codable {
         textStyle: SBJStringStyle?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
+        insertable: Bool,
+        removable: Bool,
         reorderable: Bool,
         itemTitleKey: String?,
         itemIdentifierKey: String?,
@@ -227,6 +237,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
                 textStyle: textStyle,
                 integerRange: integerRange,
                 numberRange: numberRange,
+                insertable: insertable,
                 reorderable: reorderable,
                 itemTitleKey: itemTitleKey,
                 itemIdentifierKey: itemIdentifierKey,
@@ -250,6 +261,8 @@ extension Set: _SBJCollectionValue where Element: Codable {
         textStyle: SBJStringStyle?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
+        insertable: Bool,
+        removable: Bool,
         reorderable: Bool,
         itemTitleKey: String?,
         itemIdentifierKey: String?,
@@ -262,6 +275,7 @@ extension Set: _SBJCollectionValue where Element: Codable {
         let typed = binding.binding(as: Set<Element>.self)
         return AnyView(
             SBJSetEditor(
+                insertable: insertable,
                 label: label,
                 value: typed,
                 originalValue: originalValue.map { $0.value(as: Set<Element>.self) },
@@ -289,6 +303,8 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
         textStyle: SBJStringStyle?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
+        insertable: Bool,
+        removable: Bool,
         reorderable: Bool,
         itemTitleKey: String?,
         itemIdentifierKey: String?,
@@ -301,6 +317,7 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
         let typed = binding.binding(as: [Key: Value].self)
         return AnyView(
             SBJDictionaryEditor(
+                insertable: insertable,
                 label: label,
                 value: typed,
                 originalValue: originalValue.map { $0.value(as: [Key: Value].self) },
@@ -325,8 +342,7 @@ enum SBJValueEditor {
         originalValue: SBJEditorOriginalValue? = nil,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle? = nil,
-        textAutocorrection: SBJTextAutocorrection = .automatic,
-        textCapitalization: SBJTextCapitalization = .automatic,
+        stringPresentation: SBJStringPresentationValue? = nil,
         textMaximumLength: Int? = nil,
         integerRange: ClosedRange<Int>? = nil,
         numberRange: ClosedRange<Double>? = nil,
@@ -334,6 +350,8 @@ enum SBJValueEditor {
         colorSupportsAlpha: Bool = true,
         unitEditor: SBJUnitValueEditorMode = .editable,
         unitSystem: MeasurementSystem? = nil,
+        collectionInsertable: Bool = true,
+        collectionRemovable: Bool = true,
         collectionReorderable: Bool = true,
         collectionItemTitleKey: String? = nil,
         collectionItemIdentifierKey: String? = nil,
@@ -385,22 +403,23 @@ enum SBJValueEditor {
 
         if Value.self == String.self {
             let binding = value.sbjBinding(as: String.self)
-            switch textStyle ?? .singleLine {
+            let presentation = stringPresentation ?? SBJStringPresentationValue(style: textStyle ?? .singleLine)
+            switch presentation.style {
             case .singleLine:
                 return wrapLeaf(
-                    SBJSingleLineTextEditor(label: label, value: binding, maximumLength: textMaximumLength, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, textAutocorrection: textAutocorrection, textCapitalization: textCapitalization),
+                    SBJSingleLineTextEditor(label: label, value: binding, maximumLength: textMaximumLength, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation),
                     itemActions: itemActions,
                     context: context
                 )
             case .multiline:
                 return wrapLeaf(
-                    SBJMultilineTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, textAutocorrection: textAutocorrection, textCapitalization: textCapitalization),
+                    SBJMultilineTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation),
                     itemActions: itemActions,
                     context: context
                 )
             case .sheetEdit:
                 return wrapLeaf(
-                    SBJSheetTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
+                    SBJSheetTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation),
                     itemActions: itemActions,
                     context: context
                 )
@@ -494,6 +513,8 @@ enum SBJValueEditor {
                 colorSupportsAlpha: colorSupportsAlpha,
                 unitEditor: unitEditor,
                 unitSystem: unitSystem,
+                collectionInsertable: collectionInsertable,
+                collectionRemovable: collectionRemovable,
                 collectionReorderable: collectionReorderable,
                 collectionItemTitleKey: collectionItemTitleKey,
                 collectionItemIdentifierKey: collectionItemIdentifierKey,
@@ -512,6 +533,8 @@ enum SBJValueEditor {
                 textStyle: textStyle,
                 integerRange: integerRange,
                 numberRange: numberRange,
+                insertable: collectionInsertable,
+                removable: collectionRemovable,
                 reorderable: collectionReorderable,
                 itemTitleKey: collectionItemTitleKey,
                 itemIdentifierKey: collectionItemIdentifierKey,

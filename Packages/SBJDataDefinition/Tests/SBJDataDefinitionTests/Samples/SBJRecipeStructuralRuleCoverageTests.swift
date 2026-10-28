@@ -3,15 +3,15 @@ import Testing
 @testable import SBJDataDefinition
 
 // Focused edge-case fixtures complement the canonical Recipe integration model.
-private struct Phase7Item: Codable, Hashable {
+private struct RecipeRuleItem: Codable, Hashable {
     var id: Int
     var name: String
 }
 
 @SBJStructure
-private struct Phase7RuleModel: Codable {
+private struct RecipeRuleFixture: Codable {
     @SBJString(minLength: 1, maxLength: 8)
-    @SBJPresentationString(.multiline)
+    @SBJStringPresentation(.multiline)
     var text: String = "a"
 
     @SBJInteger(range: 1...3)
@@ -23,13 +23,13 @@ private struct Phase7RuleModel: Codable {
     @SBJOptional(required: false)
     var optional: String?
 
-    @SBJArray(reorderable: true, minCount: 1, maxCount: 2, uniqueBy: \Phase7Item.id)
-    @SBJPresentationArray(title: \Phase7Item.name)
-    var array: [Phase7Item] = [.init(id: 1, name: "one")]
+    @SBJArray(minCount: 1, maxCount: 2, uniqueBy: \RecipeRuleItem.id)
+    @SBJArrayPresentation(title: \RecipeRuleItem.name, reorderable: true)
+    var array: [RecipeRuleItem] = [.init(id: 1, name: "one")]
 
     @SBJSet(minCount: 1, maxCount: 2)
-    @SBJPresentationSet(title: \Phase7Item.name)
-    var set: Set<Phase7Item> = [.init(id: 1, name: "one")]
+    @SBJSetPresentation(title: \RecipeRuleItem.name)
+    var set: Set<RecipeRuleItem> = [.init(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
     var dictionary: [String: Int] = ["one": 1]
@@ -46,13 +46,13 @@ private struct Phase7RuleModel: Codable {
     @SBJData(min: 2, max: 4, modulo: 2)
     var data = Data([0x01, 0x02])
 
-    @SBJColor(alpha: false)
+    @SBJColorPresentation(alpha: false)
     var color = CodableColor(1, 0, 0)
 }
 
 
 @SBJStructure
-private struct Phase9CodingShapeModel: Codable {
+private struct RecipeCodingShapeFixture: Codable {
     var text: String = ""
     var enabled: Bool = false
     var count: Int = 0
@@ -75,7 +75,7 @@ private struct Phase9CodingShapeModel: Codable {
 
 struct SBJRecipeStructuralRuleCoverageTests {
     @Test func structuralMetadataCoversEveryCurrentAnnotationFamily() {
-        let kinds = Dictionary(uniqueKeysWithValues: Phase7RuleModel.sbjProperties.map { ($0.sourceName, $0.kind) })
+        let kinds = Dictionary(uniqueKeysWithValues: RecipeRuleFixture.sbjProperties.map { ($0.sourceName, $0.kind) })
 
         #expect(kinds["text"] == .text)
         #expect(kinds["integer"] == .integer)
@@ -92,37 +92,37 @@ struct SBJRecipeStructuralRuleCoverageTests {
     }
 
     @Test func currentRulesAndHintsAreRepresentedWithoutEnforcement() throws {
-        let text = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.text)
-        #expect(text?.constraints == [.textLength(min: 1, max: 8)])
-        #expect(text?.hints == [.textStyle(.multiline)])
+        let text = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.text)
+        #expect(text?.constraints == [.stringRules(SBJStringRules(minLength: 1, maxLength: 8))])
+        #expect(text?.hints == [.stringPresentation(SBJStringPresentationValue(style: .multiline))])
 
-        let optional = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.optional)
-        #expect(optional?.constraints == [.required(false)])
+        let optional = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.optional)
+        #expect(optional?.constraints == [.optionalRules(SBJOptionalRules(required: false))])
 
-        let array = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.array)
-        #expect(array?.constraints == [.count(min: 1, max: 2), .uniqueBy("\\Phase7Item.id"), .reorderable(true)])
-        #expect(array?.constraints.contains(.reorderable(true)) == true && array?.hints == [.itemTitle("name")])
+        let array = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.array)
+        #expect(array?.constraints == [.arrayRules(SBJArrayRules(minCount: 1, maxCount: 2)), .uniqueBy("\\RecipeRuleItem.id")])
+        #expect(array?.hints.contains(.arrayPresentation(SBJArrayPresentationValue(reorderable: true))) == true && array?.hints.contains(.itemTitle("name")) == true)
 
-        let set = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.set)
-        #expect(set?.constraints == [.count(min: 1, max: 2)])
-        #expect(set?.hints == [.itemTitle("name")])
+        let set = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.set)
+        #expect(set?.constraints == [.setRules(SBJSetRules(minCount: 1, maxCount: 2))])
+        #expect(set?.hints == [.setPresentation(SBJSetPresentationValue(insertable: true, removable: true)), .itemTitle("name")])
 
-        let data = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.data)
-        #expect(data?.constraints == [.dataSize(min: 2, max: 4, modulo: 2)])
+        let data = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.data)
+        #expect(data?.constraints == [.dataRules(SBJDataRules(min: 2, max: 4, modulo: 2))])
 
-        let url = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.url)
-        #expect(url?.constraints == [.urlKinds([.network])])
+        let url = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.url)
+        #expect(url?.constraints == [.urlRules(SBJURLRules(allowed: [.network]))])
 
-        let uuid = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.uuid)
-        #expect(uuid?.constraints == [.uuidNonzero])
+        let uuid = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.uuid)
+        #expect(uuid?.constraints == [.uuidRules(SBJUUIDRules(nonzero: true))])
 
-        let date = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.date)
-        #expect(date?.constraints == [.dateRange(Date(timeIntervalSince1970: 0)...Date(timeIntervalSince1970: 100))])
+        let date = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.date)
+        #expect(date?.constraints == [.dateRules(SBJDateRules(range: Date(timeIntervalSince1970: 0)...Date(timeIntervalSince1970: 100)))])
 
-        let color = Phase7RuleModel.propertyMetadata(for: \Phase7RuleModel.color)
-        #expect(color?.hints == [.colorSupportsAlpha(false)])
+        let color = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.color)
+        #expect(color?.hints == [.colorPresentation(SBJColorPresentationValue(alpha: false))])
 
-        var value = Phase7RuleModel()
+        var value = RecipeRuleFixture()
         value.integer = 100
         value.text = ""
         value.array = []
@@ -134,12 +134,12 @@ struct SBJRecipeStructuralRuleCoverageTests {
         #expect(value.array.isEmpty)
         #expect(value.data.count == 1)
         #expect(throws: SBJValidationError.self) {
-            try value.invariant(at: \Phase7RuleModel.self)
+            try value.invariant(at: \RecipeRuleFixture.self)
         }
     }
 
     @Test func floatingPointValidationRejectsNonFiniteValues() {
-        let path = SBJValidationKeyPath(\Phase7RuleModel.number)
+        let path = SBJValidationKeyPath(\RecipeRuleFixture.number)
         #expect(throws: SBJValidationError.self) {
             try SBJInvariantCheck.requireRange(Double.nan, 0...1, at: path)
         }
@@ -149,7 +149,7 @@ struct SBJRecipeStructuralRuleCoverageTests {
     }
 
     @Test func dataConstraintBoundariesAreInclusiveAndModuloIsExplicit() throws {
-        let path = SBJValidationKeyPath(\Phase7RuleModel.data)
+        let path = SBJValidationKeyPath(\RecipeRuleFixture.data)
         try SBJInvariantCheck.requireData(Data(repeating: 0, count: 2), min: 2, max: 4, modulo: 2, at: path)
         try SBJInvariantCheck.requireData(Data(repeating: 0, count: 4), min: 2, max: 4, modulo: 2, at: path)
 
@@ -162,7 +162,7 @@ struct SBJRecipeStructuralRuleCoverageTests {
     }
 
     @Test func urlKindsAreExplicitInvariantConstraints() throws {
-        let path = SBJValidationKeyPath(\Phase7RuleModel.url)
+        let path = SBJValidationKeyPath(\RecipeRuleFixture.url)
         try SBJInvariantCheck.requireURL(URL(string: "https://example.com")!, allowed: [.network], at: path)
         try SBJInvariantCheck.requireURL(URL(fileURLWithPath: "/tmp/example"), allowed: [.file], at: path)
 
@@ -178,16 +178,16 @@ struct SBJRecipeStructuralRuleCoverageTests {
     }
 
     @Test func annotatedURLStillAllowsInvalidStateUntilValidation() {
-        var value = Phase7RuleModel()
+        var value = RecipeRuleFixture()
         value.url = URL(fileURLWithPath: "/tmp/local")
         #expect(value.url.isFileURL)
         #expect(throws: SBJValidationError.self) {
-            try value.invariant(at: \Phase7RuleModel.self)
+            try value.invariant(at: \RecipeRuleFixture.self)
         }
     }
 
     @Test func codingKeysDefineStructureAndAnnotationsAreNotRequiredForKinds() {
-        let metadata = Dictionary(uniqueKeysWithValues: Phase9CodingShapeModel.sbjProperties.map { ($0.sourceName, $0.kind) })
+        let metadata = Dictionary(uniqueKeysWithValues: RecipeCodingShapeFixture.sbjProperties.map { ($0.sourceName, $0.kind) })
         #expect(metadata["text"] == .text)
         #expect(metadata["enabled"] == .bool)
         #expect(metadata["count"] == .integer)
@@ -207,7 +207,7 @@ struct SBJRecipeStructuralRuleCoverageTests {
         #expect(UUID.sbjZero.sbjIsZero)
         #expect(!UUID().sbjIsZero)
 
-        let path = SBJValidationKeyPath(\Phase7RuleModel.uuid)
+        let path = SBJValidationKeyPath(\RecipeRuleFixture.uuid)
         #expect(throws: SBJValidationError.self) {
             try SBJInvariantCheck.requireNonzero(.sbjZero, at: path)
         }

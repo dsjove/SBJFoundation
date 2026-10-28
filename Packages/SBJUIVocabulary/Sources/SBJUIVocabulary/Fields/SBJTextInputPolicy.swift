@@ -5,13 +5,12 @@ import SBJDataDefinition
 /// Text-input configuration is explicit at the control boundary; no custom
 /// EnvironmentValues are installed in the view tree.
 extension View {
-    public func sbjApplyTextInputPolicies(
-        autocorrection: SBJTextAutocorrection,
-        capitalization: SBJTextCapitalization
-    ) -> some View {
+    /// Applies input policies from the portable string presentation configuration.
+    /// Layout and editing workflow are chosen by the owning control, not this modifier.
+    public func sbjTextInput(_ presentation: SBJStringPresentationValue) -> some View {
         modifier(SBJTextInputPolicyModifier(
-            autocorrection: autocorrection,
-            capitalization: capitalization
+            autocorrection: presentation.autocorrect,
+            capitalization: presentation.capitalization
         ))
     }
 }

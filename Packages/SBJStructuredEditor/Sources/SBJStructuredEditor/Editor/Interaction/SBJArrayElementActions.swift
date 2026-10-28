@@ -8,15 +8,15 @@ import SwiftUI
 enum SBJArrayElementActions {
     static func make<Element>(
         parent: Binding<[Element]>, index: Int, count: Int,
-        canReorder: Bool, resolvedIndex: @escaping () -> Int?
+        canReorder: Bool, canRemove: Bool = true, resolvedIndex: @escaping () -> Int?
     ) -> SBJEditorItemActions {
         SBJEditorItemActions(
-            remove: {
+            remove: canRemove ? {
                 guard let position = resolvedIndex() else { return }
                 var values = parent.wrappedValue
                 guard SBJArrayMutation.remove(at: position, from: &values) else { return }
                 parent.wrappedValue = values
-            },
+            } : nil,
             moveUp: canReorder && index > 0 ? {
                 guard let position = resolvedIndex() else { return }
                 var values = parent.wrappedValue

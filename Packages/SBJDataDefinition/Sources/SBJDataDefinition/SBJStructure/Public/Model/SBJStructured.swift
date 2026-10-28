@@ -243,39 +243,42 @@ public enum SBJPropertyKind: Sendable, Equatable {
 /// These values are descriptive metadata. They do not intercept assignment or
 /// enforce themselves. Validation and other consumers explicitly interpret them.
 public enum SBJPropertyConstraint: Sendable, Equatable {
-    case textLength(min: Int?, max: Int?)
-    case integerRange(ClosedRange<Int>)
-    case integerMinimum(Int)
-    case numberRange(ClosedRange<Double>)
-    case numberMinimum(Double)
-    case required(Bool)
+    case stringRules(SBJStringRules)
+    case integerRules(SBJIntegerRules)
+    case numberRules(SBJNumberRules)
+    case optionalRules(SBJOptionalRules)
     /// Whether changing the unit is prohibited by the property definition.
     case unitMutable(Bool)
     /// Preferred unit for creating a new measurement in this field.
     case defaultUnit(SBJDefaultUnit)
     case unitSystem(MeasurementSystem)
-    case count(min: Int?, max: Int?)
-    /// Whether reordering the collection is a permitted data mutation.
-    case reorderable(Bool)
+    case arrayRules(SBJArrayRules)
+    case setRules(SBJSetRules)
+    case dictionaryRules(SBJDictionaryRules)
+    case dictionaryKeyRule(SBJDictionaryMemberRuleValue)
+    case dictionaryValueRule(SBJDictionaryMemberRuleValue)
     case unique
     /// Human-readable representation of the compiler-checked element key path.
     /// Generated validation retains and uses the actual key path expression.
     case uniqueBy(String)
-    case dataSize(min: Int?, max: Int?, modulo: Int?)
-    case uuidNonzero
-    case dateRange(ClosedRange<Date>)
-    case urlKinds(Set<SBJURLKind>)
+    case dataRules(SBJDataRules)
+    case uuidRules(SBJUUIDRules)
+    case dateRules(SBJDateRules)
+    case urlRules(SBJURLRules)
 }
 
 /// Non-invariant usage or presentation information declared on a model property.
 /// Consumers may honor these hints, but they do not participate in validation.
 public enum SBJPropertyHint: Sendable, Equatable {
-    case presentationDisclosure(SBJPresentationDisclosureMode)
-    case presentationExcluded
-    case textStyle(SBJStringStyle)
-    case textAutocorrection(SBJTextAutocorrection)
-    case textCapitalization(SBJTextCapitalization)
-    case colorSupportsAlpha(Bool)
+    case fieldPresentation(SBJFieldPresentationValue)
+    /// Presentation of each Array or Set element (second annotation occurrence).
+    case elementFieldPresentation(SBJFieldPresentationValue)
+    case arrayPresentation(SBJArrayPresentationValue)
+    case setPresentation(SBJSetPresentationValue)
+    case dictionaryPresentation(SBJDictionaryPresentationValue)
+    case stringPresentation(SBJStringPresentationValue)
+    case unitValuePresentation(SBJUnitValuePresentationValue)
+    case colorPresentation(SBJColorPresentationValue)
     /// Human-readable representation of the compiler-checked item-title key path.
     case itemTitle(String)
 }

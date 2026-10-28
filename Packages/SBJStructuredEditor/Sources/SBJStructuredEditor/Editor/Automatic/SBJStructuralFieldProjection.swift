@@ -38,13 +38,13 @@ private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @pre
         // A presentation exclusion suppresses the field, not the property's
         // structural metadata, validation, or its generated writable key path.
         if metadata?.hints.contains(where: {
-            if case .presentationExcluded = $0 { return true }
+            if case .fieldPresentation(let value) = $0 { return value.exclude }
             return false
         }) == true { return }
 
         let disclosure: SBJPresentationDisclosureMode = metadata?.hints.compactMap { hint in
-            guard case .presentationDisclosure(let mode) = hint else { return nil }
-            return mode
+            guard case .fieldPresentation(let value) = hint else { return nil }
+            return value.autoExpand ? .autoOpen : .closed
         }.first ?? .closed
 
         // Structural metadata, rather than a display title, is authoritative

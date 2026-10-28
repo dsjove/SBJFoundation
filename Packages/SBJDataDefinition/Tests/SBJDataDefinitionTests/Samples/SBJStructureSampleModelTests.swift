@@ -6,12 +6,12 @@ import Testing
 struct SBJStructureSampleModelTests {
   @Test func canonicalSampleProvidesRepresentativeStructuralMetadata() {
     let servings = SBJStructureSampleModel.propertyMetadata(for: \SBJStructureSampleModel.servings)
-    #expect(servings?.constraints == [.integerRange(1...24)])
+    #expect(servings?.constraints == [.integerRules(SBJIntegerRules(range: 1...24))])
 
     let ingredients = SBJStructureSampleModel.propertyMetadata(
       for: \SBJStructureSampleModel.ingredients)
     #expect(ingredients?.kind == .array)
-    #expect(ingredients?.constraints.contains(.reorderable(true)) == true)
+    #expect(ingredients?.hints.contains(.arrayPresentation(SBJArrayPresentationValue(reorderable: true))) == true)
 
     let sourceURL = SBJStructureSampleModel.propertyMetadata(
       for: \SBJStructureSampleModel.sourceURL)

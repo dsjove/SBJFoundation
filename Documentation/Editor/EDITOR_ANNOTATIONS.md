@@ -2,12 +2,12 @@
 
 These annotations belong to **SBJFoundation**, not SBJDataDefinition.
 
-## `@SBJEditorExclude`
+## `@SBJFieldPresentation(exclude: true)`
 
 Suppresses generic editor generation while retaining structural membership.
 
 ```swift
-@SBJEditorExclude
+@SBJFieldPresentation(exclude: true)
 var generatedSummary: String
 ```
 

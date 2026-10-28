@@ -19,7 +19,7 @@ This package has no compiler macro target. Applications define their models with
 
 ## Properties and traversal
 
-Writable stored properties are projected from DataDefinition's typed `SBJMutableStructure` descriptors. Writable computed properties explicitly annotated `@SBJPresentationProperty` are projected separately as presentation-only fields. Immutable properties remain part of the structural model but are not rendered as editable fields.
+Writable stored properties are projected from DataDefinition's typed `SBJMutableStructure` descriptors. Writable computed properties explicitly annotated `@SBJFieldPresentation` are projected separately as presentation-only fields. Immutable properties remain part of the structural model but are not rendered as editable fields.
 
 The editor uses logical item identifiers and live collection locations independently, so array actions target the current element after movement. Duplicate or missing identifiers use positional identity. Sets use draft-and-commit editing to avoid accidental collisions.
 

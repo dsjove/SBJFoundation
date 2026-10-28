@@ -66,9 +66,9 @@ public struct NumberTextField: View {
     public var body: some View {
         Group {
             if let focusBinding {
-                field.oneLiner(isFocused: focusBinding)
+                field.sbjSingleLineField(isFocused: focusBinding)
             } else {
-                field.oneLiner()
+                field.sbjSingleLineField()
             }
         }
         .multilineTextAlignment(.trailing)

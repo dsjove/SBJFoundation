@@ -16,12 +16,12 @@ Each nested package has its own `Package.swift`; SwiftPM runs package test targe
 - **SBJDocuments:** document/library persistence behavior, ordering and error recovery.
 - **SBJHelp:** content resolution, templating precedence and presenter dispatch; do not retest Foundation's string replacement.
 - **SBJCamera:** encoded capture representation and capture behavior; avoid tests limited to stored properties.
-- **SBJStructuredEditor:** currently a scaffold, with no standalone editor behavior to test. Editor behavior tests currently belong to Foundation.
+- **SBJStructuredEditor:** tests its own parsing, structural projection, model-driven editing, validation propagation, traversal, and nontrivial state transitions.
 - **SBJFoundation:** integrated image/attachment/structured-editor interactions and platform behavior not owned by the smaller modules.
 
 ## Editor integration
 
-The editor's sample model and preview give **compile coverage** of the annotation and dependency graph; they do not substitute for behavioral tests. Preserve tests for mutation, validation, navigation, selection, filtering and state restoration. SwiftUI snapshot tests are appropriate only when visual output itself is a contract worth protecting.
+The editor's sample model and preview give **compile coverage** of the annotation and dependency graph; they do not substitute for behavioral tests. Preserve tests for mutation, validation, navigation, selection, filtering and state restoration. Do not test SwiftUI rendering, focus mechanics, or simple modifier behavior. Verify meaningful behavior at pure-model and editor-integration boundaries.
 
 ## Do not add tests for
 

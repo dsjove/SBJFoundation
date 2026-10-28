@@ -20,14 +20,15 @@ private struct SBJEditorActionHeight<Content: View>: View {
 
 @MainActor
 struct SBJEditorItemActions {
-    let remove: () -> Void
+    let remove: (() -> Void)?
     let moveUp: (() -> Void)?
     let moveDown: (() -> Void)?
 
     // Collection elements do not have their own compile-time property info.
     // Use the shared information gutter for removal instead of a leading lane.
     var infoLaneView: AnyView {
-        AnyView(
+        guard let remove else { return AnyView(EmptyView()) }
+        return AnyView(
             SBJEditorActionHeight {
                 SBJConfirmedRemoveButton(
                     accessibilityLabel: "Remove item",

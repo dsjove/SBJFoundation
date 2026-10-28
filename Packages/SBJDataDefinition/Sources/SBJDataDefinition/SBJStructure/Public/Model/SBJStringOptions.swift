@@ -1,7 +1,7 @@
 import Foundation
 
 /// Declares text presentation metadata and length constraints for `@SBJStructure`.
-public enum SBJStringStyle: Sendable, Equatable {
+public enum SBJStringStyle: String, Codable, Sendable, Equatable {
     case singleLine
     case multiline
     /// Uses a compact multiline field with an affordance that promotes editing into a sheet.
@@ -12,13 +12,13 @@ public enum SBJStringStyle: Sendable, Equatable {
 
 
 
-public enum SBJTextAutocorrection: Sendable, Hashable {
+public enum SBJTextAutocorrection: String, Codable, Sendable, Hashable {
     case automatic
     case enabled
     case disabled
 }
 
-public enum SBJTextCapitalization: Sendable, Hashable {
+public enum SBJTextCapitalization: String, Codable, Sendable, Hashable {
     case automatic
     case never
     case words
@@ -26,7 +26,7 @@ public enum SBJTextCapitalization: Sendable, Hashable {
     case characters
 }
 
-public enum SBJStringTrimming: Sendable, Equatable {
+public enum SBJStringTrimming: String, Codable, Sendable, Equatable {
     case none
     case whitespace
     case whitespaceAndNewlines

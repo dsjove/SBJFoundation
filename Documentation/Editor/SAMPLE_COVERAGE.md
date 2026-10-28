@@ -63,7 +63,7 @@ The canonical sample model currently declares every annotation in
 
 - `@SBJStructure` — structs and an associated-value enum.
 - `@SBJArray` — ingredients and steps.
-- `@SBJColor` — recipe-card tint.
+- `@SBJColorPresentation` — recipe-card tint.
 - `@SBJData` — a small import fingerprint, exercising Data invariants/editor.
 - `@SBJDate` — last-made date.
 - `@SBJDesignatedInit` — `SBJStructureSampleNutrition` initializer. This is intentionally
@@ -71,7 +71,7 @@ The canonical sample model currently declares every annotation in
 - `@SBJDictionary` — substitutions.
 - `@SBJEditorProperty` — editor-only computed display-name adapter.
 - `@SBJInteger` — servings and time fields.
-- `@SBJEditorExclude` — import source.
+- `@SBJFieldPresentation(exclude: true)` — import source.
 - `@SBJNumber` — nutrition/ingredient quantities.
 - `@SBJOptional` — source URL presence requirement.
 - `FontFamily?` — recipe-card font-family editor (type-based dispatch).
@@ -105,7 +105,7 @@ in the fixture. Important examples include:
 - `CodableColor` and color editing;
 - `CodableFont` / `CodableFontCache` through the font-family presentation editor; directory placement does not affect this transitive coverage;
 - `PlaceholderMultilineTextField` and shared multiline chrome through
-  `@SBJEditorString(.sheetEdit)`;
+  `@SBJStringPresentation(.sheetEdit)`;
 - `SBJSelectionMenuLabel`, `SBJUIAppearance`, focus/invalid modifiers,
   `SearchField`, and other UIVocabulary used by editor implementations;
 - Swift-source encoder types referenced by the `SBJStructured` contract and the
@@ -186,7 +186,7 @@ them into the sample would test nothing about SBJStructure.
 contract: each stock editor-selection category must be constructible from an
 ordinary SwiftUI binding without going through `SBJEditorView`. It binds to `SBJStructureSampleModel`, the same model used by the automatic preview.
 Dispatch-only properties that would make the automatic form noisy are kept on that
-model with `@SBJEditorExclude`; the standalone preview can still bind to them directly.
+model with `@SBJFieldPresentation(exclude: true)`; the standalone preview can still bind to them directly.
 
 When a new stock `SBJValueEditor` selection path is added, add a corresponding
 `SBJEditField` example so standalone usability remains a compile-visible design
