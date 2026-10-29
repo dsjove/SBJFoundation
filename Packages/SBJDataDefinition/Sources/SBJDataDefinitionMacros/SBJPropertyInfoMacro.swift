@@ -72,7 +72,7 @@ public struct SBJPropertyInfoMacro: MemberMacro {
         if !hasCustomPublicLookup {
             members.append(DeclSyntax(stringLiteral: """
             public static func propertyInfo<Value>(for keyPath: KeyPath<\(typeName), Value>) -> SBJPropertyInfo? {
-                _extensionPropertyInfo(for: keyPath)
+                SBJDefinitionTypeInfo.resolve(_extensionPropertyInfo(for: keyPath), for: Value.self)
             }
             """))
         }

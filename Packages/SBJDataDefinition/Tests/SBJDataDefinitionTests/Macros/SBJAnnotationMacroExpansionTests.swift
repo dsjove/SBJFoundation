@@ -43,7 +43,7 @@ final class SBJAnnotationMacroExpansionTests: XCTestCase {
                 }
 
                 public static func propertyInfo<Value>(for keyPath: KeyPath<Example, Value>) -> SBJPropertyInfo? {
-                    _extensionPropertyInfo(for: keyPath)
+                    SBJDefinitionTypeInfo.resolve(_extensionPropertyInfo(for: keyPath), for: Value.self)
                 }
             }
             """,

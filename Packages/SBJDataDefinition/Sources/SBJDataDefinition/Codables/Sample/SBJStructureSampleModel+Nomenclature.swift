@@ -3,7 +3,11 @@ import SBJLocalization
 
 @SBJPropertyInfo
 extension SBJStructureSampleModel {
-	public static let servingsInfo = SBJPropertyInfo(
+	public static let courseInfo = SBJPropertyInfo(
+        summary: "The course where this recipe is normally served."
+    )
+
+    public static let servingsInfo = SBJPropertyInfo(
 		summary: "The number of portions the recipe is intended to make.",
 		details: "The structural constraint is 1 through 24. The editor uses that domain knowledge to keep this numeric field compact without fixing it to one point size.",
 		accessibilityLabel: "Recipe servings",
@@ -21,9 +25,9 @@ extension SBJStructureSampleModel {
 
 	public static func propertyInfo<Value>(for keyPath: KeyPath<SBJStructureSampleModel, Value>) -> SBJPropertyInfo? {
 		if keyPath == \SBJStructureSampleModel.preparationMinutes {
-			return customPreparationMetadata
+			return SBJDefinitionTypeInfo.resolve(customPreparationMetadata, for: Value.self)
 		}
-		return _extensionPropertyInfo(for: keyPath)
+		return SBJDefinitionTypeInfo.resolve(_extensionPropertyInfo(for: keyPath), for: Value.self)
 	}
 }
 

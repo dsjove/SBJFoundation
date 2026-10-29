@@ -50,3 +50,29 @@ The generated structural model and its traversal never require an editor instanc
 ## Codable models and sample coverage
 
 The `Sources/SBJDataDefinition/Codables` directory owns Units, Fonts, and Colors model types. The accompanying model-specific structural adapters supply generated-metadata-equivalent traversal, validation, and source encoding behavior. The DEBUG-only comprehensive sample fixture is in `Sources/SBJDataDefinition/Codables/Sample`. Presentation annotations live in `Annotations`.
+
+
+## Type-level `SBJPropertyInfo` defaults
+
+Reusable domain value types can adopt `SBJDefinitionTypeInfoProviding` and supply a
+static `definitionTypeInfo: SBJPropertyInfo`. When `@SBJStructure` metadata or
+`@SBJPropertyInfo`-generated lookups resolve a property, each absent attribute
+(title, summary, details, symbol, accessibility label and accessibility hint)
+falls back independently to the property's declared value type. Explicit property
+values always win. Optional properties inherit defaults from their wrapped type.
+Primitive types without a provider are unchanged. No model instance is needed.
+
+```swift
+struct Status: Codable, SBJDefinitionTypeInfoProviding {
+    static let definitionTypeInfo = SBJPropertyInfo(
+        title: "Status", summary: "Current lifecycle status")
+    var rawValue: String
+}
+```
+
+This is *type* documentation, not a replacement for property-specific meaning.
+Handwritten metadata accessors must explicitly call `SBJDefinitionTypeInfo.resolve(_:for:)`;
+macros cannot rewrite custom implementations. Tests in
+`Core/SBJDefinitionTypeInfoTests.swift` exercise precedence and optional types.
+
+The printable catalog/PDF lives in the separate `SBJDataDefinitionReport` package.

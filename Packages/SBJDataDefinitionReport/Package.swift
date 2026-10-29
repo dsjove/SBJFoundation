@@ -15,7 +15,6 @@ let package = Package(
             .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
             .product(name: "SBJLayout", package: "SBJLayout"),
             .product(name: "SBJSharing", package: "SBJSharing"),
-        ]),
-        .testTarget(name: "SBJDataDefinitionReportTests", dependencies: ["SBJDataDefinitionReport"]),
+        ])
     ]
 )

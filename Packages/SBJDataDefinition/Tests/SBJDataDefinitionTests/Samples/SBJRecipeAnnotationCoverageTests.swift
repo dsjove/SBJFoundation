@@ -18,6 +18,24 @@ struct SBJRecipeAnnotationCoverageTests {
         #expect(type.sbjPresentationProperties.contains { $0.name == "Editor Display Name" })
     }
 
+    @Test func recipeCourseUsesTypeDefaultsAndPropertyOverrides() {
+        let shared = SBJStructureSampleCourse.definitionTypeInfo
+        let course = SBJStructureSampleModel.propertyInfo(for: \.course)
+        let optional = SBJStructureSampleModel.propertyInfo(for: \.optionalCourse)
+
+        #expect(shared.summary == "The meal category for a recipe.")
+        #expect(course?.summary == "The course where this recipe is normally served.")
+        #expect(course?.title == shared.title)
+        #expect(course?.details == shared.details)
+        #expect(course?.accessibilityHint == shared.accessibilityHint)
+        #expect(optional?.title == shared.title)
+        #expect(optional?.summary == shared.summary)
+        #expect(optional?.details == shared.details)
+        #expect(optional?.accessibilityHint == shared.accessibilityHint)
+        #expect(SBJStructureSampleModel._propertyInfo(for: \.course) == nil)
+        #expect(SBJStructureSampleModel._propertyInfo(for: \.optionalCourse) == nil)
+    }
+
     @Test func associatedEnumStressCasesRemainRepresented() {
         let cases = SBJStructureSampleCookingInstruction.sbjAssociatedCases
         #expect(cases.map(\.sourceName) == ["adjustTemperature", "oven", "rest", "substitutions"])

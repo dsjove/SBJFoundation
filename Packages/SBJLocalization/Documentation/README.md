@@ -8,7 +8,7 @@
 
 | Layer | Type / API | Actual responsibility |
 | --- | --- | --- |
-| Property declaration | `SBJPropertyInfo` | `title`, `summary`, `details`, `symbol`, `accessibilityLabel`, `accessibilityHint`; no instance value |
+| Property declaration | `SBJPropertyInfo` | `title`, `summary`, `details`, `symbol`, `accessibilityLabel`, `accessibilityHint`; `.accessibility` resolves label as `accessibilityLabel ?? title` and hint as `accessibilityHint ?? summary`; no instance value |
 | Runtime model value | `SBJTextPresentable` | `presentedValue`, `abbreviation`, `multiLineDescription`, optional `accessibilityValue` |
 | Combined result | `AccessibleItem` | Optional label, hint and value |
 | Structured property access | `SBJStructured.accessibilityItem(for:)` in **SBJDataDefinition** | Combines property info and runtime presentation for a key path; returns `nil` when neither source exists |
@@ -29,7 +29,7 @@ Current defaults: `abbreviation` is `presentedValue`; `multiLineDescription` rep
 
 ## Property metadata and accessibility
 
-`SBJPropertyInfo` describes a declaration; it never contains or derives the current property value. Use generated `@SBJPropertyInfo` / `@SBJStructure` key-path lookup where applicable.
+`SBJPropertyInfo` describes a declaration; it never contains or derives the current property value. Its `accessibility` accessor defaults the spoken label to `title` and hint to `summary` only when the explicit corresponding field is `nil`. It never uses `details` as a hint, and it does not modify the stored metadata. Use generated `@SBJPropertyInfo` / `@SBJStructure` key-path lookup where applicable.
 
 ```swift
 // model is SBJStructured and its property has declaration metadata

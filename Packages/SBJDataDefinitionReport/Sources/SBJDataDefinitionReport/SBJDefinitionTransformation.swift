@@ -31,7 +31,6 @@ public struct SBJDefinitionProperty {
     public let constraints: [SBJPropertyConstraint]
     public let hints: [SBJPropertyHint]
     public let declarationIndex: Int
-    public let isStored: Bool
 
     public var title: String? {
         guard let supplied = info?.title, !supplied.isEmpty, supplied != swiftIdentifier else { return nil }
@@ -128,7 +127,7 @@ public struct SBJDefinitionCatalog {
                     swiftIdentifier: field.sourceName, displayName: field.displayName,
                     declaredType: field.valueType, kind: field.kind,
                     info: field.info, constraints: field.constraints, hints: field.hints,
-                    declarationIndex: field.ordinal, isStored: true)
+                    declarationIndex: field.ordinal)
             }
             if options.propertySort == .alphabetical {
                 fields.sort { Self.comesFirst($0.swiftIdentifier, $0.declarationIndex,

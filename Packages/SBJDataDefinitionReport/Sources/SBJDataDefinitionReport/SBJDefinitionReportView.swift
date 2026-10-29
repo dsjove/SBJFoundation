@@ -10,14 +10,16 @@ import SBJDataDefinition
 public struct SBJDefinitionReportView: View {
     public let catalog: SBJDefinitionCatalog
     public let pageLayout: PageLayout
+    public let title: String
 
-    @State private var presentation = PDFPresentationController<String>()
+    @State private var presentation = PDFPresentationController<String>(layout: .verticalSinglePage)
     @State private var exportURL: URL?
     @State private var typeSort: SBJDefinitionSort
     @State private var propertySort: SBJDefinitionSort
     @State private var caseSort: SBJDefinitionSort
 
-    public init(catalog: SBJDefinitionCatalog, pageLayout: PageLayout = .init()) {
+    public init(catalog: SBJDefinitionCatalog, pageLayout: PageLayout = .init(), title: String = "Data Definitions") {
+        self.title = title
         self.catalog = catalog
         self.pageLayout = pageLayout
         _typeSort = State(initialValue: catalog.options.typeSort)
@@ -28,8 +30,15 @@ public struct SBJDefinitionReportView: View {
     public var body: some View {
         PDFPresentationView(presentation: presentation)
             .toolbar {
-                ToolbarItemGroup(placement: .automatic) {
+                ToolbarItem(placement: .topBarLeading) {
                     PDFPageControlView(controller: presentation.continuousController)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text(title)
+                        .font(.headline)
+                        .lineLimit(1)
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Picker("Types", selection: $typeSort) {
                             Text("Alphabetical").tag(SBJDefinitionSort.alphabetical)
@@ -47,7 +56,7 @@ public struct SBJDefinitionReportView: View {
                         Label("Sort report", systemImage: "arrow.up.arrow.down")
                     }
                     if let exportURL {
-                        ShareLink(item: exportURL, preview: SharePreview("Data Definition Report")) {
+                        ShareLink(item: exportURL, preview: SharePreview(title)) {
                             Label("Share PDF", systemImage: "square.and.arrow.up")
                         }
                         .accessibilityLabel("Share PDF report")
@@ -56,7 +65,7 @@ public struct SBJDefinitionReportView: View {
             }
             .task(id: sortOptions) {
                 let result = SBJDefinitionPDFReport.makePDFResult(
-                    catalog: catalog.sorted(using: sortOptions), pageLayout: pageLayout)
+                    catalog: catalog.sorted(using: sortOptions), pageLayout: pageLayout, title: title)
                 presentation.update(PDFPresentationUpdate(
                     content: .init(document: result.document, positions: result.positions)))
                 exportURL = Self.exportFile(for: result.data)

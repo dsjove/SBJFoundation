@@ -364,3 +364,14 @@ annotation for individual scalar/POD properties when a domain-specific sentinel
 (e.g. `0`, `false`, or a particular enum case) intentionally means *empty*.
 This would be opt-in, scoped to a property, and must not change the default
 semantics for scalar values throughout the framework.
+
+
+## Reusable type documentation
+
+`SBJDefinitionTypeInfoProviding.definitionTypeInfo` supplies defaults to properties
+whose declared value type adopts the protocol. `SBJPropertyInfo` resolves each
+missing attribute independently; declarations remain immutable and explicit
+property annotations take priority. `Optional<Wrapped>` forwards the wrapped
+provider. This is independent of validation rules and presentation annotations.
+
+Accessibility information is not automatically printed in the Data Definition PDF.

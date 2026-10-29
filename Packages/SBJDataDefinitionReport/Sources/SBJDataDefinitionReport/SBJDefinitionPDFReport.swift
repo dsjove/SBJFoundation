@@ -22,88 +22,202 @@ public enum SBJDefinitionPDFReport {
         pageLayout: PageLayout = .init(),
         title: String = "Data Definitions"
     ) -> PDFRenderResult {
-        let body = content(catalog)
+        let body = content(catalog, title: title)
         return PDFGenerator(pageLayout: pageLayout, title: title,
                             creator: "SBJDataDefinitionReport")
-            .form(body)
+            .form(body, chrome: PageChrome(footer: JCSPageNumber(font: .systemFont(ofSize: 8)), contentInsets: Insets(bottom: 8), footerGap: 5))
     }
 
-    private static func content(_ catalog: SBJDefinitionCatalog) -> Grid {
+    // The report is intentionally constructed from public SBJLayout renderables.
+    // Each row remains an independent pagination unit, preserving section positions.
+    private static func content(_ catalog: SBJDefinitionCatalog, title: String) -> Grid {
         var nodes: [Renderables.Node] = []
-        func add(_ text: String, font: UIFont, color: UIColor = .label,
-                 section: String? = nil) {
-            // Each record is an individual pagination unit; a long definition
-            // can continue on the next page without duplicating its parent type.
-            let item = JCSText(verbatim: text, font: font, color: color,
-                               lines: nil, lineBreakMode: .byWordWrapping)
+        let ink = UIColor(red: 0.12, green: 0.20, blue: 0.32, alpha: 1)
+        let blue = UIColor(red: 0.15, green: 0.32, blue: 0.52, alpha: 1)
+        let muted = UIColor(red: 0.39, green: 0.45, blue: 0.52, alpha: 1)
+
+        // Property metadata is accumulated and rendered as ONE two-column table.
+        // Rows share identical columns, instead of sizing labels independently.
+        var insideProperty = false
+        var firstPropertyRow = false
+        var propertyMetadata: [(String, String)] = []
+        func flushPropertyMetadata() {
+            guard !propertyMetadata.isEmpty else { return }
+            var cells: [Grid.Cell] = []
+            for (label, value) in propertyMetadata {
+                cells.append(JCSText(verbatim: label.uppercased(),
+                                     font: .boldSystemFont(ofSize: 8), color: muted))
+                cells.append(JCSText(verbatim: value, font: .systemFont(ofSize: 8.5),
+                                     color: ink, lines: nil, lineBreakMode: .byWordWrapping))
+            }
+            let table = Grid(table: [.init(.intrinsic(), align: .leftTop, gap: 8),
+                                     .init(.fill(1), align: .leftTop)],
+                             rows: .init(align: .leftTop, gap: 2)) {
+                Renderables(cells.map { .content($0) })
+            }
+            nodes.append(.group(PaginationGroup(behavior: .keepWith) { table }))
+            propertyMetadata.removeAll()
+        }
+        func line(_ value: String, size: CGFloat = 9, bold: Bool = false,
+                  color: UIColor? = nil, section: String? = nil) {
+            if insideProperty { flushPropertyMetadata() }
+            let item = JCSText(verbatim: value,
+                               font: bold ? .boldSystemFont(ofSize: size) : .systemFont(ofSize: size),
+                               color: color ?? ink, lines: nil, lineBreakMode: .byWordWrapping)
             if let section {
                 nodes.append(.group(PaginationGroup(sectionID: section) { item }))
             } else {
-                nodes.append(.content(item))
+                let behavior: PaginationBehavior = insideProperty && !firstPropertyRow ? .keepWith : .flow
+                nodes.append(.group(PaginationGroup(behavior: behavior) { item }))
+                if insideProperty { firstPropertyRow = false }
             }
         }
-        add("Data Definition Report", font: .boldSystemFont(ofSize: 19))
-        add("\(catalog.types.count) registered definitions", font: .systemFont(ofSize: 10), color: .darkGray)
+        func rule(color: UIColor) {
+            if insideProperty { flushPropertyMetadata() }
+            nodes.append(.group(PaginationGroup(behavior: .keepWith) {
+                DefinitionReportRule(stroke: color)
+            }))
+        }
+        func metadata(_ label: String, _ value: String?, keepWithPrevious: Bool = false) {
+            guard let value, !value.isEmpty else { return }
+            if insideProperty {
+                propertyMetadata.append((label, value))
+                return
+            }
+            let row = Grid(table: [.init(.intrinsic(), align: .leftTop, gap: 8),
+                                   .init(.fill(1), align: .leftTop)],
+                           rows: .init(align: .leftTop, gap: 0)) {
+                JCSText(verbatim: label.uppercased(), font: .boldSystemFont(ofSize: 8), color: muted)
+                JCSText(verbatim: value, font: .systemFont(ofSize: 8.5), color: ink,
+                        lines: nil, lineBreakMode: .byWordWrapping)
+            }
+            nodes.append(.group(PaginationGroup(behavior: keepWithPrevious ? .keepWith : .flow) { row }))
+        }
+        func readable(_ identifier: String) -> String {
+            let characters = Array(identifier.replacingOccurrences(of: "_", with: " "))
+            var output = ""
+            for index in characters.indices {
+                let c = characters[index]
+                if index > 0 && c.isUppercase && (characters[index-1].isLowercase || characters[index-1].isNumber) {
+                    output.append(" ")
+                }
+                output.append(c)
+            }
+            return output
+        }
+        func declarationIfDifferent(_ declaration: String, from title: String) -> Bool {
+            guard declaration != title else { return false }
+            metadata("Declaration", declaration, keepWithPrevious: true)
+            return true
+        }
+        let structureCount = catalog.types.filter {
+            if case .structure = $0.content { return true }; return false
+        }.count
+        let propertyCount = catalog.types.reduce(0) { count, definition in
+            if case .structure(let fields) = definition.content { return count + fields.count }
+            return count
+        }
+        let enumCount = catalog.types.count - structureCount
+        let caseCount = catalog.types.reduce(0) { count, definition in
+            if case .enumeration(let values) = definition.content { return count + values.count }
+            return count
+        }
+        line("DATA DEFINITION / SCHEMA REFERENCE", size: 9, bold: true, color: blue)
+        line(title, size: 22, bold: true)
+        line("Compiled declaration metadata · No model instances or runtime values", size: 9, color: muted)
+        line("\(catalog.types.count) TYPES     \(structureCount) STRUCTURES     \(enumCount) ENUMERATIONS     \(propertyCount) PROPERTIES     \(caseCount) CASES", size: 9, bold: true, color: blue)
+        let constraintCount = catalog.types.reduce(0) { sum, definition in
+            if case .structure(let fields) = definition.content {
+                return sum + fields.reduce(0) { $0 + $1.constraints.count }
+            }
+            return sum
+        }
+        let presentationCount = catalog.types.reduce(0) { sum, definition in
+            if case .structure(let fields) = definition.content {
+                return sum + fields.reduce(0) { $0 + $1.hints.count }
+            }
+            return sum
+        }
+        let documentedCount = catalog.types.reduce(0) { sum, definition in
+            switch definition.content {
+            case .structure(let fields):
+                return sum + fields.filter { $0.info != nil }.count
+            case .enumeration(let cases):
+                return sum + cases.filter { $0.info != nil }.count
+            }
+        }
+        line("ANNOTATIONS  /  \(constraintCount) validation rules  ·  \(presentationCount) presentation hints  ·  \(documentedCount) documented declarations", size: 9, color: muted)
+        rule(color: blue)
         for (index, definition) in catalog.types.enumerated() {
-            add(" ", font: .systemFont(ofSize: 9))
-            add(definition.swiftName, font: .boldSystemFont(ofSize: 15),
-                section: "type-\(index)")
+            line(" ", size: 4)
+            let shortName = definition.swiftName.split(separator: ".").last.map(String.init) ?? definition.swiftName
+            line(String(format: "%02d  %@", index + 1, readable(shortName)), size: 16, bold: true,
+                 color: blue, section: "type-\(index)")
             switch definition.content {
             case .structure(let properties):
-                add("STRUCTURE · \(properties.count) properties", font: .systemFont(ofSize: 9), color: .darkGray)
-                for field in properties {
-                    let label = field.title.map { "\($0) (\(field.swiftIdentifier))" } ?? field.swiftIdentifier
-                    add("\(label): \(field.typeName)", font: .boldSystemFont(ofSize: 10))
-                    if field.displayName != field.swiftIdentifier && field.title == nil {
-                        add("Display name: \(field.displayName)", font: .systemFont(ofSize: 9))
+                metadata("Declaration", "struct \(SBJDefinitionTypeDisplay.format(definition.swiftName)) { \(properties.count) properties }", keepWithPrevious: true)
+                rule(color: muted)
+                for (number, field) in properties.enumerated() {
+                    insideProperty = true
+                    firstPropertyRow = true
+                    let title = field.title ?? field.displayName
+                    line("\(number + 1).  \(title)", size: 11, bold: true, color: ink)
+                    let hasDeclaration = declarationIfDifferent("\(field.swiftIdentifier): \(SBJDefinitionTypeDisplay.format(field.typeName))", from: title)
+                    if let summary = field.info?.summary {
+                        metadata("Summary", summary, keepWithPrevious: !hasDeclaration)
                     }
-                    let details = ["Kind: \(field.kind)",
-                                   field.isStored ? "Stored" : "Presentation-only"]
-                    add(details.joined(separator: " · "), font: .systemFont(ofSize: 9))
-                    // Human-readable property documentation comes from the model's
-                    // SBJPropertyInfo. Intentionally do not emit accessibility copy.
-                    if let summary = field.info?.summary, !summary.isEmpty {
-                        add("Summary: \(summary)", font: .systemFont(ofSize: 9))
+                    if let details = field.info?.details {
+                        metadata("Description", details, keepWithPrevious: !hasDeclaration && field.info?.summary == nil)
                     }
-                    if let details = field.info?.details, !details.isEmpty {
-                        add("Detail: \(details)", font: .systemFont(ofSize: 9))
-                    }
-                    if let symbol = field.info?.symbol {
-                        add("Symbol: \(String(describing: symbol))", font: .systemFont(ofSize: 9))
-                    }
+                    if let symbol = field.info?.symbol { metadata("Symbol", String(describing: symbol)) }
                     if !field.constraints.isEmpty {
-                        add("Constraints: \(field.constraints.map { String(describing: $0) }.joined(separator: ", "))",
-                            font: .systemFont(ofSize: 9))
+                        for constraint in field.constraints { metadata("Validation", constraint.description) }
                     }
                     if !field.hints.isEmpty {
-                        add("Presentation: \(field.hints.map { String(describing: $0) }.joined(separator: ", "))",
-                            font: .systemFont(ofSize: 9))
+                        for value in field.hints { metadata("Presentation", value.description) }
                     }
+                    flushPropertyMetadata()
+                    insideProperty = false
                 }
             case .enumeration(let cases):
-                add("ENUMERATION · \(cases.count) cases", font: .systemFont(ofSize: 9), color: .darkGray)
-                for value in cases {
-                    let label = value.title.map { "\($0) (\(value.swiftIdentifier))" } ?? value.swiftIdentifier
-                    add(label + (value.rawValueDescription.map { " = " + $0 } ?? ""),
-                        font: .boldSystemFont(ofSize: 10))
-                    if let summary = value.info?.summary, !summary.isEmpty {
-                        add("Summary: \(summary)", font: .systemFont(ofSize: 9))
+                metadata("Declaration", "enum \(SBJDefinitionTypeDisplay.format(definition.swiftName)) { \(cases.count) cases }", keepWithPrevious: true)
+                rule(color: muted)
+                for (number, value) in cases.enumerated() {
+                    insideProperty = true
+                    firstPropertyRow = true
+                    line("\(number + 1).  \(value.title ?? readable(value.swiftIdentifier))", size: 11, bold: true)
+                    let hasDeclaration = declarationIfDifferent(value.swiftIdentifier, from: value.title ?? readable(value.swiftIdentifier))
+                    metadata("Raw value", value.rawValueDescription, keepWithPrevious: !hasDeclaration)
+                    if let summary = value.info?.summary {
+                        metadata("Summary", summary, keepWithPrevious: !hasDeclaration && (value.rawValueDescription?.isEmpty ?? true))
                     }
-                    if let details = value.info?.details, !details.isEmpty {
-                        add("Detail: \(details)", font: .systemFont(ofSize: 9))
+                    if let details = value.info?.details { metadata("Description", details) }
+                    if let symbol = value.info?.symbol { metadata("Symbol", String(describing: symbol)) }
+                    if !value.payloads.isEmpty {
+                        for payload in value.payloads {
+                            metadata("Associated value", "\(payload.name): \(SBJDefinitionTypeDisplay.format(payload.typeName))")
+                        }
                     }
-                    if let symbol = value.info?.symbol {
-                        add("Symbol: \(String(describing: symbol))", font: .systemFont(ofSize: 9))
-                    }
-                    for payload in value.payloads {
-                        add("    \(payload.name): \(payload.typeName)", font: .systemFont(ofSize: 9))
-                    }
+                    flushPropertyMetadata()
+                    insideProperty = false
                 }
             }
         }
         return Grid(vertFlow: .init(.fill(1), align: .leftTop),
-                    rows: .init(gap: 5)) { Renderables(nodes) }
+                    rows: .init(gap: 3)) { Renderables(nodes) }
     }
+
 }
 
+/// Measured horizontal rule. JCSLine is a drawing primitive, not a renderable.
+private struct DefinitionReportRule: Renderable {
+    let stroke: UIColor
+    func measure(bounds: CGSize) -> CGSize { CGSize(width: bounds.width, height: 1) }
+    func render(in allocated: CGRect, measured: CGSize, align: SBJLayout.Alignment) {
+        let y = allocated.midY
+        JCSLine(stroke: stroke, lineWidth: 0.5).draw(
+            from: CGPoint(x: allocated.minX, y: y),
+            to: CGPoint(x: allocated.maxX, y: y))
+    }
+}
 #endif

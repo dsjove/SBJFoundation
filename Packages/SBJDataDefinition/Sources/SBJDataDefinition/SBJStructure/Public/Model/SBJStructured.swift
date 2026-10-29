@@ -51,7 +51,7 @@ public extension SBJStructured {
     }
 
     static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
-        _propertyInfo(for: keyPath)
+        SBJDefinitionTypeInfo.resolve(_propertyInfo(for: keyPath), for: Value.self)
     }
 
     static func _propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? { nil }

@@ -10,7 +10,15 @@ import SBJLocalization
 /// preview, and SBJStructure integration tests so those surfaces exercise the
 /// same annotations, metadata, recursive editing, validation, comparison, and
 /// Swift-source-export behavior.
-public enum SBJStructureSampleCourse: String, Codable, CaseIterable, Hashable {
+/// Shared documentation for every Recipe property whose value is a course.
+public enum SBJStructureSampleCourse: String, Codable, CaseIterable, Hashable, SBJDefinitionTypeInfoProviding {
+  public static let definitionTypeInfo = SBJPropertyInfo(
+    title: "Course",
+    summary: "The meal category for a recipe.",
+    details: "Breakfast, lunch, dinner, or dessert.",
+    accessibilityHint: "Choose the meal category"
+  )
+
   case breakfast
   case lunch
   case dinner

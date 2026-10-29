@@ -68,3 +68,12 @@ The PDF renders `SBJPropertyInfo.summary`, `SBJPropertyInfo.details`, and
 `SBJPropertyInfo.symbol` when present for each property and enum case. Long
 descriptions wrap and paginate with the normal SBJLayout flow. Accessibility
 metadata is deliberately omitted from the report.
+
+
+## Type names in PDFs
+
+The PDF report formats standard-library types without the redundant `Swift.`
+module prefix, including within nested generic declarations and enum payloads.
+Custom type/module qualifiers are preserved. The underlying catalog retains
+fully-qualified reflected type identities; formatting only happens when drawing.
+The `SBJDefinitionTypeDisplayTests` suite covers this presentation rule.

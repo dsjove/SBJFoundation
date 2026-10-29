@@ -95,7 +95,9 @@ public struct PDFGenerator {
 		let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
 		var positions: [String: PaginationPosition] = [:]
 
-		let data = renderer.pdfData { context in
+		let collector = PDFFormCollector()
+		let data = PDFFormEnvironment.$collector.withValue(collector) {
+		 renderer.pdfData { context in
 			var openPage: PageContext?
 			let pagination = Pagination(
 				layout: pageLayout,
@@ -110,6 +112,7 @@ public struct PDFGenerator {
 
 				context.beginPage()
 				let currentPage = pagination.currentPageContext
+				if let currentPage { collector.pageBegan(currentPage.index) }
 				openPage = currentPage
 
 				withPage(currentPage) {
@@ -143,8 +146,11 @@ public struct PDFGenerator {
 				}
 			}
 			positions = pagination.positions
+		 }
 		}
-		return (data, positions)
+		guard !collector.widgets.isEmpty, let document = PDFDocument(data: data) else { return (data, positions) }
+		PDFFormWriter.install(collector, in: document)
+		return (document.dataRepresentation() ?? data, positions)
 	}
 
 	private func resolve(chrome: PageChrome, jargon: Jargon) -> ResolvedPageChrome {

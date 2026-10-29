@@ -26,8 +26,9 @@ public struct SBJPropertyInfo: Sendable, Equatable {
         self.accessibilityHint = accessibilityHint
     }
 
-    /// Declaration-site accessibility metadata only.
+    /// Resolved declaration-site accessibility: explicit overrides, then title and summary.
+    /// `details` is intentionally not used as an accessibility hint.
     public var accessibility: AccessibleItem {
-        AccessibleItem(label: accessibilityLabel, hint: accessibilityHint)
+        AccessibleItem(label: accessibilityLabel ?? title, hint: accessibilityHint ?? summary)
     }
 }
