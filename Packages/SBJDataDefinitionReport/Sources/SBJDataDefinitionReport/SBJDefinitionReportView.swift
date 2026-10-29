@@ -33,11 +33,6 @@ public struct SBJDefinitionReportView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     PDFPageControlView(controller: presentation.continuousController)
                 }
-                ToolbarItem(placement: .principal) {
-                    Text(title)
-                        .font(.headline)
-                        .lineLimit(1)
-                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Picker("Types", selection: $typeSort) {
