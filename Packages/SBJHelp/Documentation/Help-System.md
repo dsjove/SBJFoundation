@@ -129,7 +129,7 @@ SBJFoundation trigger, sheet, and presenter pipeline.
 
 Where `SwiftUI.HelpLink` is available, `SBJHelpLink` uses it. The SwiftUI API is explicitly
 unavailable in the iOS SDK, and Mac Catalyst compiles against that SDK surface. On iOS and Catalyst,
-`SBJHelpLink` therefore uses an `SBJSymbolButton` with `SBJSymbology.help` as the
+`SBJHelpLink` therefore uses an `SBJSymbolButton` with `SBJHelpSymbology.help` as the
 platform fallback. This is a presentation fallback only; help behavior and content are identical.
 
 The platform conditional must remain compile-time. Referencing `SwiftUI.HelpLink` in an iOS or

@@ -1,6 +1,7 @@
 #if !os(watchOS)
 import SwiftUI
 import SBJLocalization
+import SBJUIVocabulary
 
 /// Shared SwiftUI page-navigation and text-search chrome for an SBJLayout PDF controller.
 ///
@@ -28,16 +29,10 @@ public struct PDFPageControlView<Controller: PDFPageNavigating & PDFTextSearchin
     private var pageControls: some View {
         let pageRange = controller.currentPage
 
-        Button(action: controller.goToFirstPage) {
-            Image(symbol: .system("backward.end"))
-        }
-        .accessibilityLabel("Go to first page")
+        SBJSymbolButton(SBJLayoutSymbology.firstPageLabel, action: controller.goToFirstPage)
         .disabled(!pageRange.canGoBackward)
 
-        Button(action: controller.goToPreviousPage) {
-            Image(symbol: .system("chevron.left"))
-        }
-        .accessibilityLabel("Go to previous page")
+        SBJSymbolButton(SBJLayoutSymbology.previousPageLabel, action: controller.goToPreviousPage)
         .disabled(!pageRange.canGoBackward)
 
         Text(pageRange.description)
@@ -45,25 +40,16 @@ public struct PDFPageControlView<Controller: PDFPageNavigating & PDFTextSearchin
             .fixedSize()
             .accessibilityLabel(pageRange.pageAccessibilityLabel)
 
-        Button(action: controller.goToNextPage) {
-            Image(symbol: .system("chevron.right"))
-        }
-        .accessibilityLabel("Go to next page")
+        SBJSymbolButton(SBJLayoutSymbology.nextPageLabel, action: controller.goToNextPage)
         .disabled(!pageRange.canGoForward)
 
-        Button(action: controller.goToLastPage) {
-            Image(symbol: .system("forward.end"))
-        }
-        .accessibilityLabel("Go to last page")
+        SBJSymbolButton(SBJLayoutSymbology.lastPageLabel, action: controller.goToLastPage)
         .disabled(!pageRange.canGoForward)
 
-        Button {
+        SBJSymbolButton(SBJLayoutSymbology.searchPDFLabel) {
             controller.isSearchPresented = true
             focusSearchField()
-        } label: {
-            Image(symbol: .system("magnifyingglass"))
         }
-        .accessibilityLabel("Search PDF")
     }
 
     @ViewBuilder
@@ -84,22 +70,13 @@ public struct PDFPageControlView<Controller: PDFPageNavigating & PDFTextSearchin
             .fixedSize()
             .accessibilityLabel(searchMatchAccessibilityLabel)
 
-        Button(action: controller.goToPreviousSearchMatch) {
-            Image(symbol: .system("chevron.up"))
-        }
-        .accessibilityLabel("Go to previous search result")
+        SBJSymbolButton(SBJLayoutSymbology.previousSearchMatchLabel, action: controller.goToPreviousSearchMatch)
         .disabled(controller.searchMatchCount == 0)
 
-        Button(action: controller.goToNextSearchMatch) {
-            Image(symbol: .system("chevron.down"))
-        }
-        .accessibilityLabel("Go to next search result")
+        SBJSymbolButton(SBJLayoutSymbology.nextSearchMatchLabel, action: controller.goToNextSearchMatch)
         .disabled(controller.searchMatchCount == 0)
 
-        Button(action: closeSearch) {
-            Image(symbol: .system("xmark"))
-        }
-        .accessibilityLabel("Close search")
+        SBJSymbolButton(SBJLayoutSymbology.closeSearchLabel, action: closeSearch)
     }
 
     private var searchMatchDescription: String {

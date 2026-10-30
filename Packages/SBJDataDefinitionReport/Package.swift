@@ -9,12 +9,16 @@ let package = Package(
         .package(path: "../SBJDataDefinition"),
         .package(path: "../SBJLayout"),
         .package(path: "../SBJSharing"),
+        .package(path: "../SBJLocalization"),
+        .package(path: "../SBJUIVocabulary"),
     ],
     targets: [
         .target(name: "SBJDataDefinitionReport", dependencies: [
             .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
             .product(name: "SBJLayout", package: "SBJLayout"),
             .product(name: "SBJSharing", package: "SBJSharing"),
+            .product(name: "SBJLocalization", package: "SBJLocalization"),
+            .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
         ])
     ]
 )

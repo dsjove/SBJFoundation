@@ -15,7 +15,6 @@ public enum SBJSymbology: SBJSymbolSet {
         "checked": .system("checkmark.square.fill"),
         "unchecked": .system("square"),
         "information": .system("info.circle"),
-        "issues": .system("exclamationmark.circle.fill"),
         "moveUp": .system("arrow.up.circle"),
         "moveDown": .system("arrow.down.circle"),
         "moveToFirst": .system("arrow.up.to.line"),
@@ -26,26 +25,10 @@ public enum SBJSymbology: SBJSymbolSet {
         "share": .system("square.and.arrow.up"),
         "link": .system("link.circle"),
         "duplicate": .system("plus.square.on.square"),
-        "lock": .system("lock"),
-        "unlock": .system("lock.open"),
         "more": .system("ellipsis.circle"),
-        "sections": .system("rectangle.grid.1x3"),
-        "theme": .system("paintpalette"),
-        "pageLayout": .system("inset.filled.rectangle.portrait"),
-        "documentSettings": .system("doc.badge.gearshape"),
-        "importDocument": .system("arrow.down.document"),
-        "exportDocument": .system("arrow.up.document"),
-        "showInFolder": .system("folder"),
-        "swiftSource": .system("swift"),
         "open": .system("arrow.up.forward.app"),
         "unavailableLink": .system("xmark.circle.fill"),
-        "help": .system("questionmark.circle"),
-        "about": .system("info.circle"),
         "dismiss": .system("checkmark.circle"),
-        "helpUnavailable": .system("questionmark.circle"),
-        "unsupportedHelp": .system("doc.questionmark"),
-        "scrollPageDown": .system("chevron.down"),
-        "scrollToTop": .system("chevron.up.2"),
         "disclosureOpened": .system("chevron.down"),
         "disclosureClosed": .system("chevron.right"),
         "close": .system("xmark.circle"),
@@ -57,5 +40,29 @@ public enum SBJSymbology: SBJSymbolSet {
 
     public static func disclosure(expanded: Bool) -> SBJSymbol {
         expanded ? self.disclosureOpened : self.disclosureClosed
+    }
+}
+
+public extension SBJSymbology {
+    static var addLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.add, title: "Add")
+    }
+    static var removeLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.remove, title: "Remove")
+    }
+    static var applyLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.apply, title: "Apply")
+    }
+    static var deleteLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.delete, title: "Delete")
+    }
+    static var editLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.edit, title: "Edit")
+    }
+    static var closeLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.close, title: "Close")
+    }
+    static var shareLabel: LabeledSymbol {
+        LabeledSymbol(symbol: self.share, title: "Share")
     }
 }

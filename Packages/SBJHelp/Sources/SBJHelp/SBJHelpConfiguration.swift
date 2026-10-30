@@ -27,7 +27,7 @@ public struct SBJHelpConfiguration {
         autoPresentAbout: Bool = true,
         applicationSubstitutions: [String: String] = [:],
         substitutions: [String: String] = [:],
-        semanticImages: [String: SBJSymbol] = SBJSymbology.all,
+        semanticImages: [String: SBJSymbol] = SBJHelpConfiguration.standardSemanticImages,
         embeddedAssets: [String: SBJBundledContentReference] = [:]
     ) {
         self.aboutAsset = aboutAsset
@@ -55,6 +55,13 @@ public struct SBJHelpConfiguration {
     /// Later sets override duplicate keys; standard UI symbols are included by default.
     public mutating func addSymbolSet<S: SBJSymbolSet>(_ type: S.Type) {
         semanticImages.merge(type.all) { _, new in new }
+    }
+
+    /// Common UI symbols and help-owned symbols, composed in one place.
+    public static var standardSemanticImages: [String: SBJSymbol] {
+        var images = SBJSymbology.all
+        images.merge(SBJHelpSymbology.all) { _, help in help }
+        return images
     }
 
     public static var standard: Self { .init() }

@@ -66,7 +66,7 @@ public struct SBJHelpSheet: View {
                     if availableAboutAsset != nil {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button { showAboutSheet = true } label: {
-                                Label("About", symbol: SBJSymbology.about)
+                                Label(SBJHelpSymbology.aboutLabel)
                             }
                         }
                     }
@@ -100,13 +100,13 @@ public struct SBJHelpSheet: View {
             presenter.makeView(source: source)
         } else if resolvedSource == nil {
             ContentUnavailableView {
-                Label("Help Unavailable", symbol: SBJSymbology.helpUnavailable)
+                Label(SBJHelpSymbology.helpUnavailableLabel)
             } description: {
                 Text("Help is unavailable for this part of the app.")
             }
         } else {
             ContentUnavailableView {
-                Label("Unsupported Help Format", symbol: SBJSymbology.unsupportedHelp)
+                Label(SBJHelpSymbology.unsupportedHelpLabel)
             } description: {
                 Text("This help format cannot be displayed.")
             }

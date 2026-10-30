@@ -1,5 +1,6 @@
 import SBJDataDefinition
 import SBJUIVocabulary
+import SBJDataDefinitionReport
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
@@ -9,6 +10,7 @@ struct SBJEditorSearchBar: View {
     @Binding var criteria: SBJStructuralSearchCriteria
     let hasIssues: Bool?
     let showIssues: () -> Void
+    let showStructure: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -32,12 +34,18 @@ struct SBJEditorSearchBar: View {
             }
             .sbjActiveSearch(!criteria.isEmpty)
 
+			SBJSymbolButton(
+                SBJDataDefinitionReportSymbology.showDefinitionReport,
+                accessibilityLabel: "Show Structure report",
+                action: showStructure
+            )
+
             SBJIssueButton(
                 hasIssues: hasIssues,
                 accessibilityLabel: hasIssues == nil ? "Check issues" : "Show issues",
                 action: showIssues
             )
-        }
+		}
     }
 }
 #endif

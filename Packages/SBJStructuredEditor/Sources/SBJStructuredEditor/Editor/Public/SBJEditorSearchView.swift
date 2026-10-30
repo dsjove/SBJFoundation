@@ -2,6 +2,7 @@
 import SwiftUI
 import SBJFileResources
 import SBJUIVocabulary
+import SBJDataDefinitionReport
 
 public extension SBJBundledContentReference {
     static var structuredEditorSearchHelp: SBJBundledContentReference {
@@ -49,7 +50,8 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
             searchText: $draftSearchText,
             criteria: $model.searchCriteria,
             hasIssues: presentationModel.hasIssues,
-            showIssues: refreshIssuesAndShow
+            showIssues: refreshIssuesAndShow,
+            showStructure: { presentationModel.isShowingStructure = true}
         )
         .sheet(isPresented: $model.isShowingIssues) {
             SBJEditorIssueList(issues: presentationModel.issues ?? []) { issue in
@@ -57,6 +59,22 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
                 presentationModel.isShowingIssues = false
             }
         }
+		.sheet(isPresented: $model.isShowingStructure) {
+			NavigationStack {
+				SBJDefinitionReportView(
+					catalog: SBJDefinitionCatalog(Value.self),
+					title: "Character Definition"
+				)
+				.navigationBarTitleDisplayMode(.inline)
+				.toolbar {
+					ToolbarItem(placement: .confirmationAction) {
+						Button("Done") { presentationModel.isShowingStructure = false }
+					}
+				}
+			}
+			.frame(idealWidth: 760, idealHeight: 900)
+			.presentationDetents([.large])
+		}
         .task(id: presentationModel.issueResolutionRevision) {
             // The first pass is immediate. Later invalidations are coalesced
             // so many row-validation changes cause only one diagnostic pass.

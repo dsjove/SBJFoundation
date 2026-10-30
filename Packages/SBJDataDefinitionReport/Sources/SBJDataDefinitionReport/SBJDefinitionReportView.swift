@@ -4,6 +4,9 @@ import SwiftUI
 import PDFKit
 import SBJLayout
 import SBJDataDefinition
+import SBJSharing
+import SBJLocalization
+import SBJUIVocabulary
 
 /// Hosts the Layout PDF viewer. No report content is composed in SwiftUI.
 @MainActor
@@ -33,18 +36,18 @@ public struct SBJDefinitionReportView: View {
     }
 
     public var body: some View {
+        SBJSharePresentationHost { sharePresenter in
         PDFPresentationView(presentation: presentation)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     PDFPageControlView(controller: presentation.continuousController)
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
+                    SBJSymbolButton(
+                        SBJLayoutSymbology.pageLayoutLabel
+                    ) {
                         isPageLayoutPresented = true
-                    } label: {
-                        Label("Page Layout", systemImage: "doc.text")
                     }
-                    .accessibilityLabel("Edit report page layout")
                     Menu {
                         Picker("Types", selection: $typeSort) {
                             Text("Alphabetical").tag(SBJDefinitionSort.alphabetical)
@@ -59,12 +62,12 @@ public struct SBJDefinitionReportView: View {
                             Text("Declaration order").tag(SBJDefinitionSort.declaration)
                         }
                     } label: {
-                        Label("Sort report", systemImage: "arrow.up.arrow.down")
+                        Label(SBJDataDefinitionReportSymbology.sortReportLabel)
                     }
                     if let exportURL {
-                        ShareLink(item: exportURL, preview: SharePreview(title)) {
-                            Label("Share PDF", systemImage: "square.and.arrow.up")
-                        }
+                        SBJShareButton("Share PDF", presenter: sharePresenter, prepare: {
+                            SBJSharePayload(exportURL)
+                        })
                         .accessibilityLabel("Share PDF report")
                     }
                 }
@@ -87,6 +90,7 @@ public struct SBJDefinitionReportView: View {
                     content: .init(document: result.document, positions: result.positions)))
                 exportURL = Self.exportFile(for: result.data)
             }
+        }
     }
 
     /// A stable task identity. Do not use JSON text here: JSONEncoder does not
@@ -110,7 +114,7 @@ public struct SBJDefinitionReportView: View {
         SBJDefinitionCatalogOptions(typeSort: typeSort, propertySort: propertySort, caseSort: caseSort)
     }
 
-    /// ShareLink needs a file URL so receiving apps see a PDF, not opaque bytes.
+    /// Sharing needs a file URL so receiving apps see a PDF, not opaque bytes.
     private static func exportFile(for data: Data) -> URL? {
         guard !data.isEmpty else { return nil }
         let url = FileManager.default.temporaryDirectory

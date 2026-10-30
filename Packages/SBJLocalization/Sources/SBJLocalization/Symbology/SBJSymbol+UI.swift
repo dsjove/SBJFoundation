@@ -66,3 +66,18 @@ public extension Label where Title == Text, Icon == Image {
         self = Label { Text(title) } icon: { Image(symbol: symbol) }
     }
 }
+
+/// A semantic label without a prescribed presentation style.
+public extension Label where Title == Text, Icon == Image {
+    init(_ definition: LabeledSymbol) {
+        self = Label {
+            Text(definition.title ?? "")
+        } icon: {
+            Image(symbol: definition.symbol)
+        }
+    }
+
+    init(_ symbol: SBJSymbol) {
+        self.init(LabeledSymbol(symbol: symbol))
+    }
+}

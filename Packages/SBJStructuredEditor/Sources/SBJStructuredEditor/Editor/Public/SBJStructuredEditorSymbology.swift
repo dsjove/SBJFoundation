@@ -3,6 +3,7 @@ import SBJLocalization
 /// Structured editing, field-state, and navigation symbols.
 public enum SBJStructuredEditorSymbology: SBJSymbolSet {
     public static let all: [String: SBJSymbol] = [
+        "issues": .system("exclamationmark.circle.fill"),
         "clearOptional": .system("xmark.circle"),
         "setOptional": .system("circle.dashed"),
         "regenerate": .system("arrow.clockwise.circle"),
@@ -14,11 +15,13 @@ public enum SBJStructuredEditorSymbology: SBJSymbolSet {
 }
 
 import SBJHelp
+import SBJDataDefinitionReport
 
 public extension SBJHelpConfiguration {
 	static var structuredEditorHelp: Self {
 		var configuration = SBJHelpConfiguration.standard
 		configuration.addSymbolSet(SBJStructuredEditorSymbology.self)
+        configuration.addSymbolSet(SBJDataDefinitionReportSymbology.self)
 		return configuration
 	}
 }

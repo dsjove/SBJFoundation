@@ -1,5 +1,6 @@
 import SwiftUI
-import SBJDataDefinition
+import SBJUIVocabulary
+import SBJLocalization
 
 // TODO: editor only?
 @MainActor
@@ -22,7 +23,7 @@ public struct SBJIssueButton: View {
     public var body: some View {
         if hasIssues != false {
             SBJSymbolButton(
-                SBJSymbology.issues,
+                SBJStructuredEditorSymbology.issues,
                 accessibilityLabel: accessibilityLabel,
                 action: action
             )

@@ -21,7 +21,7 @@ extension SBJHelpPackageTests {
         configuration.addSymbolSet(TestSymbology.self)
         XCTAssertEqual(configuration.semanticImages["customAction"], .system("star"))
         XCTAssertEqual(configuration.semanticImages["add"], .system("plus"))
-        XCTAssertEqual(configuration.semanticImages["help"], SBJSymbology.help)
+        XCTAssertEqual(configuration.semanticImages["help"], SBJHelpSymbology.help)
     }
 
     func testInitializerPreservesSuppliedApplicationSubstitutions() {

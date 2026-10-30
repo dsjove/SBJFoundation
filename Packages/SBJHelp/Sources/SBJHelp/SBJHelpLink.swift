@@ -51,7 +51,7 @@ public struct SBJHelpLink: View {
         HelpLink(action: action)
         #else
         Button(action: action) {
-            Label("Help", symbol: SBJSymbology.help)
+            Label(SBJHelpSymbology.helpLabel)
                 .labelStyle(.iconOnly)
         }
         .accessibilityLabel("Help")
@@ -110,7 +110,7 @@ public struct SBJHelpButton: View {
             presenter: presenter
         ) { action in
             Button(action: action) {
-                Label("Help", symbol: SBJSymbology.help)
+                Label(SBJHelpSymbology.helpLabel)
                     .labelStyle(.iconOnly)
             }
             .accessibilityLabel("Help")

@@ -15,6 +15,7 @@ public final class SBJEditorPresentationModel {
     public let expansionOptions: SBJEditorExpansionOptions
 
     public var isShowingIssues: Bool
+    public var isShowingStructure: Bool
     public internal(set) var navigationTarget: SBJEditorNavigationTarget?
     // The cached diagnostic list is the only source of truth for issue status.
     // nil means no diagnostic pass has completed for this editor session.
@@ -26,6 +27,7 @@ public final class SBJEditorPresentationModel {
     public init(
         searchCriteria: SBJStructuralSearchCriteria = .init(),
         isShowingIssues: Bool = false,
+        isShowingStructure: Bool = false,
         navigationTarget: SBJEditorNavigationTarget? = nil,
         formattingOptions: SBJEditorFormattingOptions = .init(),
         expansionOptions: SBJEditorExpansionOptions = .init()
@@ -34,6 +36,7 @@ public final class SBJEditorPresentationModel {
         self.formattingOptions = formattingOptions
         self.expansionOptions = expansionOptions
         self.isShowingIssues = isShowingIssues
+        self.isShowingStructure = isShowingStructure
         self.navigationTarget = navigationTarget
     }
 

@@ -12,6 +12,7 @@ let package = Package(
     products: [.library(name: "SBJStructuredEditor", targets: ["SBJStructuredEditor"])],
     dependencies: [
         .package(path: "../SBJDataDefinition"),
+        .package(path: "../SBJDataDefinitionReport"),
         .package(path: "../SBJUIVocabulary"),
         .package(path: "../SBJLocalization"),
         .package(path: "../SBJFileResources"),
@@ -20,6 +21,7 @@ let package = Package(
     targets: [
         .target(name: "SBJStructuredEditor", dependencies: [
             .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+            .product(name: "SBJDataDefinitionReport", package: "SBJDataDefinitionReport"),
             .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             .product(name: "SBJLocalization", package: "SBJLocalization"),
             .product(name: "SBJFileResources", package: "SBJFileResources"),
@@ -31,6 +33,7 @@ let package = Package(
         .testTarget(name: "SBJStructuredEditorTests", dependencies: [
             "SBJStructuredEditor",
             .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+            .product(name: "SBJDataDefinitionReport", package: "SBJDataDefinitionReport"),
             .product(name: "SBJLocalization", package: "SBJLocalization"),
             .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             .product(name: "SBJFileResources", package: "SBJFileResources"),
