@@ -1,8 +1,8 @@
 import CoreGraphics
 import Testing
-import SBJFoundation
 @testable import SBJLayout
 import SBJUIVocabulary
+@testable import SBJFoundation
 
 @Suite("Tag rendering")
 struct JCSTagTests {

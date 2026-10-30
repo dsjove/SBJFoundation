@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import UniformTypeIdentifiers
 import SBJFileResources
-@testable import SBJFoundation
+@testable import SBJDocuments
 
 @Suite("Package attachment storage")
 struct PackageAttachmentStoreTests {

@@ -75,9 +75,6 @@ let package = Package(
                 .product(name: "SBJLayout", package: "SBJLayout"),
                 .product(name: "SBJImage", package: "SBJImage"),
             ],
-            resources: [
-                .process("Resources"),
-            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
                 .defaultIsolation(nil),

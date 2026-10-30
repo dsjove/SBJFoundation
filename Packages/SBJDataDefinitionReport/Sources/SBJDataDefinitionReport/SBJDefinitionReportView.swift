@@ -1,4 +1,4 @@
-#if !os(watchOS) && canImport(UIKit) && canImport(PDFKit)
+#if !os(watchOS) && !os(tvOS) && canImport(UIKit) && canImport(PDFKit)
 import Foundation
 import SwiftUI
 import PDFKit

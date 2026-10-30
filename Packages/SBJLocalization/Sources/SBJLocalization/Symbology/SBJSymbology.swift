@@ -44,25 +44,25 @@ public enum SBJSymbology: SBJSymbolSet {
 }
 
 public extension SBJSymbology {
-    static var addLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.add, title: "Add")
+    static var addLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.add, title: "Add")
     }
-    static var removeLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.remove, title: "Remove")
+    static var removeLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.remove, title: "Remove")
     }
-    static var applyLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.apply, title: "Apply")
+    static var applyLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.apply, title: "Apply")
     }
-    static var deleteLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.delete, title: "Delete")
+    static var deleteLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.delete, title: "Delete")
     }
-    static var editLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.edit, title: "Edit")
+    static var editLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.edit, title: "Edit")
     }
-    static var closeLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.close, title: "Close")
+    static var closeLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.close, title: "Close")
     }
-    static var shareLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.share, title: "Share")
+    static var shareLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.share, title: "Share")
     }
 }

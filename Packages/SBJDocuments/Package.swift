@@ -10,7 +10,10 @@ let package = Package(
 		.tvOS(.v17)
 	],
     products: [.library(name: "SBJDocuments", targets: ["SBJDocuments"])],
-    dependencies: [.package(path: "../SBJLocalization"), .package(path: "../SBJFileResources")],
+    dependencies: [
+		.package(path: "../SBJLocalization"),
+		.package(path: "../SBJFileResources")
+	],
     targets: [
         .target(name: "SBJDocuments", dependencies: [
             .product(name: "SBJLocalization", package: "SBJLocalization"), .product(name: "SBJFileResources", package: "SBJFileResources")

@@ -1,5 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
 
 /// Shared primitive for compact symbol-only actions.
 ///
@@ -9,23 +8,26 @@ import SBJDataDefinition
 @MainActor
 public struct SBJSymbolButton: View {
     public let symbol: SBJSymbol
-    private let labeledSymbol: LabeledSymbol
+    private let labeledSymbol: SBJLabeledSymbol
     private let role: ButtonRole?
     private let accessibilityLabel: Text
     private let accessibilityHint: Text?
     private let action: () -> Void
 
-    /// Convenience for symbols with contextual or caller-provided text.
+    /// Convenience for icon-only actions with an explicit meaningful accessible name.
+    /// The accessible name also serves as the semantic title of this action.
+    /// Use a `SBJLabeledSymbol` when the visual title and accessible name differ.
     public init(
         _ symbol: SBJSymbol,
         role: ButtonRole? = nil,
-        accessibilityLabel: String? = nil,
+        accessibilityLabel: String,
         accessibilityHint: String? = nil,
         action: @escaping () -> Void
     ) {
         self.init(
-            LabeledSymbol(
+            SBJLabeledSymbol(
                 symbol: symbol,
+                title: accessibilityLabel,
                 accessibilityLabel: accessibilityLabel,
                 accessibilityHint: accessibilityHint
             ),
@@ -35,40 +37,20 @@ public struct SBJSymbolButton: View {
     }
 
     /// Prefer package-owned definitions for actions with stable meaning.
+    /// The button, rather than its `Label`, owns the accessible name and hint.
+    /// The required title is used whenever no accessible-name override is supplied.
     public init(
-        _ definition: LabeledSymbol,
+        _ definition: SBJLabeledSymbol,
         role: ButtonRole? = nil,
         action: @escaping () -> Void
     ) {
         self.symbol = definition.symbol
         self.labeledSymbol = definition
         self.role = role
-        let label = definition.accessibilityLabel ?? definition.title ?? "Button"
+        let label = definition.accessibilityLabel ?? definition.title
         self.accessibilityLabel = Text(verbatim: label)
         self.accessibilityHint = definition.accessibilityHint.map { Text(verbatim: $0) }
         self.action = action
-    }
-
-    /// Derive the accessibility contract from structured property metadata.
-    public init(
-        _ symbol: SBJSymbol,
-        role: ButtonRole? = nil,
-        propertyInfo: SBJPropertyInfo,
-        fallbackAccessibilityLabel: String? = nil,
-        action: @escaping () -> Void
-    ) {
-        self.init(
-            symbol,
-            role: role,
-            accessibilityLabel: propertyInfo.accessibilityLabel
-                ?? propertyInfo.title
-                ?? fallbackAccessibilityLabel
-                ?? propertyInfo.summary
-                ?? "Button",
-            accessibilityHint: propertyInfo.accessibilityHint ?? propertyInfo.summary
-                ?? "Button",
-            action: action
-        )
     }
 
     public var body: some View {

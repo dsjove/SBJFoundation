@@ -17,31 +17,31 @@ public enum SBJLayoutSymbology: SBJSymbolSet {
 }
 
 public extension SBJLayoutSymbology {
-    static var pageLayoutLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.pageLayout, title: "Page Layout", accessibilityLabel: "Edit page layout", accessibilityHint: "Configure page layout")
+    static var pageLayoutLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.pageLayout, title: "Page Layout", accessibilityLabel: "Edit page layout", accessibilityHint: "Configure page layout")
     }
-    static var firstPageLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.firstPage, title: "First Page", accessibilityLabel: "Go to first page")
+    static var firstPageLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.firstPage, title: "First Page", accessibilityLabel: "Go to first page")
     }
-    static var previousPageLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.previousPage, title: "Previous Page", accessibilityLabel: "Go to previous page")
+    static var previousPageLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.previousPage, title: "Previous Page", accessibilityLabel: "Go to previous page")
     }
-    static var nextPageLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.nextPage, title: "Next Page", accessibilityLabel: "Go to next page")
+    static var nextPageLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.nextPage, title: "Next Page", accessibilityLabel: "Go to next page")
     }
-    static var lastPageLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.lastPage, title: "Last Page", accessibilityLabel: "Go to last page")
+    static var lastPageLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.lastPage, title: "Last Page", accessibilityLabel: "Go to last page")
     }
-    static var searchPDFLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.searchPDF, title: "Search PDF", accessibilityLabel: "Search PDF")
+    static var searchPDFLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.searchPDF, title: "Search PDF", accessibilityLabel: "Search PDF")
     }
-    static var previousSearchMatchLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.previousSearchMatch, title: "Previous Match", accessibilityLabel: "Go to previous search result")
+    static var previousSearchMatchLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.previousSearchMatch, title: "Previous Match", accessibilityLabel: "Go to previous search result")
     }
-    static var nextSearchMatchLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.nextSearchMatch, title: "Next Match", accessibilityLabel: "Go to next search result")
+    static var nextSearchMatchLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.nextSearchMatch, title: "Next Match", accessibilityLabel: "Go to next search result")
     }
-    static var closeSearchLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.closeSearch, title: "Close Search", accessibilityLabel: "Close search")
+    static var closeSearchLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.closeSearch, title: "Close Search", accessibilityLabel: "Close search")
     }
 }

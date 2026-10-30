@@ -13,12 +13,12 @@ public enum SBJHelpSymbology: SBJSymbolSet {
 }
 
 public extension SBJHelpSymbology {
-    static var helpLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.help, title: "Help")
+    static var helpLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.help, title: "Help")
     }
-    static var aboutLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.about, title: "About")
+    static var aboutLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.about, title: "About")
     }
-    static var helpUnavailableLabel: LabeledSymbol { LabeledSymbol(symbol: self.helpUnavailable, title: "Help Unavailable") }
-    static var unsupportedHelpLabel: LabeledSymbol { LabeledSymbol(symbol: self.unsupportedHelp, title: "Unsupported Help Format") }
+    static var helpUnavailableLabel: SBJLabeledSymbol { SBJLabeledSymbol(symbol: self.helpUnavailable, title: "Help Unavailable") }
+    static var unsupportedHelpLabel: SBJLabeledSymbol { SBJLabeledSymbol(symbol: self.unsupportedHelp, title: "Unsupported Help Format") }
 }

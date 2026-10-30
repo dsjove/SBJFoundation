@@ -67,17 +67,23 @@ public extension Label where Title == Text, Icon == Image {
     }
 }
 
-/// A semantic label without a prescribed presentation style.
+/// A semantic title-and-symbol label without a prescribed presentation style.
+/// When inside a control, apply interaction accessibility to that control, not here.
+/// When standalone, the title is normally the spoken label; associate separately
+/// presented labels with their controls to avoid redundant VoiceOver stops.
 public extension Label where Title == Text, Icon == Image {
-    init(_ definition: LabeledSymbol) {
+    init(_ definition: SBJLabeledSymbol) {
         self = Label {
-            Text(definition.title ?? "")
+            Text(definition.title)
         } icon: {
             Image(symbol: definition.symbol)
         }
     }
 
+    /// Creates an icon-only label with no title. Prefer `Label(title, symbol:)`
+    /// for meaningful content, or `Image(symbol:)` for decorative imagery.
+    @available(*, deprecated, message: "Use Label(title, symbol:) or Image(symbol:) as appropriate")
     init(_ symbol: SBJSymbol) {
-        self.init(LabeledSymbol(symbol: symbol))
+        self = Label { Text("") } icon: { Image(symbol: symbol) }
     }
 }

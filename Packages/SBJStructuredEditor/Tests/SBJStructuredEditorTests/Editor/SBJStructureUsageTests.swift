@@ -623,6 +623,28 @@ extension SBJStructureUsageTests {
         #expect(replacementSucceeded)
         #expect(values == ["two", "three"])
     }
+
+    @Test func collectionMutationHelpersHandleNoOpMissingAndCollisionCases() {
+        var set: Set<String> = ["one", "two"]
+        let sameValueSucceeded = set.sbjReplace("one", with: "one")
+        #expect(sameValueSucceeded)
+        #expect(set == ["one", "two"])
+        let missingRejected = !set.sbjReplace("missing", with: "three")
+        #expect(missingRejected)
+        let collisionRejected = !set.sbjReplace("one", with: "two")
+        #expect(collisionRejected)
+        #expect(set == ["one", "two"])
+    }
+
+    @Test func publicCollectionMutationExtensionsRejectCollisions() {
+        var set: Set<String> = ["one", "two"]
+        let replacementSucceeded = set.sbjReplace("one", with: "three")
+        #expect(replacementSucceeded)
+        #expect(set == ["two", "three"])
+        let setCollisionRejected = !set.sbjReplace("two", with: "three")
+        #expect(setCollisionRejected)
+        #expect(set == ["two", "three"])
+    }
 }
 
 @SBJStructure

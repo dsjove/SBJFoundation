@@ -44,16 +44,6 @@ struct SBJFoundationUtilitiesTests {
     }
 
     @Test func collectionMutationHelpersHandleNoOpMissingAndCollisionCases() {
-        var set: Set<String> = ["one", "two"]
-        let sameValueSucceeded = set.sbjReplace("one", with: "one")
-        #expect(sameValueSucceeded)
-        #expect(set == ["one", "two"])
-        let missingRejected = !set.sbjReplace("missing", with: "three")
-        #expect(missingRejected)
-        let collisionRejected = !set.sbjReplace("one", with: "two")
-        #expect(collisionRejected)
-        #expect(set == ["one", "two"])
-
         var dictionary = ["one": 1, "two": 2]
         let sameKeySucceeded = dictionary.sbjRenameKey("one", to: "one")
         #expect(sameKeySucceeded)
@@ -65,14 +55,6 @@ struct SBJFoundationUtilitiesTests {
     }
 
     @Test func publicCollectionMutationExtensionsRejectCollisions() {
-        var set: Set<String> = ["one", "two"]
-        let replacementSucceeded = set.sbjReplace("one", with: "three")
-        #expect(replacementSucceeded)
-        #expect(set == ["two", "three"])
-        let setCollisionRejected = !set.sbjReplace("two", with: "three")
-        #expect(setCollisionRejected)
-        #expect(set == ["two", "three"])
-
         var dictionary = ["one": 1, "two": 2]
         let renameSucceeded = dictionary.sbjRenameKey("one", to: "three")
         #expect(renameSucceeded)

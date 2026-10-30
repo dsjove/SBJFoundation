@@ -6,6 +6,14 @@ import SBJFileResources
 #if !os(watchOS)
 
 final class SBJHelpTests: XCTestCase {
+    func testEmbeddedFrameworkHelpIsExpandedInsideApplicationHelp() throws {
+        let parent = SBJBundledContentReference.help("Embedding Fixture", bundle: .module)
+        let source = try XCTUnwrap(SBJHelpTemplateRenderer(configuration: .standard).renderedSource(for: parent))
+        XCTAssertFalse(source.contains("UI_help\\"))
+        XCTAssertTrue(source.contains("data:image/png;base64"))
+        XCTAssertTrue(source.contains("style='height:1em;width:auto;vertical-align:-0.125em'"))
+    }
+
     func testEmbeddedHelpExpandsImageDataUsingStandardConfiguration() throws {
         let reference = SBJBundledContentReference.help("Embedding Fixture", bundle: .module)
         let source = try XCTUnwrap(SBJHelpTemplateRenderer(configuration: .standard).renderedSource(for: reference))

@@ -125,16 +125,14 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 											view.accessibilityHint(hint)
 										}
 										.accessibilityValue(tag.displayName)
+										// SBJPropertyInfo describes the data property; the button owns
+										// the action's accessible name and optional interaction hint.
 										SBJSymbolButton(
 											user.isTagPrimary(tag)
 												? SBJTagSymbology.primaryTag
 												: SBJTagSymbology.notPrimaryTag,
-											propertyInfo: T.propertyInfo(for: \T.__primaryTagID)
-												?? SBJPropertyInfo(
-													summary: "Primary tag",
-													details: "Toggles the primary tag.",
-													accessibilityLabel: "Primary tag"
-												)
+											accessibilityLabel: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityLabel ?? "Primary tag",
+											accessibilityHint: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityHint
 										) {
 											user.togglePrimary(tag)
 										}

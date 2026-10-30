@@ -1,6 +1,5 @@
 import SwiftUI
 import UniformTypeIdentifiers
-
 #if os(iOS) && !targetEnvironment(macCatalyst)
 import UIKit
 #endif

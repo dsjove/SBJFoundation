@@ -1,7 +1,6 @@
 #if !os(watchOS) && canImport(UIKit)
 import Foundation
 import SwiftUI
-
 import UIKit
 
 /// Compatibility wrapper that returns a captured `UIImage`.

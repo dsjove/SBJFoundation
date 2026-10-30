@@ -469,7 +469,8 @@ public struct PhotoEditor: View {
         if options.availableMirrorAxes.contains(.horizontal) {
             SBJSymbolButton(
                 SBJImageSymbology.mirrorHorizontal,
-                propertyInfo: horizontalMirrorInfo
+                accessibilityLabel: horizontalMirrorInfo.accessibilityLabel ?? horizontalMirrorInfo.title ?? horizontalMirrorInfo.summary ?? "Mirror Horizontally",
+                accessibilityHint: horizontalMirrorInfo.accessibilityHint ?? horizontalMirrorInfo.summary
             ) {
                 model.toggleMirror(.horizontal)
             }
@@ -489,7 +490,8 @@ public struct PhotoEditor: View {
         if options.availableMirrorAxes.contains(.vertical) {
             SBJSymbolButton(
                 SBJImageSymbology.mirrorVertical,
-                propertyInfo: verticalMirrorInfo
+                accessibilityLabel: verticalMirrorInfo.accessibilityLabel ?? verticalMirrorInfo.title ?? verticalMirrorInfo.summary ?? "Mirror Vertically",
+                accessibilityHint: verticalMirrorInfo.accessibilityHint ?? verticalMirrorInfo.summary
             ) {
                 model.toggleMirror(.vertical)
             }
@@ -499,7 +501,8 @@ public struct PhotoEditor: View {
         if options.allowsFreeRotation {
             SBJSymbolButton(
                 SBJImageSymbology.straighten,
-                propertyInfo: straightenInfo
+                accessibilityLabel: straightenInfo.accessibilityLabel ?? straightenInfo.title ?? straightenInfo.summary ?? "Straighten",
+                accessibilityHint: straightenInfo.accessibilityHint ?? straightenInfo.summary
             ) {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isRotationVisible.toggle()

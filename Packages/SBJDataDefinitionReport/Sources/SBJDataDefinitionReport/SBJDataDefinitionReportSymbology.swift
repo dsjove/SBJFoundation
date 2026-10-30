@@ -9,8 +9,8 @@ public enum SBJDataDefinitionReportSymbology: SBJSymbolSet {
 }
 
 public extension SBJDataDefinitionReportSymbology {
-    static var showDefinitionReportLabel: LabeledSymbol {
-        LabeledSymbol(symbol: self.showDefinitionReport, title: "Structure Report", accessibilityHint: "Show structure report")
+    static var showDefinitionReportLabel: SBJLabeledSymbol {
+        SBJLabeledSymbol(symbol: self.showDefinitionReport, title: "Structure Report", accessibilityHint: "Show structure report")
     }
-    static var sortReportLabel: LabeledSymbol { LabeledSymbol(symbol: self.sortReport, title: "Sort report") }
+    static var sortReportLabel: SBJLabeledSymbol { SBJLabeledSymbol(symbol: self.sortReport, title: "Sort report") }
 }
