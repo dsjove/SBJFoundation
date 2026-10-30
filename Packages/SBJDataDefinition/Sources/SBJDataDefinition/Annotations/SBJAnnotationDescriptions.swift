@@ -4,7 +4,22 @@ import Foundation
 /// Omits absent attributes, unnecessary type names, and Swift Optional wrappers.
 private enum SBJAnnotationText {
     static func words(_ value: String) -> String {
-        let short = value.split(separator: ".").last.map(String.init) ?? value
+        // UnitType descriptions may look like "Optional(pound)" or "(pound)".
+        // Strip balanced enclosing punctuation before extracting a type/member name.
+        var normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if normalized.hasPrefix("Optional(") && normalized.hasSuffix(")") {
+            normalized = String(normalized.dropFirst("Optional(".count).dropLast())
+        }
+        while normalized.hasPrefix("(") && normalized.hasSuffix(")") {
+            normalized = String(normalized.dropFirst().dropLast())
+        }
+        // Swift enum descriptions can include a parenthesized payload.
+        // The final human-readable unit must not retain a dangling ")".
+        if normalized.contains("("), normalized.hasSuffix(")") {
+            normalized = String(normalized.split(separator: "(").last ?? "")
+                .trimmingCharacters(in: CharacterSet(charactersIn: ")"))
+        }
+        let short = normalized.split(separator: ".").last.map(String.init) ?? normalized
         var result = ""
         for char in short {
             if char.isUppercase && !result.isEmpty && result.last != " " && (result.last?.isLowercase == true || result.last?.isNumber == true) { result.append(" ") }

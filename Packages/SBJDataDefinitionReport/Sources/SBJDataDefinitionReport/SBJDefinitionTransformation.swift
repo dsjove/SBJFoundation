@@ -234,7 +234,23 @@ private final class PayloadCollector<Root>: SBJTypedAssociatedValueVisitor {
 /// catalog identities retain their original, fully qualified spelling.
 public enum SBJDefinitionTypeDisplay {
     public static func format(_ reflectedName: String) -> String {
-        reflectedName.replacingOccurrences(of: "Swift.", with: "")
+        var text = reflectedName.replacingOccurrences(of: "Swift.", with: "")
+        // String(reflecting:) spells optionals as Optional<T>, including nested forms.
+        // Rewrite from the inside out so Optional<Array<Optional<Int>>> works too.
+        while let range = text.range(of: "Optional<", options: .backwards) {
+            let start = range.upperBound
+            var depth = 1
+            var cursor = start
+            while cursor < text.endIndex && depth > 0 {
+                if text[cursor] == "<" { depth += 1 }
+                if text[cursor] == ">" { depth -= 1 }
+                if depth > 0 { cursor = text.index(after: cursor) }
+            }
+            guard depth == 0 else { break }
+            let wrapped = String(text[start..<cursor])
+            text.replaceSubrange(range.lowerBound...cursor, with: "\(wrapped)?")
+        }
+        return text
     }
 }
 

@@ -148,21 +148,84 @@ public enum SBJDefinitionPDFReport {
         }
         line("ANNOTATIONS  /  \(constraintCount) validation rules  ·  \(presentationCount) presentation hints  ·  \(documentedCount) documented declarations", size: 9, color: muted)
         rule(color: blue)
-        for (index, definition) in catalog.types.enumerated() {
+        // Concrete generic instantiations remain independent catalog entries.
+        // Only merge report sections when every field/case has the same metadata;
+        // specialized declaration types are listed individually below.
+        func familyName(_ definition: SBJDefinitionType) -> String? {
+            guard let bracket = definition.swiftName.firstIndex(of: "<") else { return nil }
+            return String(definition.swiftName[..<bracket])
+        }
+        func signature(_ definition: SBJDefinitionType) -> [String] {
+            switch definition.content {
+            case .structure(let fields):
+                return ["struct"] + fields.map { field in
+                    [field.swiftIdentifier, field.displayName, field.title ?? "",
+                     field.info?.summary ?? "", field.info?.details ?? "",
+                     String(describing: field.info?.symbol),
+                     String(describing: field.info?.accessibilityLabel),
+                     String(describing: field.info?.accessibilityHint),
+                     String(describing: field.kind),
+                     field.constraints.map(\.description).joined(separator: "|"),
+                     field.hints.map(\.description).joined(separator: "|")].joined(separator: "\u{1f}")
+                }
+            case .enumeration(let cases):
+                return ["enum"] + cases.map { item in
+                    [item.swiftIdentifier, item.title ?? "", item.info?.summary ?? "",
+                     item.info?.details ?? "", String(describing: item.info?.symbol),
+                     item.payloads.map { "\($0.name):\($0.typeName)" }.joined(separator: "|"),
+                     item.rawValueDescription ?? ""].joined(separator: "\u{1f}")
+                }
+            }
+        }
+        var sections: [[SBJDefinitionType]] = []
+        for definition in catalog.types {
+            if let family = familyName(definition),
+               let section = sections.indices.first(where: {
+                   guard let first = sections[$0].first else { return false }
+                   return family == familyName(first) && signature(first) == signature(definition)
+               }) {
+                sections[section].append(definition)
+            } else {
+                sections.append([definition])
+            }
+        }
+        for (index, variants) in sections.enumerated() {
+            guard let definition = variants.first else { continue }
             line(" ", size: 4)
-            let shortName = definition.swiftName.split(separator: ".").last.map(String.init) ?? definition.swiftName
+            // Do not split on periods inside generic arguments (e.g. Module.UnitValue<Module.LengthUnit>).
+            let displayed = SBJDefinitionTypeDisplay.format(definition.swiftName)
+            let base = String(displayed.prefix(while: { $0 != "<" }))
+            let shortName = base.split(separator: ".").last.map(String.init) ?? base
             line(String(format: "%02d  %@", index + 1, readable(shortName)), size: 16, bold: true,
                  color: blue, section: "type-\(index)")
             switch definition.content {
             case .structure(let properties):
-                metadata("Declaration", "struct \(SBJDefinitionTypeDisplay.format(definition.swiftName)) { \(properties.count) properties }", keepWithPrevious: true)
+                if variants.count > 1 {
+                    metadata("Specializations", variants.map { SBJDefinitionTypeDisplay.format($0.swiftName) }.joined(separator: "\n"), keepWithPrevious: true)
+                } else {
+                    metadata("Declaration", "struct \(SBJDefinitionTypeDisplay.format(definition.swiftName)) { \(properties.count) properties }", keepWithPrevious: true)
+                }
                 rule(color: muted)
                 for (number, field) in properties.enumerated() {
                     insideProperty = true
                     firstPropertyRow = true
                     let title = field.title ?? field.displayName
                     line("\(number + 1).  \(title)", size: 11, bold: true, color: ink)
-                    let hasDeclaration = declarationIfDifferent("\(field.swiftIdentifier): \(SBJDefinitionTypeDisplay.format(field.typeName))", from: title)
+                    let corresponding = variants.compactMap { variant -> SBJDefinitionProperty? in
+                        if case .structure(let fields) = variant.content, number < fields.count { return fields[number] }
+                        return nil
+                    }
+                    let declarations = corresponding.map { "\(field.swiftIdentifier): \(SBJDefinitionTypeDisplay.format($0.typeName))" }
+                    let distinctDeclarations = Array(Set(declarations))
+                    let hasDeclaration: Bool
+                    if distinctDeclarations.count == 1 {
+                        hasDeclaration = declarationIfDifferent(declarations[0], from: title)
+                    } else {
+                        for (variant, property) in zip(variants, corresponding) {
+                            metadata("Declaration", "\(SBJDefinitionTypeDisplay.format(variant.swiftName)): \(property.swiftIdentifier): \(SBJDefinitionTypeDisplay.format(property.typeName))")
+                        }
+                        hasDeclaration = true
+                    }
                     if let summary = field.info?.summary {
                         metadata("Summary", summary, keepWithPrevious: !hasDeclaration)
                     }
@@ -180,7 +243,11 @@ public enum SBJDefinitionPDFReport {
                     insideProperty = false
                 }
             case .enumeration(let cases):
-                metadata("Declaration", "enum \(SBJDefinitionTypeDisplay.format(definition.swiftName)) { \(cases.count) cases }", keepWithPrevious: true)
+                if variants.count > 1 {
+                    metadata("Specializations", variants.map { SBJDefinitionTypeDisplay.format($0.swiftName) }.joined(separator: "\n"), keepWithPrevious: true)
+                } else {
+                    metadata("Declaration", "enum \(SBJDefinitionTypeDisplay.format(definition.swiftName)) { \(cases.count) cases }", keepWithPrevious: true)
+                }
                 rule(color: muted)
                 for (number, value) in cases.enumerated() {
                     insideProperty = true
