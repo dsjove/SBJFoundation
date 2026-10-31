@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Observation
+import SBJLocalization
 
 /// Eager Core Location provider intended for clients that need a location
 /// immediately at the point of use. It begins authorization/acquisition as soon
@@ -57,7 +58,7 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 	func observeAuthorization(
 		_ change: @escaping @MainActor (CLAuthorizationStatus) -> Void
 	) -> ObserveToken {
-		SBJLocation.observeValue(of: self, \.authorizationStatus) { _, status in
+		SBJLocalization.observeValue(of: self, \.authorizationStatus) { _, status in
 			change(status)
 		}
 	}

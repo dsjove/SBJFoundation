@@ -49,6 +49,10 @@ public extension String {
 }
 
 public extension Data {
+    var isZero: Bool {
+        isEmpty || allSatisfy { $0 == .zero }
+    }
+
     var sbjHexDescription: String {
         sbjHexFormat(bytesPerRow: 16)
     }

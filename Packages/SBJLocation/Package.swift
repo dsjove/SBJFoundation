@@ -10,9 +10,15 @@ let package = Package(
         .tvOS(.v17),
     ],
     products: [.library(name: "SBJLocation", targets: ["SBJLocation"])],
+    dependencies: [
+		.package(path: "../SBJLocalization")
+    ],
     targets: [
         .target(
             name: "SBJLocation",
+            dependencies: [
+				.product(name: "SBJLocalization", package: "SBJLocalization")
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
                 .defaultIsolation(nil),

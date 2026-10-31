@@ -1,4 +1,5 @@
 import CoreLocation
+import SBJLocalization
 
 /// Location capability used by clients that need an eagerly acquired, cached
 /// location without depending on a concrete Core Location implementation.
