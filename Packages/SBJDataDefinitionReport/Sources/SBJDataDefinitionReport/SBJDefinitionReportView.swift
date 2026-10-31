@@ -1,12 +1,12 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit) && canImport(PDFKit)
 import Foundation
-import SwiftUI
 import PDFKit
-import SBJLayout
-import SBJDataDefinition
-import SBJSharing
+import SwiftUI
 import SBJLocalization
+import SBJDataDefinition
 import SBJUIVocabulary
+import SBJLayout
+import SBJSharing
 
 /// Hosts the Layout PDF viewer. No report content is composed in SwiftUI.
 @MainActor

@@ -14,8 +14,8 @@ public enum SBJStructuredEditorSymbology: SBJSymbolSet {
     ]
 }
 
-import SBJHelp
 import SBJDataDefinitionReport
+import SBJHelp
 
 public extension SBJHelpConfiguration {
 	static var structuredEditorHelp: Self {

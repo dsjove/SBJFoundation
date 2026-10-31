@@ -37,6 +37,7 @@ app-specific relationships separately.
 
 ## Rendering
 
-Printable/Core Graphics representation deliberately does not live here.
-`SBJLayout`, which depends on SBJFoundation, supplies `TagRenderable` and the
-`Tagging.renderable(isPrimary:)` convenience.
+Printable/Core Graphics representation belongs in `SBJTags` as `JCSTag` and
+`JCSTagGroup` (`Tagging+JCS.swift`). The tag-specific rendering code depends
+on the general-purpose drawing abstractions in `SBJLayout`; `SBJLayout`
+does not depend on `SBJTags`.

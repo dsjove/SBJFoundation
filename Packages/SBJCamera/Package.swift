@@ -15,6 +15,8 @@ let package = Package(
             .enableUpcomingFeature("ApproachableConcurrency"),
             .defaultIsolation(nil),
         ]),
-        .testTarget(name: "SBJCameraTests", dependencies: ["SBJCamera"]),
+        .testTarget(name: "SBJCameraTests", dependencies: [
+                "SBJCamera",
+            ]),
     ]
 )

@@ -2,9 +2,9 @@
 import QuickLook
 import SwiftUI
 import UIKit
-import SBJUIVocabulary
 import SBJLocalization
 import SBJFileResources
+import SBJUIVocabulary
 
 public struct DocumentPreviewSheet: View {
     @Environment(\.dismiss) private var dismiss

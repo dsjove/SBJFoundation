@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 #if canImport(PencilKit)
 import PencilKit
 #endif
-import SBJDataDefinition
 import SBJFileResources
+import SBJDataDefinition
 import SBJUIVocabulary
 
 enum PhotoEditRenderer {

@@ -18,6 +18,8 @@ let package = Package(
                 .defaultIsolation(nil),
             ]
         ),
-        .testTarget(name: "SBJLocationTests", dependencies: ["SBJLocation"]),
+        .testTarget(name: "SBJLocationTests", dependencies: [
+                "SBJLocation",
+            ]),
     ]
 )

@@ -7,9 +7,9 @@ import UniformTypeIdentifiers
 import PhotosUI
 #endif
 import SBJCamera
+import SBJFileResources
 import SBJDataDefinition
 import SBJDocuments
-import SBJFileResources
 import SBJUIVocabulary
 import SBJSharing
 

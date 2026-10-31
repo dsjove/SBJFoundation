@@ -3,8 +3,8 @@ import Foundation
 import Testing
 import UIKit
 import UniformTypeIdentifiers
-import SBJDataDefinition
 import SBJFileResources
+import SBJDataDefinition
 @testable import SBJImage
 import SBJUIVocabulary
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)

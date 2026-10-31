@@ -4,14 +4,6 @@ import Testing
 
 @Suite("Foundation utilities")
 struct SBJFoundationUtilitiesTests {
-    @Test func collectionUtilities() {
-        #expect([1, 2, 1, 3, 2].removingDuplicatesPreservingOrder() == [1, 2, 3])
-        #expect(Set([1, 2, 1, 3, 2].removingDuplicatesUnordered()) == Set([1, 2, 3]))
-        let grouped = ["a", "bb", "c"].grouped(by: \.count)
-        #expect(grouped[1] == ["a", "c"])
-        #expect(grouped[2] == ["bb"])
-    }
-
     @Test func dictionaryRenamePreservesOptionalNilValue() {
         var values: [String: Int?] = [:]
         values.updateValue(nil, forKey: "old")

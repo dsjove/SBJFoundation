@@ -1,11 +1,11 @@
 import UIKit
-import SBJLayout
 import SBJUIVocabulary
+import SBJLayout
 
 /// Core Graphics representation of a semantic tag.
 ///
-/// Tag storage and SwiftUI controls live in SBJFoundation. Printable rendering
-/// belongs in SBJLayout so clients do not need their own PDF-only tag geometry.
+/// Tag storage, SwiftUI controls, and tag-specific printable rendering live in
+/// SBJTags; reusable rendering primitives are supplied by SBJLayout.
 public struct JCSTag: Renderable {
 	public let displayName: String
 	public let color: CodableColor

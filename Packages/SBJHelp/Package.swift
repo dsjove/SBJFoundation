@@ -11,18 +11,18 @@ let package = Package(
 	],
     products: [.library(name: "SBJHelp", targets: ["SBJHelp"])],
     dependencies: [
-        .package(path: "../SBJFileResources"),
         .package(path: "../SBJLocalization"),
+        .package(path: "../SBJFileResources"),
     ],
     targets: [
         .target(name: "SBJHelp", dependencies: [
-            .product(name: "SBJFileResources", package: "SBJFileResources"),
-            .product(name: "SBJLocalization", package: "SBJLocalization"),
-        ]),
+                .product(name: "SBJLocalization", package: "SBJLocalization"),
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
+            ]),
         .testTarget(name: "SBJHelpTests", dependencies: [
-            "SBJHelp",
-            .product(name: "SBJFileResources", package: "SBJFileResources"),
-            .product(name: "SBJLocalization", package: "SBJLocalization"),
-        ], resources: [.process("Resources")]),
+                "SBJHelp",
+                .product(name: "SBJLocalization", package: "SBJLocalization"),
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
+            ], resources: [.process("Resources")]),
     ]
 )

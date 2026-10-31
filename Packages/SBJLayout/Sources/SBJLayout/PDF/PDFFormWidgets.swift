@@ -1,7 +1,7 @@
 #if !os(watchOS)
 import Foundation
-import UIKit
 import PDFKit
+import UIKit
 
 /// PDF-specific behavior; the graphical appearance remains the responsibility of the JCS control.
 public struct JCSFormTraits {

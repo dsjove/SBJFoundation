@@ -1,7 +1,7 @@
 #if !os(watchOS)
 import SwiftUI
-import SBJFileResources
 import SBJLocalization
+import SBJFileResources
 
 /// Shared help presentation chrome for every help representation.
 ///

@@ -39,7 +39,13 @@ let package = Package(
         ),
         .testTarget(
             name: "SBJDataDefinitionTests",
-            dependencies: ["SBJDataDefinition", "SBJDataDefinitionMacros", "SBJStructureMacroSupport", .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")]
+            dependencies: [
+                "SBJDataDefinition",
+                .product(name: "SBJLocalization", package: "SBJLocalization"),
+                "SBJDataDefinitionMacros",
+                "SBJStructureMacroSupport",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ]
         ),
     ]
 )

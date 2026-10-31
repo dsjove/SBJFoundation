@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
-import SBJFileResources
 import SBJLocalization
+import SBJFileResources
 @testable import SBJHelp
 
 final class SBJHelpPackageTests: XCTestCase {

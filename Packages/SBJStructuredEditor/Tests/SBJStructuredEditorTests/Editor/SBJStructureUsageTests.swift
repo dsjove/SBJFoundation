@@ -1,7 +1,7 @@
 import Foundation
-import SBJDataDefinition
 import SwiftUI
 import Testing
+import SBJDataDefinition
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
 

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:Testing.md">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/Testing.xctestplan">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJCamera">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJDataDefinition">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJDataDefinitionReport">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJDocuments">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJFileResources">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJHelp">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJImage">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJLayout">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJLocalization">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJLocation">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJSharing">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJStructuredEditor">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJUIVocabulary">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJTags">
+   </FileRef>
+</Workspace>

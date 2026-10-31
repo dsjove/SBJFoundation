@@ -6,8 +6,8 @@ import ImageIO
 #if canImport(UIKit)
 import UIKit
 #endif
-import SBJDataDefinition
 import SBJFileResources
+import SBJDataDefinition
 import SBJUIVocabulary
 
 /// General image reference: obtain an image from symbolic, bundled or file-backed sources.

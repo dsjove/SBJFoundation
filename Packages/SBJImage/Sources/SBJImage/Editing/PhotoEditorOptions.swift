@@ -1,7 +1,7 @@
-import SBJDataDefinition
 import CoreGraphics
 import Foundation
 import SBJLocalization
+import SBJDataDefinition
 
 @SBJStructure
 public struct PhotoEditorOptions: Codable, Equatable, Sendable, Hashable {

@@ -1,6 +1,6 @@
 import Foundation
-import SBJDataDefinition
 import Testing
+import SBJDataDefinition
 @testable import SBJStructuredEditor
 
 private struct RegistryCustomValue: Equatable {

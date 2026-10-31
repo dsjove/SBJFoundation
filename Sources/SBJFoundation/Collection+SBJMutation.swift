@@ -15,24 +15,6 @@ public extension Dictionary {
     }
 }
 
-public extension Collection where Element: Hashable {
-    /// Removes duplicate elements while retaining the first occurrence of each value.
-    func removingDuplicatesPreservingOrder() -> [Element] {
-        var seen = Set<Element>()
-        return filter { seen.insert($0).inserted }
-    }
-
-    /// Removes duplicate elements without preserving source order.
-    func removingDuplicatesUnordered() -> [Element] {
-        Array(Set(self))
-    }
-
-    /// Convenience wrapper around `Dictionary(grouping:by:)`.
-    func grouped<Key: Hashable>(by keySelector: (Element) -> Key) -> [Key: [Element]] {
-        Dictionary(grouping: self, by: keySelector)
-    }
-}
-
 public extension Collection {
     var second: Element? {
         guard count > 1 else { return nil }

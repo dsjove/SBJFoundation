@@ -1,6 +1,6 @@
 import SwiftUI
-import SBJUIVocabulary
 import SBJLocalization
+import SBJUIVocabulary
 
 // TODO: editor only?
 @MainActor

@@ -3,8 +3,8 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 import WebKit
-import SBJFileResources
 import SBJLocalization
+import SBJFileResources
 
 public struct SBJHTMLHelpPresenter: SBJHelpContentPresenter {
     public let contentType: UTType = .html

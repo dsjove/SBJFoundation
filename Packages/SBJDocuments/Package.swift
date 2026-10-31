@@ -18,6 +18,9 @@ let package = Package(
         .target(name: "SBJDocuments", dependencies: [
             .product(name: "SBJLocalization", package: "SBJLocalization"), .product(name: "SBJFileResources", package: "SBJFileResources")
         ]),
-        .testTarget(name: "SBJDocumentsTests", dependencies: ["SBJDocuments", .product(name: "SBJLocalization", package: "SBJLocalization"), .product(name: "SBJFileResources", package: "SBJFileResources")])
+        .testTarget(name: "SBJDocumentsTests", dependencies: [
+                "SBJDocuments",
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
+            ])
     ]
 )

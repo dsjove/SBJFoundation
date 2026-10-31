@@ -1,7 +1,7 @@
 #if !os(watchOS)
 import SwiftUI
-import SBJFileResources
 import SBJLocalization
+import SBJFileResources
 
 /// Standard SwiftUI help entry point backed by SBJHelp's presentation system.
 ///

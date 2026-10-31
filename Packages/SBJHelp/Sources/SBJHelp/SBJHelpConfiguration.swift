@@ -1,7 +1,7 @@
 import Foundation
 import UniformTypeIdentifiers
-import SBJFileResources
 import SBJLocalization
+import SBJFileResources
 
 /// Application-level values used while resolving help templates.
 ///

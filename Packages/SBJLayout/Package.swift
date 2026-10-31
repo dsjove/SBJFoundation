@@ -27,11 +27,11 @@ let package = Package(
         .target(
             name: "SBJLayout",
             dependencies: [
-				.product(name: "SBJLocalization", package: "SBJLocalization"),
-				.product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
-				.product(name: "SBJFileResources", package: "SBJFileResources"),
-				.product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
-			],
+                .product(name: "SBJLocalization", package: "SBJLocalization"),
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
+            ],
             resources: [.process("Resources")],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
@@ -41,12 +41,10 @@ let package = Package(
         .testTarget(
             name: "SBJLayoutTests",
             dependencies: [
-				"SBJLayout",
-				.product(name: "SBJLocalization", package: "SBJLocalization"),
-				.product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
-				.product(name: "SBJFileResources", package: "SBJFileResources"),
-				.product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
-			],
+                "SBJLayout",
+                .product(name: "SBJLocalization", package: "SBJLocalization"),
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+            ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
                 .defaultIsolation(nil),

@@ -1,5 +1,5 @@
-import SBJDataDefinition
 import SBJLocalization
+import SBJDataDefinition
 
 @SBJPropertyInfo
 extension PhotoCropState: SBJTextPresentable {

@@ -1,8 +1,8 @@
 #if !os(watchOS)
 import Foundation
 import PDFKit
-import UIKit
 import Testing
+import UIKit
 @testable import SBJLayout
 
 @Suite("PDF AcroForm widgets")

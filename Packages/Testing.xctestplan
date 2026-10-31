@@ -1,0 +1,97 @@
+{
+  "configurations": [
+    {
+      "id": "906721E6-F35E-4C17-9384-D8303DADDD7C",
+      "name": "Configuration 1",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {},
+  "testTargets": [
+    {
+      "target": {
+        "containerPath": "container:../SBJCamera",
+        "identifier": "SBJCameraTests",
+        "name": "SBJCameraTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJLayout",
+        "identifier": "SBJLayoutTests",
+        "name": "SBJLayoutTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJStructuredEditor",
+        "identifier": "SBJStructuredEditorTests",
+        "name": "SBJStructuredEditorTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJUIVocabulary",
+        "identifier": "SBJUIVocabularyTests",
+        "name": "SBJUIVocabularyTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJLocation",
+        "identifier": "SBJLocationTests",
+        "name": "SBJLocationTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJImage",
+        "identifier": "SBJImageTests",
+        "name": "SBJImageTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJFileResources",
+        "identifier": "SBJFileResourcesTests",
+        "name": "SBJFileResourcesTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJDocuments",
+        "identifier": "SBJDocumentsTests",
+        "name": "SBJDocumentsTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJHelp",
+        "identifier": "SBJHelpTests",
+        "name": "SBJHelpTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:",
+        "identifier": "SBJLocalizationTests",
+        "name": "SBJLocalizationTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJDataDefinition",
+        "identifier": "SBJDataDefinitionTests",
+        "name": "SBJDataDefinitionTests"
+      }
+    },
+    {
+      "target": {
+        "containerPath": "container:../SBJTags",
+        "identifier": "SBJTagsTests",
+        "name": "SBJTagsTests"
+      }
+    }
+  ],
+  "version": 1
+}

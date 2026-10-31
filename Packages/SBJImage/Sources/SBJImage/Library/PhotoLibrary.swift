@@ -1,8 +1,8 @@
 #if os(iOS)
 import Foundation
 import Photos
-import SBJDataDefinition
 import SBJFileResources
+import SBJDataDefinition
 import SBJUIVocabulary
 
 /// A named encoded image resource that can be passed to image destinations

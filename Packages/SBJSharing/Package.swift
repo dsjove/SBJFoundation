@@ -11,17 +11,17 @@ let package = Package(
     ],
     products: [.library(name: "SBJSharing", targets: ["SBJSharing"])],
     dependencies: [
-        .package(path: "../SBJUIVocabulary"),
         .package(path: "../SBJLocalization"),
         .package(path: "../SBJFileResources"),
+        .package(path: "../SBJUIVocabulary"),
     ],
     targets: [
         .target(
             name: "SBJSharing",
             dependencies: [
-                .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),

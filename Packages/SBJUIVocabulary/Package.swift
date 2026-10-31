@@ -12,19 +12,21 @@ let package = Package(
     products: [.library(name: "SBJUIVocabulary", targets: ["SBJUIVocabulary"])],
     dependencies: [
         .package(path: "../SBJLocalization"),
-        .package(path: "../SBJDataDefinition"),
         .package(path: "../SBJFileResources"),
+        .package(path: "../SBJDataDefinition"),
     ],
     targets: [
         .target(
             name: "SBJUIVocabulary",
             dependencies: [
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
             ],
             resources: [.process("Resources")],
         ),
-        .testTarget(name: "SBJUIVocabularyTests", dependencies: ["SBJUIVocabulary"]),
+        .testTarget(name: "SBJUIVocabularyTests", dependencies: [
+                "SBJUIVocabulary",
+            ]),
     ]
 )

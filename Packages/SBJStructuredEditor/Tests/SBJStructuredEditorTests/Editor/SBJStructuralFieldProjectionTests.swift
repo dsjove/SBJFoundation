@@ -1,6 +1,6 @@
 import Foundation
-import SBJDataDefinition
 import Testing
+import SBJDataDefinition
 #if canImport(SwiftUI)
 import SwiftUI
 #endif

@@ -9,28 +9,28 @@ let package = Package(
     products: [.library(name: "SBJImage", targets: ["SBJImage"])],
     dependencies: [
         .package(path: "../SBJCamera"),
+        .package(path: "../SBJLocation"),
+        .package(path: "../SBJLocalization"),
+        .package(path: "../SBJFileResources"),
         .package(path: "../SBJDataDefinition"),
         .package(path: "../SBJDocuments"),
-        .package(path: "../SBJFileResources"),
-        .package(path: "../SBJHelp"),
-        .package(path: "../SBJLocalization"),
-        .package(path: "../SBJLocation"),
-        .package(path: "../SBJSharing"),
         .package(path: "../SBJUIVocabulary"),
+        .package(path: "../SBJHelp"),
+        .package(path: "../SBJSharing"),
     ],
     targets: [
         .target(
             name: "SBJImage",
             dependencies: [
                 .product(name: "SBJCamera", package: "SBJCamera"),
+                .product(name: "SBJLocation", package: "SBJLocation"),
+                .product(name: "SBJLocalization", package: "SBJLocalization"),
+                .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
-                .product(name: "SBJFileResources", package: "SBJFileResources"),
-                .product(name: "SBJHelp", package: "SBJHelp"),
-                .product(name: "SBJLocalization", package: "SBJLocalization"),
-                .product(name: "SBJLocation", package: "SBJLocation"),
-                .product(name: "SBJSharing", package: "SBJSharing"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
+                .product(name: "SBJHelp", package: "SBJHelp"),
+                .product(name: "SBJSharing", package: "SBJSharing"),
             ],
             resources: [.process("Resources")],
             swiftSettings: [
@@ -42,8 +42,8 @@ let package = Package(
             name: "SBJImageTests",
             dependencies: [
                 "SBJImage",
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
+                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             ],
             swiftSettings: [

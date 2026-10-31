@@ -5,11 +5,11 @@ import UIKit
 #if canImport(PencilKit)
 import PencilKit
 #endif
+import SBJFileResources
 import SBJDataDefinition
 import SBJDocuments
-import SBJFileResources
-import SBJHelp
 import SBJUIVocabulary
+import SBJHelp
 import SBJSharing
 
 public extension SBJBundledContentReference {

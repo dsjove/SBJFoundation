@@ -1,7 +1,7 @@
-import SBJDataDefinition
+import CoreGraphics
 import Foundation
 import UniformTypeIdentifiers
-import CoreGraphics
+import SBJDataDefinition
 #if canImport(PencilKit)
 import PencilKit
 #endif

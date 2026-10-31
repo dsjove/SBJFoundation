@@ -1,8 +1,8 @@
 #if !os(watchOS)
 #if canImport(UIKit)
 import UIKit
-import SBJDataDefinition
 import SBJFileResources
+import SBJDataDefinition
 import SBJUIVocabulary
 
 public typealias IdentifiableImage = Identified<UIImage>

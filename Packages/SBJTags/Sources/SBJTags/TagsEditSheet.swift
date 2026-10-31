@@ -1,7 +1,7 @@
 import SwiftUI
 import SBJLocalization
-import SBJUIVocabulary
 import SBJFileResources
+import SBJUIVocabulary
 import SBJHelp
 
 public enum SBJTagSymbology: SBJSymbolSet {

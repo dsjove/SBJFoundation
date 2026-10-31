@@ -16,6 +16,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "SBJLocalization"),
-        .testTarget(name: "SBJLocalizationTests", dependencies: ["SBJLocalization"]),
+        .testTarget(name: "SBJLocalizationTests", dependencies: [
+                "SBJLocalization",
+            ]),
     ]
 )

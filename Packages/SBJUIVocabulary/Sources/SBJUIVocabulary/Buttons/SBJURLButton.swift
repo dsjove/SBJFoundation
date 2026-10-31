@@ -1,6 +1,6 @@
 import SwiftUI
-import SBJFileResources
 import SBJLocalization
+import SBJFileResources
 
 /// Presentation of a URL action, following SwiftUI `Label` conventions.
 public enum SBJURLButtonStyle: Sendable {

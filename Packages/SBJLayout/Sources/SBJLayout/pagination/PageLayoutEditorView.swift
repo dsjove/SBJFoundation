@@ -1,8 +1,8 @@
 #if !os(watchOS) && !os(tvOS)
 import SwiftUI
+import SBJFileResources
 import SBJDataDefinition
 import SBJUIVocabulary
-import SBJFileResources
 
 public extension SBJBundledContentReference {
     static var pageLayoutCore: SBJBundledContentReference {

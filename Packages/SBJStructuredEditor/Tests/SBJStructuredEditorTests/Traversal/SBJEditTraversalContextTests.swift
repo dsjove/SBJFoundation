@@ -1,5 +1,5 @@
-import SBJDataDefinition
 import Testing
+import SBJDataDefinition
 @testable import SBJStructuredEditor
 import SBJUIVocabulary
 

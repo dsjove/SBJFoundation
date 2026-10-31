@@ -2,7 +2,7 @@ import CoreGraphics
 import Testing
 @testable import SBJLayout
 import SBJUIVocabulary
-@testable import SBJFoundation
+@testable import SBJTags
 
 @Suite("Tag rendering")
 struct JCSTagTests {

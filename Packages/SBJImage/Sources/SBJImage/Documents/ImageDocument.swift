@@ -6,9 +6,9 @@ import UIKit
 #if canImport(PencilKit)
 import PencilKit
 #endif
-import SBJDataDefinition
-import SBJFileResources
 import SBJLocation
+import SBJFileResources
+import SBJDataDefinition
 import SBJUIVocabulary
 
 #if !os(watchOS)
