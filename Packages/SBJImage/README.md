@@ -1,11 +1,12 @@
 # SBJImage
 
-Image references, non-destructive image documents, photo geometry, rendering, import/export, viewer, and editor UI.
+`SBJImage` handles image selection, references, non-destructive image documents, image geometry, editing, viewing, and import/export. Use it for user-facing image workflows rather than generic file storage or raw camera capture.
 
-## Dependency
+## Getting started
 
-From the SBJFoundation workspace use `.package(path: "Packages/SBJImage")` and depend on `.product(name: "SBJImage", package: "SBJImage")`. Import `SBJImage` to use the image APIs.
+```swift
+import SBJImage
+```
 
-The bundled Image Edit and Image View help resources are owned by this package, as are its focused tests. Existing photo-editor `@AppStorage` keys intentionally retain their `SBJFoundation` prefix to preserve users' preferences.
+Start with the photo menu or library surfaces when users need to choose an image; use the image editor when the workflow needs adjustments, and image document types when edits must be preserved non-destructively. Keep camera capture (`SBJCamera`) separate from editing and resource persistence (`SBJFileResources`). The feature owning the image decides how to store or reference the result.
 
-See [IMAGE_DOCUMENT.md](Documentation/IMAGE_DOCUMENT.md) for the document format.

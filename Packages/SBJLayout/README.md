@@ -14,7 +14,6 @@ The core model is deliberately small:
 - `PDFGenerator` renders a `Renderable` tree into PDF data.
 - `JCSLink` adds hyperlink annotations around renderables without leaking Core Graphics PDF context handling to clients.
 - `JCSText`, `JCSImage`, `JCSRect`, and `JCSLine` provide basic UIKit/Core Graphics content and drawing wrappers.
-- `Jargon` is an experimental/legacy document-wording prototype retained temporarily while the shared SBJLocalization localization/presentation-resource design is developed.
 
 SBJLayout currently targets **iOS 17+** and requires **Swift 6.4**.
 
@@ -149,7 +148,6 @@ Cells beyond a row factory's `maxCount` are intentionally excluded. Minimum row 
 
 ## Text and images
 
-`JCSText` currently supports verbatim text plus the experimental Jargon lookup/formatting path, minimum character width, line-height constraints, and horizontal/vertical alignment. Its minimum-content measurement uses the widest Foundation word segment for word wrapping and the widest extended grapheme cluster for character wrapping; `minChars` remains an adaptive character-based reserve. Clipping/truncation currently retain ordinary measurement semantics. The planned shared-resource/candidate-fitting API is described in `LOCALIZATION_DESIGN.md`.
 
 `JCSImage` measures and renders a `UIImage` with `Aspect` behavior and optional rounded clipping. A nil image measures as zero for fit/fill layouts.
 
@@ -157,7 +155,6 @@ Cells beyond a row factory's `maxCount` are intentionally excluded. Minimum row 
 
 ## Jargon and render context
 
-`Jargon` is retained as an experimental prototype, not the planned localization architecture. `RenderableEnvironment` currently stores a task-local `RenderableContext` containing the active `Pagination` and `Jargon`; the localization design replaces that text-policy role with a shared SBJLocalization presentation-resource context.
 
 ```swift
 let jargon = Jargon(
@@ -195,7 +192,6 @@ The three behaviors are:
 - `.keepWith` — Keep With Above: attach the first logical unit to the preceding unit.
 - `.page` — force one page transition at the group's entry (coincident parent/child requirements collapse).
 
-Content remains indivisible unless an authorized group boundary permits a split. Nested groups, oversize behavior, page decoration handling, and the rule forbidding splits within horizontal Grid rows are specified in [PaginationRules.md](Sources/SBJLayout/pagination/PaginationRules.md).
 
 Pagination now performs **measurement, then a pre-render page-planning pass, then rendering**. The planner knows the complete page count before headers and footers are drawn. This change intentionally removes the old `PaginationGroup(sectionID:behavior:groupGap:dimension:content:)` layout-wrapper API; callers own their Grids explicitly.
 
@@ -203,7 +199,6 @@ Pagination now performs **measurement, then a pre-render page-planning pass, the
 
 `PDFGenerator.render(...)` returns PDF `Data`. `form(...)` additionally creates a `PDFDocument` when PDFKit can open the rendered data. The generator also accepts optional title/creator metadata so clients do not need a second PDF-rendering layer solely to set document metadata.
 
-SwiftUI helpers are included for displaying a `PDFDocument`, keeping PDFKit behind a stable `UIViewRepresentable` bridge, managing it through `PDFViewController`, and editing `PageLayout`. Application chrome and overlays remain SwiftUI. See [PDF hosting](Documentation/PDF_HOSTING.md).
 
 ## Design assumptions and intentional limits
 
@@ -220,16 +215,6 @@ Run with a Swift 6.4 toolchain:
 ```sh
 swift test
 ```
-
-## Localization and text fitting design
-
-The planned shared localization/text-fitting architecture, including the future replacement for experimental `Jargon` and the `JCSText` measure/draw retry requirements, is documented in [Documentation/LOCALIZATION_DESIGN.md](Documentation/LOCALIZATION_DESIGN.md).
-
-
-## Documentation
-
-Design and architecture documents live in `Documentation/`. The shared localization/presentation-resource work is described from Layout's perspective in [Documentation/LOCALIZATION_DESIGN.md](Documentation/LOCALIZATION_DESIGN.md).
-
 
 ## Physical units
 

@@ -1,19 +1,23 @@
 # SBJDocuments
 
-Document storage and persistence services for applications managing document data. The package provides core-data and document-storage infrastructure, general content storage, and document/file naming helpers. It does not present sharing UI.
+`SBJDocuments` handles application documents, package-based persistence, attachment storage, export artifacts, and supporting Core Data/SwiftData storage concerns. Choose it when your app owns document lifecycles; use `SBJFileResources` for individual files without a document model.
 
-## Use
+## Getting started
+
+Prepare an export file in an app-owned temporary directory:
 
 ```swift
+import Foundation
 import SBJDocuments
+
+let writer = ExportArtifactWriter(directoryName: "RecipeExports")
+let url = try writer.write(
+    Data("Example".utf8),
+    named: "recipe",
+    extension: "txt"
+)
+// Present `url` with your application's sharing UI.
 ```
 
-Choose `SBJDocuments` for document lifecycle and storage operations. Choose `SBJFileResources` for standalone file, URL and `FileWrapper` operations that do not require a document model. SwiftUI sharing surfaces are provided by the application presentation layer.
+For package document applications, start with the `PackageDocument` protocols and the `PackageDocumentLibrary` lifecycle rather than implementing ad hoc save operations. `PackageAttachmentStore` and `PackageResourceDirectory` manage content within package structures. Use `CoreDataStorage` for the package's model-container helpers.
 
-## Dependencies
-
-`SBJLocalization` and `SBJFileResources`. No dependency on `SBJFoundation`.
-
-## Tests
-
-Package tests cover document-library behavior and ordering semantics. Consumers should separately test their own persistence and migration requirements.

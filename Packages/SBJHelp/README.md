@@ -1,25 +1,24 @@
 # SBJHelp
 
-Reusable help presentation, bundled-content references and template rendering for SwiftUI applications.
+`SBJHelp` shows bundled help content in SwiftUI applications. It resolves resources, applies template substitutions and selects an appropriate presenter, including support for HTML and Markdown. Help source files belong to the feature that documents them.
 
-## Use
+## Getting started
+
+Create an `SBJBundledContentReference` for a resource in your own application or package, then present it using `SBJHelpLink`:
 
 ```swift
+import SwiftUI
 import SBJHelp
+import SBJFileResources
+
+struct FeatureHelp: View {
+    let helpAsset: SBJBundledContentReference
+
+    var body: some View {
+        SBJHelpLink(asset: helpAsset)
+    }
+}
 ```
 
-Configure `SBJHelpConfiguration` with the application's bundled resources and template substitutions. Help content remains with its owning feature or application; the help system provides rendering and resource resolution rather than owning every application's HTML.
+The same asset can be presented via `SBJHelpButton` in toolbar layouts. Use `SBJHelpConfiguration` for shared presentation settings and `SBJHelpTemplateRenderer` when resource content needs substitutions before display.
 
-See [Help architecture](Documentation/Architecture.md) and [Help system](Documentation/Help-System.md) for configuration and presentation details.
-
-## Dependencies
-
-`SBJFileResources` and `SBJLocalization`.
-
-## Tests
-
-Protect resource selection, substitution precedence, supported content-type dispatch, and error paths. Avoid asserting trivial literal replacements already guaranteed by Foundation's string APIs.
-
-## Editor help
-
-The structured editor owns its own help HTML. The editor exposes bundled-content references and `SBJHelpConfiguration.includeStructuredEditorHelp()` for applications that embed its help content. `SBJHelp` provides the presentation mechanism; it does not own those documents.

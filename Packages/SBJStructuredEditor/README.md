@@ -2,10 +2,31 @@
 
 `SBJStructuredEditor` provides SwiftUI editing for mutable structured models described by `SBJDataDefinition`. It uses typed property metadata to construct editor rows, perform bound mutations, present validation, and navigate nested structures.
 
+## Quick start
+
+Bind a mutable structural model to the editor and supply a presentation model:
+
+```swift
+import SwiftUI
+import SBJDataDefinition
+import SBJStructuredEditor
+
+struct RecipeEditorScreen: View {
+    @Binding var recipe: Recipe
+    let presentationModel: SBJEditorPresentationModel
+
+    var body: some View {
+        ScrollView {
+            SBJEditorView(value: $recipe, presentationModel: presentationModel)
+        }
+    }
+}
+```
+
+
 ## Dependencies and ownership
 
 - `SBJDataDefinition` supplies `@SBJStructure`, structural metadata, defaults, validation, and collection identity/traversal rules.
-- `SBJLocalization` supplies localized names and textual presentation.
 - `SBJUIVocabulary` supplies shared controls and field-presentation primitives.
 - `SBJFileResources` and `SBJHelp` support bundled editor help.
 

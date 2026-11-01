@@ -1,19 +1,20 @@
 # SBJFileResources
 
-File and URL operations that can be used independently of document storage and UI.
+`SBJFileResources` covers typed file content, bundled-resource references, URLs, security-scoped access, file wrappers, attachments, and small persistence helpers. It intentionally does not manage complete application document lifecycles.
 
-## Use
+## Getting started
+
+When reading untrusted `FileWrapper` contents, use the checked accessors instead of accessing the wrong wrapper kind:
 
 ```swift
+import Foundation
 import SBJFileResources
+
+func bytes(from wrapper: FileWrapper) throws -> Data {
+    try wrapper.sbjRegularFileContents()
+}
 ```
 
-Features include `SBJResourceContent`, checked `FileWrapper` operations, filename sanitization and uniqueness, security-scoped URL access, bundled-content references and bundle resource lookup. The module also provides platform-aware URL validation/opening used by `SBJURLButton`; it is not interchangeable with SwiftUI's `openURL` environment.
+`sbjRegularFileContents()` throws if the wrapper is not a regular file; `sbjDirectoryContents()` is the equivalent for directories. To pass data together with a Uniform Type Identifier, use `SBJResourceContent(data:contentType:)`. `SBJBundledContentReference` represents content shipped with a module or app. `URLAttachment` and the attachment protocols support model-level file references.
 
-## Boundaries
-
-For document storage use `SBJDocuments`; for document-specific presentation use the owning UI module. This package has no local SBJ package dependencies.
-
-## Tests
-
-Focus on invalid paths, security-scope lifetimes, filename collisions, malformed resource data and error propagation rather than copies of filename text or trivial accessors.
+Use `SBJDocuments` when file operations are part of a document library, and `SBJSharing` when they need user-facing export or share presentation.

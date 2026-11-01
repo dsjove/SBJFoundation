@@ -1,27 +1,26 @@
 # SBJUIVocabulary
 
-Reusable SwiftUI presentation vocabulary shared by application screens, unit controls and the structured editor.
+`SBJUIVocabulary` provides reusable SwiftUI controls and presentation conventions: symbol buttons, selection surfaces, form fields, numeric and text inputs, font/color UI, attachment previews, and consistent visual states. It keeps common controls out of feature-specific screens.
 
-## Use
+## Getting started
 
 ```swift
+import SwiftUI
 import SBJUIVocabulary
 
-SBJURLButton(url: documentationURL, title: "Documentation", style: .titleAndIcon)
+struct ReferenceLink: View {
+    let documentationURL: URL
+
+    var body: some View {
+        SBJURLButton(
+            url: documentationURL,
+            title: "Documentation",
+            style: .titleAndIcon
+        )
+    }
+}
 ```
 
-`SBJURLButton` supports `.iconOnly`, `.titleOnly` and `.titleAndIcon`; URL validation/opening deliberately uses `SBJFileResources`, **not** SwiftUI's `openURL` environment. `SBJSelectionMenu` centralizes choice presentation and uses a picker on watchOS for binding-based selection. Its action-menu variant remains an action menu.
+For common actions, choose controls such as `SBJAddButton`, `SBJDeleteButton`, `SBJDismissButton`, and `SBJSymbolButton` before constructing a one-off equivalent. `SBJSelectionMenu` and `SBJSelectionView` handle selection UI; `NumberTextField`, `SearchField`, and `UnitValueControl` cover specialized inputs.
 
-`CodableFont` is a structural font specification with family, size, weight, italic, and width values. `FontFamily` is a normalized atomic value rather than a structural model; the structured editor supplies its font-family picker and font-specification presentation.
-
-The package also contains `SBJUIAppearance`, symbol buttons, fonts, controls, field sizing and text-input policies. Sizing values are heuristics rather than measured glyph bounds; see the sizing source TODOs for planned work. Some controls are currently used primarily by the editor, but remain part of this shared vocabulary.
-
-## Dependencies
-
-`SBJDataDefinition`, `SBJLocalization` and `SBJFileResources`.
-
-## Tests
-
-Test selection decisions, disabled behavior, sizing policy and other independently observable results. Simple construction and accessors do not need runtime tests.
-
-The Codable models (`CodableFont`, `FontFamily`, `CodableColor`, and unit values) are defined in `SBJDataDefinition`. This package provides their SwiftUI/UIKit presentation and font caches, and re-exports DataDefinition for UI consumers. There is no dependency on `SBJUnits`.
+The underlying `CodableColor`, `CodableFont`, and unit models belong to `SBJDataDefinition`; this package provides their UI representation. Some controls are platform-conditional, so import and use the surfaces available to your target.
