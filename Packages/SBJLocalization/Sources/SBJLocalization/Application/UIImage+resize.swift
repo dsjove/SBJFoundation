@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-
+#if !os(watchOS)
 public extension UIImage {
 	func resized(toFit size: CGSize) -> UIImage {
 		guard size.width > 0, size.height > 0,
@@ -36,3 +36,4 @@ public extension UIImage {
 		}
 	}
 }
+#endif
