@@ -1,8 +1,14 @@
 #if !os(watchOS)
 import CoreGraphics
+import SBJUIVocabulary
 import PDFKit
 import QuartzCore
+import SBJUIVocabulary
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// Stable geometry for one text-search result. PDFKit selections are intentionally
 /// not retained: page-view-controller turns can rebuild PDFKit's presentation objects.
@@ -32,14 +38,14 @@ public struct PDFSearchPresentationStyle {
 
 	public init(
 		highlight: JCSRect = JCSRect(
-			fill: UIColor.systemYellow.withAlphaComponent(0.45),
-			stroke: UIColor.systemOrange.withAlphaComponent(0.95),
+			fill: SBJColor.systemYellow.withAlphaComponent(0.45),
+			stroke: SBJColor.systemOrange.withAlphaComponent(0.95),
 			lineWidth: 2,
 			radius: 3
 		),
 		animatedHighlight: JCSRect = JCSRect(
-			fill: UIColor.systemOrange.withAlphaComponent(0.34),
-			stroke: UIColor.systemRed,
+			fill: SBJColor.systemOrange.withAlphaComponent(0.34),
+			stroke: SBJColor.systemRed,
 			lineWidth: 4,
 			radius: 4
 		),
@@ -55,6 +61,7 @@ public struct PDFSearchPresentationStyle {
 	}
 }
 
+#if !os(macOS)
 @MainActor
 final class PDFSearchOverlayView: UIView {
 	weak var pdfView: PDFView?
@@ -213,4 +220,6 @@ final class PDFSearchOverlayView: UIView {
 		animationLayers.removeAll()
 	}
 }
+#endif // !os(macOS)
+
 #endif

@@ -1,22 +1,39 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import SBJDataDefinition
+
+#if canImport(UIKit)
+public typealias SBJFontDescriptor = UIFontDescriptor
+#endif
 
 public extension CodableFont {
 	/// Shared cached font lookup, with a caller-supplied theme scale.
-	func uiFont(scale: Double = 1) -> UIFont {
+	func nativeFont(scale: Double = 1) -> SBJFont {
 		CodableFontCache.shared.font(for: self, scale: scale)
 	}
 }
 
-extension CodableFont.Weight {
+#if canImport(UIKit)
+public extension CodableFont {
+    func uiFont(scale: Double = 1) -> UIFont { nativeFont(scale: scale) }
 }
+#elseif canImport(AppKit)
+public typealias SBJFontDescriptor = NSFontDescriptor
+public extension CodableFont {
+    func nsFont(scale: Double = 1) -> NSFont { nativeFont(scale: scale) }
+}
+#endif
+
 
 // TODO: Consider exposing cached realized fonts to a separate text measurement
 // service shared by field sizing and localization candidate fitting. Do not cache
 // text widths here without designing keys for content, effective font/scale,
 // formatting, line-break constraints and relevant layout environment.
-/// A process-wide cache for installed font metadata and realized `UIFont` objects.
+/// A process-wide cache for installed font metadata and realized `SBJFont` objects.
 ///
 /// The cache is synchronous and actor-neutral. Installed font families/faces are
 /// enumerated once and retained for the process lifetime. Realized fonts are also
@@ -55,7 +72,7 @@ public final class CodableFontCache: @unchecked Sendable {
 	}
 
 	private let fontLock = NSLock()
-	private var fonts: [Key: UIFont] = [:]
+	private var fonts: [Key: SBJFont] = [:]
 
 	private let catalogLock = NSLock()
 	private var cachedCatalog: Catalog?
@@ -113,21 +130,36 @@ public final class CodableFontCache: @unchecked Sendable {
 		// faces. Some installed families (Arial is a common example) expose real
 		// bold/italic faces while reporting incomplete or identical descriptor-trait
 		// metadata for those faces. What matters to the editor is whether the same
-		// UIFontDescriptor matching path used by `makeFont` actually resolves a
+		// SBJFontDescriptor matching path used by `makeFont` actually resolves a
 		// different face when an attribute is requested.
-		let base = UIFontDescriptor(fontAttributes: [.family: family])
+        #if canImport(AppKit)
+        let members = NSFontManager.shared.availableMembers(ofFontFamily: family) ?? []
+        let weightValues = Set(members.compactMap { ($0.count > 2 ? $0[2] : nil) as? Int })
+        let italicValues = Set(members.map { member in
+            let traits = (member.count > 3 ? member[3] : nil) as? UInt ?? 0
+            return (traits & NSFontTraitMask.italicFontMask.rawValue) != 0
+        })
+        let widthValues = Set(members.map { member in
+            let name = String(describing: member.first ?? "").lowercased()
+            return name.contains("condensed") ? -1 : (name.contains("expanded") ? 1 : 0)
+        })
+        let weightCount = weightValues.count
+        let italicCount = italicValues.count
+        let widthCount = widthValues.count
+        #else
+		let base = SBJFontDescriptor(fontAttributes: [.family: family])
 
-		func matchedFontName(_ traits: [UIFontDescriptor.TraitKey: Any]) -> String {
+		func matchedFontName(_ traits: [SBJFontDescriptor.TraitKey: Any]) -> String {
 			let descriptor = traits.isEmpty
 				? base
 				: base.addingAttributes([.traits: traits])
-			return UIFont(descriptor: descriptor, size: 12).fontName
+			return SBJFont(descriptor: descriptor, size: 12).fontName
 		}
 
 		let weightNames = Set([
-			matchedFontName([.weight: UIFont.Weight.ultraLight.rawValue]),
-			matchedFontName([.weight: UIFont.Weight.regular.rawValue]),
-			matchedFontName([.weight: UIFont.Weight.black.rawValue])
+			matchedFontName([.weight: SBJFont.Weight.ultraLight.rawValue]),
+			matchedFontName([.weight: SBJFont.Weight.regular.rawValue]),
+			matchedFontName([.weight: SBJFont.Weight.black.rawValue])
 		])
 
 		let italicNames = Set([
@@ -141,16 +173,20 @@ public final class CodableFontCache: @unchecked Sendable {
 			matchedFontName([.width: 0.5])
 		])
 
+        let weightCount = weightNames.count
+        let italicCount = italicNames.count
+        let widthCount = widthNames.count
+        #endif
 		return FamilyCapabilities(
-			weightIsEffective: weightNames.count > 1,
-			italicIsEffective: italicNames.count > 1,
-			widthIsEffective: widthNames.count > 1
+			weightIsEffective: weightCount > 1,
+			italicIsEffective: italicCount > 1,
+			widthIsEffective: widthCount > 1
 		)
 	}
 
-	/// Returns a cached `UIFont` for the supplied description and scale.
+	/// Returns a cached `SBJFont` for the supplied description and scale.
 	/// A font is created only the first time a particular pair is requested.
-	public func font(for font: CodableFont, scale: Double = 1.0) -> UIFont {
+	public func font(for font: CodableFont, scale: Double = 1.0) -> SBJFont {
 		let key = Key(font: font, scale: scale)
 
 		if let cached = fontLock.sbjWithLock({ fonts[key] }) {
@@ -169,37 +205,78 @@ public final class CodableFontCache: @unchecked Sendable {
 	}
 
 	/// Realizes a font using preflighted family metadata when needed but does not
-	/// retain the resulting UIFont in the realized-font cache.
-	public func uncachedFont(for font: CodableFont, scale: Double = 1.0) -> UIFont {
+	/// retain the resulting SBJFont in the realized-font cache.
+	public func uncachedFont(for font: CodableFont, scale: Double = 1.0) -> SBJFont {
 		makeFont(for: font, scale: scale)
 	}
 
-	private func makeFont(for font: CodableFont, scale: Double) -> UIFont {
+    #if canImport(AppKit)
+    private func makeFont(for font: CodableFont, scale: Double) -> SBJFont {
+        let size = CGFloat(font.size * scale)
+        let manager = NSFontManager.shared
+        let weight: Int = switch font.weight {
+        case .ultraLight: 1
+        case .thin: 2
+        case .light: 3
+        case .regular: 5
+        case .medium: 6
+        case .semibold: 8
+        case .bold: 9
+        case .heavy: 12
+        case .black: 14
+        }
+        var traits: NSFontTraitMask = []
+        if font.italic { traits.insert(.italicFontMask) }
+        switch font.width {
+        case .condensed: traits.insert(.condensedFontMask)
+        case .expanded: traits.insert(.expandedFontMask)
+        case .standard: break
+        }
+        var result: NSFont
+        if let family = font.family?.name {
+            result = manager.font(withFamily: family, traits: traits, weight: weight, size: size)
+                ?? NSFont(name: family, size: size)
+                ?? .systemFont(ofSize: size, weight: font.weight.nativeWeight)
+        } else {
+            result = .systemFont(ofSize: size, weight: font.weight.nativeWeight)
+        }
+        if font.italic && !manager.traits(of: result).contains(.italicFontMask) {
+            result = manager.convert(result, toHaveTrait: .italicFontMask)
+        }
+        if font.width == .condensed && !manager.traits(of: result).contains(.condensedFontMask) {
+            result = manager.convert(result, toHaveTrait: .condensedFontMask)
+        } else if font.width == .expanded && !manager.traits(of: result).contains(.expandedFontMask) {
+            result = manager.convert(result, toHaveTrait: .expandedFontMask)
+        }
+        return result
+    }
+    #else
+	private func makeFont(for font: CodableFont, scale: Double) -> SBJFont {
 		let size = CGFloat(font.size * scale)
 
 		// System fonts have a direct weight API. Only add descriptor traits for
 		// variations that actually need them; in particular, `.standard` width
 		// means "no width override" rather than forcing a descriptor rematch.
 		guard let family = font.family?.name else {
-			let base = UIFont.systemFont(ofSize: size, weight: font.weight.uiWeight)
+			let base = SBJFont.systemFont(ofSize: size, weight: font.weight.nativeWeight)
 			let descriptor = descriptorApplyingVariations(
 				to: base.fontDescriptor,
 				font: font,
 				includeWeight: false
 			)
-			return UIFont(descriptor: descriptor, size: size)
+			return SBJFont(descriptor: descriptor, size: size)
 		}
 
-		// The editor stores family names. Let UIFontDescriptor choose the best
+		// The editor stores family names. Let SBJFontDescriptor choose the best
 		// matching face from that family using the requested weight and optional
 		// variations instead of selecting a concrete PostScript face ourselves.
-		var descriptor = UIFontDescriptor(fontAttributes: [.family: family])
+		var descriptor = SBJFontDescriptor(fontAttributes: [.family: family])
 		descriptor = descriptorApplyingVariations(
 			to: descriptor,
 			font: font,
 			includeWeight: true
 		)
-		let matched = UIFont(descriptor: descriptor, size: size)
+		let matched = SBJFont(descriptor: descriptor, size: size)
 
 		// A caller may still supply a PostScript face name directly. Family-name
 		// descriptors normally resolve correctly; retain this fallback for source
@@ -208,26 +285,26 @@ public final class CodableFontCache: @unchecked Sendable {
 			|| matched.fontName.caseInsensitiveCompare(family) == .orderedSame {
 			return matched
 		}
-		if let direct = UIFont(name: family, size: size) {
+		if let direct = SBJFont(name: family, size: size) {
 			let directDescriptor = descriptorApplyingVariations(
 				to: direct.fontDescriptor,
 				font: font,
 				includeWeight: true
 			)
-			return UIFont(descriptor: directDescriptor, size: size)
+			return SBJFont(descriptor: directDescriptor, size: size)
 		}
 		return matched
 	}
 
 	private func descriptorApplyingVariations(
-		to descriptor: UIFontDescriptor,
+		to descriptor: SBJFontDescriptor,
 		font: CodableFont,
 		includeWeight: Bool
-	) -> UIFontDescriptor {
-		var traits: [UIFontDescriptor.TraitKey: Any] = [:]
+	) -> SBJFontDescriptor {
+		var traits: [SBJFontDescriptor.TraitKey: Any] = [:]
 
 		if includeWeight {
-			traits[.weight] = font.weight.uiWeight.rawValue
+			traits[.weight] = font.weight.nativeWeight.rawValue
 		}
 
 		// Do not write a width trait for `.standard`. A zero/standard width trait
@@ -249,6 +326,8 @@ public final class CodableFontCache: @unchecked Sendable {
 		return descriptor.addingAttributes([.traits: traits])
 	}
 
+    #endif
+
 	private func catalog() -> Catalog {
 		catalogLock.sbjWithLock {
 			if let cachedCatalog {
@@ -260,8 +339,31 @@ public final class CodableFontCache: @unchecked Sendable {
 		}
 	}
 
+    #if canImport(AppKit)
+    private static func buildCatalog() -> Catalog {
+        let manager = NSFontManager.shared
+        let families = manager.availableFontFamilies.sorted {
+            $0.localizedStandardCompare($1) == .orderedAscending
+        }
+        var facesByFamily: [String: [Face]] = [:]
+        for family in families {
+            facesByFamily[family] = (manager.availableMembers(ofFontFamily: family) ?? []).compactMap { member in
+                guard let name = member.first as? String else { return nil }
+                let traits = (member.count > 3 ? member[3] : nil) as? UInt ?? 0
+                let lower = name.lowercased()
+                return Face(
+                    postScriptName: name,
+                    weight: CGFloat((member.count > 2 ? member[2] : nil) as? Int ?? 5),
+                    italic: (traits & NSFontTraitMask.italicFontMask.rawValue) != 0,
+                    width: lower.contains("condensed") ? .condensed : (lower.contains("expanded") ? .expanded : .standard)
+                )
+            }
+        }
+        return Catalog(families: families, facesByFamily: facesByFamily)
+    }
+    #else
 	private static func buildCatalog() -> Catalog {
-		let families = UIFont.familyNames.sorted {
+		let families = SBJFont.familyNames.sorted {
 			$0.localizedStandardCompare($1) == .orderedAscending
 		}
 
@@ -269,11 +371,11 @@ public final class CodableFontCache: @unchecked Sendable {
 		facesByFamily.reserveCapacity(families.count)
 
 		for family in families {
-			facesByFamily[family] = UIFont.fontNames(forFamilyName: family).compactMap { name in
-				guard let font = UIFont(name: name, size: 12) else { return nil }
+			facesByFamily[family] = SBJFont.fontNames(forFamilyName: family).compactMap { name in
+				guard let font = SBJFont(name: name, size: 12) else { return nil }
 				let descriptor = font.fontDescriptor
 				let symbolicTraits = descriptor.symbolicTraits
-				let attributes = descriptor.fontAttributes[.traits] as? [UIFontDescriptor.TraitKey: Any]
+				let attributes = descriptor.fontAttributes[.traits] as? [SBJFontDescriptor.TraitKey: Any]
 				let weight = (attributes?[.weight] as? NSNumber)?.doubleValue ?? 0
 				let widthValue = (attributes?[.width] as? NSNumber)?.doubleValue ?? 0
 
@@ -297,6 +399,8 @@ public final class CodableFontCache: @unchecked Sendable {
 
 		return Catalog(families: families, facesByFamily: facesByFamily)
 	}
+    #endif
+
 }
 
 private extension NSLock {

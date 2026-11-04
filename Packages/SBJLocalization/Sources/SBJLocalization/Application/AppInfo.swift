@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 public enum AppInfo {
 //These need to be localized
@@ -27,7 +27,7 @@ public enum AppInfo {
 		Bundle.main.bundleIdentifier ?? "Unknown"
 	}
 
-	public static var icon: UIImage? {
+	public static var icon: SBJImage? {
 		Bundle.main.icon
 	}
 }

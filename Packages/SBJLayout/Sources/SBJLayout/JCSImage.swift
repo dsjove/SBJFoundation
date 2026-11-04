@@ -1,13 +1,18 @@
 import CoreGraphics
+import SBJLocalization
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 public struct JCSImage: Renderable {
 	public let cornerRadius: CGFloat
 	public let aspect: Aspect
-	public let image: UIImage?
+	public let image: SBJImage?
 
 	public init(
-		_ image: UIImage?,
+		_ image: SBJImage?,
 		aspect: Aspect = .fit,
 		cornerRadius: CGFloat = 0.0
 	) {
@@ -34,7 +39,12 @@ public struct JCSImage: Renderable {
 		if let image = image {
 			let sized = aspect.apply(size: image.size, in: allocated.size)
 			let placed = align.apply(size: sized, in: allocated)
-			if let ctx = UIGraphicsGetCurrentContext() {
+			#if canImport(AppKit) && !canImport(UIKit)
+            let ctx = NSGraphicsContext.current?.cgContext
+#else
+            let ctx = UIGraphicsGetCurrentContext()
+#endif
+            if let ctx {
 				ctx.saveGState()
 				defer { ctx.restoreGState() }
 				if cornerRadius > 0 {

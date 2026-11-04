@@ -65,7 +65,7 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
 					catalog: SBJDefinitionCatalog(Value.self),
 					title: "Character Definition"
 				)
-				.navigationBarTitleDisplayMode(.inline)
+				.sbjInlineNavigationTitle()
 				.toolbar {
 					ToolbarItem(placement: .confirmationAction) {
 						Button("Done") { presentationModel.isShowingStructure = false }

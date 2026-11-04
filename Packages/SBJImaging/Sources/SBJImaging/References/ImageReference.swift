@@ -5,6 +5,8 @@ import ImageIO
 #endif
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 import SBJFileResources
 import SBJDataDefinition
@@ -67,5 +69,22 @@ public extension ImageReference {
         }
     }
     var data: Data? { image?.pngData() }
+}
+#endif
+
+#if os(macOS)
+import SBJLocalization
+
+public extension ImageReference {
+    var image: SBJImage? {
+        switch self {
+        case .none: return nil
+        case .symbol(let symbol): return symbol.nativeImage
+        case .file(let url):
+            return url.withSecurityScopedAccess { scopedURL in
+                NSImage(contentsOf: scopedURL)
+            }
+        }
+    }
 }
 #endif

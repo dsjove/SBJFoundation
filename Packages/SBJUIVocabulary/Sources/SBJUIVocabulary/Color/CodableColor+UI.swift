@@ -4,6 +4,8 @@ import SBJDataDefinition
 
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 extension CodableColor {
@@ -50,3 +52,30 @@ public extension CodableColor {
 	}
 }
 #endif
+
+#if canImport(AppKit)
+public extension CodableColor {
+    init(color: NSColor) {
+        guard let rgb = color.usingColorSpace(.deviceRGB) else {
+            self.init(0, 0, 0, 1)
+            return
+        }
+        self.init(Double(rgb.redComponent), Double(rgb.greenComponent), Double(rgb.blueComponent), Double(rgb.alphaComponent))
+    }
+
+    var nsColor: NSColor {
+        NSColor(deviceRed: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(opacity))
+    }
+}
+#endif
+
+// Shared platform-native representation for drawing clients.
+public extension CodableColor {
+    var sbjColor: SBJColor {
+        #if canImport(UIKit)
+        uiColor
+        #elseif canImport(AppKit)
+        nsColor
+        #endif
+    }
+}

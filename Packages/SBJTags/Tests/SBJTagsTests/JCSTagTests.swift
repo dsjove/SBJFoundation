@@ -1,3 +1,4 @@
+#if canImport(UIKit) || canImport(AppKit)
 import CoreGraphics
 import Testing
 @testable import SBJLayout
@@ -51,3 +52,5 @@ struct JCSTagTests {
 		#expect(JCSTagGroup([]).measure() == .zero)
 	}
 }
+
+#endif

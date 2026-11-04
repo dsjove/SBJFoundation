@@ -129,7 +129,7 @@ public struct SBJSelectionView<Element: Identifiable, Label: View>: View {
                     Spacer()
                 }
             }
-#if !os(tvOS)
+#if !os(tvOS) && !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
             .navigationTitle(title)

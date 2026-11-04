@@ -37,7 +37,7 @@ struct PackageLibraryStoreTests {
 		#expect(scan.presentPackageNames.contains("broken.pkg"))
 		#expect(scan.states.isEmpty)
 		#expect(scan.issues.count == 1)
-		#expect(scan.issues.first?.packageURL == broken)
+		#expect(scan.issues.first?.packageURL.resolvingSymlinksInPath() == broken.resolvingSymlinksInPath())
 	}
 
 	@Test("Non-directory package candidate remains represented as a catalog issue")
@@ -54,7 +54,7 @@ struct PackageLibraryStoreTests {
 		#expect(scan.occupiedPackageNames == ["broken.pkg"])
 		#expect(scan.states.isEmpty)
 		#expect(scan.issues.count == 1)
-		#expect(scan.issues.first?.packageURL == broken)
+		#expect(scan.issues.first?.packageURL.resolvingSymlinksInPath() == broken.resolvingSymlinksInPath())
 	}
 
 	@Test("Misnamed decodable package reserves both its actual and canonical package names")

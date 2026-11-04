@@ -428,7 +428,12 @@ extension CameraModel {
 		case .on:
 			return true
 		case .auto:
+			#if os(macOS)
+			// AVFoundation does not expose scene-based flash detection on macOS.
+			return false
+			#else
 			return photoOutput.isFlashScene
+			#endif
 		case .off, .torch:
 			return false
 		}

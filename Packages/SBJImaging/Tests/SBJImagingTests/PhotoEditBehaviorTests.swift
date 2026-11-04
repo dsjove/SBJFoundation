@@ -1,13 +1,15 @@
 import CoreLocation
 import Foundation
 import Testing
-import UIKit
 import UniformTypeIdentifiers
+#if canImport(UIKit)
+import UIKit
+#endif
 import SBJFileResources
 import SBJDataDefinition
-@testable import SBJImage
+@testable import SBJImaging
 import SBJUIVocabulary
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS)
 
 @Suite("Photo edit behavior")
 struct PhotoEditBehaviorTests {
@@ -129,6 +131,7 @@ struct PhotoEditBehaviorTests {
         #expect(decoded.skew == .identity)
     }
 
+    #if canImport(UIKit)
     @Test func imageDocumentPackageRoundTripsPortableState() throws {
         let source = SBJResourceContent(data: Data([1, 2, 3]), contentType: .png)
         var geometry = PhotoEditGeometry(crop: .init(option: .square, freeAspectRatio: 1))
@@ -264,6 +267,8 @@ struct PhotoEditBehaviorTests {
         let source = SBJResourceContent(data: Data([1, 2, 3]), contentType: .plainText)
         #expect(source.preservingImageEdits() == nil)
     }
+
+    #endif
 
     @Test func cropMutationsOwnTheirDependentGeometryReset() {
         var geometry = PhotoEditGeometry(

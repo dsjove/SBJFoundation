@@ -591,7 +591,7 @@ struct PackageDocumentLibraryTests {
 
 		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
 		try await library.load()
-		#expect(library.catalogIssues.map(\.packageURL).contains(misnamedURL))
+		#expect(library.catalogIssues.contains { $0.packageURL.resolvingSymlinksInPath() == misnamedURL.resolvingSymlinksInPath() })
 
 		let importedURL = try write(.init(
 			id: reservedID, name: "Incoming", role: .user, modifiedAt: .now, value: "preserve"
@@ -615,11 +615,11 @@ struct PackageDocumentLibraryTests {
 
 		let library = PackageDocumentLibrary<TestDocument>(rootDirectory: root)
 		try await library.load()
-		let issue = try #require(library.catalogIssues.first { $0.packageURL == badURL })
+		let issue = try #require(library.catalogIssues.first { $0.packageURL.resolvingSymlinksInPath() == badURL.resolvingSymlinksInPath() })
 		try await library.deleteCatalogIssue(issue)
 
 		#expect(!FileManager.default.fileExists(atPath: badURL.path))
-		#expect(!library.catalogIssues.contains { $0.packageURL == badURL })
+		#expect(!library.catalogIssues.contains { $0.packageURL.resolvingSymlinksInPath() == badURL.resolvingSymlinksInPath() })
 	}
 
 	@MainActor @Test("Document URLs route to the canonical live document")

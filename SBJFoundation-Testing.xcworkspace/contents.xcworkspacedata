@@ -26,9 +26,6 @@
       location = "group:Packages/SBJHelp">
    </FileRef>
    <FileRef
-      location = "group:Packages/SBJImage">
-   </FileRef>
-   <FileRef
       location = "group:Packages/SBJLayout">
    </FileRef>
    <FileRef
@@ -48,5 +45,8 @@
    </FileRef>
    <FileRef
       location = "group:Packages/SBJTags">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJImaging">
    </FileRef>
 </Workspace>

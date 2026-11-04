@@ -9,6 +9,7 @@ let package = Package(
         .watchOS(.v10),
         .visionOS(.v1),
         .tvOS(.v17),
+        .macOS(.v14),
     ],
     products: [
         .library(
@@ -25,7 +26,7 @@ let package = Package(
         .package(path: "Packages/SBJDocuments"),
         .package(path: "Packages/SBJUIVocabulary"),
         .package(path: "Packages/SBJLayout"),
-        .package(path: "Packages/SBJImage"),
+        .package(path: "Packages/SBJImaging"),
         .package(path: "Packages/SBJDataDefinitionReport"),
         .package(path: "Packages/SBJHelp"),
         .package(path: "Packages/SBJSharing"),
@@ -44,7 +45,7 @@ let package = Package(
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJLayout", package: "SBJLayout"),
-                .product(name: "SBJImage", package: "SBJImage"),
+                .product(name: "SBJImaging", package: "SBJImaging"),
                 .product(name: "SBJDataDefinitionReport", package: "SBJDataDefinitionReport"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
                 .product(name: "SBJSharing", package: "SBJSharing"),

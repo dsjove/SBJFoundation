@@ -1,7 +1,7 @@
-#if !os(watchOS) && canImport(UIKit) && canImport(PDFKit)
+#if !os(watchOS) && canImport(PDFKit) && (canImport(UIKit) || canImport(AppKit))
 import Foundation
 import PDFKit
-import UIKit
+import SBJUIVocabulary
 import SBJDataDefinition
 import SBJLayout
 
@@ -32,9 +32,9 @@ public enum SBJDefinitionPDFReport {
     // Each row remains an independent pagination unit, preserving section positions.
     private static func content(_ catalog: SBJDefinitionCatalog, title: String) -> Grid {
         var nodes: [Renderables.Node] = []
-        let ink = UIColor(red: 0.12, green: 0.20, blue: 0.32, alpha: 1)
-        let blue = UIColor(red: 0.15, green: 0.32, blue: 0.52, alpha: 1)
-        let muted = UIColor(red: 0.39, green: 0.45, blue: 0.52, alpha: 1)
+        let ink = SBJColor(red: 0.12, green: 0.20, blue: 0.32, alpha: 1)
+        let blue = SBJColor(red: 0.15, green: 0.32, blue: 0.52, alpha: 1)
+        let muted = SBJColor(red: 0.39, green: 0.45, blue: 0.52, alpha: 1)
 
         // Property metadata is accumulated and rendered as ONE two-column table.
         // Rows share identical columns, instead of sizing labels independently.
@@ -59,7 +59,7 @@ public enum SBJDefinitionPDFReport {
             propertyMetadata.removeAll()
         }
         func line(_ value: String, size: CGFloat = 9, bold: Bool = false,
-                  color: UIColor? = nil, section: String? = nil) {
+                  color: SBJColor? = nil, section: String? = nil) {
             if insideProperty { flushPropertyMetadata() }
             let item = JCSText(verbatim: value,
                                font: bold ? .boldSystemFont(ofSize: size) : .systemFont(ofSize: size),
@@ -72,7 +72,7 @@ public enum SBJDefinitionPDFReport {
                 if insideProperty { firstPropertyRow = false }
             }
         }
-        func rule(color: UIColor) {
+        func rule(color: SBJColor) {
             if insideProperty { flushPropertyMetadata() }
             nodes.append(.group(PaginationGroup(behavior: .keepWith) {
                 DefinitionReportRule(stroke: color)
@@ -278,7 +278,7 @@ public enum SBJDefinitionPDFReport {
 
 /// Measured horizontal rule. JCSLine is a drawing primitive, not a renderable.
 private struct DefinitionReportRule: Renderable {
-    let stroke: UIColor
+    let stroke: SBJColor
     func measure(bounds: CGSize) -> CGSize { CGSize(width: bounds.width, height: 1) }
     func render(in allocated: CGRect, measured: CGSize, align: SBJLayout.Alignment) {
         let y = allocated.midY

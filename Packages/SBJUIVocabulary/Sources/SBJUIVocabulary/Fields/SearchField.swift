@@ -29,7 +29,7 @@ public struct SearchField<S: SearchProtocol>: View {
     private var searchField: some View {
         TextField(titleKey, text: $searching.text)
             .sbjSingleLineField()
-#if !os(watchOS)
+#if !os(watchOS) && !os(macOS)
             .autocapitalization(.none)
 #endif
             .disableAutocorrection(true)

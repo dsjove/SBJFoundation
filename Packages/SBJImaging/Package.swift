@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "SBJImage",
+    name: "SBJImaging",
     platforms: [
-        .iOS(.v17), .watchOS(.v10), .visionOS(.v1), .tvOS(.v17),
+        .macOS(.v14), .iOS(.v17), .watchOS(.v10), .visionOS(.v1), .tvOS(.v17),
     ],
-    products: [.library(name: "SBJImage", targets: ["SBJImage"])],
+    products: [.library(name: "SBJImaging", targets: ["SBJImaging"])],
     dependencies: [
         .package(path: "../SBJCamera"),
         .package(path: "../SBJLocation"),
@@ -20,7 +20,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SBJImage",
+            name: "SBJImaging",
             dependencies: [
                 .product(name: "SBJCamera", package: "SBJCamera"),
                 .product(name: "SBJLocation", package: "SBJLocation"),
@@ -39,9 +39,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "SBJImageTests",
+            name: "SBJImagingTests",
             dependencies: [
-                "SBJImage",
+                "SBJImaging",
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),

@@ -87,12 +87,16 @@ public struct PDFGenerator {
 		)
 
 		let pageRect = pageLayout.pageRect
-		let format = UIGraphicsPDFRendererFormat()
+	#if os(macOS)
+		var format = SBJPDFRendererFormat()
+	#else
+		let format = SBJPDFRendererFormat()
+	#endif
 		var documentInfo: [String: Any] = [:]
 		if let title { documentInfo[kCGPDFContextTitle as String] = title }
 		if let creator { documentInfo[kCGPDFContextCreator as String] = creator }
 		format.documentInfo = documentInfo
-		let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
+		let renderer = SBJPDFRenderer(bounds: pageRect, format: format)
 		var positions: [String: PaginationPosition] = [:]
 
 		let collector = PDFFormCollector()

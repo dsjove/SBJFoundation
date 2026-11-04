@@ -38,13 +38,17 @@ public struct SBJAnyHelpContentPresenter: SBJHelpContentPresenter {
 @MainActor
 public enum SBJHelpPresenters {
     public static func builtIn(for contentType: UTType) -> SBJAnyHelpContentPresenter? {
-        #if canImport(UIKit) && canImport(WebKit)
+        #if (canImport(UIKit) || canImport(AppKit)) && canImport(WebKit)
         if contentType.conforms(to: .html) {
             return SBJAnyHelpContentPresenter(SBJHTMLHelpPresenter())
         }
         #endif
         #if targetEnvironment(macCatalyst)
         if #available(macCatalyst 27.0, *), contentType.conforms(to: .markdown) {
+            return SBJAnyHelpContentPresenter(SBJMarkdownHelpPresenter())
+        }
+        #elseif os(macOS)
+        if #available(macOS 27.0, *), contentType.conforms(to: .markdown) {
             return SBJAnyHelpContentPresenter(SBJMarkdownHelpPresenter())
         }
         #elseif os(iOS)

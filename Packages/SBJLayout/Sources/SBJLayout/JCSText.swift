@@ -1,10 +1,15 @@
 import CoreGraphics
+import SBJUIVocabulary
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import SBJLocalization
 
 public struct JCSText: Renderable {
 	public let text: String?
-	public let font: UIFont
+	public let font: SBJFont
 	public let align: Alignment?
 	public let lines: ClosedRange<Int>?
 	public let lineBreakMode: NSLineBreakMode
@@ -13,7 +18,7 @@ public struct JCSText: Renderable {
 // Immutable attributed content preserves JCSText value semantics; render works on a private mutable copy.
 
 	public init(
-		size font: UIFont?,
+		size font: SBJFont?,
 		chars: Int? = nil,
 		lines: Int = 1
 	) {
@@ -22,8 +27,8 @@ public struct JCSText: Renderable {
 
 	public init(
 		_ text: CustomStringConvertible?,
-		font: UIFont?,
-		color: UIColor?,
+		font: SBJFont?,
+		color: SBJColor?,
 		align: Alignment? = nil,
 		minChars: Int? = nil,
 		lines: ClosedRange<Int>? = nil,
@@ -34,8 +39,8 @@ public struct JCSText: Renderable {
 
 	public init(
 		_ jargon: String?,
-		font: UIFont? = nil,
-		color: UIColor? = nil,
+		font: SBJFont? = nil,
+		color: SBJColor? = nil,
 		align: Alignment? = nil,
 		minChars: Int? = nil,
 		lines: ClosedRange<Int>? = nil,
@@ -55,8 +60,8 @@ public struct JCSText: Renderable {
 	public init<Value: Sendable>(
 		_ jargon: String?,
 		value: Value,
-		font: UIFont? = nil,
-		color: UIColor? = nil,
+		font: SBJFont? = nil,
+		color: SBJColor? = nil,
 		align: Alignment? = nil,
 		minChars: Int? = nil,
 		lines: ClosedRange<Int>? = nil,
@@ -78,15 +83,15 @@ public struct JCSText: Renderable {
 
 	public init(
 		verbatim text: String?,
-		font: UIFont? = nil,
-		color: UIColor? = nil,
+		font: SBJFont? = nil,
+		color: SBJColor? = nil,
 		align: Alignment? = nil,
 		minChars: Int? = nil,
 		lines: ClosedRange<Int>? = nil,
 		lineBreakMode: NSLineBreakMode = .byWordWrapping
 	) {
-		let font = font ?? UIFont.systemFont(ofSize: 9.0)
-		let color = color ?? UIColor.black
+		let font = font ?? SBJFont.systemFont(ofSize: 9.0)
+		let color = color ?? SBJColor.black
 		self.text = text
 		self.font = font
 		self.align = align

@@ -162,7 +162,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
         }
         }
         }
-#if !os(tvOS)
+#if !os(tvOS) && !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
 #endif
         .navigationTitle("Attachments")

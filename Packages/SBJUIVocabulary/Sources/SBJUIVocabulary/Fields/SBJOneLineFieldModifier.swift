@@ -53,7 +53,9 @@ private extension View {
             .sbjFieldChrome(focused ? .focused : .standard)
             .multilineTextAlignment(.leading)
             .lineLimit(1)
+#if !os(macOS)
             .submitLabel(.done)
+#endif
     }
 }
 

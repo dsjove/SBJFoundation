@@ -1,7 +1,6 @@
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS)
 import Observation
 import SwiftUI
-import UIKit
 import SBJDataDefinition
 import SBJUIVocabulary
 

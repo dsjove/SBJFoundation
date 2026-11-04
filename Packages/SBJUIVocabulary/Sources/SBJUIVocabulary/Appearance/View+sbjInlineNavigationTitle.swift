@@ -4,7 +4,7 @@ import SwiftUI
 public extension View {
 	@ViewBuilder
 	func sbjInlineNavigationTitle() -> some View {
-		#if os(tvOS)
+		#if os(tvOS) || os(macOS)
 		self
 		#else
 		self.navigationBarTitleDisplayMode(.inline)

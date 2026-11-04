@@ -50,21 +50,37 @@ public struct SBJHelpSheet: View {
         return about
     }
 
+    private var dismissToolbarPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .cancellationAction
+        #else
+        .topBarLeading
+        #endif
+    }
+
+    private var aboutToolbarPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .primaryAction
+        #else
+        .topBarTrailing
+        #endif
+    }
+
     public var body: some View {
         NavigationStack {
             content
                 .navigationTitle(asset.displayName)
-                #if !os(tvOS)
+                #if os(iOS) || targetEnvironment(macCatalyst)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: dismissToolbarPlacement) {
                         Button { dismiss() } label: {
                             Label("Dismiss", symbol: SBJSymbology.dismiss)
                         }
                     }
                     if availableAboutAsset != nil {
-                        ToolbarItem(placement: .topBarTrailing) {
+                        ToolbarItem(placement: aboutToolbarPlacement) {
                             Button { showAboutSheet = true } label: {
                                 Label(SBJHelpSymbology.aboutLabel)
                             }

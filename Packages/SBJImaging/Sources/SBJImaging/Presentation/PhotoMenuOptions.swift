@@ -1,6 +1,5 @@
 import PhotosUI
 import SwiftUI
-import UIKit
 import SBJCamera
 import SBJDataDefinition
 import SBJUIVocabulary

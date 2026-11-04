@@ -1,54 +1,39 @@
-import SBJUIVocabulary
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
-import LinkPresentation
+#if !os(watchOS) && !os(tvOS) && (canImport(UIKit) || canImport(AppKit))
+import Foundation
+import SBJLocalization
+#if canImport(UIKit)
 import UIKit
+import LinkPresentation
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
-/// A fully prepared payload for one UIKit share presentation.
-///
-/// Prepare expensive representations before constructing this value. The share
-/// presenter retains the exact payload for the lifetime of the activity sheet,
-/// so SwiftUI recomputation never asks the caller to regenerate it.
+/// Retains the prepared share items throughout one presentation.
 @MainActor
 public struct SBJSharePayload {
     public let activityItems: [Any]
-    public let applicationActivities: [UIActivity]?
+    public let applicationActivities: [SBJShareActivity]?
 
-    public init(
-        activityItems: [Any],
-        applicationActivities: [UIActivity]? = nil
-    ) {
+    public init(activityItems: [Any], applicationActivities: [SBJShareActivity]? = nil) {
         self.activityItems = activityItems
         self.applicationActivities = applicationActivities
     }
 
-    public init(
-        _ activityItem: Any,
-        applicationActivities: [UIActivity]? = nil
-    ) {
-        self.init(
-            activityItems: [activityItem],
-            applicationActivities: applicationActivities
-        )
+    public init(_ activityItem: Any, applicationActivities: [SBJShareActivity]? = nil) {
+        self.init(activityItems: [activityItem], applicationActivities: applicationActivities)
     }
 
-    /// Shares an image as an image while also supplying Link Presentation
-    /// metadata so the system share sheet can display the image preview.
-    public init(
-        _ image: UIImage,
-        title: String? = nil,
-        applicationActivities: [UIActivity]? = nil
-    ) {
-        self.init(
-            activityItems: [SBJImageActivityItemSource(image: image, title: title)],
-            applicationActivities: applicationActivities
-        )
+    public init(_ image: SBJImage, title: String? = nil, applicationActivities: [SBJShareActivity]? = nil) {
+        #if canImport(UIKit)
+        self.init(activityItems: [SBJImageActivityItemSource(image: image, title: title)], applicationActivities: applicationActivities)
+        #else
+        self.init(activityItems: [image], applicationActivities: applicationActivities)
+        #endif
     }
 }
 
-/// `UIActivityViewController` can share a bare `UIImage`, but does not reliably
-/// use it for the header preview. Supplying the same image through an activity
-/// item source lets us attach `LPLinkMetadata` without changing the item that
-/// receiving activities get.
+#if canImport(UIKit)
+/// UIKit needs an activity item source for the share sheet's image header metadata.
 private final class SBJImageActivityItemSource: NSObject, UIActivityItemSource {
     private let image: UIImage
     private let title: String?
@@ -58,26 +43,16 @@ private final class SBJImageActivityItemSource: NSObject, UIActivityItemSource {
         self.title = title
     }
 
-    func activityViewControllerPlaceholderItem(
-        _ activityViewController: UIActivityViewController
-    ) -> Any {
-        image
-    }
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any { image }
 
-    func activityViewController(
-        _ activityViewController: UIActivityViewController,
-        itemForActivityType activityType: UIActivity.ActivityType?
-    ) -> Any? {
-        image
-    }
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? { image }
 
-    func activityViewControllerLinkMetadata(
-        _ activityViewController: UIActivityViewController
-    ) -> LPLinkMetadata? {
+    func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
         let metadata = LPLinkMetadata()
         metadata.title = title
         metadata.imageProvider = NSItemProvider(object: image)
         return metadata
     }
 }
+#endif
 #endif

@@ -1,4 +1,10 @@
+#if canImport(UIKit) || canImport(AppKit)
+import CoreGraphics
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import SBJUIVocabulary
 import SBJLayout
 
@@ -25,16 +31,20 @@ public struct JCSTag: Renderable {
 		let cornerRadius: CGFloat = 8
 		let reservedStrokeWidth: CGFloat = 2
 
-		let baseFont = UIFont.preferredFont(forTextStyle: .caption1)
-		let font: UIFont
+		let font: SBJFont
+#if canImport(UIKit)
+		let baseFont = SBJFont.preferredFont(forTextStyle: .caption1)
 		if let descriptor = baseFont.fontDescriptor.withSymbolicTraits(.traitBold) {
-			font = UIFont(descriptor: descriptor, size: baseFont.pointSize)
+			font = SBJFont(descriptor: descriptor, size: baseFont.pointSize)
 		} else {
 			font = baseFont
 		}
+#elseif canImport(AppKit)
+		font = SBJFont.systemFont(ofSize: SBJFont.smallSystemFontSize, weight: .bold)
+#endif
 
-		let fillColor = color.uiColor
-		let foregroundColor: UIColor = fillColor.isLight ? .black : .white
+		let fillColor = color.sbjColor
+		let foregroundColor: SBJColor = fillColor.isLight ? .black : .white
 
 		let chrome = JCSRect(
 			fill: fillColor,
@@ -154,3 +164,5 @@ public extension TagUser {
 		)
 	}
 }
+
+#endif

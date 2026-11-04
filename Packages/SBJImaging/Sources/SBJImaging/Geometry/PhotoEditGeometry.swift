@@ -71,7 +71,7 @@ public struct PhotoEditGeometry: Codable, Equatable, Sendable {
         self.magnification = min(max(magnification, 1), maximum)
     }
 
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS)
     public func constrained(
         sourceSize: CGSize,
         containerSize: CGSize,

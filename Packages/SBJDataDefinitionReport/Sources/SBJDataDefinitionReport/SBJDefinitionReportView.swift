@@ -1,4 +1,4 @@
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit) && canImport(PDFKit)
+#if !os(watchOS) && !os(tvOS) && canImport(PDFKit) && (canImport(UIKit) || canImport(AppKit))
 import Foundation
 import PDFKit
 import SwiftUI
@@ -35,14 +35,30 @@ public struct SBJDefinitionReportView: View {
         _caseSort = State(initialValue: catalog.options.caseSort)
     }
 
+    private var pageControlPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .navigation
+        #else
+        .topBarLeading
+        #endif
+    }
+
+    private var reportActionsPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .primaryAction
+        #else
+        .topBarTrailing
+        #endif
+    }
+
     public var body: some View {
         SBJSharePresentationHost { sharePresenter in
         PDFPresentationView(presentation: presentation)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: pageControlPlacement) {
                     PDFPageControlView(controller: presentation.continuousController)
                 }
-                ToolbarItemGroup(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: reportActionsPlacement) {
                     SBJSymbolButton(
                         SBJLayoutSymbology.pageLayoutLabel
                     ) {

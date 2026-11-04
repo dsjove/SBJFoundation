@@ -1,6 +1,10 @@
-#if canImport(UIKit) && canImport(WebKit)
+#if (canImport(UIKit) || canImport(AppKit)) && canImport(WebKit)
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UniformTypeIdentifiers
 import WebKit
 import SBJLocalization
@@ -33,11 +37,18 @@ private final class SBJHelpWebViewScroller {
     }
 
     func scrollPage(down: Bool) {
+#if canImport(AppKit) && !canImport(UIKit)
+        let script = down
+            ? "window.scrollBy({top: window.innerHeight, behavior: 'smooth'});"
+            : "window.scrollTo({top: 0, behavior: 'smooth'});"
+        webView?.evaluateJavaScript(script, completionHandler: nil)
+#else
         guard let scrollView = webView?.scrollView else { return }
         let pageHeight = scrollView.frame.height
         let maximumY = max(0, scrollView.contentSize.height - scrollView.frame.height)
         let y = down ? min(scrollView.contentOffset.y + pageHeight, maximumY) : 0
         scrollView.setContentOffset(CGPoint(x: 0, y: y), animated: true)
+#endif
     }
 }
 
@@ -56,6 +67,7 @@ private struct SBJHTMLHelpPresentation: View {
                 scroller: scroller
             )
 
+            #if !os(macOS) || targetEnvironment(macCatalyst)
             if scrollState != .none {
                 Button {
                     scroller.scrollPage(down: scrollState != .atBottom)
@@ -73,10 +85,12 @@ private struct SBJHTMLHelpPresentation: View {
                 }
                 .accessibilityLabel(scrollState == .atBottom ? "Scroll to top" : "Scroll down one page")
             }
+            #endif
         }
     }
 }
 
+#if canImport(UIKit)
 private struct SBJHTMLHelpView: UIViewRepresentable {
     let html: String
     @Binding var scrollState: SBJHelpScrollState
@@ -189,4 +203,53 @@ private struct SBJHTMLHelpView: UIViewRepresentable {
         webView.scrollView.removeObserver(coordinator, forKeyPath: "contentOffset")
     }
 }
+#endif // UIKit
+
+#if canImport(AppKit) && !canImport(UIKit)
+private struct SBJHTMLHelpView: NSViewRepresentable {
+    let html: String
+    @Binding var scrollState: SBJHelpScrollState
+    let scroller: SBJHelpWebViewScroller
+
+    @MainActor
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        var lastHTML: String?
+        var parent: SBJHTMLHelpView
+        init(parent: SBJHTMLHelpView) { self.parent = parent }
+
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
+            guard navigationAction.navigationType == .linkActivated,
+                  let url = navigationAction.request.url else {
+                decisionHandler(.allow)
+                return
+            }
+            switch url.scheme?.lowercased() {
+            case "http", "https", "mailto":
+                url.open()
+                decisionHandler(.cancel)
+            default:
+                decisionHandler(.allow)
+            }
+        }
+
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    func makeNSView(context: Context) -> WKWebView {
+        let view = WKWebView()
+        view.navigationDelegate = context.coordinator
+        scroller.setWebView(view)
+        return view
+    }
+
+    func updateNSView(_ view: WKWebView, context: Context) {
+        context.coordinator.parent = self
+        guard context.coordinator.lastHTML != html else { return }
+        context.coordinator.lastHTML = html
+        view.loadHTMLString(html, baseURL: nil)
+    }
+}
+#endif
 #endif

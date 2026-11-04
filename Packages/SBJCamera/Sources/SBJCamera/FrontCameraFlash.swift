@@ -148,6 +148,22 @@ private final class FlashHostView: UIView {
     }
 }
 
+#elseif os(macOS)
+
+// macOS has no equivalent of UIScreen.brightness. Use the same SwiftUI
+// illumination overlay, without attempting to modify display brightness.
+public extension View {
+    func frontCameraFlash(_ flash: FrontCameraFlash) -> some View {
+        overlay {
+            if flash.isActive {
+                Color.white
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
 #else
 
 public extension View {

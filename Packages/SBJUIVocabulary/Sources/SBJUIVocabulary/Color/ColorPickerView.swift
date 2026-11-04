@@ -3,10 +3,11 @@ import SwiftUI
 import UIKit
 import SBJDataDefinition
 
-// TODO(ColorPicker duplication — unresolved): SBJFoundation still has both this UIKit-backed
-// ColorPickerView and direct SwiftUI.ColorPicker use in SBJColorEditor. Do not consolidate yet:
-// the wrapper was introduced because SwiftUI.ColorPicker exposed unwanted cross-platform
-// behavior. Resolve only after the two paths are compared on every supported platform.
+// The public sheet-facing ColorPickerView API is shared across platforms.
+// UIKit's UIColorPickerViewController preserves the iOS interaction while
+// macOS uses the native SwiftUI ColorPicker and system color panel.
+// TODO: Compare the direct ColorPicker in SBJColorEditor with this wrapper
+// before attempting to merge their distinct presentation behaviors.
 
 public struct ColorPickerView: UIViewControllerRepresentable {
 	private let title: String
@@ -49,5 +50,36 @@ public struct ColorPickerView: UIViewControllerRepresentable {
 	}
 
 	public func updateUIViewController(_ uiViewController: UIColorPickerViewController, context: Context) {}
+}
+#endif
+
+#if os(macOS)
+import SwiftUI
+
+/// Native macOS color editing, presented using the same sheet-facing API as iOS.
+/// SwiftUI's ColorPicker uses the system color panel; no custom AppKit panel
+/// coordination or parallel color conversion is needed.
+public struct ColorPickerView: View {
+    private let title: String
+    @Binding private var selectedColor: Color
+    @Environment(\.dismiss) private var dismiss
+
+    public init(title: String, selectedColor: Binding<Color>) {
+        self.title = title
+        self._selectedColor = selectedColor
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ColorPicker(title, selection: $selectedColor, supportsOpacity: true)
+            HStack {
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+        .frame(minWidth: 300)
+    }
 }
 #endif

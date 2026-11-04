@@ -1,4 +1,4 @@
-#if !os(watchOS) && canImport(UIKit)
+#if !os(watchOS)
 import CoreGraphics
 import Foundation
 import SBJDataDefinition

@@ -1,5 +1,5 @@
 import SBJUIVocabulary
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS) && (canImport(UIKit) || canImport(AppKit))
 import SwiftUI
 import SBJLocalization
 

@@ -1,12 +1,17 @@
+import SBJUIVocabulary
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// Renders the current PDF page number while reserving enough width for the
 /// expected number of digits in the document's page count.
 public struct JCSPageNumber: Renderable {
-	public let font: UIFont
+	public let font: SBJFont
 	public let estimatedPageCountDigits: Int
 
-	public init(font: UIFont, estimatedPageCountDigits: Int = 3) {
+	public init(font: SBJFont, estimatedPageCountDigits: Int = 3) {
 		self.font = font
 		self.estimatedPageCountDigits = max(1, estimatedPageCountDigits)
 	}

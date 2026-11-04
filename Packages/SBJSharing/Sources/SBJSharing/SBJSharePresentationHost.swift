@@ -1,5 +1,8 @@
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS) && (canImport(UIKit) || canImport(AppKit))
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
 import SBJUIVocabulary
 
 /// Stable owner for UIKit share presentation.
@@ -26,10 +29,14 @@ public struct SBJSharePresentationHost<Content: View>: View {
         @Bindable var bindingPresenter = presenter
         content(presenter)
             .sheet(item: $bindingPresenter.presentation, onDismiss: finishPresentation) { presentation in
+                #if canImport(AppKit)
+                SBJMacShareSheet(payload: presentation.payload)
+                #else
                 ShareSheet(
                     activityItems: presentation.payload.activityItems,
                     applicationActivities: presentation.payload.applicationActivities
                 )
+                #endif
             }
             .onChange(of: presenter.presentation?.id) { _, newID in
                 synchronizeChromeSuppression(isPresented: newID != nil)
@@ -56,6 +63,20 @@ public struct SBJSharePresentationHost<Content: View>: View {
             isSuppressingChrome = false
             chromeSuppression.end()
         }
+    }
+}
+#endif
+
+#if canImport(AppKit)
+private struct SBJMacShareSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let payload: SBJSharePayload
+
+    var body: some View {
+        ShareSheet(activityItems: payload.activityItems, applicationActivities: payload.applicationActivities) {
+            dismiss()
+        }
+        .frame(minWidth: 280, minHeight: 80)
     }
 }
 #endif

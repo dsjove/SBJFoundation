@@ -1,9 +1,7 @@
 import Foundation
 import SBJLocalization
 import SBJFileResources
-#if canImport(UIKit)
-import UIKit
-#endif
+
 
 /// Resolves application, caller, and embedded-help tokens in a help source.
 ///
@@ -98,7 +96,7 @@ public struct SBJHelpTemplateRenderer {
             guard
                 let reference = configuration.semanticImages[name],
                 let encoded = encodeImage(
-                    reference.uiImage?.withConfiguration(UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)),
+                    reference.nativeImage,
                     alt: name
                 )
             else { continue }
@@ -137,39 +135,15 @@ public struct SBJHelpTemplateRenderer {
 #if os(watchOS)
         return nil
 #else
-        let image: UIImage?
-        if isAsset {
-            image = UIImage(named: imageName)
-        } else {
-            let configuration = UIImage.SymbolConfiguration(pointSize: 48, weight: .regular)
-            image = UIImage(systemName: imageName, withConfiguration: configuration)
-        }
-
-        return encodeImage(image, alt: imageName)
+        let symbol: SBJSymbol = isAsset ? .asset(imageName, bundle: nil) : .system(imageName)
+        return encodeImage(symbol.nativeImage, alt: imageName)
 #endif
     }
 
 #if !os(watchOS)
-    private func encodeImage(_ image: UIImage?, alt: String) -> String? {
-        guard let image else { return nil }
-        let renderer = UIGraphicsImageRenderer(size: image.size)
-        let rendered = renderer.image { context in
-            (UIColor(named: "AccentColor") ?? .systemBlue).setFill()
-            guard let cgImage = image.cgImage else {
-                image.draw(in: CGRect(origin: .zero, size: image.size))
-                return
-            }
-            context.cgContext.translateBy(x: 0, y: image.size.height)
-            context.cgContext.scaleBy(x: 1, y: -1)
-            context.cgContext.setBlendMode(.normal)
-            let rect = CGRect(origin: .zero, size: image.size)
-            context.cgContext.clip(to: rect, mask: cgImage)
-            context.cgContext.fill(rect)
-        }
-
-        guard let base64 = rendered.pngData()?.base64EncodedString() else { return nil }
+    private func encodeImage(_ image: SBJImage?, alt: String) -> String? {
+        guard let base64 = SBJHelpImageEncoding.pngData(for: image)?.base64EncodedString() else { return nil }
         return "<img class='help-icon' style='height:1em;width:auto;vertical-align:-0.125em' src='data:image/png;base64,\(base64)' alt='\(alt)'/>"
     }
 #endif
-
 }

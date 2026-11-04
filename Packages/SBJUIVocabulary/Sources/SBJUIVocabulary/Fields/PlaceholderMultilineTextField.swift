@@ -3,7 +3,8 @@ import SwiftUI
 import SBJDataDefinition
 #if canImport(UIKit)
 import UIKit
-// TODO: editor only?
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 /// A compact multiline text field that can promote input into a sheet when more
@@ -83,7 +84,7 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
                     .sbjMultilineField(isFocused: $sheetIsFocused, minHeight: 220)
                     .sbjTextInput(presentation)
                     .padding()
-                    .navigationBarTitleDisplayMode(.inline)
+                    .sbjInlineNavigationTitle()
                     .toolbar {
                         ToolbarItem(placement: .principal) {
                             placeholder
@@ -102,6 +103,8 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
     private var estimatedHeight: CGFloat {
 #if canImport(UIKit)
         let lineHeight = UIFont.preferredFont(forTextStyle: .body).lineHeight
+#elseif canImport(AppKit)
+        let lineHeight = NSFont.systemFont(ofSize: NSFont.systemFontSize).boundingRectForFont.height
 #else
         let lineHeight: CGFloat = 20
 #endif

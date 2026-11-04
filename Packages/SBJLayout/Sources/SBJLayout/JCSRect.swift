@@ -1,17 +1,20 @@
 import CoreGraphics
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import SBJUIVocabulary
 
-//TODO: API - this is more of a drawing trait than an entity and not a rectangle
 public struct JCSRect: Chrome {
-	public let fill: UIColor
-	public let stroke: UIColor
+	public let fill: SBJColor
+	public let stroke: SBJColor
 	public let lineWidth: CGFloat
 	public let radius: CGFloat
 
 	public init(
-		fill: UIColor = .clear,
-		stroke: UIColor = .clear,
+		fill: SBJColor = .clear,
+		stroke: SBJColor = .clear,
 		lineWidth: CGFloat = 1.0,
 		radius: CGFloat = 0.0
 	) {
@@ -23,7 +26,7 @@ public struct JCSRect: Chrome {
 
 	/// Resolves serializable theme colors at the drawing boundary.
 	public init(fill: CodableColor, stroke: CodableColor, lineWidth: CGFloat = 1, radius: CGFloat = 0) {
-		self.init(fill: fill.uiColor, stroke: stroke.uiColor, lineWidth: lineWidth, radius: radius)
+		self.init(fill: fill.sbjColor, stroke: stroke.sbjColor, lineWidth: lineWidth, radius: radius)
 	}
 
 	public func render(in allocated: CGRect, measured: CGSize, align: Alignment) {
@@ -34,7 +37,7 @@ public struct JCSRect: Chrome {
 	public func draw(in rect: CGRect) -> CGRect {
 		fill.setFill()
 		stroke.setStroke()
-		let path = UIBezierPath(borderRect: rect, cornerRadius: radius)
+		let path = SBJBezierPath(borderRect: rect, cornerRadius: radius)
 		path.lineWidth = lineWidth
 		path.fill()
 		path.stroke()
@@ -51,45 +54,10 @@ public struct JCSRect: Chrome {
 				width: radius * 2,
 				height: radius * 2
 			)
-		let path = UIBezierPath(ovalIn: rect)
+		let path = SBJBezierPath(ovalIn: rect)
 		path.fill()
 		path.stroke()
 		return rect
 	}
 }
 
-//TODO: API - see JCSRect comment
-public struct JCSLine {
-	public let stroke: UIColor
-	public let lineWidth: CGFloat
-
-	public init(stroke: UIColor, lineWidth: CGFloat) {
-		self.stroke = stroke
-		self.lineWidth = lineWidth
-	}
-
-	public init(stroke: CodableColor, lineWidth: CGFloat) {
-		self.init(stroke: stroke.uiColor, lineWidth: lineWidth)
-	}
-
-	@discardableResult
-	public func draw(from: CGPoint, to: CGPoint) -> CGRect {
-		stroke.setStroke()
-		let path = UIBezierPath()
-		path.move(to: from)
-		path.addLine(to: to)
-		path.lineWidth = lineWidth
-		path.stroke()
-		return CGRect(x: min(from.x, to.x), y: min(from.y, to.y), width: abs(from.x - to.x), height: abs(from.y - to.y))
-	}
-}
-
-public extension UIBezierPath {
-	convenience init(borderRect rect: CGRect, cornerRadius: CGFloat?) {
-		if let cornerRadius, cornerRadius > 0.0 {
-			self.init(roundedRect: rect, cornerRadius: cornerRadius)
-		} else {
-			self.init(rect: rect)
-		}
-	}
-}

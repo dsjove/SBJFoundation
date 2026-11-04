@@ -5,6 +5,8 @@ import ImageIO
 #endif
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 public extension SBJSymbol {
@@ -54,6 +56,40 @@ public extension SBJSymbol {
             guard let url = bundledImageURL else { return nil }
             return UIImage(contentsOfFile: url.path)
         }
+    }
+}
+#endif
+
+#if canImport(AppKit)
+public extension SBJSymbol {
+    var nsImage: NSImage? {
+        switch self {
+        case .system(let name):
+            return NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        case .asset(let name, let bundle):
+            if let bundle, bundle != .main {
+                for ext in ["png", "jpg", "jpeg", "tiff", "icns", "pdf"] {
+                    if let url = bundle.url(forResource: name, withExtension: ext),
+                       let image = NSImage(contentsOf: url) { return image }
+                }
+            }
+            return NSImage(named: NSImage.Name(name))
+        case .bundleImage:
+            guard let url = bundledImageURL else { return nil }
+            return NSImage(contentsOf: url)
+        }
+    }
+}
+#endif
+
+#if canImport(UIKit) || canImport(AppKit)
+public extension SBJSymbol {
+    var nativeImage: SBJImage? {
+        #if canImport(UIKit)
+        return uiImage
+        #else
+        return nsImage
+        #endif
     }
 }
 #endif

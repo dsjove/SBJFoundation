@@ -1,9 +1,9 @@
-#if os(tvOS)
+#if os(tvOS) || os(macOS)
 import Foundation
 
-/// Active lifecycle for one package-backed file on tvOS.
+/// Active lifecycle for one package-backed file on macOS and tvOS.
 ///
-/// tvOS has no `UIDocument`, so this backend uses `NSFilePresenter` and
+/// macOS and tvOS have no `UIDocument`, so this backend uses `NSFilePresenter` and
 /// `NSFileCoordinator`. The public API intentionally matches the UIKit-backed
 /// `PackageSession`; clients never branch on platform.
 final class PackageSession<Document: PackageDocument>: NSObject, NSFilePresenter, @unchecked Sendable {

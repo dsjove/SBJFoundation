@@ -51,6 +51,10 @@ extension PDFViewportState {
 			abs(pdfView.scaleFactor - fitScale) <= 0.001
 		else { return false }
 
+        #if os(macOS)
+        guard let page = pdfView.currentPage else { return false }
+        return pdfView.document?.index(for: page) == 0
+        #else
 		if pdfView.isUsingPageViewController {
 			guard let document = pdfView.document, let currentPage = pdfView.currentPage else { return false }
 			return document.index(for: currentPage) == 0
@@ -59,6 +63,7 @@ extension PDFViewportState {
 		guard let scrollView = pdfView.sbjScrollView else { return false }
 		let minimumY = -scrollView.adjustedContentInset.top
 		return abs(scrollView.contentOffset.y - minimumY) <= 1
+        #endif
 	}
 
 	private static func captureAnchor(

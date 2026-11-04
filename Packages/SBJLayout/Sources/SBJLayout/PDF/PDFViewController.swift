@@ -304,7 +304,7 @@ public final class PDFViewController: PDFPageNavigating, PDFTextSearching {
 
 		for _ in 0..<30 {
 			guard !Task.isCancelled, self.pdfView === pdfView else { return }
-			pdfView.layoutIfNeeded()
+			pdfView.sbjLayoutIfNeeded()
 			guard let rect = viewRect(for: match, in: pdfView),
 				rect.intersects(pdfView.bounds)
 			else {
@@ -345,7 +345,7 @@ public final class PDFViewController: PDFPageNavigating, PDFTextSearching {
 	/// visible, no navigation occurs.
 	public func reveal(_ position: PaginationPosition) async -> CGRect? {
 		guard let pdfView else { return nil }
-		pdfView.layoutIfNeeded()
+		pdfView.sbjLayoutIfNeeded()
 
 		if let rect = convertedViewRect(for: position, in: pdfView),
 			isSufficientlyVisible(rect, in: pdfView)
@@ -462,7 +462,7 @@ public final class PDFViewController: PDFPageNavigating, PDFTextSearching {
 
 		for _ in 0..<30 {
 			guard !Task.isCancelled, self.pdfView === pdfView else { return }
-			pdfView.layoutIfNeeded()
+			pdfView.sbjLayoutIfNeeded()
 			guard let rect = convertedViewRect(for: position, in: pdfView) else { return }
 
 			if let previousRect, rect.isApproximatelyEqual(to: previousRect, tolerance: 0.5) {

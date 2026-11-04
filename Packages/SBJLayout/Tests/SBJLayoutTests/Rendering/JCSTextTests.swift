@@ -1,6 +1,11 @@
 import Foundation
 import Testing
+#if os(macOS)
+import AppKit
+private typealias UIFont = NSFont
+#else
 import UIKit
+#endif
 @testable import SBJLayout
 import SBJLocalization
 

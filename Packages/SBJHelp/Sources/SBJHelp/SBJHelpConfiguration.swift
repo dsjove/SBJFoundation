@@ -46,8 +46,8 @@ public struct SBJHelpConfiguration {
             "URL": AppInfo.supportURL,
             "PRIVACY_URL": AppInfo.privacyPolicyURL,
         ].merging(applicationSubstitutions) { _, supplied in supplied }
-        #if canImport(UIKit) && !os(watchOS)
-		self.applicationSubstitutions["ICON"] = AppInfo.icon?.resized(toFit: .init(width: 256, height: 256)).pngData()?.base64EncodedString() ?? ""
+        #if (canImport(UIKit) || canImport(AppKit)) && !os(watchOS)
+		self.applicationSubstitutions["ICON"] = SBJHelpImageEncoding.pngData(for: AppInfo.icon?.resized(toFit: .init(width: 256, height: 256)))?.base64EncodedString() ?? ""
         #endif
     }
 

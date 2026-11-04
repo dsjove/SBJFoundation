@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 /// Native SwiftUI presenter for Markdown help assets.
 @available(iOS 27.0, *)
 @available(macCatalyst 27.0, *)
+@available(macOS 27.0, *)
 @available(tvOS 27.0, *)
 public struct SBJMarkdownHelpPresenter: SBJHelpContentPresenter {
     public let contentType: UTType = UTType(filenameExtension: "md") ?? .plainText

@@ -65,85 +65,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 							.buttonStyle(.borderedProminent)
 						} else {
 							ForEach(sortedTags) { tag in
-								HStack {
-									Rectangle()
-										.fill(tag.color.swiftUIColor)
-										.frame(width: 44, height: 44)
-										.cornerRadius(8.0)
-										.onTapGesture {
-											editColorTag = tag
-										}
-										.applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityLabel) { view, label in
-											view.accessibilityLabel(label)
-										}
-										.applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityHint) { view, hint in
-											view.accessibilityHint(hint)
-										}
-										.accessibilityValue(tag.displayName)
-										.accessibilityAddTraits(.isButton)
-									VStack(alignment: .leading, spacing: 2) {
-										TextField("Name", text: Binding(
-											get: { tag.name },
-											set: { tag.name = $0 }
-										))
-										.submitLabel(.done)
-										.onSubmit {
-												isTagFieldFocused = nil
-										}
-	#if !os(watchOS)
-										.autocapitalization(.none)
-	#endif
-										.disableAutocorrection(true)
-										.sbjFocusedControl(isFocused: $isTagFieldFocused, id: tag.id)
-										.applyIf(Tag.propertyInfo(for: \Tag.name)?.accessibilityLabel) { view, label in
-											view.accessibilityLabel(label)
-										}
-
-										if !tag.isSoleUser(user) {
-											Text("(\(tag.userCount))")
-												.font(.caption)
-												.foregroundStyle(.secondary)
-										}
-									}
-									//Implicit Spacer() with List rows
-									if let user {
-										Toggle(isOn: Binding(
-											get: { user.hasTag(tag) },
-											set: { newValue in
-												if newValue {
-													user.addTag(tag)
-												} else {
-													user.removeTag(tag)
-												}
-											}
-										)) {}
-										.toggleStyle(.sbjCheckbox)
-										.applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityLabel) { view, label in
-											view.accessibilityLabel(label)
-										}
-										.applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityHint) { view, hint in
-											view.accessibilityHint(hint)
-										}
-										.accessibilityValue(tag.displayName)
-										// SBJPropertyInfo describes the data property; the button owns
-										// the action's accessible name and optional interaction hint.
-										SBJSymbolButton(
-											user.isTagPrimary(tag)
-												? SBJTagSymbology.primaryTag
-												: SBJTagSymbology.notPrimaryTag,
-											accessibilityLabel: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityLabel ?? "Primary tag",
-											accessibilityHint: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityHint
-										) {
-											user.togglePrimary(tag)
-										}
-										.accessibilityValue(tag.displayName)
-									}
-								}
-								.background(
-									RoundedRectangle(cornerRadius: 12, style: .continuous)
-										.fill((user?.isTagPrimary(tag) ?? false) ? Color.secondary.opacity(0.13) : Color.clear)
-										.padding(-8)
-								)
+								tagRow(tag)
 							}
 							.onDelete { offsets in
 								let toBeDeleted = offsets.map { sortedTags[$0] }
@@ -168,18 +90,20 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 					}
 				}
 			}
-	#if !os(watchOS) && !os(tvOS)
+	#if os(macOS)
+			.navigationTitle(tagBag.title)
+	#elseif !os(watchOS) && !os(tvOS)
 			.navigationBarTitle(tagBag.title, displayMode: .inline)
 	#else
 			.navigationBarTitle(tagBag.title)
 	#endif
 			.toolbar {
-				ToolbarItemGroup(placement: .topBarLeading) {
+				ToolbarItemGroup(placement: leadingToolbarPlacement) {
 					Button("Done") {
 						dismiss()
 					}
 				}
-				ToolbarItemGroup(placement: .topBarTrailing) {
+				ToolbarItemGroup(placement: trailingToolbarPlacement) {
 					SBJAddButton("Tag", action: addTag)
 	#if !os(watchOS)
 					SBJHelpLink(asset: .editTagsHelp, configuration: .editTagsHelp)
@@ -192,7 +116,9 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 					get: { tag.color.swiftUIColor },
 					set: { tag.color.swiftUIColor = $0 }
 				))
+#if !os(macOS)
 				.presentationDetents([.medium])
+#endif
 			}
 	#endif
 			.alert(item: $deletionRequest) { request in
@@ -219,7 +145,109 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 				)
 			}
 		}
+#if !os(macOS)
 		.presentationDetents([.large])
+#endif
+	}
+
+    @ViewBuilder
+    private func tagRow(_ tag: Tag) -> some View {
+        HStack {
+            tagColorControl(tag)
+            tagNameControl(tag)
+            if let user {
+                tagUserControls(tag, user: user)
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill((user?.isTagPrimary(tag) ?? false) ? Color.secondary.opacity(0.13) : Color.clear)
+                .padding(-8)
+        )
+    }
+
+    private func tagColorControl(_ tag: Tag) -> some View {
+        Rectangle()
+            .fill(tag.color.swiftUIColor)
+            .frame(width: 44, height: 44)
+            .cornerRadius(8)
+            .onTapGesture { editColorTag = tag }
+            .applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityLabel) { view, label in
+                view.accessibilityLabel(label)
+            }
+            .applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityHint) { view, hint in
+                view.accessibilityHint(hint)
+            }
+            .accessibilityValue(tag.displayName)
+            .accessibilityAddTraits(.isButton)
+    }
+
+    private func tagNameControl(_ tag: Tag) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            TextField("Name", text: Binding(
+                get: { tag.name },
+                set: { tag.name = $0 }
+            ))
+            .submitLabel(.done)
+            .onSubmit { isTagFieldFocused = nil }
+#if !os(watchOS) && !os(macOS)
+            .autocapitalization(.none)
+#endif
+            .disableAutocorrection(true)
+            .sbjFocusedControl(isFocused: $isTagFieldFocused, id: tag.id)
+            .applyIf(Tag.propertyInfo(for: \Tag.name)?.accessibilityLabel) { view, label in
+                view.accessibilityLabel(label)
+            }
+            if !tag.isSoleUser(user) {
+                Text("(\(tag.userCount))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func tagUserControls(_ tag: Tag, user: T) -> some View {
+        Toggle(isOn: Binding(
+            get: { user.hasTag(tag) },
+            set: { enabled in
+                if enabled { user.addTag(tag) }
+                else { user.removeTag(tag) }
+            }
+        )) {}
+        .toggleStyle(.sbjCheckbox)
+        .applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityLabel) { view, label in
+            view.accessibilityLabel(label)
+        }
+        .applyIf(T.propertyInfo(for: \T.__tags)?.accessibilityHint) { view, hint in
+            view.accessibilityHint(hint)
+        }
+        .accessibilityValue(tag.displayName)
+
+        SBJSymbolButton(
+            user.isTagPrimary(tag) ? SBJTagSymbology.primaryTag : SBJTagSymbology.notPrimaryTag,
+            accessibilityLabel: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityLabel ?? "Primary tag",
+            accessibilityHint: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityHint
+        ) {
+            user.togglePrimary(tag)
+        }
+        .accessibilityValue(tag.displayName)
+    }
+
+	private var leadingToolbarPlacement: ToolbarItemPlacement {
+#if os(macOS)
+		.navigation
+#else
+		.topBarLeading
+#endif
+	}
+
+	private var trailingToolbarPlacement: ToolbarItemPlacement {
+#if os(macOS)
+		.automatic
+#else
+		.topBarTrailing
+#endif
 	}
 
 	func addTag() {

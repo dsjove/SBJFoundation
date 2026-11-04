@@ -70,7 +70,7 @@ public struct PackageImportConflict<ID: Hashable & Sendable>: Equatable, Sendabl
 /// Reusable catalog + active-package lifecycle for app-controlled package documents.
 ///
 /// Platform differences are entirely below this type: `PackageSession` uses
-/// `UIDocument` where available and the tvOS presenter backend on Apple TV.
+/// `UIDocument` on UIKit platforms and the shared file-presenter backend on macOS and tvOS.
 @Observable
 @MainActor
 public final class PackageDocumentLibrary<Document: PackageDocument> {

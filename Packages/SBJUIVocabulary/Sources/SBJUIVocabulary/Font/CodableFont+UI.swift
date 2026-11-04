@@ -1,6 +1,10 @@
 import Foundation
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import SBJDataDefinition
 
 extension CodableFont {
@@ -8,19 +12,19 @@ extension CodableFont {
 	///
 	/// Rendering paths that repeatedly request the same fonts should use
 	/// ``CodableFontCache`` instead.
-	public var font: UIFont {
+	public var font: SBJFont {
 		font(scale: 1.0)
 	}
 
 	/// Creates the described font with a multiplier applied to its point size.
-	/// This method does not cache the resulting UIFont object.
-	public func font(scale: Double) -> UIFont {
+	/// This method does not cache the resulting SBJFont object.
+	public func font(scale: Double) -> SBJFont {
 		CodableFontCache.shared.uncachedFont(for: self, scale: scale)
 	}
 }
 
 extension CodableFont.Weight {
-	var uiWeight: UIFont.Weight {
+	var nativeWeight: SBJFont.Weight {
 		switch self {
 		case .ultraLight: .ultraLight
 		case .thin: .thin

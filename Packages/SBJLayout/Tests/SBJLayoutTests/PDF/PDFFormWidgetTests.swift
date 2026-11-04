@@ -2,7 +2,7 @@
 import Foundation
 import PDFKit
 import Testing
-import UIKit
+
 @testable import SBJLayout
 
 @Suite("PDF AcroForm widgets")

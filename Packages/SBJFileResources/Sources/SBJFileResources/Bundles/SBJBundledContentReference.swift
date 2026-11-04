@@ -1,6 +1,8 @@
 import Foundation
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 import UniformTypeIdentifiers
 
@@ -64,7 +66,7 @@ public struct SBJBundledContentReference: Hashable {
         }
     }
 
-    #if canImport(UIKit)
+    #if canImport(UIKit) || canImport(AppKit)
     private var dataAsset: NSDataAsset? {
         guard case .dataAsset(let name) = storage else { return nil }
         return NSDataAsset(name: name, bundle: bundle)
@@ -72,7 +74,7 @@ public struct SBJBundledContentReference: Hashable {
     #endif
 
     private var dataAssetData: Data? {
-        #if canImport(UIKit)
+        #if canImport(UIKit) || canImport(AppKit)
         dataAsset?.data
         #else
         nil
@@ -80,7 +82,7 @@ public struct SBJBundledContentReference: Hashable {
     }
 
     private var dataAssetTypeIdentifier: String? {
-        #if canImport(UIKit)
+        #if canImport(UIKit) || canImport(AppKit)
         dataAsset?.typeIdentifier
         #else
         nil
@@ -88,7 +90,7 @@ public struct SBJBundledContentReference: Hashable {
     }
 
     private var dataAssetExists: Bool {
-        #if canImport(UIKit)
+        #if canImport(UIKit) || canImport(AppKit)
         dataAsset != nil
         #else
         false

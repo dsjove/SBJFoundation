@@ -3,7 +3,13 @@ import PackageDescription
 
 let package = Package(
     name: "SBJDataDefinitionReport",
-    platforms: [.iOS(.v17), .watchOS(.v10), .visionOS(.v1), .tvOS(.v17)],
+    platforms: [
+		.iOS(.v17),
+		.macOS(.v14),
+		.watchOS(.v10),
+		.visionOS(.v1),
+		.tvOS(.v17)
+	],
     products: [.library(name: "SBJDataDefinitionReport", targets: ["SBJDataDefinitionReport"])],
     dependencies: [
         .package(path: "../SBJLocalization"),

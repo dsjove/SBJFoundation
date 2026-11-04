@@ -1,6 +1,6 @@
 import CoreGraphics
 import Testing
-import UIKit
+
 @testable import SBJLayout
 
 @Suite("Alignment")

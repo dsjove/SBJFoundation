@@ -24,6 +24,8 @@ private struct SBJFieldChromeModifier: ViewModifier {
         if state.contains(.selected) { return SBJUIAppearance.activeControlColor }
 #if os(tvOS) || os(watchOS)
         return .clear
+#elseif os(macOS)
+        return Color(nsColor: .textBackgroundColor)
 #else
         return Color(.systemBackground)
 #endif

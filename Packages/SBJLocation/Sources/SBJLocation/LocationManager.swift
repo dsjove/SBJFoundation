@@ -40,17 +40,12 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 			accept(cached)
 		}
 
-		switch authorizationStatus {
-		case .authorizedAlways, .authorizedWhenInUse:
+		if canGetLocation {
 #if !os(tvOS)
 			manager.startUpdatingLocation()
-#else
-			break
 #endif
-		case .notDetermined:
+		} else if authorizationStatus == .notDetermined {
 			manager.requestWhenInUseAuthorization()
-		default:
-			break
 		}
 	}
 
@@ -64,6 +59,9 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 	}
 
 	private static func canGetLocation(for status: CLAuthorizationStatus) -> Bool {
+#if os(macOS)
+		return status == .authorizedAlways
+#else
 		switch status {
 		case .authorizedAlways, .authorizedWhenInUse:
 			return true
@@ -72,6 +70,7 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 		@unknown default:
 			return false
 		}
+#endif
 	}
 
 	private static func validLocation(_ location: CLLocation?) -> CLLocation? {
@@ -100,12 +99,7 @@ extension LocationManager: CLLocationManagerDelegate {
 			self.authorizationStatus = status
 			self.canGetLocation = Self.canGetLocation(for: status)
 			if let cached { self.accept(cached) }
-			#if os(visionOS)
-			let start = status == .authorizedWhenInUse
-			#else
-			let start = status == .authorizedAlways || status == .authorizedWhenInUse
-			#endif
-			if start {
+			if self.canGetLocation {
 			#if !os(tvOS)
 				self.manager.startUpdatingLocation()
 			#endif

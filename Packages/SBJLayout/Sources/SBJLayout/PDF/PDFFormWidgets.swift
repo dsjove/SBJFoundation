@@ -1,7 +1,12 @@
 #if !os(watchOS)
 import Foundation
+import SBJUIVocabulary
 import PDFKit
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// PDF-specific behavior; the graphical appearance remains the responsibility of the JCS control.
 public struct JCSFormTraits {
@@ -17,7 +22,7 @@ public struct JCSFormTraits {
 }
 
 internal enum PDFFormWidgetKind {
-    case text(String, multiline: Bool, font: UIFont, color: UIColor, alignment: NSTextAlignment)
+    case text(String, multiline: Bool, font: SBJFont, color: SBJColor, alignment: NSTextAlignment)
     case checkbox(Bool)
     case radio(value: String, selected: Bool)
 }

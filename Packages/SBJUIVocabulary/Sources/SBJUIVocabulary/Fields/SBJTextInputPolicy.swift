@@ -21,7 +21,11 @@ private struct SBJTextInputPolicyModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
+        #if os(macOS)
+        let capitalized = content
+        #else
         let capitalized = content.textInputAutocapitalization(capitalization.swiftUIValue)
+        #endif
         switch autocorrection {
         case .automatic:
             capitalized
@@ -33,6 +37,7 @@ private struct SBJTextInputPolicyModifier: ViewModifier {
     }
 }
 
+#if !os(macOS)
 private extension SBJTextCapitalization {
     var swiftUIValue: TextInputAutocapitalization? {
         switch self {
@@ -44,4 +49,5 @@ private extension SBJTextCapitalization {
         }
     }
 }
+#endif
 #endif

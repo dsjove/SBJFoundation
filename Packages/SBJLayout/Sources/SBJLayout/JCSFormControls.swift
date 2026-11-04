@@ -1,22 +1,27 @@
 #if !os(watchOS)
 import CoreGraphics
+import SBJUIVocabulary
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// A graphical renderable which becomes an editable PDF AcroForm text field when exported.
 public struct JCSTextField: Renderable {
     public let name: String
     public let value: String
     public let multiline: Bool
-    public let font: UIFont
-    public let color: UIColor
-    public let border: UIColor
+    public let font: SBJFont
+    public let color: SBJColor
+    public let border: SBJColor
     public let height: CGFloat
     public let minChars: Int
     public let traits: JCSFormTraits
 
     public init(name: String, value: String = "", multiline: Bool = false,
-                font: UIFont = .systemFont(ofSize: 11), color: UIColor = .black,
-                border: UIColor = .lightGray, minChars: Int = 20,
+                font: SBJFont = .systemFont(ofSize: 11), color: SBJColor = .black,
+                border: SBJColor = .lightGray, minChars: Int = 20,
                 height: CGFloat = 24, traits: JCSFormTraits = .init()) {
         self.name = name; self.value = value; self.multiline = multiline
         self.font = font; self.color = color; self.border = border
@@ -57,11 +62,11 @@ public struct JCSCheckbox: Renderable {
         let rect = align.apply(size: measured, in: allocated)
         JCSRect(fill: .white, stroke: .darkGray, lineWidth: 0.8).draw(in: rect)
         if checked && PDFFormEnvironment.collector == nil {
-            let mark = UIBezierPath()
+            let mark = SBJBezierPath()
             mark.move(to: CGPoint(x: rect.minX + rect.width * 0.2, y: rect.midY))
             mark.addLine(to: CGPoint(x: rect.midX - 1, y: rect.maxY - rect.height * 0.2))
             mark.addLine(to: CGPoint(x: rect.maxX - rect.width * 0.15, y: rect.minY + rect.height * 0.2))
-            UIColor.black.setStroke(); mark.lineWidth = 1.6; mark.stroke()
+            SBJColor.black.setStroke(); mark.lineWidth = 1.6; mark.stroke()
         }
         PDFFormEnvironment.collector?.add(name, bounds: rect, kind: .checkbox(checked), traits: traits)
     }
@@ -79,12 +84,12 @@ public struct JCSRadioGroup: Renderable {
     public let selected: String?
     public let side: CGFloat
     public let spacing: CGFloat
-    public let font: UIFont
+    public let font: SBJFont
     public let traits: JCSFormTraits
 
     public init(name: String, options: [Option], selected: String? = nil,
                 side: CGFloat = 13, spacing: CGFloat = 12,
-                font: UIFont = .systemFont(ofSize: 10), traits: JCSFormTraits = .init()) {
+                font: SBJFont = .systemFont(ofSize: 10), traits: JCSFormTraits = .init()) {
         self.name = name; self.options = options; self.selected = selected
         self.side = side; self.spacing = spacing; self.font = font; self.traits = traits
     }
@@ -101,13 +106,13 @@ public struct JCSRadioGroup: Renderable {
         var x = origin.x
         for option in options {
             let circle = CGRect(x: x, y: origin.y + (measured.height - side)/2, width: side, height: side)
-            let path = UIBezierPath(ovalIn: circle)
-            UIColor.white.setFill(); path.fill(); UIColor.darkGray.setStroke(); path.lineWidth = 0.8; path.stroke()
+            let path = SBJBezierPath(ovalIn: circle)
+            SBJColor.white.setFill(); path.fill(); SBJColor.darkGray.setStroke(); path.lineWidth = 0.8; path.stroke()
             if option.value == selected && PDFFormEnvironment.collector == nil {
-                UIColor.black.setFill(); UIBezierPath(ovalIn: circle.insetBy(dx: 3, dy: 3)).fill()
+                SBJColor.black.setFill(); SBJBezierPath(ovalIn: circle.insetBy(dx: 3, dy: 3)).fill()
             }
             let labelRect = CGRect(x: x + side + 5, y: origin.y, width: itemWidth(option) - side - 5, height: measured.height)
-            (option.label as NSString).draw(in: labelRect, withAttributes: [.font: font, .foregroundColor: UIColor.black])
+            (option.label as NSString).draw(in: labelRect, withAttributes: [.font: font, .foregroundColor: SBJColor.black])
             PDFFormEnvironment.collector?.add(name, bounds: circle,
                 kind: .radio(value: option.value, selected: option.value == selected), traits: traits)
             x += itemWidth(option) + spacing

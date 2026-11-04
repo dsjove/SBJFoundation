@@ -21,7 +21,7 @@ Raw-value enum literals and static/computed PropertyInfo-only declaration invent
 
 ## Native SBJLayout PDF output
 
-On UIKit/PDFKit platforms, `SBJDefinitionPDFReport.makePDF(catalog:pageLayout:title:)`
+On supported UIKit and native macOS AppKit/PDFKit platforms, `SBJDefinitionPDFReport.makePDF(catalog:pageLayout:title:)`
 returns PDF data without displaying a view. `makePDFResult` returns the SBJLayout
 `PDFRenderResult` with a `PDFDocument` and `PaginationPosition` entries keyed
 by `type-0`, `type-1`, etc. `SBJDefinitionReportView` (also available as `SBJDefinitionPDFReportView`) presents the document
@@ -77,3 +77,7 @@ module prefix, including within nested generic declarations and enum payloads.
 Custom type/module qualifiers are preserved. The underlying catalog retains
 fully-qualified reflected type identities; formatting only happens when drawing.
 The `SBJDefinitionTypeDisplayTests` suite covers this presentation rule.
+
+## macOS support
+
+The report generator uses shared SBJLayout renderables with `SBJColor` from SBJUIVocabulary (native UIColor/NSColor). The report viewer uses the existing cross-platform PDFKit presentation and SBJSharing controls, with only toolbar placements conditionalized on macOS. There is no duplicate renderer.
