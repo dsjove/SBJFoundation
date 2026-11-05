@@ -1,5 +1,6 @@
 #if !os(watchOS) && canImport(UIKit)
 import ImageIO
+import CoreImage
 import UIKit
 import UniformTypeIdentifiers
 #if canImport(PencilKit)
@@ -18,13 +19,15 @@ enum PhotoEditRenderer {
     static func render(
         resource: SBJResourceContent,
         geometry: PhotoEditGeometry,
+        color: PhotoColorAdjustments = .init(),
         options: PhotoEditorOptions,
         markup: Any? = nil,
         markupCanvasSize: CGSize = .zero,
         maximumPixelDimension: CGFloat? = nil,
         encoding: Encoding = .sourceCompatible
     ) -> SBJResourceContent? {
-        guard let source = resource.uiImage else { return nil }
+        guard let original = resource.uiImage else { return nil }
+        let source = color.applying(to: original) ?? original
         let sourceSize = source.size
         guard sourceSize.width > 0, sourceSize.height > 0 else { return nil }
 

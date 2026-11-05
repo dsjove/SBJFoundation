@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 import AVFoundation
 import AVKit
+import CoreImage
 import SBJLocalization
 import SBJDataDefinition
 #if os(macOS)
@@ -10,6 +11,20 @@ import AppKit
 #else
 import UIKit
 #endif
+
+/// Thread-safe settings snapshot for AVFoundation's asynchronous render callback.
+private final class PlaybackEnhancementBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = PhotoColorAdjustments()
+    func set(_ next: PhotoColorAdjustments) {
+        lock.lock(); defer { lock.unlock() }
+        value = next
+    }
+    func get() -> PhotoColorAdjustments {
+        lock.lock(); defer { lock.unlock() }
+        return value
+    }
+}
 
 /// Shared AVPlayer engine; only the compact controls are custom.
 @MainActor
@@ -23,9 +38,40 @@ final class MoviePlayback {
     private var observer: Any?
     private var ending: NSObjectProtocol?
     private var durationTask: Task<Void, Never>?
+    private let enhancementBox = PlaybackEnhancementBox()
+    private var hasEnhancementComposition = false
+
+    /// Leave AVPlayer on its native decoding/rendering path when no filters
+    /// are active. Attach a Core Image composition only while required.
+    func updateEnhancements(_ changes: PhotoColorAdjustments, enabled: Bool) {
+        let settings = enabled ? changes : PhotoColorAdjustments()
+        enhancementBox.set(settings)
+        guard let item = player.currentItem else { return }
+        let needsProcessing = !settings.isNeutral
+        guard needsProcessing != hasEnhancementComposition else { return }
+        if needsProcessing {
+            let box = enhancementBox
+            item.videoComposition = AVVideoComposition(
+                asset: item.asset,
+                applyingCIFiltersWithHandler: { request in
+                    let settings = box.get()
+                    let filtered = settings.applying(to: request.sourceImage)
+                    request.finish(
+                        with: filtered.cropped(to: request.sourceImage.extent),
+                        context: nil
+                    )
+                }
+            )
+        } else {
+            item.videoComposition = nil
+        }
+        hasEnhancementComposition = needsProcessing
+    }
 
     init(url: URL) {
-        player = AVPlayer(url: url)
+        let asset = AVURLAsset(url: url)
+        let item = AVPlayerItem(asset: asset)
+        player = AVPlayer(playerItem: item)
         observer = player.addPeriodicTimeObserver(
             forInterval: CMTime(value: 1, timescale: 30), queue: .main
         ) { [weak self] time in
@@ -127,7 +173,21 @@ struct MovieViewer: View {
     var onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)? = nil
     @State private var playback: MoviePlayback
     @State private var working = false
+    @State private var enhancements = PhotoColorAdjustments()
+    @State private var enhancementsEnabled = true
+    @State private var showingEnhancements = false
+    // AVPlayer does not promise to redraw an already paused frame when only
+    // its video-composition filter parameters change. Render that frame here.
+    @State private var pausedSourceFrame: CGImage?
+    @State private var pausedPreviewFrame: CGImage?
+    @State private var pausedFrameTask: Task<Void, Never>?
+    @State private var pausedFrameTime: Double?
+    private let pausedFrameContext = CIContext()
     @State private var errorMessage: String?
+    @State private var enhancementApplyTask: Task<Void, Never>?
+    @State private var enhancementThrottleActive = false
+    @State private var pendingEnhancementState: EnhancementState?
+    private let enhancementThrottleInterval: Duration = .milliseconds(80)
     var onClose: (() -> Void)? = nil
     var onFullScreen: (() -> Void)? = nil
 
@@ -158,11 +218,119 @@ struct MovieViewer: View {
         #endif
     }
 
+
+    private struct EnhancementState: Equatable {
+        let adjustments: PhotoColorAdjustments
+        let isEnabled: Bool
+    }
+
+    private func applyEnhancementState(_ state: EnhancementState) {
+        playback.updateEnhancements(state.adjustments, enabled: state.isEnabled)
+        refreshPausedFrame()
+        redrawPausedFrame()
+    }
+
+    /// Leading + trailing throttle: the first slider change applies
+    /// immediately, later changes within the window are coalesced to the
+    /// latest value, and the final value is always delivered.
+    private func scheduleEnhancementApply() {
+        let current = EnhancementState(
+            adjustments: enhancements,
+            isEnabled: enhancementsEnabled
+        )
+
+        guard enhancementThrottleActive else {
+            enhancementThrottleActive = true
+            pendingEnhancementState = nil
+            applyEnhancementState(current)
+            enhancementApplyTask?.cancel()
+            enhancementApplyTask = Task { @MainActor in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: enhancementThrottleInterval)
+                    guard !Task.isCancelled else { break }
+                    if let pendingEnhancementState {
+                        let pending = pendingEnhancementState
+                        self.pendingEnhancementState = nil
+                        applyEnhancementState(pending)
+                    } else {
+                        enhancementThrottleActive = false
+                        enhancementApplyTask = nil
+                        break
+                    }
+                }
+            }
+            return
+        }
+
+        pendingEnhancementState = current
+    }
+
+    private func stopEnhancementApplyTask() {
+        enhancementApplyTask?.cancel()
+        enhancementApplyTask = nil
+        enhancementThrottleActive = false
+        pendingEnhancementState = nil
+    }
+
     private var videoSurface: some View {
-        NativeVideoSurface(playback: playback)
-            // The video can be 4:3, 16:9, CinemaScope, or portrait.
-            // Fill the available layout; AVKit maintains the source aspect.
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ZStack {
+            NativeVideoSurface(playback: playback)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if !playback.isPlaying, enhancementsEnabled,
+               !enhancements.isNeutral, let pausedPreviewFrame {
+                Image(decorative: pausedPreviewFrame, scale: 1)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .allowsHitTesting(false)
+            }
+        }
+        // AVKit and the still-frame overlay both preserve the source aspect.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Fetch only when the selected frame changes; slider changes reuse the
+    /// cached source CGImage and immediately redraw it with the new recipe.
+    private func refreshPausedFrame() {
+        guard !playback.isPlaying, enhancementsEnabled,
+              !enhancements.isNeutral else {
+            pausedFrameTask?.cancel()
+            pausedFrameTask = nil
+            pausedSourceFrame = nil
+            pausedPreviewFrame = nil
+            pausedFrameTime = nil
+            return
+        }
+        let time = playback.seconds
+        guard time.isFinite, time >= 0 else { return }
+        if let previous = pausedFrameTime, abs(previous - time) < 0.005,
+           pausedSourceFrame != nil { return }
+        pausedFrameTask?.cancel()
+        pausedFrameTime = time
+        pausedSourceFrame = nil
+        pausedPreviewFrame = nil
+        pausedFrameTask = Task { @MainActor in
+            // Limit decoding to display resolution. The saved poster still
+            // uses the original full-resolution frame-generation path.
+            let frame = await getPosterFrame(from: url, at: time,
+                                             fitting: CGSize(width: 1920, height: 1080))
+            guard !Task.isCancelled, !playback.isPlaying,
+                  abs(playback.seconds - time) < 0.05 else { return }
+            pausedSourceFrame = frame
+            redrawPausedFrame()
+        }
+    }
+
+    private func redrawPausedFrame() {
+        guard enhancementsEnabled, !enhancements.isNeutral else {
+            pausedPreviewFrame = nil
+            return
+        }
+        guard let pausedSourceFrame, !playback.isPlaying else { return }
+        pausedPreviewFrame = enhancements.applying(
+            to: pausedSourceFrame,
+            context: pausedFrameContext
+        ) ?? pausedSourceFrame
     }
 
     @State private var frameRepeatTask: Task<Void, Never>?
@@ -236,6 +404,22 @@ struct MovieViewer: View {
                 #endif
             } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
             .help("Full screen")
+            Button("Enhancements", systemImage: "slider.horizontal.3") {
+                showingEnhancements.toggle()
+            }
+                .labelStyle(.iconOnly)
+                .popover(isPresented: $showingEnhancements) {
+                    ImageEnhancementControls(
+                        adjustments: $enhancements,
+                        isEnabled: $enhancementsEnabled
+                    )
+                    // Explicit opaque surface: macOS popover vibrancy otherwise
+                    // makes the text nearly white over a pale translucent view.
+                    .environment(\.colorScheme, .light)
+                    .foregroundStyle(.black)
+                    .background(Color.white)
+                }
+                .help("Image enhancements")
             if onPosterChanged != nil {
                 Button { Task { await savePoster() } } label: { Image(systemName: "camera") }
                     .help("Select current frame").disabled(working)
@@ -311,9 +495,20 @@ struct MovieViewer: View {
         #if os(macOS)
         .background(MovieViewerWindowReader(window: $hostingWindow))
         #endif
+        .onChange(of: enhancements) { _, _ in
+            scheduleEnhancementApply()
+        }
+        .onChange(of: enhancementsEnabled) { _, _ in
+            scheduleEnhancementApply()
+        }
+        .onChange(of: playback.isPlaying) { _, _ in refreshPausedFrame() }
+        .onChange(of: playback.seconds) { _, _ in
+            if !playback.isPlaying { refreshPausedFrame() }
+        }
         .task {
             if let initialTime { playback.seek(initialTime) }
             else if let stored = await getPosterFrameTime(from: url) { playback.seek(stored) }
+            refreshPausedFrame()
         }
         #if os(iOS) || os(visionOS)
         .fullScreenCover(isPresented: $fullscreen) {
@@ -335,6 +530,11 @@ struct MovieViewer: View {
         .onDisappear {
             if !fullscreen {
                 stopFrameRepeat()
+                stopEnhancementApplyTask()
+                pausedFrameTask?.cancel()
+                pausedFrameTask = nil
+                pausedPreviewFrame = nil
+                pausedSourceFrame = nil
                 playback.stopObserving()
             }
         }
@@ -356,7 +556,21 @@ struct MovieViewer: View {
                 errorMessage = nil
                 return
             }
-            try await setPosterFrame(from: url, at: selected)
+            // The normal poster path remains unchanged for neutral settings.
+            // With edits, render a full-resolution frame and pass the adjusted
+            // image to the existing image-based setter (no scaled preview).
+            if enhancementsEnabled && !enhancements.isNeutral {
+                guard let source = await getPosterFrame(from: url, at: selected) else {
+                    throw NSError(
+                        domain: "SBJImaging.MovieViewer", code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Could not extract the selected movie frame."]
+                    )
+                }
+                let adjusted = enhancements.applying(to: source) ?? source
+                try await setPosterFrame(from: url, at: selected, image: adjusted)
+            } else {
+                try await setPosterFrame(from: url, at: selected)
+            }
             errorMessage = nil
         } catch {
             // Failures must be visible in this window, not hidden behind it.

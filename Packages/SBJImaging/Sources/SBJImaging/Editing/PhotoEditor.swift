@@ -2,6 +2,7 @@
 import Observation
 import SwiftUI
 import UIKit
+import CoreImage
 #if canImport(PencilKit)
 import PencilKit
 #endif
@@ -27,13 +28,17 @@ public extension SBJBundledContentReference {
 public struct PhotoEditor: View {
     private let resource: SBJResourceContent
     private let image: UIImage
+    private let previewImage: UIImage
+    private let initialColorAdjustments: PhotoColorAdjustments
     private let title: String?
     private let options: PhotoEditorOptions
     private let onComplete: ((SBJResourceContent?) -> Void)?
     private let onEditComplete: ((PhotoEditResult?) -> Void)?
     private let initialDisplayName: String
     private let initialDescription: String
-    private let initialColorAdjustments: PhotoColorAdjustments
+    @State private var colorAdjustments: PhotoColorAdjustments
+    @State private var enhancementsEnabled = true
+    @State private var showEnhancements = false
     private let allowsUnchangedCompletion: Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -57,6 +62,7 @@ public struct PhotoEditor: View {
         guard let image = resource.uiImage else { return nil }
         self.resource = resource
         self.image = image
+        self.previewImage = Self.previewSized(image)
         self.title = title
         self.options = options
         self.onComplete = onComplete
@@ -64,6 +70,7 @@ public struct PhotoEditor: View {
         self.initialDisplayName = ""
         self.initialDescription = ""
         self.initialColorAdjustments = .init()
+        self._colorAdjustments = State(initialValue: .init())
         self.allowsUnchangedCompletion = allowsUnchangedCompletion
 
         let initial = PhotoEditGeometry(crop: .init(option: options.effectiveInitialCrop, sourceSize: image.size))
@@ -90,6 +97,7 @@ public struct PhotoEditor: View {
         guard let image = resource.uiImage else { return nil }
         self.resource = resource
         self.image = image
+        self.previewImage = Self.previewSized(image)
         self.title = title
         self.options = options
         self.onComplete = nil
@@ -97,6 +105,7 @@ public struct PhotoEditor: View {
         self.initialDisplayName = edits.displayName
         self.initialDescription = edits.description
         self.initialColorAdjustments = edits.color
+        self._colorAdjustments = State(initialValue: edits.color)
         self.allowsUnchangedCompletion = allowsUnchangedCompletion
         self._model = State(initialValue: PhotoEditorModel(
             geometry: edits.geometry,
@@ -239,11 +248,32 @@ public struct PhotoEditor: View {
 
     @ViewBuilder
     private func transformedImage(layout: PhotoResolvedLayout) -> some View {
-        Image(uiImage: image)
+        Image(uiImage: enhancedPreviewImage)
             .resizable()
             .frame(width: layout.renderedImageSize.width, height: layout.renderedImageSize.height)
             .scaleEffect(x: layout.mirrorX, y: layout.mirrorY)
             .rotationEffect(.radians(layout.rotationRadians))
+    }
+
+    private static let previewContext = CIContext()
+
+    /// GPU filters operate on a display-sized preview during slider dragging.
+    /// The renderer always processes the full-resolution source on completion.
+    private static func previewSized(_ image: UIImage) -> UIImage {
+        let largest = max(image.size.width, image.size.height)
+        guard largest > 1600 else { return image }
+        let scale = 1600 / largest
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    private var enhancedPreviewImage: UIImage {
+        guard enhancementsEnabled else { return image }
+        return colorAdjustments.applying(to: previewImage, context: Self.previewContext) ?? previewImage
     }
 
     private var isMarkupActive: Bool {
@@ -308,6 +338,7 @@ public struct PhotoEditor: View {
 					auto: false,
 					configuration: .imageHelp
 				)
+                enhancementButton
                 doneButton
             }
 
@@ -358,8 +389,22 @@ public struct PhotoEditor: View {
 #endif
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
+                enhancementButton
                 doneButton
             }
+        }
+    }
+
+    private var enhancementButton: some View {
+        Button("Enhancements", systemImage: "slider.horizontal.3") {
+            showEnhancements.toggle()
+        }
+        .labelStyle(.iconOnly)
+        .popover(isPresented: $showEnhancements) {
+            ImageEnhancementControls(
+                adjustments: $colorAdjustments,
+                isEnabled: $enhancementsEnabled
+            )
         }
     }
 
@@ -625,10 +670,11 @@ public struct PhotoEditor: View {
     }
 
     private var hasEdits: Bool {
+        if colorAdjustments != initialColorAdjustments { return true }
 #if canImport(PencilKit)
-        model.hasGeometryEdits || markup.hasDrawing
+        return model.hasGeometryEdits || markup.hasDrawing
 #else
-        model.hasGeometryEdits
+        return model.hasGeometryEdits
 #endif
     }
 
@@ -659,6 +705,7 @@ public struct PhotoEditor: View {
             resourceResult = PhotoEditRenderer.render(
                 resource: resource,
                 geometry: model.geometry,
+                color: colorAdjustments,
                 options: options,
                 markup: markupForRendering,
                 markupCanvasSize: markupSizeForRendering
@@ -682,7 +729,7 @@ public struct PhotoEditor: View {
             displayName: initialDisplayName,
             description: initialDescription,
             geometry: model.geometry,
-            color: initialColorAdjustments,
+            color: colorAdjustments,
             markup: currentMarkup
         )
     }
@@ -715,6 +762,7 @@ public struct PhotoEditor: View {
         PhotoEditRenderer.render(
             resource: resource,
             geometry: model.geometry,
+            color: colorAdjustments,
             options: options,
             markup: markupForRendering,
             markupCanvasSize: markupSizeForRendering

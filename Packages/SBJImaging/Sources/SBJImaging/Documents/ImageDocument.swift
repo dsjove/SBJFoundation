@@ -430,6 +430,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         return PhotoEditRenderer.render(
             resource: source,
             geometry: edits.geometry,
+            color: edits.color,
             options: options,
             markup: drawing,
             markupCanvasSize: edits.markup?.canvasSize.cgSize ?? .zero
@@ -445,6 +446,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         return PhotoEditRenderer.render(
             resource: source,
             geometry: edits.geometry,
+            color: edits.color,
             options: options,
             markup: drawing,
             markupCanvasSize: edits.markup?.canvasSize.cgSize ?? .zero,
