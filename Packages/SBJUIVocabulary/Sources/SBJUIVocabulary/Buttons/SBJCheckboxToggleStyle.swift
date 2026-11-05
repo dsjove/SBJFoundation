@@ -1,5 +1,5 @@
 import SwiftUI
-import SBJUIVocabulary
+import SBJLocalization
 
 /// A checkbox presentation for `Toggle` that keeps the normal Toggle binding contract while
 /// presenting an explicit checked/unchecked semantic image.
@@ -10,9 +10,8 @@ public struct SBJCheckboxToggleStyle: ToggleStyle {
         Button {
             configuration.isOn.toggle()
         } label: {
-            HStack {
+            HStack(spacing: 2) {
                 configuration.label
-                Spacer()
                 Image(symbol: configuration.isOn ? SBJSymbology.checked : SBJSymbology.unchecked)
                     .foregroundStyle(configuration.isOn ? SBJUIAppearance.activeControlColor : SBJUIAppearance.inactiveControlColor)
                     .imageScale(.large)

@@ -15,7 +15,7 @@ struct SBJEditorSearchBar: View {
     var body: some View {
         HStack(spacing: 8) {
             HStack(spacing: 8) {
-                SearchField(searching: $searchText, appliesActiveSearchDecoration: false)
+                SearchField(searching: $searchText, appliesActiveSearchDecoration: nil)
                 SBJToggleButton(
                     "Changed",
                     isOn: $criteria.showChangedOnly,
