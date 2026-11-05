@@ -1,8 +1,10 @@
 #if !os(watchOS) && canImport(UIKit)
+import SBJLocalization
 import SwiftUI
 import SBJFileResources
 import SBJDataDefinition
 import SBJUIVocabulary
+import SBJLocalization
 
 /// Compact image-resource control suitable for lists, inspectors, and editor rows.
 ///
@@ -60,8 +62,8 @@ public struct PhotoThumbnailView: View {
 
     @ViewBuilder
     private var thumbnail: some View {
-        if showsPreview, let image = resource?.uiImage {
-            Image(uiImage: image)
+        if showsPreview, let image = resource?.sbjImage {
+            image.sbjSwiftUIImage
                 .resizable()
                 .scaledToFill()
                 .frame(width: size.width, height: size.height)
@@ -103,8 +105,8 @@ public struct PhotoDisplayView: View {
     }
 
     public var body: some View {
-        if let image = resource?.uiImage {
-            Image(uiImage: image)
+        if let image = resource?.sbjImage {
+            image.sbjSwiftUIImage
                 .resizable()
                 .aspectRatio(1, contentMode: .fill)
                 .frame(alignment: .center)

@@ -1,4 +1,5 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+import SBJLocalization
 import Observation
 import SwiftUI
 import UIKit
@@ -27,8 +28,8 @@ public extension SBJBundledContentReference {
 @MainActor
 public struct PhotoEditor: View {
     private let resource: SBJResourceContent
-    private let image: UIImage
-    private let previewImage: UIImage
+    private let image: SBJImage
+    private let previewImage: SBJImage
     private let initialColorAdjustments: PhotoColorAdjustments
     private let title: String?
     private let options: PhotoEditorOptions
@@ -59,7 +60,7 @@ public struct PhotoEditor: View {
         allowsUnchangedCompletion: Bool = false,
         onComplete: @escaping (SBJResourceContent?) -> Void
     ) {
-        guard let image = resource.uiImage else { return nil }
+        guard let image = resource.sbjImage else { return nil }
         self.resource = resource
         self.image = image
         self.previewImage = Self.previewSized(image)
@@ -94,7 +95,7 @@ public struct PhotoEditor: View {
         allowsUnchangedCompletion: Bool = false,
         onComplete: @escaping (PhotoEditResult?) -> Void
     ) {
-        guard let image = resource.uiImage else { return nil }
+        guard let image = resource.sbjImage else { return nil }
         self.resource = resource
         self.image = image
         self.previewImage = Self.previewSized(image)
@@ -259,7 +260,7 @@ public struct PhotoEditor: View {
 
     /// GPU filters operate on a display-sized preview during slider dragging.
     /// The renderer always processes the full-resolution source on completion.
-    private static func previewSized(_ image: UIImage) -> UIImage {
+    private static func previewSized(_ image: SBJImage) -> SBJImage {
         let largest = max(image.size.width, image.size.height)
         guard largest > 1600 else { return image }
         let scale = 1600 / largest
@@ -271,7 +272,7 @@ public struct PhotoEditor: View {
         }
     }
 
-    private var enhancedPreviewImage: UIImage {
+    private var enhancedPreviewImage: SBJImage {
         guard enhancementsEnabled else { return image }
         return colorAdjustments.applying(to: previewImage, context: Self.previewContext) ?? previewImage
     }
@@ -758,7 +759,7 @@ public struct PhotoEditor: View {
 #endif
     }
 
-    private var renderedImageForSharing: UIImage? {
+    private var renderedImageForSharing: SBJImage? {
         PhotoEditRenderer.render(
             resource: resource,
             geometry: model.geometry,
@@ -766,7 +767,7 @@ public struct PhotoEditor: View {
             options: options,
             markup: markupForRendering,
             markupCanvasSize: markupSizeForRendering
-        )?.uiImage
+        )?.sbjImage
     }
 }
 #endif

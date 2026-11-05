@@ -1,4 +1,5 @@
 #if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+import SBJLocalization
 import Observation
 import SwiftUI
 import UIKit
@@ -24,7 +25,7 @@ public extension SBJBundledContentReference {
 @MainActor
 public struct PhotoViewer: View {
     private let resource: SBJResourceContent
-    private let image: UIImage
+    private let image: SBJImage
     private let title: String?
 
     @Environment(\.dismiss) private var dismiss
@@ -35,11 +36,11 @@ public struct PhotoViewer: View {
         title: String? = nil,
         maximumScale: CGFloat = 8
     ) {
-        let image: UIImage?
+        let image: SBJImage?
         if let document = try? SBJImageDocument(resourceContent: resource) {
             image = document.renderedImage(renderIfNeeded: true)
         } else {
-            image = resource.uiImage
+            image = resource.sbjImage
         }
 
         guard let image else { return nil }
@@ -141,7 +142,7 @@ public struct PhotoViewer: View {
 
     /// Shares the flattened, fully rendered representation of an image document.
     /// Ordinary image resources are already flattened and can be shared directly.
-    private func imageForSharing() -> UIImage {
+    private func imageForSharing() -> SBJImage {
         guard let document = try? SBJImageDocument(resourceContent: resource) else { return image }
         return document.renderedImage(renderIfNeeded: true) ?? image
     }

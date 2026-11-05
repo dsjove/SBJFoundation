@@ -35,10 +35,10 @@ public struct SBJSharePayload {
 #if canImport(UIKit)
 /// UIKit needs an activity item source for the share sheet's image header metadata.
 private final class SBJImageActivityItemSource: NSObject, UIActivityItemSource {
-    private let image: UIImage
+    private let image: SBJImage
     private let title: String?
 
-    init(image: UIImage, title: String?) {
+    init(image: SBJImage, title: String?) {
         self.image = image
         self.title = title
     }

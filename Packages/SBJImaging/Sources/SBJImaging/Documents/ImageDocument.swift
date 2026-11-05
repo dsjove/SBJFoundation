@@ -1,17 +1,18 @@
+import SBJLocalization
 import CoreLocation
 import Foundation
 import UniformTypeIdentifiers
 #if canImport(UIKit)
 import UIKit
-#if canImport(PencilKit)
-import PencilKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 import SBJLocation
 import SBJFileResources
 import SBJDataDefinition
 import SBJUIVocabulary
 
-#if !os(watchOS)
+#if !os(watchOS) && (canImport(UIKit) || canImport(AppKit))
 
 /// A self-contained non-destructive image package.
 ///
@@ -75,7 +76,7 @@ public struct SBJImageDocument: Sendable, Equatable {
     ) {
         self.source = source
         self.location = location
-        let size = source.uiImage?.size ?? .init(width: 1, height: 1)
+        let size = source.sbjImage?.size ?? .init(width: 1, height: 1)
         self.edits = .init(geometry: .init(crop: .init(option: .none, sourceSize: size)))
         self.renderCache = renderCache
         self.thumbnail = nil
@@ -114,12 +115,14 @@ public struct SBJImageDocument: Sendable, Equatable {
         at fileURL: URL,
         renderIfNeeded: Bool,
         options: PhotoEditorOptions = .default
-    ) -> UIImage? {
-        if let url = thumbnailURL(in: fileURL),
-           let data = try? Data(contentsOf: url),
-           let image = UIImage(data: data) {
-            return image
-        }
+    ) -> SBJImage? {
+        if let image = fileURL.withSecurityScopedAccess({ packageURL -> SBJImage? in
+            guard let manifest = try? Self.manifest(at: packageURL),
+                  let descriptor = manifest.thumbnail,
+                  let url = Self.componentURL(in: packageURL, path: descriptor.path),
+                  let data = try? Data(contentsOf: url) else { return nil }
+            return SBJImage(data: data)
+        }) { return image }
         guard renderIfNeeded else { return nil }
         return fileURL.withSecurityScopedAccess { packageURL in
             guard let document = try? SBJImageDocument(
@@ -153,12 +156,14 @@ public struct SBJImageDocument: Sendable, Equatable {
         at fileURL: URL,
         renderIfNeeded: Bool,
         options: PhotoEditorOptions = .default
-    ) -> UIImage? {
-        if let url = renderedURL(in: fileURL),
-           let data = try? Data(contentsOf: url),
-           let image = UIImage(data: data) {
-            return image
-        }
+    ) -> SBJImage? {
+        if let image = fileURL.withSecurityScopedAccess({ packageURL -> SBJImage? in
+            guard let manifest = try? Self.manifest(at: packageURL),
+                  let descriptor = manifest.rendered,
+                  let url = Self.componentURL(in: packageURL, path: descriptor.path),
+                  let data = try? Data(contentsOf: url) else { return nil }
+            return SBJImage(data: data)
+        }) { return image }
         guard renderIfNeeded else { return nil }
         return fileURL.withSecurityScopedAccess { packageURL in
             guard let document = try? SBJImageDocument(
@@ -358,10 +363,10 @@ public struct SBJImageDocument: Sendable, Equatable {
     public func thumbnailImage(
         renderIfNeeded: Bool,
         options: PhotoEditorOptions = .default
-    ) -> UIImage? {
-        if let image = thumbnail?.uiImage { return image }
+    ) -> SBJImage? {
+        if let image = thumbnail?.sbjImage { return image }
         guard renderIfNeeded else { return nil }
-        return makeThumbnail(options: options)?.uiImage
+        return makeThumbnail(options: options)?.sbjImage
     }
 
     /// Resolves this document's full rendered image according to the caller's cache-miss policy.
@@ -369,10 +374,10 @@ public struct SBJImageDocument: Sendable, Equatable {
     public func renderedImage(
         renderIfNeeded: Bool,
         options: PhotoEditorOptions = .default
-    ) -> UIImage? {
-        if let image = rendered?.uiImage { return image }
+    ) -> SBJImage? {
+        if let image = rendered?.sbjImage { return image }
         guard renderIfNeeded else { return nil }
-        return renderedContent(options: options)?.uiImage ?? source.uiImage
+        return renderedContent(options: options)?.sbjImage ?? source.sbjImage
     }
 
     /// Serializes the complete package, including the selected rendered caches.
@@ -420,44 +425,50 @@ public struct SBJImageDocument: Sendable, Equatable {
 
     // MARK: - Rendering
 
-    /// Renders the supported current state. Reserved perspective/skew state is not yet applied.
-    private func renderedContent(options: PhotoEditorOptions) -> SBJResourceContent? {
-#if canImport(PencilKit)
-        let drawing: Any? = edits.markup?.pencilKitDrawing
-#else
-        let drawing: Any? = nil
-#endif
-        return PhotoEditRenderer.render(
+    /// The document remains agnostic about platform image implementations.
+    /// Cache rendering and full rendering differ only in pixel bound/encoding.
+    /// Unsupported markup causes the renderer to return nil rather than
+    /// silently discard it on platforms without PencilKit raster support.
+    private func render(
+        options: PhotoEditorOptions,
+        maximumPixelDimension: CGFloat? = nil,
+        encoding: PhotoEditRenderer.Encoding = .sourceCompatible
+    ) -> SBJResourceContent? {
+        PhotoEditRenderer.render(
             resource: source,
             geometry: edits.geometry,
             color: edits.color,
             options: options,
-            markup: drawing,
-            markupCanvasSize: edits.markup?.canvasSize.cgSize ?? .zero
+            markup: edits.markup,
+            markupCanvasSize: edits.markup?.canvasSize.cgSize ?? .zero,
+            maximumPixelDimension: maximumPixelDimension,
+            encoding: encoding
         )
     }
 
+    private func renderedContent(options: PhotoEditorOptions) -> SBJResourceContent? {
+        render(options: options)
+    }
+
     private func makeThumbnail(options: PhotoEditorOptions) -> SBJResourceContent? {
-#if canImport(PencilKit)
-        let drawing: Any? = edits.markup?.pencilKitDrawing
-#else
-        let drawing: Any? = nil
-#endif
-        return PhotoEditRenderer.render(
-            resource: source,
-            geometry: edits.geometry,
-            color: edits.color,
+        render(
             options: options,
-            markup: drawing,
-            markupCanvasSize: edits.markup?.canvasSize.cgSize ?? .zero,
             maximumPixelDimension: Self.thumbnailMaximumPixelDimension,
             encoding: .thumbnail
         )
     }
 
     private mutating func rebuildRenderCache(options: PhotoEditorOptions) {
-        thumbnail = renderCache.contains(.thumbnail) ? makeThumbnail(options: options) : nil
-        rendered = renderCache.contains(.rendered) ? renderedContent(options: options) : nil
+        if renderCache.contains(.thumbnail) {
+            thumbnail = makeThumbnail(options: options) ?? thumbnail
+        } else {
+            thumbnail = nil
+        }
+        if renderCache.contains(.rendered) {
+            rendered = renderedContent(options: options) ?? rendered
+        } else {
+            rendered = nil
+        }
     }
 
     // MARK: - Package persistence
@@ -466,7 +477,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         guard renderCache.contains(.thumbnail) else { return nil }
 
         if let thumbnail,
-           let image = thumbnail.uiImage,
+           let image = thumbnail.sbjImage,
            max(image.size.width, image.size.height) <= Self.thumbnailMaximumPixelDimension {
             return thumbnail
         }
@@ -604,5 +615,4 @@ public extension SBJResourceContent {
     }
 }
 
-#endif
 #endif

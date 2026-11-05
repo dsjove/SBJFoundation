@@ -4,8 +4,9 @@ import UIKit
 import SBJFileResources
 import SBJDataDefinition
 import SBJUIVocabulary
+import SBJLocalization
 
-public typealias IdentifiableImage = Identified<UIImage>
+public typealias IdentifiableImage = Identified<SBJImage>
 
 public extension UIImage {
 	convenience init?(data: Data?) {

@@ -102,23 +102,33 @@ public struct PhotoColorAdjustments: Codable, Equatable, Sendable {
         return context.createCGImage(output, from: input.extent)
     }
 
-    #if canImport(UIKit)
+    #if canImport(UIKit) || canImport(AppKit)
     public func applying(to image: SBJImage, context: CIContext = CIContext()) -> SBJImage? {
         guard !isNeutral else { return image }
-        guard let source = image.cgImage,
+        guard let source = image.sbjCGImage,
               let result = applying(to: source, context: context) else { return nil }
-        return UIImage(cgImage: result, scale: image.scale, orientation: image.imageOrientation)
-    }
-    #elseif canImport(AppKit)
-    public func applying(to image: SBJImage, context: CIContext = CIContext()) -> SBJImage? {
-        guard !isNeutral else { return image }
-        guard let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              let result = applying(to: source, context: context) else { return nil }
-        return NSImage(cgImage: result, size: NSSize(width: result.width, height: result.height))
+        return image.sbjReplacingPixels(with: result)
     }
     #endif
+
 }
 
 private extension Double {
     func clamped(to range: ClosedRange<Double>) -> Double { min(max(self, range.lowerBound), range.upperBound) }
 }
+
+// Native image representation belongs at the platform boundary. The filter
+// implementation above has one code path on both platforms.
+#if canImport(UIKit)
+private extension SBJImage {
+    func sbjReplacingPixels(with image: CGImage) -> SBJImage {
+        UIImage(cgImage: image, scale: scale, orientation: imageOrientation)
+    }
+}
+#elseif canImport(AppKit)
+private extension SBJImage {
+    func sbjReplacingPixels(with image: CGImage) -> SBJImage {
+        NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+    }
+}
+#endif

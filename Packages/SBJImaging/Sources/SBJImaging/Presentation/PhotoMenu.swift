@@ -1,4 +1,5 @@
 #if !os(watchOS) && canImport(UIKit)
+import SBJLocalization
 import Observation
 import SwiftUI
 import UIKit
@@ -99,8 +100,8 @@ public struct PhotoMenu<Content: View>: View {
 
 #if !os(tvOS)
     @MainActor
-    private var image: UIImage? {
-        resource?.uiImage
+    private var image: SBJImage? {
+        resource?.sbjImage
     }
 
     @ViewBuilder
@@ -312,7 +313,7 @@ public struct PhotoMenu<Content: View>: View {
     }
 
     @MainActor
-    private func importUIImage(_ image: UIImage) async {
+    private func importUIImage(_ image: SBJImage) async {
         guard let imported = await PhotoResourceEncoding.encode(image) else { return }
         acceptImported(imported)
     }
@@ -456,11 +457,11 @@ public struct PhotoMenu<Content: View>: View {
 /// `PhotoMenu<Content>.Type` (which triggers Swift 6 Sendable-metatype diagnostics).
 private enum PhotoResourceEncoding {
     private struct SendableImageBox: @unchecked Sendable {
-        let image: UIImage
+        let image: SBJImage
     }
 
     @MainActor
-    static func encode(_ image: UIImage) async -> SBJResourceContent? {
+    static func encode(_ image: SBJImage) async -> SBJResourceContent? {
         let box = SendableImageBox(image: image)
         return await Task.detached(priority: .userInitiated) {
             let hasAlpha: Bool = {

@@ -11,6 +11,7 @@ import AppKit
 import SBJFileResources
 import SBJDataDefinition
 import SBJUIVocabulary
+import SBJLocalization
 
 /// General image reference: obtain an image from symbolic, bundled or file-backed sources.
 /// `SBJSymbol` is restricted to local UI symbology; `.file` also resolves image-document thumbnails.
@@ -51,30 +52,7 @@ public enum ImageReference: Sendable, Hashable {
     }
 }
 
-#if canImport(UIKit)
-public extension ImageReference {
-    var image: UIImage? {
-        switch self {
-        case .none: return nil
-        case .symbol(let symbol): return symbol.uiImage
-        case .file(let url):
-            return url.withSecurityScopedAccess { scopedURL in
-                if let image = UIImage(contentsOfFile: scopedURL.path) { return image }
-                #if !os(watchOS) && !os(tvOS)
-                return SBJImageDocument.thumbnailImage(at: scopedURL, renderIfNeeded: false)
-                #else
-                return nil
-                #endif
-            }
-        }
-    }
-    var data: Data? { image?.pngData() }
-}
-#endif
-
-#if os(macOS)
-import SBJLocalization
-
+#if canImport(UIKit) || canImport(AppKit)
 public extension ImageReference {
     var image: SBJImage? {
         switch self {
@@ -82,9 +60,25 @@ public extension ImageReference {
         case .symbol(let symbol): return symbol.nativeImage
         case .file(let url):
             return url.withSecurityScopedAccess { scopedURL in
-                NSImage(contentsOf: scopedURL)
+                // UIKit image documents store a separate rendered thumbnail.
+                #if canImport(UIKit)
+                if let image = SBJImage(contentsOfFile: scopedURL.path) { return image }
+                #if !os(watchOS) && !os(tvOS)
+                return SBJImageDocument.thumbnailImage(at: scopedURL, renderIfNeeded: false)
+                #else
+                return nil
+                #endif
+                #else
+                return SBJImage(contentsOf: scopedURL)
+                #endif
             }
         }
     }
+}
+#endif
+
+#if canImport(UIKit)
+public extension ImageReference {
+    var data: Data? { image?.pngData() }
 }
 #endif

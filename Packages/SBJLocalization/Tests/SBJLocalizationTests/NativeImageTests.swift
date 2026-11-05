@@ -27,3 +27,12 @@ import AppKit
     #expect(symbol.nativeImage != nil)
 }
 #endif
+
+@Test func platformImagePresentationAdapters() {
+    guard let image = SBJSymbol.system("star").nativeImage else {
+        Issue.record("System symbol is unavailable")
+        return
+    }
+    _ = image.sbjSwiftUIImage
+    #expect(image.sbjCGImage == nil || image.sbjCGImage!.width > 0)
+}
