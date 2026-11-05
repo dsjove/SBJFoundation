@@ -346,6 +346,10 @@ public enum SBJStructureGeneration {
                     constraintMetadata.append(".uuidRules(SBJUUIDRules(nonzero: true))")
                 }
 
+                if let durationUnits = durationUnits(on: variable) {
+                    constraintMetadata.append(".durationRules(SBJDurationRules(units: \(durationUnits)))")
+                    invariantStatements.append("try SBJInvariantCheck.requireDuration(\(name), units: \(durationUnits), at: keyPath.appending(\\Self.\(name)))")
+                }
                 if let dateRange = dateRange(on: variable) {
                     invariantStatements.append("try SBJInvariantCheck.requireRange(\(name), \(dateRange), at: keyPath.appending(\\Self.\(name)))")
                     constraintMetadata.append(".dateRules(SBJDateRules(range: \(dateRange)))")
@@ -1688,6 +1692,20 @@ public enum SBJStructureGeneration {
                 return argument.expression.trimmedDescription
             }
             return "true"
+        }
+        return nil
+    }
+
+    private static func durationUnits(on variable: VariableDeclSyntax) -> String? {
+        for element in variable.attributes {
+            guard case .attribute(let attribute) = element,
+                  attribute.attributeName.trimmedDescription == "SBJDuration" else { continue }
+            guard let raw = attribute.arguments,
+                  case .argumentList(let arguments) = raw else {
+                return ".milliseconds ... .day"
+            }
+            return arguments.first(where: { $0.label?.text == "units" })?
+                .expression.trimmedDescription ?? ".milliseconds ... .day"
         }
         return nil
     }

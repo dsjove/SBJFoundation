@@ -4,22 +4,22 @@ import SBJDataDefinition
 /// A reusable text field for values that participate in `SearchProtocol`.
 public struct SearchField<S: SearchProtocol>: View {
     private let titleKey: LocalizedStringKey
-    private let appliesActiveSearchDecoration: CGFloat?
+    private let activeSearchBorderPadding: CGFloat?
     @Binding private var searching: S
 
     public init(
         _ titleKey: LocalizedStringKey = "Search",
         searching: Binding<S>,
-        appliesActiveSearchDecoration: CGFloat? = 4
+        activeSearchBorderPadding: CGFloat? = SBJUIAppearance.activeSearchStrokeWidth + 0.5
     ) {
         self.titleKey = titleKey
         self._searching = searching
-        self.appliesActiveSearchDecoration = appliesActiveSearchDecoration
+        self.activeSearchBorderPadding = activeSearchBorderPadding
     }
 
     public var body: some View {
         searchField
-            .sbjActiveSearch(!searching.isEmpty, padding: appliesActiveSearchDecoration)
+            .sbjActiveSearch(!searching.isEmpty, padding: activeSearchBorderPadding)
     }
 
     private var searchField: some View {

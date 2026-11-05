@@ -93,4 +93,11 @@ struct SBJRecipeCompileTimeContractTests {
   }
 }
 
+@Test func sampleDurationAnnotations() {
+    let elapsed = SBJStructureSampleModel.propertyMetadata(for: \.elapsedTime)
+    let resting = SBJStructureSampleModel.propertyMetadata(for: \.restingTime)
+    #expect(elapsed?.constraints.contains(.durationRules(.init(units: .milliseconds ... .day))) == true)
+    #expect(resting?.constraints.contains(.durationRules(.init(units: .second ... .hour))) == true)
+}
+
 #endif

@@ -32,7 +32,7 @@ public extension View {
     ///
     /// A non-nil padding adds the inset and active-search outline; nil omits
     /// both, leaving the underlying view undecorated.
-    func sbjActiveSearch(_ isActive: Bool = true, padding: CGFloat? = 8) -> some View {
+    func sbjActiveSearch(_ isActive: Bool = true, padding: CGFloat? = SBJUIAppearance.activeSearchStrokeWidth + 0.5) -> some View {
         modifier(SBJActiveSearchModifier(isActive: isActive, padding: padding))
     }
 }

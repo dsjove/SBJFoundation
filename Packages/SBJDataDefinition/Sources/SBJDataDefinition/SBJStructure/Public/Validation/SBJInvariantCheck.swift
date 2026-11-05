@@ -74,6 +74,25 @@ public enum SBJInvariantCheck {
         guard condition() else { throw SBJValidationError(value, at: keyPath, message) }
     }
 
+    /// Duration storage must be finite, nonnegative, and representable in the
+    /// shared millisecond formatter. Unit selection controls presentation.
+    public static func requireDuration(
+        _ value: TimeInterval,
+        units: ClosedRange<DurationUnit>,
+        at keyPath: SBJValidationKeyPath
+    ) throws {
+        try require(value.isFinite && value >= 0 && value < Double(Int64.max) / 1000,
+                    at: keyPath, "must be a finite nonnegative duration")
+    }
+
+    public static func requireDuration(
+        _ value: TimeInterval?,
+        units: ClosedRange<DurationUnit>,
+        at keyPath: SBJValidationKeyPath
+    ) throws {
+        if let value { try requireDuration(value, units: units, at: keyPath) }
+    }
+
     public static func requireRange(_ value: Int, _ range: ClosedRange<Int>, at keyPath: SBJValidationKeyPath) throws {
         try require(range.contains(value), value: value, at: keyPath, "must be in \(range.lowerBound)...\(range.upperBound)")
     }

@@ -163,6 +163,14 @@ public struct SBJStructureSampleModel: Codable {
   @SBJUnitValue(unitMutable: false)
   public var packageWeight = UnitValue<MassUnit>(340, unit: .gram)
   public var simmerTime = UnitValue<DurationUnit>(45, unit: .minute)
+
+  // TimeInterval annotation coverage: fractional precision and whole-second
+  // input both flow through the structured editor's duration text field.
+  @SBJDuration(units: .milliseconds ... .day)
+  public var elapsedTime: TimeInterval = 93.125
+
+  @SBJDuration(units: .second ... .hour)
+  public var restingTime: TimeInterval = 75
   public var panDepth: UnitValue<LengthUnit>? = .init(2, unit: .inch)
 
   @SBJDate(range: Date(timeIntervalSince1970: 0)...Date(timeIntervalSince1970: 4_102_444_800))

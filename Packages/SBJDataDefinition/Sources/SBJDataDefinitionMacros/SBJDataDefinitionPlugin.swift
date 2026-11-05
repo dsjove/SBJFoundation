@@ -19,6 +19,7 @@ struct SBJDataDefinitionPlugin: CompilerPlugin {
         SBJURLMacro.self,
         SBJUUIDMacro.self,
         SBJDateMacro.self,
+        SBJDurationMacro.self,
         SBJDataMacro.self,
         SBJColorPresentationMacro.self,
         SBJArrayPresentationMacro.self,

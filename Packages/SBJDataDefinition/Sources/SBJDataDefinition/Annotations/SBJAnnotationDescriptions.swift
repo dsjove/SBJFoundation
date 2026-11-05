@@ -158,6 +158,7 @@ extension SBJPropertyConstraint: CustomStringConvertible {
         case .dataRules(let v): return "Data · \(v)"
         case .uuidRules(let v): return v.description
         case .dateRules(let v): return "Date · \(v)"
+        case .durationRules(let v): return "Duration · \(v.units.lowerBound)...\(v.units.upperBound)"
         case .urlRules(let v): return "URL · \(v)"
         }
     }

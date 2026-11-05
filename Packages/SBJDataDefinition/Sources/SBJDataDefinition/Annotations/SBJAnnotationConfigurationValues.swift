@@ -77,6 +77,13 @@ public struct SBJURLRules: Codable, Sendable, Equatable {
     public init(allowed: Set<SBJURLKind>) { self.allowed = allowed }
 }
 
+public struct SBJDurationRules: Codable, Sendable, Equatable {
+    public var units: ClosedRange<DurationUnit>
+    public init(units: ClosedRange<DurationUnit> = .milliseconds ... .day) {
+        self.units = units
+    }
+}
+
 public struct SBJDateRules: Codable, Sendable, Equatable {
     public var range: ClosedRange<Date>
     public init(range: ClosedRange<Date>) { self.range = range }

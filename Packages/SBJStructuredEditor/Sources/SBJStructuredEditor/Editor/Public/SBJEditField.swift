@@ -11,6 +11,7 @@ import SBJUIVocabulary
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let dateRange: ClosedRange<Date>?
+    let durationUnits: ClosedRange<DurationUnit>?
     let colorSupportsAlpha: Bool
     let unitEditor: SBJUnitValueEditorMode
     let unitSystem: MeasurementSystem?
@@ -59,6 +60,10 @@ import SBJUIVocabulary
           if case .dateRules(let rules) = constraint { return rules.range }
           return nil
         }.first
+      durationUnits = metadata?.constraints.compactMap { constraint -> ClosedRange<DurationUnit>? in
+        if case .durationRules(let rules) = constraint { return rules.units }
+        return nil
+      }.first
       colorSupportsAlpha =
         metadata?.hints.compactMap { hint -> Bool? in
           if case .colorPresentation(let value) = hint { return value.alpha }
@@ -235,6 +240,7 @@ import SBJUIVocabulary
           integerRange: configuration.integerRange,
           numberRange: configuration.numberRange,
           dateRange: configuration.dateRange,
+          durationUnits: configuration.durationUnits,
           colorSupportsAlpha: configuration.colorSupportsAlpha,
           unitEditor: configuration.unitEditor,
           unitSystem: configuration.unitSystem,

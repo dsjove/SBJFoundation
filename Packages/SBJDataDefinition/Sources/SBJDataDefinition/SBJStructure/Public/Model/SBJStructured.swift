@@ -264,6 +264,7 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
     case dataRules(SBJDataRules)
     case uuidRules(SBJUUIDRules)
     case dateRules(SBJDateRules)
+    case durationRules(SBJDurationRules)
     case urlRules(SBJURLRules)
 }
 

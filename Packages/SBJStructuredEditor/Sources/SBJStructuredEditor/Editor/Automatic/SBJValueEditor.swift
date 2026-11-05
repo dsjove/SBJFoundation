@@ -347,6 +347,7 @@ enum SBJValueEditor {
         integerRange: ClosedRange<Int>? = nil,
         numberRange: ClosedRange<Double>? = nil,
         dateRange: ClosedRange<Date>? = nil,
+        durationUnits: ClosedRange<DurationUnit>? = nil,
         colorSupportsAlpha: Bool = true,
         unitEditor: SBJUnitValueEditorMode = .editable,
         unitSystem: MeasurementSystem? = nil,
@@ -434,6 +435,14 @@ enum SBJValueEditor {
                 SBJIntegerEditor(label: label, value: value.sbjBinding(as: Int.self), range: integerRange, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
                 itemActions: itemActions,
                 context: context
+            )
+        }
+        if Value.self == Double.self, let durationUnits {
+            return wrapLeaf(
+                SBJDurationEditor(label: label, value: value.sbjBinding(as: Double.self),
+                                  units: durationUnits, focusRequest: focusRequest,
+                                  labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status),
+                itemActions: itemActions, context: context
             )
         }
         if Value.self == Double.self {
