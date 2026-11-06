@@ -1,25 +1,27 @@
-#if !os(watchOS) && canImport(UIKit)
+#if os(iOS) || os(macOS)
 import Foundation
 import SwiftUI
-import UIKit
 
-/// Compatibility wrapper that returns a captured `UIImage`.
+#if canImport(UIKit)
+import UIKit
+/// Native in-memory image returned from ``CameraPickerView`` on iOS and Mac Catalyst.
+public typealias CameraPickerImage = UIImage
+#elseif canImport(AppKit)
+import AppKit
+/// Native in-memory image returned from ``CameraPickerView`` on macOS.
+public typealias CameraPickerImage = NSImage
+#endif
+
+/// Convenience camera picker returning an in-memory platform image.
 ///
-/// Prefer ``CameraView`` when encoded capture data is useful. This wrapper exists
-/// for callers that intentionally want a simple in-memory `UIImage` result.
+/// Capture selection, permissions, camera controls and cancellation all use
+/// ``CameraView``; only the final platform-image decode differs between
+/// UIKit and AppKit. For encoded capture data, prefer ``CameraView`` directly.
 @MainActor
 public struct CameraPickerView: View {
-    public typealias Completion = @MainActor (UIImage?) -> Void
+    public typealias Completion = @MainActor (CameraPickerImage?) -> Void
 
-    public static var isAvailable: Bool {
-        #if targetEnvironment(macCatalyst)
-        CameraCaptureView.isAvailable
-        #elseif os(iOS)
-        CameraImplementation.preferred != nil
-        #else
-        false
-        #endif
-    }
+    public static var isAvailable: Bool { CameraView.isAvailable }
 
     private let allowsEditing: Bool
     private let remembersCameraDevice: Bool
@@ -28,7 +30,7 @@ public struct CameraPickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     public init(
-        image: Binding<UIImage?>,
+        image: Binding<CameraPickerImage?>,
         allowsEditing: Bool = false,
         remembersCameraDevice: Bool = true
     ) {
@@ -51,37 +53,17 @@ public struct CameraPickerView: View {
     }
 
     public var body: some View {
-        Group {
-            #if targetEnvironment(macCatalyst)
-            CameraCaptureView { attachment in
-                finish(attachment)
-            }
-            .ignoresSafeArea()
-            #elseif os(iOS)
-            CameraView(
-                implementation: .automatic,
-                allowsEditing: allowsEditing,
-                remembersCameraDevice: remembersCameraDevice
-            ) { attachment in
-                finish(attachment)
-            }
-            .ignoresSafeArea()
-            #else
-            unavailableView
-            #endif
+        CameraView(
+            allowsEditing: allowsEditing,
+            remembersCameraDevice: remembersCameraDevice
+        ) { attachment in
+            finish(attachment)
         }
-    }
-
-    private var unavailableView: some View {
-        ContentUnavailableView(
-            "Camera Unavailable",
-            systemImage: "camera.slash",
-            description: Text("Camera capture is not available on this platform.")
-        )
+        .ignoresSafeArea()
     }
 
     private func finish(_ attachment: CapturedAttachment?) {
-        let image = attachment.flatMap { UIImage(data: $0.blob) }
+        let image = attachment.flatMap { CameraPickerImage(data: $0.blob) }
         completion(image)
         dismiss()
     }

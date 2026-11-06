@@ -2,9 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:Testing.md">
-   </FileRef>
-   <FileRef
       location = "group:Packages/Testing.xctestplan">
    </FileRef>
    <FileRef

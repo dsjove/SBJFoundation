@@ -4,7 +4,12 @@ import PackageDescription
 let package = Package(
     name: "SBJImaging",
     platforms: [
-        .macOS(.v14), .iOS(.v17), .watchOS(.v10), .visionOS(.v1), .tvOS(.v17),
+        .macOS(.v14),
+        .macCatalyst(.v17),
+        .iOS(.v17),
+        .watchOS(.v10),
+        .visionOS(.v1),
+        .tvOS(.v17),
     ],
     products: [.library(name: "SBJImaging", targets: ["SBJImaging"])],
     dependencies: [

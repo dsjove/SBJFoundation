@@ -2,6 +2,7 @@
 import SwiftUI
 import Observation
 import SBJFileResources
+import CoreGraphics
 
 /// A movie request is independent of Casting or of the owning SwiftUI view.
 /// An ID instead of URL as the scene value permits multiple windows for one movie.
@@ -16,18 +17,21 @@ public struct MediaOpenRequest: Identifiable {
     public let title: String
     public let file: ScopedFile
     public let initialTime: TimeInterval?
-    public let onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)?
+    public let options: MovieViewerOptions
+    public let setPoster: MoviePosterHandler?
 
     public init(
         title: String,
         file: ScopedFile,
         initialTime: TimeInterval? = nil,
-        onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)? = nil
+        options: MovieViewerOptions = .init(),
+        setPoster: MoviePosterHandler? = nil
     ) {
         self.title = title
         self.file = file
         self.initialTime = initialTime
-        self.onPosterChanged = onPosterChanged
+        self.options = options
+        self.setPoster = setPoster
     }
 }
 
@@ -36,7 +40,8 @@ struct MovieViewerSession {
     let title: String
     let url: URL
     let initialTime: TimeInterval?
-    let onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)?
+    let options: MovieViewerOptions
+    let setPoster: MoviePosterHandler?
     /// Retained while the player may access the movie file.
     let accessLease: SecurityScopedFileURLLease
 }
@@ -54,12 +59,12 @@ public final class MovieViewerSessions {
     // preserves the title, casting callback and scoped directory access while
     // keeping the presentation API as simple as quickLookPreview($url).
     private var pending: (title: String, resource: SecurityScopedFileURL,
-                          initialTime: TimeInterval?,
-                          onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)?)?
+                          initialTime: TimeInterval?, options: MovieViewerOptions,
+                          setPoster: MoviePosterHandler?)?
 
     func prepare(title: String, resource: SecurityScopedFileURL, initialTime: TimeInterval?,
-                 onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)?) {
-        pending = (title, resource, initialTime, onPosterChanged)
+                 options: MovieViewerOptions = .init(), setPoster: MoviePosterHandler?) {
+        pending = (title, resource, initialTime, options, setPoster)
     }
 
     func openPrepared(for url: URL) -> UUID {
@@ -69,7 +74,8 @@ public final class MovieViewerSessions {
         }
         pending = nil
         return open(title: request.title, resource: request.resource,
-                    initialTime: request.initialTime, onPosterChanged: request.onPosterChanged)
+                    initialTime: request.initialTime, options: request.options,
+                    setPoster: request.setPoster)
     }
 
     @discardableResult
@@ -77,14 +83,15 @@ public final class MovieViewerSessions {
         title: String,
         resource: SecurityScopedFileURL,
         initialTime: TimeInterval?,
-        onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)? = nil
+        options: MovieViewerOptions = .init(),
+        setPoster: MoviePosterHandler? = nil
     ) -> UUID {
         // Keep the security scope alive until the window/sheet closes.
         let access = resource.beginAccess()
         let id = UUID()
         sessions[id] = MovieViewerSession(
             title: title, url: resource.url, initialTime: initialTime,
-            onPosterChanged: onPosterChanged, accessLease: access
+            options: options, setPoster: setPoster, accessLease: access
         )
         return id
     }
@@ -110,10 +117,9 @@ public struct MovieViewerSessionContent: View {
                     title: session.title,
                     url: session.url,
                     initialTime: session.initialTime,
-                    onPosterChanged: session.onPosterChanged,
-                    onClose: {
-                        dismiss()
-                    }
+                    options: session.options,
+                    onClose: { dismiss() },
+                    setPoster: session.setPoster
                 )
             } else {
                 // An old/restored window has no matching live session.
@@ -229,8 +235,8 @@ private struct MediaOpenRequestModifier: ViewModifier {
         guard let request else { return }
         let id = sessions.open(
             title: request.title, resource: request.file.securityScopedURL,
-            initialTime: request.initialTime,
-            onPosterChanged: request.onPosterChanged
+            initialTime: request.initialTime, options: request.options,
+            setPoster: request.setPoster
         )
         presentedID = id
         #if os(visionOS)

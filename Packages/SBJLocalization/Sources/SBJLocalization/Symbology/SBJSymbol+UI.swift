@@ -60,7 +60,7 @@ public extension SBJSymbol {
 }
 #endif
 
-#if canImport(AppKit)
+#if os(macOS)
 public extension SBJSymbol {
     var nsImage: NSImage? {
         switch self {

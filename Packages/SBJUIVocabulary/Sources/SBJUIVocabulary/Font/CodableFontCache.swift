@@ -132,7 +132,7 @@ public final class CodableFontCache: @unchecked Sendable {
 		// metadata for those faces. What matters to the editor is whether the same
 		// SBJFontDescriptor matching path used by `makeFont` actually resolves a
 		// different face when an attribute is requested.
-        #if canImport(AppKit)
+        #if os(macOS)
         let members = NSFontManager.shared.availableMembers(ofFontFamily: family) ?? []
         let weightValues = Set(members.compactMap { ($0.count > 2 ? $0[2] : nil) as? Int })
         let italicValues = Set(members.map { member in
@@ -210,7 +210,7 @@ public final class CodableFontCache: @unchecked Sendable {
 		makeFont(for: font, scale: scale)
 	}
 
-    #if canImport(AppKit)
+    #if os(macOS)
     private func makeFont(for font: CodableFont, scale: Double) -> SBJFont {
         let size = CGFloat(font.size * scale)
         let manager = NSFontManager.shared
@@ -339,7 +339,7 @@ public final class CodableFontCache: @unchecked Sendable {
 		}
 	}
 
-    #if canImport(AppKit)
+    #if os(macOS)
     private static func buildCatalog() -> Catalog {
         let manager = NSFontManager.shared
         let families = manager.availableFontFamilies.sorted {

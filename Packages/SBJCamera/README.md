@@ -7,7 +7,7 @@ The camera layer deliberately separates capture from image editing:
 - `CameraView` is the preferred high-level SwiftUI capture surface. It returns encoded `CapturedAttachment` data and chooses the most appropriate supported implementation.
 - `CameraCaptureView` is the framework's AVFoundation implementation.
 - `SystemCameraPickerView` is Apple's `UIImagePickerController` camera UI where that API is available.
-- `CameraPickerView` is a convenience that returns an in-memory `UIImage` for callers that intentionally want that simpler API.
+- `CameraPickerView` is a shared convenience wrapper over `CameraView` that returns an in-memory native image (`UIImage` on iOS / Mac Catalyst, `NSImage` on macOS). Its `CameraPickerImage` typealias preserves the platform-native binding and completion types.
 - `Camera`, `CameraModel`, `CameraPreview`, `CameraPosition`, and `CameraFlashMode` support custom camera experiences.
 - `PhotoMenu` uses `CameraView` directly so a camera capture can remain encoded data and does not need an unnecessary UIImage decode/re-encode cycle.
 
@@ -115,9 +115,11 @@ For a deliberately simple in-memory image workflow, the compatibility wrapper re
 
 ```swift
 CameraPickerView { image in
-    // UIImage? result
+    // CameraPickerImage? result (UIImage on iOS, NSImage on macOS)
 }
 ```
+
+On macOS, `CameraPickerView` uses the same AVFoundation camera path as `CameraView`. `allowsEditing` and `remembersCameraDevice` are forwarded to `CameraView`; these options affect the UIKit system picker when that implementation is selected, not the AVFoundation camera. The view does not introduce a separate macOS camera controller.
 
 ## PhotoMenu integration
 

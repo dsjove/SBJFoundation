@@ -1,9 +1,14 @@
-#if !os(watchOS) && canImport(UIKit)
+#if !os(watchOS) && (canImport(UIKit) || canImport(AppKit))
 import SBJLocalization
 import Observation
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import UniformTypeIdentifiers
+import ImageIO
 #if !os(tvOS)
 import PhotosUI
 #endif
@@ -209,7 +214,7 @@ public struct PhotoMenu<Content: View>: View {
                 state.photoPickerSelection = nil
                 Task { await importPhotoPickerItem(item) }
             }
-            .fullScreenCover(
+            .photoModal(
                 isPresented: Binding(
                     get: { state.viewingResource != nil },
                     set: { if !$0 { state.viewingResource = nil } }
@@ -220,7 +225,7 @@ public struct PhotoMenu<Content: View>: View {
                     viewer
                 }
             }
-            .fullScreenCover(
+            .photoModal(
                 isPresented: Binding(
                     get: { state.editingResource != nil },
                     set: { if !$0 { state.editingResource = nil } }
@@ -251,7 +256,7 @@ public struct PhotoMenu<Content: View>: View {
                     }
                 }
             }
-            .fullScreenCover(isPresented: $state.isCameraPresented) {
+            .photoModal(isPresented: $state.isCameraPresented) {
                 CameraView { attachment in
                     state.isCameraPresented = false
                     guard let attachment,
@@ -277,26 +282,39 @@ public struct PhotoMenu<Content: View>: View {
 
     @MainActor
     private func refreshPasteAvailability() {
+        #if canImport(UIKit)
         state.canPasteImage = UIPasteboard.general.hasImages
+        #else
+        state.canPasteImage = NSPasteboard.general.canReadItem(
+            withDataConformingToTypes: [UTType.image.identifier]
+        ) || NSImage(pasteboard: .general) != nil
+        #endif
     }
 
     @MainActor
     private func importFromPasteboard() {
+        #if canImport(UIKit)
         let pasteboard = UIPasteboard.general
-
-        for typeIdentifier in pasteboard.types {
-            let type = UTType(typeIdentifier)
-            guard type?.conforms(to: .image) == true,
-                  let data = pasteboard.data(forPasteboardType: typeIdentifier),
-                  let type else { continue }
+        for identifier in pasteboard.types {
+            guard let type = UTType(identifier), type.conforms(to: .image),
+                  let data = pasteboard.data(forPasteboardType: identifier) else { continue }
             acceptImported(.init(data: data, contentType: type))
             return
         }
-
-        // Some systems expose an image but not a directly retrievable encoded
-        // representation. Fall back to off-main encoding in that case.
         guard let image = pasteboard.image else { return }
-        Task { await importUIImage(image) }
+        #else
+        let pasteboard = NSPasteboard.general
+        for item in pasteboard.pasteboardItems ?? [] {
+            for identifier in item.types {
+                guard let type = UTType(identifier.rawValue), type.conforms(to: .image),
+                      let data = item.data(forType: identifier) else { continue }
+                acceptImported(.init(data: data, contentType: type))
+                return
+            }
+        }
+        guard let image = NSImage(pasteboard: pasteboard) else { return }
+        #endif
+        Task { await importNativeImage(image) }
     }
 
     @MainActor
@@ -313,7 +331,7 @@ public struct PhotoMenu<Content: View>: View {
     }
 
     @MainActor
-    private func importUIImage(_ image: SBJImage) async {
+    private func importNativeImage(_ image: SBJImage) async {
         guard let imported = await PhotoResourceEncoding.encode(image) else { return }
         acceptImported(imported)
     }
@@ -453,8 +471,7 @@ public struct PhotoMenu<Content: View>: View {
 }
 
 #if !os(tvOS)
-/// Non-generic encoding boundary so detached work does not capture
-/// `PhotoMenu<Content>.Type` (which triggers Swift 6 Sendable-metatype diagnostics).
+/// Non-generic encoding boundary; one ImageIO implementation for AppKit and UIKit.
 private enum PhotoResourceEncoding {
     private struct SendableImageBox: @unchecked Sendable {
         let image: SBJImage
@@ -464,28 +481,50 @@ private enum PhotoResourceEncoding {
     static func encode(_ image: SBJImage) async -> SBJResourceContent? {
         let box = SendableImageBox(image: image)
         return await Task.detached(priority: .userInitiated) {
+            guard let cg = box.image.sbjCGImage else { return nil }
+            let alpha = cg.alphaInfo
             let hasAlpha: Bool = {
-                guard let alphaInfo = box.image.cgImage?.alphaInfo else { return false }
-                switch alphaInfo {
-                case .first, .last, .premultipliedFirst, .premultipliedLast:
-                    return true
-                default:
-                    return false
+                switch alpha {
+                case .first, .last, .premultipliedFirst, .premultipliedLast: true
+                default: false
                 }
             }()
-
-            if hasAlpha, let data = box.image.pngData() {
-                return .init(data: data, contentType: .png)
-            }
-            if let data = box.image.jpegData(compressionQuality: 0.92) {
-                return .init(data: data, contentType: .jpeg)
-            }
-            if let data = box.image.pngData() {
-                return .init(data: data, contentType: .png)
-            }
-            return nil
+            let type: UTType = hasAlpha ? .png : .jpeg
+            let output = NSMutableData()
+            guard let destination = CGImageDestinationCreateWithData(
+                output, type.identifier as CFString, 1, nil
+            ) else { return nil }
+            CGImageDestinationAddImage(destination, cg, [
+                kCGImageDestinationLossyCompressionQuality: 0.92
+            ] as CFDictionary)
+            guard CGImageDestinationFinalize(destination) else { return nil }
+            return SBJResourceContent(data: output as Data, contentType: type)
         }.value
     }
 }
 #endif
+#endif
+
+#if os(macOS) || os(iOS) || os(visionOS)
+private struct PhotoModalModifier<Presented: View>: ViewModifier {
+    @Binding var isPresented: Bool
+    let content: () -> Presented
+
+    func body(content base: Content) -> some View {
+        #if os(macOS)
+        base.sheet(isPresented: $isPresented, content: content)
+        #else
+        base.fullScreenCover(isPresented: $isPresented, content: content)
+        #endif
+    }
+}
+
+private extension View {
+    func photoModal<Presented: View>(
+        isPresented: Binding<Bool>,
+        @ViewBuilder content: @escaping () -> Presented
+    ) -> some View {
+        modifier(PhotoModalModifier(isPresented: isPresented, content: content))
+    }
+}
 #endif

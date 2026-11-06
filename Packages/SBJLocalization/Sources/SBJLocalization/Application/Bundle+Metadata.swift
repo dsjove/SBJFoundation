@@ -66,7 +66,7 @@ public extension Bundle {
                let image = SBJImage(contentsOfFile: url.path) { return image }
         }
 
-        #if canImport(AppKit)
+        #if os(macOS)
         // macOS traditionally records an .icns file in CFBundleIconFile.
         if let iconFile = object(forInfoDictionaryKey: "CFBundleIconFile") as? String {
             let name = (iconFile as NSString).deletingPathExtension

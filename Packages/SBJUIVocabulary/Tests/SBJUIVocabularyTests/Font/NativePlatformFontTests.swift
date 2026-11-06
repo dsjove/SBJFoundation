@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import SBJUIVocabulary
 
-#if canImport(AppKit)
+#if os(macOS)
 import AppKit
 
 struct NativePlatformFontTests {

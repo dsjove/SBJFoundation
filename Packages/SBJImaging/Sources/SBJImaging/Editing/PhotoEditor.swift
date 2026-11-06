@@ -1,10 +1,14 @@
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS) && (canImport(UIKit) || canImport(AppKit))
 import SBJLocalization
 import Observation
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import CoreImage
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
 import PencilKit
 #endif
 import SBJFileResources
@@ -31,6 +35,7 @@ public struct PhotoEditor: View {
     private let image: SBJImage
     private let previewImage: SBJImage
     private let initialColorAdjustments: PhotoColorAdjustments
+    private let preservedMarkup: PhotoMarkup?
     private let title: String?
     private let options: PhotoEditorOptions
     private let onComplete: ((SBJResourceContent?) -> Void)?
@@ -41,13 +46,15 @@ public struct PhotoEditor: View {
     @State private var enhancementsEnabled = true
     @State private var showEnhancements = false
     private let allowsUnchangedCompletion: Bool
+    /// Set false when embedded directly in a parent view rather than presented as a sheet.
+    private let dismissOnCompletion: Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var model: PhotoEditorModel
     /// UI preference only; persisted independently from image edit state.
     @AppStorage("SBJFoundation.PhotoEditor.isRotationVisible")
     private var isRotationVisible = false
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
     @State private var markup: PhotoMarkupState
     @AppStorage("SBJFoundation.PhotoEditor.markupActive")
     private var markupActive = false
@@ -58,6 +65,7 @@ public struct PhotoEditor: View {
         title: String? = nil,
         options: PhotoEditorOptions = .default,
         allowsUnchangedCompletion: Bool = false,
+        dismissOnCompletion: Bool = true,
         onComplete: @escaping (SBJResourceContent?) -> Void
     ) {
         guard let image = resource.sbjImage else { return nil }
@@ -71,8 +79,10 @@ public struct PhotoEditor: View {
         self.initialDisplayName = ""
         self.initialDescription = ""
         self.initialColorAdjustments = .init()
+        self.preservedMarkup = nil
         self._colorAdjustments = State(initialValue: .init())
         self.allowsUnchangedCompletion = allowsUnchangedCompletion
+        self.dismissOnCompletion = dismissOnCompletion
 
         let initial = PhotoEditGeometry(crop: .init(option: options.effectiveInitialCrop, sourceSize: image.size))
         self._model = State(initialValue: PhotoEditorModel(
@@ -80,7 +90,7 @@ public struct PhotoEditor: View {
             sourceSize: image.size,
             options: options
         ))
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         self._markup = State(initialValue: PhotoMarkupState())
 #endif
     }
@@ -93,6 +103,7 @@ public struct PhotoEditor: View {
         title: String? = nil,
         options: PhotoEditorOptions = .default,
         allowsUnchangedCompletion: Bool = false,
+        dismissOnCompletion: Bool = true,
         onComplete: @escaping (PhotoEditResult?) -> Void
     ) {
         guard let image = resource.sbjImage else { return nil }
@@ -106,8 +117,10 @@ public struct PhotoEditor: View {
         self.initialDisplayName = edits.displayName
         self.initialDescription = edits.description
         self.initialColorAdjustments = edits.color
+        self.preservedMarkup = edits.markup
         self._colorAdjustments = State(initialValue: edits.color)
         self.allowsUnchangedCompletion = allowsUnchangedCompletion
+        self.dismissOnCompletion = dismissOnCompletion
         self._model = State(initialValue: PhotoEditorModel(
             geometry: edits.geometry,
             initialGeometry: edits.geometry,
@@ -115,7 +128,7 @@ public struct PhotoEditor: View {
             options: options,
             prepareForEditing: true
         ))
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         self._markup = State(initialValue: PhotoMarkupState(
             drawing: edits.markup?.pencilKitDrawing ?? PKDrawing(),
             canvasSize: edits.markup?.canvasSize.cgSize ?? .zero
@@ -130,6 +143,7 @@ public struct PhotoEditor: View {
         title: String? = nil,
         options: PhotoEditorOptions = .default,
         allowsUnchangedCompletion: Bool = false,
+        dismissOnCompletion: Bool = true,
         onComplete: @escaping (SBJImageDocument?) -> Void
     ) {
         let input = document.editorInput
@@ -138,7 +152,8 @@ public struct PhotoEditor: View {
             edits: input.edits,
             title: title,
             options: options,
-            allowsUnchangedCompletion: allowsUnchangedCompletion
+            allowsUnchangedCompletion: allowsUnchangedCompletion,
+            dismissOnCompletion: dismissOnCompletion
         ) { edits in
             guard let edits else {
                 onComplete(nil)
@@ -159,10 +174,18 @@ public struct PhotoEditor: View {
                 }
                 .background(Color.black.ignoresSafeArea())
                 .navigationTitle(title ?? "")
+                #if os(iOS) || os(visionOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar { toolbar(sharePresenter: sharePresenter) }
                 .overlay(alignment: .bottom) {
                     straightenOverlay
+                    #if os(macOS)
+                    if preservedMarkup != nil {
+                        Text("This photo contains markup that cannot be edited on macOS.")
+                            .padding().background(.regularMaterial)
+                    }
+                    #endif
                 }
             }
         }
@@ -185,7 +208,7 @@ public struct PhotoEditor: View {
                 transformedImage(layout: layout)
                     .position(layout.imageCenterInFrame)
 
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
                 if options.allowsMarkup {
                     PhotoMarkupCanvas(
                         model: markup,
@@ -249,7 +272,7 @@ public struct PhotoEditor: View {
 
     @ViewBuilder
     private func transformedImage(layout: PhotoResolvedLayout) -> some View {
-        Image(uiImage: enhancedPreviewImage)
+        enhancedPreviewImage.sbjSwiftUIImage
             .resizable()
             .frame(width: layout.renderedImageSize.width, height: layout.renderedImageSize.height)
             .scaleEffect(x: layout.mirrorX, y: layout.mirrorY)
@@ -265,11 +288,19 @@ public struct PhotoEditor: View {
         guard largest > 1600 else { return image }
         let scale = 1600 / largest
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        #if canImport(UIKit)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             image.draw(in: CGRect(origin: .zero, size: size))
         }
+        #else
+        guard let cg = image.sbjCGImage else { return image }
+        let source = CIImage(cgImage: cg)
+        let reduced = source.transformed(by: .init(scaleX: scale, y: scale))
+        guard let result = previewContext.createCGImage(reduced, from: reduced.extent) else { return image }
+        return NSImage(cgImage: result, size: size)
+        #endif
     }
 
     private var enhancedPreviewImage: SBJImage {
@@ -278,7 +309,7 @@ public struct PhotoEditor: View {
     }
 
     private var isMarkupActive: Bool {
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         markupActive
 #else
         false
@@ -306,7 +337,7 @@ public struct PhotoEditor: View {
 
     @ToolbarContentBuilder
     private func toolbar(sharePresenter: SBJSharePresenter) -> some ToolbarContent {
-        ToolbarItemGroup(placement: .topBarLeading) {
+        ToolbarItemGroup(placement: editorLeadingPlacement) {
             Button("Cancel", role: .cancel) {
                 cancel()
             }
@@ -324,7 +355,7 @@ public struct PhotoEditor: View {
             }
 
 			if model.usesCompactToolbar {
-	#if canImport(PencilKit)
+	#if canImport(UIKit) && canImport(PencilKit)
 				if options.allowsMarkup && markup.extendedToolsSupported {
 					markupToggleButton
 				}
@@ -333,7 +364,7 @@ public struct PhotoEditor: View {
         }
 
         if model.usesCompactToolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: editorTrailingPlacement) {
 				SBJHelpLink(
 					asset: .imageEditHelp,
 					auto: false,
@@ -343,8 +374,8 @@ public struct PhotoEditor: View {
                 doneButton
             }
 
-            ToolbarItemGroup(placement: .bottomBar) {
-#if canImport(PencilKit)
+            ToolbarItemGroup(placement: editorBottomPlacement) {
+#if canImport(UIKit) && canImport(PencilKit)
                 if options.allowsMarkup, markupActive, markup.extendedToolsSupported {
                     compactMarkupActions
                 } else {
@@ -355,8 +386,8 @@ public struct PhotoEditor: View {
 #endif
             }
         } else {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-#if canImport(PencilKit)
+            ToolbarItemGroup(placement: editorTrailingPlacement) {
+#if canImport(UIKit) && canImport(PencilKit)
                 if options.allowsMarkup, markupActive {
                     SBJSymbolButton(
                         SBJImageSymbology.eraseMarkup,
@@ -389,11 +420,33 @@ public struct PhotoEditor: View {
                 geometryToolbarButtons
 #endif
             }
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: editorTrailingPlacement) {
                 enhancementButton
                 doneButton
             }
         }
+    }
+
+    private var editorLeadingPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .topBarLeading
+        #endif
+    }
+    private var editorTrailingPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .topBarTrailing
+        #endif
+    }
+    private var editorBottomPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .bottomBar
+        #endif
     }
 
     private var enhancementButton: some View {
@@ -419,7 +472,7 @@ public struct PhotoEditor: View {
         .opacity(canComplete ? 1 : 0.35)
     }
 
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
     @ViewBuilder
     private var markupToggleButton: some View {
         SBJSymbolButton(
@@ -431,7 +484,7 @@ public struct PhotoEditor: View {
     }
 #endif
 
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
     @ViewBuilder
     private var compactMarkupActions: some View {
         SBJSymbolButton(
@@ -667,12 +720,16 @@ public struct PhotoEditor: View {
     }
 
     private var canComplete: Bool {
-        hasEdits || allowsUnchangedCompletion
+        #if os(macOS)
+        // Never discard a markup layer that this platform cannot render.
+        if preservedMarkup != nil { return false }
+        #endif
+        return hasEdits || allowsUnchangedCompletion
     }
 
     private var hasEdits: Bool {
         if colorAdjustments != initialColorAdjustments { return true }
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         return model.hasGeometryEdits || markup.hasDrawing
 #else
         return model.hasGeometryEdits
@@ -683,19 +740,30 @@ public struct PhotoEditor: View {
         model.geometry.crop.option != .none || hasEdits
     }
 
+    /// Modal presentations own their dismissal. Embedded presentations are
+    /// removed by their parent after the completion callback; calling dismiss()
+    /// there would dismiss the *parent* viewer instead.
+    private func deliverCompletion(_ callback: @escaping @MainActor () -> Void) {
+        if dismissOnCompletion {
+            dismiss()
+            Task { @MainActor in
+                await Task.yield()
+                callback()
+            }
+        } else {
+            callback()
+        }
+    }
+
     private func cancel() {
-        // The editor owns its presentation dismissal. Deliver the cancellation
-        // after SwiftUI has begun dismissing so a parent that also clears its
-        // presentation binding does not race the local dismiss action.
-        dismiss()
-        Task { @MainActor in
-            await Task.yield()
+        deliverCompletion {
             onComplete?(nil)
             onEditComplete?(nil)
         }
     }
 
     private func complete() {
+        guard canComplete else { return }
         let resourceResult: SBJResourceContent?
         let editResult: PhotoEditResult?
 
@@ -714,9 +782,7 @@ public struct PhotoEditor: View {
             editResult = currentEditResult
         }
 
-        dismiss()
-        Task { @MainActor in
-            await Task.yield()
+        deliverCompletion {
             if let onEditComplete {
                 onEditComplete(editResult)
             } else {
@@ -736,15 +802,15 @@ public struct PhotoEditor: View {
     }
 
     private var currentMarkup: PhotoMarkup? {
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         markup.markup
 #else
-        nil
+        preservedMarkup
 #endif
     }
 
     private var markupForRendering: Any? {
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         markup.drawingForRendering
 #else
         nil
@@ -752,7 +818,7 @@ public struct PhotoEditor: View {
     }
 
     private var markupSizeForRendering: CGSize {
-#if canImport(PencilKit)
+#if canImport(UIKit) && canImport(PencilKit)
         markup.canvasSizeForRendering
 #else
         .zero

@@ -8,10 +8,10 @@ public enum MacFlavor {
 	case iosOnMac
 
 	public init?() {
-#if os(macOS)
-		self = .native
-#elseif targetEnvironment(macCatalyst)
+#if targetEnvironment(macCatalyst)
 		self = .catalyst
+#elseif os(macOS)
+		self = .native
 #else
 		let info = ProcessInfo.processInfo
 		if info.isMacCatalystApp {

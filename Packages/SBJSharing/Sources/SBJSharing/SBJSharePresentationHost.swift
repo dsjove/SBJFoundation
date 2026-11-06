@@ -1,6 +1,6 @@
 #if !os(watchOS) && !os(tvOS) && (canImport(UIKit) || canImport(AppKit))
 import SwiftUI
-#if canImport(AppKit)
+#if os(macOS)
 import AppKit
 #endif
 import SBJUIVocabulary
@@ -29,7 +29,7 @@ public struct SBJSharePresentationHost<Content: View>: View {
         @Bindable var bindingPresenter = presenter
         content(presenter)
             .sheet(item: $bindingPresenter.presentation, onDismiss: finishPresentation) { presentation in
-                #if canImport(AppKit)
+                #if os(macOS)
                 SBJMacShareSheet(payload: presentation.payload)
                 #else
                 ShareSheet(
@@ -67,7 +67,7 @@ public struct SBJSharePresentationHost<Content: View>: View {
 }
 #endif
 
-#if canImport(AppKit)
+#if os(macOS)
 private struct SBJMacShareSheet: View {
     @Environment(\.dismiss) private var dismiss
     let payload: SBJSharePayload

@@ -1,12 +1,5 @@
 #if (canImport(QuickLook) && canImport(UIKit) && !os(visionOS)) || (os(macOS) && canImport(QuickLookUI))
 import SwiftUI
-#if canImport(UIKit)
-import QuickLook
-import UIKit
-#elseif canImport(QuickLookUI)
-import QuickLookUI
-import AppKit
-#endif
 import SBJLocalization
 import SBJFileResources
 import SBJUIVocabulary
@@ -22,19 +15,10 @@ public struct DocumentPreviewSheet: View {
         self.displayName = displayName
     }
 
-    @ViewBuilder
-    private var previewContent: some View {
-        #if os(macOS)
-        SBJMacDocumentPreview(url: url)
-        #else
-        AttachmentPreviewSheet(url: url, displayName: displayName)
-        #endif
-    }
-
     public var body: some View {
         SBJSharePresentationHost { sharePresenter in
             NavigationStack {
-                previewContent
+                AttachmentPreviewSheet(url: url, displayName: displayName)
                     .navigationTitle(displayName)
                     .modifier(SBJPreviewTitleStyle())
                     .toolbar {
@@ -75,27 +59,4 @@ private struct SBJPreviewTitleStyle: ViewModifier {
     }
 }
 
-#if os(macOS)
-private struct SBJMacDocumentPreview: NSViewRepresentable {
-    let url: URL
-
-    func makeNSView(context: Context) -> QLPreviewView {
-#if os(macOS)
-		if let view = QLPreviewView(frame: .zero, style: .normal) {
-			view.previewItem = url as NSURL
-			return view
-		}
-		return QLPreviewView()
-#else
-        let view = QLPreviewView(frame: .zero, style: .normal)
-        view.previewItem = url as NSURL
-        return view
-#endif
-    }
-
-    func updateNSView(_ view: QLPreviewView, context: Context) {
-        view.previewItem = url as NSURL
-    }
-}
-#endif
 #endif

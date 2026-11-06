@@ -1,8 +1,12 @@
-#if !os(watchOS) && !os(tvOS) && canImport(UIKit)
+#if !os(watchOS) && !os(tvOS) && (canImport(UIKit) || canImport(AppKit))
 import SBJLocalization
 import Observation
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 import SBJFileResources
 import SBJDataDefinition
 import SBJDocuments
@@ -61,7 +65,7 @@ public struct PhotoViewer: View {
                         Color.black
                             .ignoresSafeArea()
 
-                        Image(uiImage: image)
+                        image.sbjSwiftUIImage
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(
@@ -87,9 +91,11 @@ public struct PhotoViewer: View {
                     }
                 }
                 .navigationTitle(title ?? "")
+                #if os(iOS) || os(visionOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
-                    ToolbarItemGroup(placement: .topBarLeading) {
+                    ToolbarItemGroup(placement: leadingToolbarPlacement) {
                         SBJDismissButton(accessibilityLabel: "Close") {
                             dismiss()
                         }
@@ -109,7 +115,7 @@ public struct PhotoViewer: View {
                         )
                     }
 
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: trailingToolbarPlacement) {
                         SBJSymbolButton(
                             SBJImageSymbology.resetPanZoom,
                             accessibilityLabel: "Reset zoom and position",
@@ -121,6 +127,22 @@ public struct PhotoViewer: View {
                 }
             }
         }
+    }
+
+    private var leadingToolbarPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .topBarLeading
+        #endif
+    }
+
+    private var trailingToolbarPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .topBarTrailing
+        #endif
     }
 
     private var transformGesture: some Gesture {

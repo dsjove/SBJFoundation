@@ -6,6 +6,9 @@ import AVKit
 import CoreImage
 import SBJLocalization
 import SBJDataDefinition
+import SBJFileResources
+import UniformTypeIdentifiers
+import ImageIO
 #if os(macOS)
 import AppKit
 #else
@@ -166,13 +169,33 @@ private struct NativeVideoSurface: UIViewControllerRepresentable {
 }
 #endif
 
+/// Controls the shared movie viewer's editing and poster actions on all platforms.
+public struct MovieViewerOptions: Sendable, Equatable {
+    public var setPoster: Bool
+    public var colorEdits: Bool
+    public var posterEdits: Bool
+
+    public init(setPoster: Bool = true, colorEdits: Bool = true, posterEdits: Bool = true) {
+        self.setPoster = setPoster
+        self.colorEdits = colorEdits
+        self.posterEdits = posterEdits
+    }
+}
+
+/// The caller is given the selected timestamp and full-resolution, edited image.
+/// Return true to embed it into the movie, false to persist it elsewhere only.
+public typealias MoviePosterHandler = @MainActor (TimeInterval, CGImage) async throws -> Bool
+
 struct MovieViewer: View {
     let title: String
     let url: URL
     var initialTime: TimeInterval? = nil
-    var onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)? = nil
+    let options: MovieViewerOptions
+    var setPosterHandler: MoviePosterHandler? = nil
     @State private var playback: MoviePlayback
     @State private var working = false
+    @State private var posterEditInput: PosterEditInput?
+    @State private var posterEditOptions = PhotoEditorOptions.default
     @State private var enhancements = PhotoColorAdjustments()
     @State private var enhancementsEnabled = true
     @State private var showingEnhancements = false
@@ -192,12 +215,14 @@ struct MovieViewer: View {
     var onFullScreen: (() -> Void)? = nil
 
     init(title: String, url: URL, initialTime: TimeInterval? = nil,
-         onPosterChanged: (@MainActor (TimeInterval) async throws -> Bool)? = nil,
-         onClose: (() -> Void)? = nil, onFullScreen: (() -> Void)? = nil) {
+         options: MovieViewerOptions = .init(),
+         onClose: (() -> Void)? = nil, onFullScreen: (() -> Void)? = nil,
+         setPoster: MoviePosterHandler? = nil) {
         self.title = title
         self.url = url
         self.initialTime = initialTime
-        self.onPosterChanged = onPosterChanged
+        self.options = options
+        self.setPosterHandler = setPoster
         self.onClose = onClose
         self.onFullScreen = onFullScreen
         _playback = State(initialValue: MoviePlayback(url: url))
@@ -207,6 +232,7 @@ struct MovieViewer: View {
     @State private var fullscreen = false
     #if os(macOS)
     @State private var hostingWindow: NSWindow?
+    @State private var editorEnteredFullScreen = false
     #endif
     @Environment(\.dismiss) private var dismiss
 
@@ -404,6 +430,7 @@ struct MovieViewer: View {
                 #endif
             } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
             .help("Full screen")
+            if options.colorEdits {
             Button("Enhancements", systemImage: "slider.horizontal.3") {
                 showingEnhancements.toggle()
             }
@@ -420,7 +447,8 @@ struct MovieViewer: View {
                     .background(Color.white)
                 }
                 .help("Image enhancements")
-            if onPosterChanged != nil {
+            }
+            if options.setPoster {
                 Button { Task { await savePoster() } } label: { Image(systemName: "camera") }
                     .help("Select current frame").disabled(working)
             }
@@ -476,28 +504,64 @@ struct MovieViewer: View {
             .background(.black)
     }
 
+    // Overlay only while performing work. The editor is a separate interaction,
+    // so opening it must not leave a busy indicator obscuring its content.
     @ViewBuilder
-    private var savingIndicator: some View {
-        if working {
-            HStack(spacing: 8) {
-                ProgressView()
-                    .controlSize(.small)
-                Text("Saving poster frame…")
-                    .font(.caption)
+    private var savingOverlay: some View {
+        if working && posterEditInput == nil {
+            // The native macOS progress indicator does not reliably honor .tint.
+            // Force light appearance on an opaque light surface so it remains
+            // legible over black, white, or high-contrast movie frames.
+            ProgressView()
+                .controlSize(.regular)
+                .tint(.black)
+                .environment(\.colorScheme, .light)
+                .padding(20)
+                .background(.white, in: RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.35), radius: 10, y: 3)
+                .accessibilityLabel("Saving poster frame")
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var editorIsModal: Bool {
+        #if os(macOS)
+        return false
+        #else
+        return true
+        #endif
+    }
+
+    // The editor and its completion behavior are shared across platforms.
+    // Only the container presenting it is conditional.
+    @ViewBuilder
+    private func posterEditor(for input: PosterEditInput) -> some View {
+        if let editor = PhotoEditor(
+            resource: input.resource,
+            edits: input.edits,
+            title: "Edit Poster Frame",
+            options: posterEditOptions,
+            allowsUnchangedCompletion: true,
+            dismissOnCompletion: editorIsModal,
+            onComplete: { result in
+                posterEditInput = nil
+                guard let result else { working = false; return }
+                Task { await finishPoster(at: input.time, resource: input.resource, edits: result) }
             }
-            .foregroundStyle(.white)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
-            .background(.black)
-            .accessibilityElement(children: .combine)
+        ) {
+            editor
+        } else {
+            ContentUnavailableView("Poster unavailable", systemImage: "photo")
+                .onAppear { working = false }
         }
     }
 
     var body: some View {
         VStack(spacing: 0) {
             videoSurface
+                .allowsHitTesting(!working)
+                .overlay { savingOverlay }
             controls
-            savingIndicator
             // Keep the movie name below the controls, never over the video.
             movieTitle
             if let errorMessage {
@@ -511,6 +575,34 @@ struct MovieViewer: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
+        #if os(macOS)
+        // Keep one shared PhotoEditor implementation. Only its presentation
+        // differs: on macOS it occupies the movie window, which is temporarily
+        // placed in native fullscreen instead of showing a constrained sheet.
+        .overlay {
+            if let input = posterEditInput {
+                posterEditor(for: input)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black)
+                    .ignoresSafeArea()
+            }
+        }
+        .onChange(of: posterEditInput != nil) { _, isEditing in
+            guard let window = hostingWindow else { return }
+            if isEditing {
+                editorEnteredFullScreen = !window.styleMask.contains(.fullScreen)
+                if editorEnteredFullScreen { window.toggleFullScreen(nil) }
+            } else if editorEnteredFullScreen {
+                editorEnteredFullScreen = false
+                if window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil) }
+            }
+        }
+        #else
+        .sheet(item: $posterEditInput) { input in
+            posterEditor(for: input)
+                .interactiveDismissDisabled()
+        }
+        #endif
         #if os(macOS)
         .background(MovieViewerWindowReader(window: $hostingWindow))
         #endif
@@ -532,8 +624,9 @@ struct MovieViewer: View {
         .fullScreenCover(isPresented: $fullscreen) {
             VStack(spacing: 0) {
                 videoSurface
+                    .allowsHitTesting(!working)
+                    .overlay { savingOverlay }
                 controls
-                savingIndicator
                 movieTitle
             }
             .background(.black)
@@ -559,42 +652,98 @@ struct MovieViewer: View {
         }
     }
 
+    private struct PosterEditInput: Identifiable {
+        let id = UUID()
+        let time: TimeInterval
+        let resource: SBJResourceContent
+        let edits: PhotoEditResult
+    }
+
+    /// Read the original full-resolution image once, before launching the editor
+    /// or invoking the application callback.
     @MainActor
     private func savePoster() async {
-        guard let onPosterChanged, !working else { return }
+        guard !working else { return }
         playback.pause()
         working = true
-        defer { working = false }
-        let selected = playback.seconds
-        // The owner persists the selection first. A `false` response means
-        // the selected timestamp is only a casting marker, not movie artwork.
-        do {
-            let writeEmbeddedPoster = try await onPosterChanged(selected)
-            guard writeEmbeddedPoster else {
-                // False is successful casting-only persistence, not failure.
-                errorMessage = nil
+        errorMessage = nil
+        let time = playback.seconds
+        guard let frame = await getPosterFrame(from: url, at: time) else {
+            errorMessage = "Could not extract the selected movie frame."
+            working = false
+            return
+        }
+
+        let initial = PhotoEditResult(
+            geometry: PhotoEditGeometry(crop: .init(
+                option: posterEditOptions.effectiveInitialCrop,
+                sourceSize: CGSize(width: frame.width, height: frame.height)
+            )),
+            color: options.colorEdits && enhancementsEnabled ? enhancements : .init()
+        )
+        if options.posterEdits {
+            guard let resource = Self.posterResource(from: frame) else {
+                errorMessage = "Could not prepare the selected movie frame for editing."
+                working = false
                 return
             }
-            // The unmodified path extracts and embeds the frame within the setter.
-            // With edits, render a full-resolution frame and pass the adjusted
-            // image to the existing image-based setter (no scaled preview).
-            if enhancementsEnabled && !enhancements.isNeutral {
-                guard let source = await getPosterFrame(from: url, at: selected) else {
-                    throw NSError(
-                        domain: "SBJImaging.MovieViewer", code: 1,
-                        userInfo: [NSLocalizedDescriptionKey: "Could not extract the selected movie frame."]
-                    )
-                }
-                let adjusted = enhancements.applying(to: source) ?? source
-                try await setPosterFrame(from: url, image: adjusted)
+            posterEditInput = PosterEditInput(time: time, resource: resource, edits: initial)
+        } else {
+            // No editor requested: avoid PNG encoding followed by a second
+            // image decode and render when color adjustments are unchanged.
+            if initial.color == .init() {
+                await commitPoster(at: time, image: frame)
             } else {
-                try await setPosterFrame(from: url, at: selected)
+                guard let resource = Self.posterResource(from: frame) else {
+                    errorMessage = "Could not prepare the selected movie frame."
+                    working = false
+                    return
+                }
+                await finishPoster(at: time, resource: resource, edits: initial)
             }
+        }
+    }
+
+    @MainActor
+    private func finishPoster(at time: TimeInterval, resource: SBJResourceContent,
+                              edits: PhotoEditResult) async {
+        do {
+            // Preserve full resolution: no preview-sized image is used for saving.
+            guard let rendered = PhotoEditRenderer.render(
+                resource: resource, geometry: edits.geometry, color: edits.color,
+                options: posterEditOptions
+            ), let image = rendered.sbjImage?.sbjCGImage else {
+                throw NSError(domain: "SBJImaging.MovieViewer", code: 2,
+                    userInfo: [NSLocalizedDescriptionKey: "Could not render the poster image."])
+            }
+            await commitPoster(at: time, image: image)
+        } catch {
+            errorMessage = "Could not save poster frame: \(error.localizedDescription)"
+            working = false
+        }
+    }
+
+    @MainActor
+    private func commitPoster(at time: TimeInterval, image: CGImage) async {
+        defer { working = false }
+        do {
+            // The handler is optional. Without it, the viewer embeds artwork.
+            let shouldEmbed = try await setPosterHandler?(time, image) ?? true
+            if shouldEmbed { try await setPosterFrame(from: url, image: image) }
             errorMessage = nil
         } catch {
-            // Failures must be visible in this window, not hidden behind it.
             errorMessage = "Could not save poster frame: \(error.localizedDescription)"
         }
+    }
+
+    private static func posterResource(from image: CGImage) -> SBJResourceContent? {
+        let data = NSMutableData()
+        guard let output = CGImageDestinationCreateWithData(
+            data, UTType.png.identifier as CFString, 1, nil
+        ) else { return nil }
+        CGImageDestinationAddImage(output, image, nil)
+        guard CGImageDestinationFinalize(output) else { return nil }
+        return SBJResourceContent(data: data as Data, contentType: .png)
     }
 
 }

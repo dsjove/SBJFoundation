@@ -147,7 +147,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                             requestRemoval(ids: [id])
                         }
 
-#if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
+#if (canImport(QuickLook) && canImport(UIKit) && !os(visionOS)) || (os(macOS) && canImport(QuickLookUI))
                         SBJSymbolButton(
                             SBJAttachmentSymbology.previewAttachment,
                             accessibilityLabel: "Preview \(attachment.displayName)"
@@ -198,7 +198,20 @@ public struct AttachmentsView<Attachment: Attaching>: View {
         } message: {
             Text(removalAlertMessage)
         }
-#if canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
+#if os(macOS) && canImport(QuickLookUI)
+        .sheet(item: $preview) { item in
+            NavigationStack {
+                AttachmentPreviewSheet(url: item.url, displayName: item.displayName)
+                    .navigationTitle(item.displayName)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { preview = nil }
+                        }
+                    }
+            }
+            .frame(minWidth: 600, minHeight: 450)
+        }
+#elseif canImport(QuickLook) && canImport(UIKit) && !os(visionOS)
         .fullScreenCover(item: $preview) { item in
             AttachmentPreviewSheet(url: item.url, displayName: item.displayName)
         }

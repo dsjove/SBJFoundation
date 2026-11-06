@@ -53,7 +53,7 @@ public extension CodableColor {
 }
 #endif
 
-#if canImport(AppKit)
+#if os(macOS)
 public extension CodableColor {
     init(color: NSColor) {
         guard let rgb = color.usingColorSpace(.deviceRGB) else {

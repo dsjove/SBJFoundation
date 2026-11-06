@@ -4,43 +4,31 @@ import QuartzCore
 import SwiftUI
 import UIKit
 
-/// Stable SwiftUI ownership for one long-lived interactive PDFKit `PDFView`.
-///
-/// The UIKit view survives PDF regeneration. Replacing the PDF payload preserves the user's
-/// zoom and viewport anchor while PDFKit updates the attached document in place.
-public struct StablePDFView: UIViewRepresentable {
+/// UIKit-specific PDFKit host used by the shared public `StablePDFView`.
+/// Keeps a long-lived PDFView and preserves viewport state during PDF regeneration.
+struct StablePDFNativeView: UIViewRepresentable {
 	let document: PDFDocument
 	let controller: PDFViewController?
 	let layout: PDFPresentationLayout
+	let initialPageIndex: Int
 	let onReady: @MainActor () -> Void
 
-	public init(
-		document: PDFDocument,
-		controller: PDFViewController? = nil,
-		layout: PDFPresentationLayout = .verticalSinglePage,
-		onReady: @escaping @MainActor () -> Void = {}
-	) {
-		self.document = document
-		self.controller = controller
-		self.layout = layout
-		self.onReady = onReady
-	}
 
 
-	public func makeCoordinator() -> Coordinator {
+	func makeCoordinator() -> Coordinator {
 		Coordinator(controller: controller)
 	}
 
-	public func makeUIView(context: Context) -> StablePDFHostView {
+	func makeUIView(context: Context) -> StablePDFHostView {
 		let host = StablePDFHostView()
-		let initialPageIndex = max((controller?.currentPage.pageNumber ?? 1) - 1, 0)
+		let startingPage = controller.flatMap { $0.currentPage.pageNumber > 0 ? $0.currentPage.pageNumber - 1 : nil } ?? initialPageIndex
 		host.setDisplayCountChangeHandler { count in
 			controller?.setDisplayCount(count)
 		}
 		host.setPresentationLayout(layout)
 		context.coordinator.host = host
 		controller?.attach(host.pdfView)
-		host.installInitial(document: document, pageIndex: initialPageIndex) {
+		host.installInitial(document: document, pageIndex: max(startingPage, 0)) {
 			guard host.represents(document) else { return }
 			controller?.refreshPageState()
 			controller?.documentDidChange()
@@ -49,7 +37,7 @@ public struct StablePDFView: UIViewRepresentable {
 		return host
 	}
 
-	public func updateUIView(_ host: StablePDFHostView, context: Context) {
+	func updateUIView(_ host: StablePDFHostView, context: Context) {
 		if context.coordinator.controller !== controller {
 			context.coordinator.controller?.detach(host.pdfView)
 			context.coordinator.controller = controller
@@ -75,12 +63,12 @@ public struct StablePDFView: UIViewRepresentable {
 		}
 	}
 
-	public static func dismantleUIView(_ host: StablePDFHostView, coordinator: Coordinator) {
+	static func dismantleUIView(_ host: StablePDFHostView, coordinator: Coordinator) {
 		coordinator.controller?.detach(host.pdfView)
 		coordinator.host = nil
 	}
 
-	public final class Coordinator {
+	final class Coordinator {
 		var controller: PDFViewController?
 		weak var host: StablePDFHostView?
 
