@@ -8,8 +8,8 @@ import os
 
 private let posterLogger = Logger(subsystem: "SBJImaging", category: "PosterFrame")
 
-/// Posted after poster metadata has been successfully updated on disk.
-/// The object is the affected movie's file URL (not a Finder icon URL).
+/// Posted after embedded poster artwork has been successfully updated on disk.
+/// The object is the affected movie's file URL.
 public extension Notification.Name {
     static let sbjPosterFrameDidChange = Notification.Name("SBJImaging.posterFrameDidChange")
 }
@@ -82,25 +82,7 @@ public func getPosterFrame(
             }
         }
 
-        // 1. Saved frame timestamp. 2. Embedded poster image.
-        // Never read a Finder icon: it is a low-resolution square intended
-        // only for Finder, not a poster suitable for display.
-        if let saved = await getPosterFrameTime(from: url) {
-            let bounded = await boundedPosterTime(saved, in: asset)
-            do {
-                let frame = try await generateFrameAtTime(
-                    from: asset,
-                    at: CMTime(seconds: bounded, preferredTimescale: 600)
-                )
-                posterLogger.info("GET source=embeddedTimestamp at=\(bounded), size=\(imageDimensions(frame), privacy: .public)")
-                return fit(frame, within: size)
-            } catch {
-                posterLogger.error("GET timestamp frame failed: \(error.localizedDescription, privacy: .public); trying embedded artwork")
-            }
-        } else {
-            posterLogger.debug("GET timestamp metadata absent; trying embedded artwork")
-        }
-
+        // Poster artwork is embedded in the movie. No timestamp or Finder icon is used.
         if let image = await extractNativeEmbeddedPoster(from: url) {
             posterLogger.info("GET source=embeddedArtwork size=\(imageDimensions(image), privacy: .public)")
             return fit(image, within: size)
@@ -116,7 +98,7 @@ public func getPosterFrame(
                 posterLogger.error("GET first-frame extraction failed: \(error.localizedDescription, privacy: .public)")
             }
         }
-        posterLogger.notice("GET no readable poster (Finder icon intentionally ignored)")
+        posterLogger.notice("GET no readable embedded poster")
         return nil
     }
     #endif
@@ -307,34 +289,9 @@ private func generateFrameAtTime(
 }
 #endif
 
-#if !os(watchOS)
-/// Reads the poster timestamp written by Casting. Artwork alone has no standard
-/// recoverable presentation time, so absence of this value is not an error.
-func getPosterFrameTime(from url: URL) async -> TimeInterval? {
-    let asset = AVURLAsset(url: url)
-    let items: [AVMetadataItem]
-    do { items = try await asset.load(.metadata) }
-    catch {
-        posterLogger.error("TIMESTAMP unable to load metadata: \(error.localizedDescription, privacy: .public)")
-        return nil
-    }
-    let timestampID = "mdta/com.example.Casting.posterTime"
-    for item in items where item.identifier?.rawValue == timestampID {
-        if let value = try? await item.load(.stringValue),
-           let seconds = Double(value), seconds.isFinite {
-            posterLogger.debug("TIMESTAMP found value=\(seconds)")
-            return seconds
-        }
-        posterLogger.warning("TIMESTAMP tag exists but has no valid numeric value")
-    }
-    posterLogger.debug("TIMESTAMP tag absent")
-    return nil
-}
-#endif
-
 #if os(macOS) || os(iOS) || os(visionOS)
 public enum PosterFrameWriteResult {
-    case embeddedTimestamp, embeddedArtwork, filesystemThumbnail, cleared
+    case embeddedArtwork
 }
 
 public enum PosterFrameWriteError: LocalizedError {
@@ -345,119 +302,61 @@ public enum PosterFrameWriteError: LocalizedError {
         case .invalidTime: return "The supplied movie time must be finite."
         case .frameUnavailable: return "No frame was available at the requested time."
         case .cannotEncodeFrame: return "Could not encode the selected frame."
-        case .cannotWriteArtwork: return "Could not persist a poster timestamp or embedded poster image."
+        case .cannotWriteArtwork: return "Could not embed the poster artwork in the movie."
         }
     }
 }
 
-/// Time wins over image when both are specified. A timestamp is stored when
-/// the container supports it; otherwise the selected frame is embedded as JPEG
-/// artwork if possible. On macOS a separate Finder icon is always attempted.
-/// Neither the getter nor setter uses JPEG sidecars or reads Finder icons.
-@MainActor
+/// Extracts the full-resolution movie frame at the given time and embeds it as JPEG artwork.
+/// All expensive work runs outside the main actor.
 @discardableResult
 public func setPosterFrame(
     from url: URL,
-    at time: TimeInterval? = nil,
-    image: CGImage? = nil
+    at time: TimeInterval
 ) async throws -> PosterFrameWriteResult {
-    posterLogger.notice("SET file=\(url.lastPathComponent, privacy: .public), time=\(time.map(String.init(describing:)) ?? "none", privacy: .public), image=\(image.map(imageDimensions) ?? "none", privacy: .public)")
-    guard url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
-    if let time, !time.isFinite { throw PosterFrameWriteError.invalidTime }
+    guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    guard time.isFinite else { throw PosterFrameWriteError.invalidTime }
 
-    if time == nil && image == nil {
-        let metadataCleared = await writePosterMetadata(in: url, timestamp: nil, artwork: nil)
-        #if os(macOS)
-        let iconCleared = NSWorkspace.shared.setIcon(nil, forFile: url.path, options: [])
-        posterLogger.notice("SET clear: metadata=\(metadataCleared), FinderIcon=\(iconCleared)")
-        #else
-        posterLogger.notice("SET clear: metadata=\(metadataCleared)")
-        #endif
-        guard metadataCleared else { throw PosterFrameWriteError.cannotWriteArtwork }
-        posterFrameDidChange(at: url)
-        return .cleared
-    }
-
-    let selectedTime: TimeInterval?
-    if let time {
-        let asset = AVURLAsset(url: url)
-        selectedTime = await boundedPosterTime(time, in: asset)
-        posterLogger.info("SET timestamp requested=\(time), clamped=\(selectedTime ?? 0)")
-    } else {
-        selectedTime = nil
-    }
-
-    // The selected high-quality frame is used for the Finder icon and image
-    // metadata fallback. Frame generation does not use a thumbnail constraint.
+    let asset = AVURLAsset(url: url)
+    let bounded = await boundedPosterTime(time, in: asset)
     let frame: CGImage
-    if let selectedTime {
-        let asset = AVURLAsset(url: url)
-        do {
-            frame = try await generateFrameAtTime(
-                from: asset,
-                at: CMTime(seconds: selectedTime, preferredTimescale: 600)
-            )
-            posterLogger.info("SET source=movieFrame size=\(imageDimensions(frame), privacy: .public)")
-        } catch {
-            posterLogger.error("SET frame extraction failed: \(error.localizedDescription, privacy: .public)")
-            throw PosterFrameWriteError.frameUnavailable
-        }
-    } else if let image {
-        frame = image
-        posterLogger.info("SET source=suppliedImage size=\(imageDimensions(frame), privacy: .public)")
-    } else { throw PosterFrameWriteError.frameUnavailable }
+    do {
+        frame = try await generateFrameAtTime(
+            from: asset,
+            at: CMTime(seconds: bounded, preferredTimescale: 600)
+        )
+    } catch {
+        posterLogger.error("SET frame extraction failed: \(error.localizedDescription, privacy: .public)")
+        throw PosterFrameWriteError.frameUnavailable
+    }
+    posterLogger.info("SET extracted at=\(bounded), size=\(imageDimensions(frame), privacy: .public)")
+    return try await embedPosterFrame(frame, in: url, asset: asset)
+}
 
-    // For timestamp requests, don't create/encode JPEG artwork if the custom
-    // metadata can be stored and read back successfully.
-    var savedTimestamp = false
-    if let selectedTime {
-        // The current QuickTime custom mdta key does not survive MP4/M4V
-        // passthrough exports. Avoid an expensive, doomed whole-file rewrite.
-        // MOV retains the timestamp-first attempt and read-back verification.
-        switch url.pathExtension.lowercased() {
-        case "mov":
-            savedTimestamp = await writePosterMetadata(
-                in: url, timestamp: selectedTime, artwork: nil
-            )
-            posterLogger.notice("SET timestamp metadata result=\(savedTimestamp)")
-        case "mp4", "m4v":
-            posterLogger.notice("SET timestamp metadata skipped for MP4/M4V; writing embedded artwork instead")
-        default:
-            posterLogger.notice("SET no timestamp metadata strategy for this extension")
-        }
-    }
+/// Embeds the supplied full-resolution image as JPEG artwork in the movie.
+/// No frame extraction, timestamp metadata, Finder icons, or sidecars are used.
+@discardableResult
+public func setPosterFrame(
+    from url: URL,
+    image: CGImage
+) async throws -> PosterFrameWriteResult {
+    guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    let asset = AVURLAsset(url: url)
+    return try await embedPosterFrame(image, in: url, asset: asset)
+}
 
-    var savedArtwork = false
-    if !savedTimestamp {
-        guard let data = jpegData(for: frame) else {
-            posterLogger.error("SET unable to encode full-resolution frame")
-            throw PosterFrameWriteError.cannotEncodeFrame
-        }
-        posterLogger.info("SET JPEG artwork sourceSize=\(imageDimensions(frame), privacy: .public), bytes=\(data.count)")
-        savedArtwork = await writePosterMetadata(in: url, timestamp: nil, artwork: data)
-        posterLogger.notice("SET embedded artwork result=\(savedArtwork)")
+private func embedPosterFrame(
+    _ image: CGImage, in url: URL, asset: AVURLAsset
+) async throws -> PosterFrameWriteResult {
+    guard let data = jpegData(for: image) else {
+        throw PosterFrameWriteError.cannotEncodeFrame
     }
-
-    #if os(macOS)
-    let finderIcon = finderIconImage(from: frame)
-    let iconWritten = NSWorkspace.shared.setIcon(finderIcon, forFile: url.path, options: [])
-    posterLogger.notice("SET Finder icon (display-only)=\(iconWritten), iconSize=512x512")
-    #else
-    let iconWritten = false
-    #endif
-
-    if savedTimestamp {
-        posterFrameDidChange(at: url)
-        return .embeddedTimestamp
+    posterLogger.info("SET embedded JPEG sourceSize=\(imageDimensions(image), privacy: .public), bytes=\(data.count)")
+    guard await writePosterMetadata(in: url, asset: asset, artwork: data) else {
+        throw PosterFrameWriteError.cannotWriteArtwork
     }
-    if savedArtwork {
-        posterFrameDidChange(at: url)
-        return .embeddedArtwork
-    }
-    if iconWritten {
-        posterLogger.error("SET only Finder icon succeeded; no retrievable poster was saved")
-    }
-    throw PosterFrameWriteError.cannotWriteArtwork
+    await MainActor.run { posterFrameDidChange(at: url) }
+    return .embeddedArtwork
 }
 
 private func jpegData(for image: CGImage) -> Data? {
@@ -469,42 +368,11 @@ private func jpegData(for image: CGImage) -> Data? {
     return CGImageDestinationFinalize(destination) ? data as Data : nil
 }
 
-#if os(macOS)
-/// Finder needs a square icon. This is NEVER used for app poster retrieval.
-/// Letterbox (rather than crop) so ultrawide frames remain recognizable.
-private func finderIconImage(from frame: CGImage) -> NSImage {
-    let side = 512
-    guard let context = CGContext(
-        data: nil, width: side, height: side,
-        bitsPerComponent: 8, bytesPerRow: 0,
-        space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-    ) else {
-        return NSImage(cgImage: frame,
-                       size: NSSize(width: frame.width, height: frame.height))
-    }
-    let ratio = min(CGFloat(side) / CGFloat(frame.width),
-                    CGFloat(side) / CGFloat(frame.height))
-    let width = CGFloat(frame.width) * ratio
-    let height = CGFloat(frame.height) * ratio
-    context.setFillColor(CGColor(gray: 0, alpha: 1))
-    context.fill(CGRect(x: 0, y: 0, width: side, height: side))
-    context.interpolationQuality = .high
-    context.draw(frame, in: CGRect(x: (CGFloat(side) - width) / 2,
-                                   y: (CGFloat(side) - height) / 2,
-                                   width: width, height: height))
-    let iconCG = context.makeImage() ?? frame
-    return NSImage(cgImage: iconCG, size: NSSize(width: side, height: side))
-}
-#endif
-
-/// Rewrites metadata using AVFoundation passthrough and verifies the staged
-/// result BEFORE replacing the source. Only the existing poster timestamp and
-/// QuickTime artwork entries are changed; other metadata is retained.
-/// MP4 support is attempted only when AVFoundation reports an MP4 export type.
-@MainActor
+/// Exports embedded JPEG artwork using a passthrough session. Only poster
+/// metadata is changed; other metadata is preserved. Verifies the staged movie
+/// before replacing the original file.
 private func writePosterMetadata(
-    in url: URL, timestamp: TimeInterval?, artwork: Data?
+    in url: URL, asset: AVURLAsset, artwork: Data
 ) async -> Bool {
     let format: AVFileType
     switch url.pathExtension.lowercased() {
@@ -515,7 +383,6 @@ private func writePosterMetadata(
         posterLogger.error("METADATA unsupported file extension")
         return false
     }
-    let asset = AVURLAsset(url: url)
     guard let session = AVAssetExportSession(
         asset: asset, presetName: AVAssetExportPresetPassthrough
     ) else {
@@ -526,63 +393,37 @@ private func writePosterMetadata(
         posterLogger.warning("METADATA format not supported by passthrough export: \(url.pathExtension, privacy: .public)")
         return false
     }
-    let timestampID = AVMetadataIdentifier(rawValue: "mdta/com.example.Casting.posterTime")
     let originalItems: [AVMetadataItem]
     do { originalItems = try await asset.load(.metadata) }
     catch {
         posterLogger.error("METADATA original metadata read failed: \(error.localizedDescription, privacy: .public)")
         return false
     }
+    // Remove legacy Casting timestamp and previous artwork entries, preserving
+    // every other metadata item.
+    let legacyTimestampID = AVMetadataIdentifier(rawValue: "mdta/com.example.Casting.posterTime")
     var items = originalItems.filter {
-        $0.identifier != timestampID && $0.identifier != .quickTimeMetadataArtwork
+        $0.identifier != legacyTimestampID && $0.identifier != .quickTimeMetadataArtwork
     }
-    if let timestamp {
-        let item = AVMutableMetadataItem()
-        item.identifier = timestampID
-        item.value = String(format: "%.6f", timestamp) as NSString
-        item.dataType = "com.apple.metadata.datatype.UTF8"
-        items.append(item)
-    }
-    if let artwork {
-        let item = AVMutableMetadataItem()
-        item.identifier = .quickTimeMetadataArtwork
-        item.value = artwork as NSData
-        item.dataType = "com.apple.metadata.datatype.JPEG"
-        items.append(item)
-    }
+    let item = AVMutableMetadataItem()
+    item.identifier = .quickTimeMetadataArtwork
+    item.value = artwork as NSData
+    item.dataType = "com.apple.metadata.datatype.JPEG"
+    items.append(item)
     session.metadata = items
+
     let stagingURL = url.deletingLastPathComponent()
         .appendingPathComponent(".CastingPoster-\(UUID().uuidString).\(url.pathExtension)")
     defer { try? FileManager.default.removeItem(at: stagingURL) }
     do {
         try await session.export(to: stagingURL, as: format)
-        let writtenAsset = AVURLAsset(url: stagingURL)
-        if let timestamp {
-            guard let writtenTime = await getPosterFrameTime(from: stagingURL),
-                  abs(writtenTime - timestamp) < 0.000_002 else {
-                posterLogger.error("METADATA timestamp missing/incorrect after export; refusing replacement")
-                return false
-            }
-        }
-        if artwork != nil {
-            // Presence alone is not enough; ensure we can decode the saved image.
-            guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
-                posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
-                return false
-            }
-        }
-        if timestamp == nil && artwork == nil {
-            let written = try await writtenAsset.load(.metadata)
-            guard !written.contains(where: {
-                $0.identifier == timestampID || $0.identifier == .quickTimeMetadataArtwork
-            }) else {
-                posterLogger.error("METADATA failed to clear poster tags")
-                return false
-            }
+        guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
+            posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
+            return false
         }
         _ = try FileManager.default.replaceItemAt(url, withItemAt: stagingURL,
                                                   backupItemName: nil, options: [])
-        posterLogger.notice("METADATA persisted format=\(url.pathExtension, privacy: .public), timestamp=\(timestamp != nil), artwork=\(artwork != nil)")
+        posterLogger.notice("METADATA embedded artwork persisted format=\(url.pathExtension, privacy: .public)")
         return true
     } catch {
         posterLogger.error("METADATA export/replacement failed: \(error.localizedDescription, privacy: .public)")
@@ -592,22 +433,21 @@ private func writePosterMetadata(
 #endif
 
 #if os(tvOS) || os(watchOS)
-/// Retains a consistent library signature on platforms without writable movie files.
-enum PosterFrameWriteResult { case embeddedTimestamp, embeddedArtwork, filesystemThumbnail, cleared }
+/// Retains consistent setter signatures on platforms without writable movies.
+public enum PosterFrameWriteResult { case embeddedArtwork }
 
-enum PosterFrameWriteError: LocalizedError {
+public enum PosterFrameWriteError: LocalizedError {
     case unsupportedPlatform
-    var errorDescription: String? { "Movie poster modification is not available on this platform." }
+    public var errorDescription: String? { "Movie poster modification is not available on this platform." }
 }
 
-@MainActor
 @discardableResult
-func setPosterFrame(from url: URL, at time: TimeInterval? = nil,
-                    image: CGImage? = nil) async throws -> PosterFrameWriteResult {
+public func setPosterFrame(from url: URL, at time: TimeInterval) async throws -> PosterFrameWriteResult {
     throw PosterFrameWriteError.unsupportedPlatform
 }
-#endif
 
-#if os(watchOS)
-func getPosterFrameTime(from url: URL) async -> TimeInterval? { nil }
+@discardableResult
+public func setPosterFrame(from url: URL, image: CGImage) async throws -> PosterFrameWriteResult {
+    throw PosterFrameWriteError.unsupportedPlatform
+}
 #endif

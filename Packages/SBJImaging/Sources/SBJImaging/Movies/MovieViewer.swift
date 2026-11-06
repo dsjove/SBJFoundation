@@ -456,6 +456,7 @@ struct MovieViewer: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(working)
         .foregroundStyle(.white)
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -475,10 +476,28 @@ struct MovieViewer: View {
             .background(.black)
     }
 
+    @ViewBuilder
+    private var savingIndicator: some View {
+        if working {
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Saving poster frame…")
+                    .font(.caption)
+            }
+            .foregroundStyle(.white)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(.black)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             videoSurface
             controls
+            savingIndicator
             // Keep the movie name below the controls, never over the video.
             movieTitle
             if let errorMessage {
@@ -507,7 +526,6 @@ struct MovieViewer: View {
         }
         .task {
             if let initialTime { playback.seek(initialTime) }
-            else if let stored = await getPosterFrameTime(from: url) { playback.seek(stored) }
             refreshPausedFrame()
         }
         #if os(iOS) || os(visionOS)
@@ -515,6 +533,7 @@ struct MovieViewer: View {
             VStack(spacing: 0) {
                 videoSurface
                 controls
+                savingIndicator
                 movieTitle
             }
             .background(.black)
@@ -556,7 +575,7 @@ struct MovieViewer: View {
                 errorMessage = nil
                 return
             }
-            // The normal poster path remains unchanged for neutral settings.
+            // The unmodified path extracts and embeds the frame within the setter.
             // With edits, render a full-resolution frame and pass the adjusted
             // image to the existing image-based setter (no scaled preview).
             if enhancementsEnabled && !enhancements.isNeutral {
@@ -567,14 +586,14 @@ struct MovieViewer: View {
                     )
                 }
                 let adjusted = enhancements.applying(to: source) ?? source
-                try await setPosterFrame(from: url, at: selected, image: adjusted)
+                try await setPosterFrame(from: url, image: adjusted)
             } else {
                 try await setPosterFrame(from: url, at: selected)
             }
             errorMessage = nil
         } catch {
             // Failures must be visible in this window, not hidden behind it.
-            errorMessage = "Could not save casting time: \(error.localizedDescription)"
+            errorMessage = "Could not save poster frame: \(error.localizedDescription)"
         }
     }
 
