@@ -13,10 +13,15 @@ public struct ShowInFinder: View {
 
     public var body: some View {
         if URL.hasFinder && url.isFileURL {
-            Button { url.showInFinder(directory: directory) } label: {
-                Image(systemName: "arrow.up.right").font(.caption2)
+            Button {
+                url.showInFinder(directory: directory)
+            } label: {
+                Image(systemName: "arrow.up.right")
+                    .font(.caption2)
+                    .frame(minWidth: 24, minHeight: 24)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.plain)
             .accessibilityLabel("Show \(url.lastPathComponent) in Finder")
             .help("Show in Finder")
         }

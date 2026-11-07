@@ -38,6 +38,21 @@ public struct BookmarkedURLWithFallback {
         defaults.set(data, forKey: bookmarkKey)
     }
 
+    /// Human-readable remembered location, including disconnected volumes.
+    public var displayText: String? { resolve()?.path ?? fallbackURL?.path }
+
+    /// Clears both authorization and the remembered display path.
+    public func reset() {
+        defaults.removeObject(forKey: bookmarkKey)
+        defaults.removeObject(forKey: pathKey)
+    }
+
+    /// Explicitly named form for callers holding a URL.
+    public func save(url: URL?) throws {
+        guard let url else { reset(); return }
+        try save(url)
+    }
+
     /// Prefers the bookmark, but returns the stored path if it cannot resolve.
     /// Stale bookmarks are renewed when possible without discarding the fallback.
     public func resolve() -> URL? {

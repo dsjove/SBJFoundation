@@ -1,6 +1,6 @@
 import Foundation
 
-//TODO: find a better place
+/// Mac runtime classification shared by Foundation packages.
 
 public enum MacFlavor {
 	case native

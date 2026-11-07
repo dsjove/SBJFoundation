@@ -1,10 +1,32 @@
 import Foundation
+import SBJLocalization
 #if os(watchOS)
 import WatchKit
 #elseif canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
 import AppKit
+#endif
+
+#if canImport(UIKit) && !os(watchOS)
+/// Owns the security scope until UIKit reports that the external open request
+/// has completed. The object only transfers ownership across the callback;
+/// no mutable state is accessed across threads.
+private final class FinderOpenHandoff: @unchecked Sendable {
+    private let scope: SecurityScopedFileURLLease
+
+    init(file: URL, directory: URL?) {
+        scope = SecurityScopedFileURL(file, accessing: directory).beginAccess()
+    }
+
+    func complete(accepted: Bool, folder: URL) {
+        if !accepted {
+            NSLog("ShowInFinder: UIKit rejected opening folder: %@", folder.path)
+        }
+        // Retain the lease until after UIKit's completion callback.
+        withExtendedLifetime(scope) {}
+    }
+}
 #endif
 
 /// Platform URL behavior used by help and other clients.
@@ -51,32 +73,43 @@ public extension URL {
     }
 
     /// Whether the current platform provides a native Finder handoff.
-    static var hasFinder: Bool {
-#if os(macOS)
-        true
-#elseif os(iOS)
-        ProcessInfo.processInfo.isiOSAppOnMac
-#else
-        false
-#endif
-    }
+    static var hasFinder: Bool { ProcessInfo.isAnyMac }
 
-    /// Reveal a file in Finder on macOS, otherwise open its containing folder.
-    /// Security-scoped access is retained for the duration of the handoff.
+    /// Reveal a file in Finder on macOS, otherwise request its enclosing folder.
+    /// The public API is intentionally synchronous for existing callers. UIKit's
+    /// open is asynchronous: on Catalyst the directory security scope must remain
+    /// active until the completion callback, not merely until request submission.
     func showInFinder(directory: URL? = nil) {
         guard isFileURL, Self.hasFinder else { return }
-        let reveal = {
 #if os(macOS)
-            NSWorkspace.shared.activateFileViewerSelecting([self])
-#else
-            self.openFolder()
-#endif
-        }
         if let directory {
-            directory.withSecurityScopedAccess { _ in reveal() }
+            directory.withSecurityScopedAccess { _ in
+                NSWorkspace.shared.activateFileViewerSelecting([self])
+            }
         } else {
-            withSecurityScopedAccess { _ in reveal() }
+            withSecurityScopedAccess { _ in
+                NSWorkspace.shared.activateFileViewerSelecting([self])
+            }
         }
+#elseif canImport(UIKit) && !WIDGET_TARGET
+        // Do not change the fallback behavior: Catalyst opens the containing
+        // folder, not the file selection, because AppKit's Finder selection API
+        // is unavailable here. Resource-value lookup occurs under the lease.
+        let handoff = FinderOpenHandoff(file: self, directory: directory)
+        let isDirectory = (try? resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory
+        let folder = (isDirectory ?? (hasDirectoryPath || pathExtension.isEmpty))
+            ? self : deletingLastPathComponent()
+        NSLog("ShowInFinder: Catalyst requesting folder: %@ (file: %@)", folder.path, path)
+        UIApplication.shared.open(folder, options: [:]) { [handoff] accepted in
+            handoff.complete(accepted: accepted, folder: folder)
+        }
+#else
+        if let directory {
+            directory.withSecurityScopedAccess { _ in self.openFolder() }
+        } else {
+            withSecurityScopedAccess { _ in self.openFolder() }
+        }
+#endif
     }
 
     @discardableResult

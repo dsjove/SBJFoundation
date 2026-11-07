@@ -5,6 +5,7 @@ import PencilKit
 import SwiftUI
 import SBJDataDefinition
 import SBJUIVocabulary
+import SBJLocalization
 
 @MainActor
 @Observable

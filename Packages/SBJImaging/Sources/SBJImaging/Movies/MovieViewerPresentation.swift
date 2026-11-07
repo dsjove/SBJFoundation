@@ -105,10 +105,13 @@ public final class MovieViewerSessions {
 /// The presenting scene owns dismissal; the session owns security-scoped access.
 public struct MovieViewerSessionContent: View {
     let id: UUID
-    @Environment(MovieViewerSessions.self) private var sessions
+    let sessions: MovieViewerSessions
     @Environment(\.dismiss) private var dismiss
 
-    public init(id: UUID) { self.id = id }
+    public init(id: UUID, sessions: MovieViewerSessions) {
+        self.id = id
+        self.sessions = sessions
+    }
 
     public var body: some View {
         Group {
@@ -138,7 +141,7 @@ public struct MovieViewerSessionContent: View {
 @MainActor
 private struct MovieViewerModifier: ViewModifier {
     @Binding var url: URL?
-    @Environment(MovieViewerSessions.self) private var sessions
+    let sessions: MovieViewerSessions
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
@@ -149,7 +152,7 @@ private struct MovieViewerModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(item: $sheetSelection) { selection in
-                MovieViewerSessionContent(id: selection.id)
+                MovieViewerSessionContent(id: selection.id, sessions: sessions)
             }
             .onChange(of: url, initial: true) { _, next in
                 updatePresentation(for: next)
@@ -182,7 +185,7 @@ private struct MovieViewerModifier: ViewModifier {
         guard let next else { return }
         let id = sessions.openPrepared(for: next)
         presentedID = id
-        #if os(visionOS)
+        #if targetEnvironment(macCatalyst) || os(visionOS)
         openWindow(id: MovieViewerSessions.sceneID, value: id)
         #else
         if supportsMultipleWindows {
@@ -194,12 +197,12 @@ private struct MovieViewerModifier: ViewModifier {
     }
 }
 
-/// Rich movie presentation owned entirely by the modifier; no session
-/// dependency or pre-staging is required in ContentView.
+/// Movie presentation uses a caller-owned session store passed explicitly.
+/// ContentView does not have to stage requests separately.
 @MainActor
 private struct MediaOpenRequestModifier: ViewModifier {
     @Binding var request: MediaOpenRequest?
-    @Environment(MovieViewerSessions.self) private var sessions
+    let sessions: MovieViewerSessions
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
@@ -210,7 +213,7 @@ private struct MediaOpenRequestModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(item: $sheetSelection) { selection in
-                MovieViewerSessionContent(id: selection.id)
+                MovieViewerSessionContent(id: selection.id, sessions: sessions)
             }
             .onChange(of: request?.id, initial: true) { _, _ in
                 updatePresentation()
@@ -239,7 +242,7 @@ private struct MediaOpenRequestModifier: ViewModifier {
             setPoster: request.setPoster
         )
         presentedID = id
-        #if os(visionOS)
+        #if targetEnvironment(macCatalyst) || os(visionOS)
         openWindow(id: MovieViewerSessions.sceneID, value: id)
         #else
         if supportsMultipleWindows {
@@ -253,14 +256,14 @@ private struct MediaOpenRequestModifier: ViewModifier {
 
 extension View {
     /// Presents a local movie request without exposing MovieViewerSessions to the caller.
-    public func movieViewer(_ request: Binding<MediaOpenRequest?>) -> some View {
-        modifier(MediaOpenRequestModifier(request: request))
+    public func movieViewer(_ request: Binding<MediaOpenRequest?>, sessions: MovieViewerSessions) -> some View {
+        modifier(MediaOpenRequestModifier(request: request, sessions: sessions))
     }
 
     /// Displays a URL in the app's MovieViewer, using a window when supported
-    /// and a sheet otherwise. Set the binding to nil to dismiss.
-    public func movieViewer(_ url: Binding<URL?>) -> some View {
-        modifier(MovieViewerModifier(url: url))
+    /// and a sheet otherwise. Catalyst always opens a window. Set the binding to nil to dismiss.
+    public func movieViewer(_ url: Binding<URL?>, sessions: MovieViewerSessions) -> some View {
+        modifier(MovieViewerModifier(url: url, sessions: sessions))
     }
 }
 
