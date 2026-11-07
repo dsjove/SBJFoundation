@@ -232,7 +232,6 @@ struct MovieViewer: View {
     @State private var fullscreen = false
     #if os(macOS)
     @State private var hostingWindow: NSWindow?
-    @State private var editorEnteredFullScreen = false
     #endif
     @Environment(\.dismiss) private var dismiss
 
@@ -525,7 +524,9 @@ struct MovieViewer: View {
     }
 
     private var editorIsModal: Bool {
-        #if os(macOS)
+        #if os(macOS) || targetEnvironment(macCatalyst)
+        // The editor lives inside the movie window, not in a modal presentation.
+        // PhotoEditor must not call dismiss(), which would close the movie viewer.
         return false
         #else
         return true
@@ -575,26 +576,16 @@ struct MovieViewer: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
-        #if os(macOS)
-        // Keep one shared PhotoEditor implementation. Only its presentation
-        // differs: on macOS it occupies the movie window, which is temporarily
-        // placed in native fullscreen instead of showing a constrained sheet.
+        #if os(macOS) || targetEnvironment(macCatalyst)
+        // Replace the contents of this movie viewer window without entering
+        // system fullscreen or presenting another scene/controller.
+        // The overlay is constrained to the MovieViewer bounds.
         .overlay {
             if let input = posterEditInput {
                 posterEditor(for: input)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.black)
-                    .ignoresSafeArea()
-            }
-        }
-        .onChange(of: posterEditInput != nil) { _, isEditing in
-            guard let window = hostingWindow else { return }
-            if isEditing {
-                editorEnteredFullScreen = !window.styleMask.contains(.fullScreen)
-                if editorEnteredFullScreen { window.toggleFullScreen(nil) }
-            } else if editorEnteredFullScreen {
-                editorEnteredFullScreen = false
-                if window.styleMask.contains(.fullScreen) { window.toggleFullScreen(nil) }
+                    .background(Color.black)
+                    .zIndex(1)
             }
         }
         #else
