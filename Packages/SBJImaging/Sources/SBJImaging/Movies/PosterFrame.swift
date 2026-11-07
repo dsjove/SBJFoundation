@@ -5,8 +5,12 @@ import SwiftUI
 import UniformTypeIdentifiers
 import SBJFileResources
 import os
+import QuartzCore
 
 private let posterLogger = Logger(subsystem: "SBJImaging", category: "PosterFrame")
+private func posterElapsed(_ start: CFTimeInterval) -> String {
+    String(format: "%.3f", CACurrentMediaTime() - start)
+}
 
 /// Posted after embedded poster artwork has been successfully updated on disk.
 /// The object is the affected movie's file URL.
@@ -114,6 +118,34 @@ public func getPosterFrame(
         return await loadRemoteImage(from: url, fitting: size)
     }
     return nil
+}
+
+/// Tests whether a movie advertises embedded poster artwork without decoding
+/// image bytes, extracting a video frame, or exporting the movie.
+///
+/// This is a metadata-presence check, not a guarantee that the artwork can be
+/// decoded. A movie with only video frames (and no embedded artwork) returns false.
+/// The asset metadata lookup is asynchronous and may still require file I/O.
+public func hasPosterFrame(from url: URL) async -> Bool {
+    #if !os(watchOS)
+    guard url.isMovieMediaFile else { return false }
+    let asset = AVURLAsset(url: url)
+    do {
+        let metadata = try await asset.load(.metadata)
+        if metadata.contains(where: { $0.identifier == .quickTimeMetadataArtwork }) {
+            return true
+        }
+        let common = try await asset.load(.commonMetadata)
+        return !AVMetadataItem.metadataItems(
+            from: common, withKey: AVMetadataKey.commonKeyArtwork, keySpace: .common
+        ).isEmpty
+    } catch {
+        posterLogger.debug("POSTER presence lookup failed file=\(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        return false
+    }
+    #else
+    return false
+    #endif
 }
 
 // MARK: - Platform-specific UI wrappers
@@ -317,8 +349,11 @@ public func setPosterFrame(
     guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
     guard time.isFinite else { throw PosterFrameWriteError.invalidTime }
 
+    let started = CACurrentMediaTime()
+    posterLogger.notice("SET begin source=timestamp file=\(url.lastPathComponent, privacy: .public)")
     let asset = AVURLAsset(url: url)
     let bounded = await boundedPosterTime(time, in: asset)
+    posterLogger.notice("SET bounded time elapsed=\(posterElapsed(started), privacy: .public)s")
     let frame: CGImage
     do {
         frame = try await generateFrameAtTime(
@@ -329,7 +364,7 @@ public func setPosterFrame(
         posterLogger.error("SET frame extraction failed: \(error.localizedDescription, privacy: .public)")
         throw PosterFrameWriteError.frameUnavailable
     }
-    posterLogger.info("SET extracted at=\(bounded), size=\(imageDimensions(frame), privacy: .public)")
+    posterLogger.notice("SET extracted at=\(bounded), size=\(imageDimensions(frame), privacy: .public), elapsed=\(posterElapsed(started), privacy: .public)s")
     return try await embedPosterFrame(frame, in: url, asset: asset)
 }
 
@@ -341,20 +376,34 @@ public func setPosterFrame(
     image: CGImage
 ) async throws -> PosterFrameWriteResult {
     guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    posterLogger.notice("SET begin source=image file=\(url.lastPathComponent, privacy: .public)")
     let asset = AVURLAsset(url: url)
     return try await embedPosterFrame(image, in: url, asset: asset)
+}
+
+/// Removes embedded poster artwork while preserving the movie's other metadata
+/// and tracks. Uses the same staged passthrough export as poster updates.
+public func clearPosterFrame(from url: URL) async throws {
+    guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    let asset = AVURLAsset(url: url)
+    guard await writePosterMetadata(in: url, asset: asset, artwork: nil) else {
+        throw PosterFrameWriteError.cannotWriteArtwork
+    }
+    await MainActor.run { posterFrameDidChange(at: url) }
 }
 
 private func embedPosterFrame(
     _ image: CGImage, in url: URL, asset: AVURLAsset
 ) async throws -> PosterFrameWriteResult {
+    let started = CACurrentMediaTime()
     guard let data = jpegData(for: image) else {
         throw PosterFrameWriteError.cannotEncodeFrame
     }
-    posterLogger.info("SET embedded JPEG sourceSize=\(imageDimensions(image), privacy: .public), bytes=\(data.count)")
+    posterLogger.notice("SET JPEG encoded sourceSize=\(imageDimensions(image), privacy: .public), bytes=\(data.count), elapsed=\(posterElapsed(started), privacy: .public)s")
     guard await writePosterMetadata(in: url, asset: asset, artwork: data) else {
         throw PosterFrameWriteError.cannotWriteArtwork
     }
+    posterLogger.notice("SET metadata committed elapsed=\(posterElapsed(started), privacy: .public)s")
     await MainActor.run { posterFrameDidChange(at: url) }
     return .embeddedArtwork
 }
@@ -372,7 +421,7 @@ private func jpegData(for image: CGImage) -> Data? {
 /// metadata is changed; other metadata is preserved. Verifies the staged movie
 /// before replacing the original file.
 private func writePosterMetadata(
-    in url: URL, asset: AVURLAsset, artwork: Data
+    in url: URL, asset: AVURLAsset, artwork: Data?
 ) async -> Bool {
     let format: AVFileType
     switch url.pathExtension.lowercased() {
@@ -393,37 +442,54 @@ private func writePosterMetadata(
         posterLogger.warning("METADATA format not supported by passthrough export: \(url.pathExtension, privacy: .public)")
         return false
     }
+    let started = CACurrentMediaTime()
+    posterLogger.notice("METADATA begin source=\(url.lastPathComponent, privacy: .public)")
     let originalItems: [AVMetadataItem]
     do { originalItems = try await asset.load(.metadata) }
     catch {
         posterLogger.error("METADATA original metadata read failed: \(error.localizedDescription, privacy: .public)")
         return false
     }
+    posterLogger.notice("METADATA loaded source items=\(originalItems.count), elapsed=\(posterElapsed(started), privacy: .public)s")
     // Remove legacy Casting timestamp and previous artwork entries, preserving
     // every other metadata item.
     let legacyTimestampID = AVMetadataIdentifier(rawValue: "mdta/com.example.Casting.posterTime")
     var items = originalItems.filter {
-        $0.identifier != legacyTimestampID && $0.identifier != .quickTimeMetadataArtwork
+        $0.identifier != legacyTimestampID
+            && $0.identifier != .quickTimeMetadataArtwork
+            && $0.commonKey != .commonKeyArtwork
     }
-    let item = AVMutableMetadataItem()
-    item.identifier = .quickTimeMetadataArtwork
-    item.value = artwork as NSData
-    item.dataType = "com.apple.metadata.datatype.JPEG"
-    items.append(item)
+    if let artwork {
+        let item = AVMutableMetadataItem()
+        item.identifier = .quickTimeMetadataArtwork
+        item.value = artwork as NSData
+        item.dataType = "com.apple.metadata.datatype.JPEG"
+        items.append(item)
+    }
     session.metadata = items
 
     let stagingURL = url.deletingLastPathComponent()
         .appendingPathComponent(".CastingPoster-\(UUID().uuidString).\(url.pathExtension)")
     defer { try? FileManager.default.removeItem(at: stagingURL) }
     do {
+        posterLogger.notice("METADATA export starting elapsed=\(posterElapsed(started), privacy: .public)s")
         try await session.export(to: stagingURL, as: format)
-        guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
-            posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
-            return false
+        posterLogger.notice("METADATA export completed elapsed=\(posterElapsed(started), privacy: .public)s")
+        if artwork != nil {
+            guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
+                posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
+                return false
+            }
+        } else {
+            guard !(await hasPosterFrame(from: stagingURL)) else {
+                posterLogger.error("METADATA exported movie still contains artwork; refusing replacement")
+                return false
+            }
         }
+        posterLogger.notice("METADATA verification completed elapsed=\(posterElapsed(started), privacy: .public)s")
         _ = try FileManager.default.replaceItemAt(url, withItemAt: stagingURL,
                                                   backupItemName: nil, options: [])
-        posterLogger.notice("METADATA embedded artwork persisted format=\(url.pathExtension, privacy: .public)")
+        posterLogger.notice("METADATA embedded artwork persisted format=\(url.pathExtension, privacy: .public), elapsed=\(posterElapsed(started), privacy: .public)s")
         return true
     } catch {
         posterLogger.error("METADATA export/replacement failed: \(error.localizedDescription, privacy: .public)")
@@ -439,6 +505,10 @@ public enum PosterFrameWriteResult { case embeddedArtwork }
 public enum PosterFrameWriteError: LocalizedError {
     case unsupportedPlatform
     public var errorDescription: String? { "Movie poster modification is not available on this platform." }
+}
+
+public func clearPosterFrame(from url: URL) async throws {
+    throw PosterFrameWriteError.unsupportedPlatform
 }
 
 @discardableResult

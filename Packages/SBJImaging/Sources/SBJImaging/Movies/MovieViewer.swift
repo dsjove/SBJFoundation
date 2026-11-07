@@ -7,6 +7,7 @@ import CoreImage
 import SBJLocalization
 import SBJDataDefinition
 import SBJFileResources
+import SBJUIVocabulary
 import UniformTypeIdentifiers
 import ImageIO
 #if os(macOS)
@@ -134,34 +135,92 @@ final class MoviePlayback {
 }
 
 #if os(macOS)
+private final class MovieScrollingPlayerView: AVPlayerView {
+    var seekOnScroll: ((CGFloat) -> Void)?
+
+    override func scrollWheel(with event: NSEvent) {
+        let delta = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY)
+            ? event.scrollingDeltaX : event.scrollingDeltaY
+        if delta != 0 { seekOnScroll?(delta) }
+        else { super.scrollWheel(with: event) }
+    }
+}
+
 private struct NativeVideoSurface: NSViewRepresentable {
     let playback: MoviePlayback
-    func makeNSView(context: Context) -> AVPlayerView {
-        let view = AVPlayerView()
+    func makeNSView(context: Context) -> MovieScrollingPlayerView {
+        let view = MovieScrollingPlayerView()
+        view.seekOnScroll = { [weak playback] delta in
+            guard let playback else { return }
+            playback.seek(playback.seconds + -Double(delta) * 0.025)
+        }
         view.player = playback.player
         view.controlsStyle = .none
         view.videoGravity = .resizeAspect
         return view
     }
-    func updateNSView(_ view: AVPlayerView, context: Context) {
+    func updateNSView(_ view: MovieScrollingPlayerView, context: Context) {
         if view.player !== playback.player { view.player = playback.player }
     }
-    static func dismantleNSView(_ view: AVPlayerView, coordinator: ()) {
+    static func dismantleNSView(_ view: MovieScrollingPlayerView, coordinator: ()) {
+        view.seekOnScroll = nil
         view.player = nil
     }
 }
 #else
 private struct NativeVideoSurface: UIViewControllerRepresentable {
     let playback: MoviePlayback
+
+    #if targetEnvironment(macCatalyst)
+    @MainActor final class Coordinator: NSObject {
+        weak var playback: MoviePlayback?
+        private var previousTranslation: CGPoint = .zero
+
+        @objc func scrolled(_ gesture: UIPanGestureRecognizer) {
+            guard let playback else { return }
+            switch gesture.state {
+            case .began:
+                previousTranslation = gesture.translation(in: gesture.view)
+            case .changed:
+                let current = gesture.translation(in: gesture.view)
+                let dx = current.x - previousTranslation.x
+                let dy = current.y - previousTranslation.y
+                previousTranslation = current
+                let amount = abs(dx) > abs(dy) ? dx : dy
+                playback.seek(playback.seconds + -Double(amount) * 0.025)
+            case .ended, .cancelled, .failed:
+                previousTranslation = .zero
+            default: break
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        let result = Coordinator()
+        result.playback = playback
+        return result
+    }
+    #endif
+
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let controller = AVPlayerViewController()
         controller.player = playback.player
         controller.showsPlaybackControls = false
         controller.videoGravity = .resizeAspect
+        #if targetEnvironment(macCatalyst)
+        // Match only indirect trackpad scrolls. Do not steal direct touch pans
+        // from AVKit or its accessibility/playback handling.
+        let scroll = UIPanGestureRecognizer(target: context.coordinator,
+                                             action: #selector(Coordinator.scrolled(_:)))
+        scroll.allowedScrollTypesMask = .continuous
+        scroll.allowedTouchTypes = []
+        controller.view.addGestureRecognizer(scroll)
+        #endif
         return controller
     }
     func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
         if controller.player !== playback.player { controller.player = playback.player }
+
     }
     static func dismantleUIViewController(_ controller: AVPlayerViewController, coordinator: ()) {
         controller.player = nil
@@ -194,6 +253,9 @@ struct MovieViewer: View {
     var setPosterHandler: MoviePosterHandler? = nil
     @State private var playback: MoviePlayback
     @State private var working = false
+    @State private var posterHasContent: Bool? = nil
+    @State private var posterSaveTask: Task<Void, Error>?
+
     @State private var posterEditInput: PosterEditInput?
     @State private var posterEditOptions = PhotoEditorOptions.default
     @State private var enhancements = PhotoColorAdjustments()
@@ -406,16 +468,16 @@ struct MovieViewer: View {
     }
 
     private var timeline: some View {
-        Slider(value: Binding(
+        SBJPrecisionSlider(value: Binding(
             get: { min(playback.seconds, max(playback.duration, 0.001)) },
             set: { playback.seek($0) }
-        ), in: 0...max(playback.duration, 0.001))
+        ), range: 0...max(playback.duration, 0.001))
     }
 
     private var remainingControls: some View {
         HStack(spacing: 7) {
             Image(systemName: "speaker.wave.2")
-            Slider(value: $playback.volume, in: 0...1)
+            SBJVolumeSlider(value: $playback.volume)
                 .frame(width: compact ? 58 : 68)
                 .onChange(of: playback.volume) { _, next in
                     playback.player.volume = Float(next)
@@ -429,6 +491,7 @@ struct MovieViewer: View {
                 #endif
             } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
             .help("Full screen")
+            ShowInFinder(url: url)
             if options.colorEdits {
             Button("Enhancements", systemImage: "slider.horizontal.3") {
                 showingEnhancements.toggle()
@@ -448,10 +511,44 @@ struct MovieViewer: View {
                 .help("Image enhancements")
             }
             if options.setPoster {
-                Button { Task { await savePoster() } } label: { Image(systemName: "camera") }
-                    .help("Select current frame").disabled(working)
+                PhotoMenu(
+                    source: .deferred(
+                        hasContent: posterHasContent,
+                        load: {
+                            // The resource is the existing poster, not a temporary
+                            // frame at the current playback position.
+                            guard let image = await getPosterFrame(from: url) else { return nil }
+                            return Self.posterResource(from: image)
+                        },
+                        save: { resource in
+                            if let resource {
+                                try await savePosterFromMenu(resource)
+                            } else {
+                                try await clearPosterFromMenu()
+                            }
+                        }
+                    ),
+                    options: .all,
+                    viewerTitle: title
+                ) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .accessibilityLabel("Poster frame options")
+                }
+                .help("Poster frame options")
+                .disabled(working)
             }
         }
+    }
+
+    /// Size the elapsed timestamp for the longest frame position in this movie.
+    private var timeDisplayUnit: DurationUnit { DurationUnit(playback.duration) }
+
+    private var currentTimeText: String {
+        playback.seconds.timestampString(
+            units: .milliseconds ... timeDisplayUnit,
+            minimumWholeFields: timeDisplayUnit.timestampWholeFields,
+            fractionalDigits: 3
+        )
     }
 
     private var controls: some View {
@@ -466,7 +563,7 @@ struct MovieViewer: View {
                     HStack(spacing: 7) {
                         playbackButtons
                         timeline
-                        Text(playback.seconds.timestampString)
+                        Text(currentTimeText)
                             .monospacedDigit().frame(minWidth: 65, alignment: .leading)
                     }
                     remainingControls
@@ -475,7 +572,7 @@ struct MovieViewer: View {
                 HStack(spacing: 7) {
                     playbackButtons
                     timeline
-                    Text(playback.seconds.timestampString)
+                    Text(currentTimeText)
                         .monospacedDigit().frame(minWidth: 74, alignment: .leading)
                     remainingControls
                 }
@@ -596,6 +693,8 @@ struct MovieViewer: View {
         #endif
         #if os(macOS)
         .background(MovieViewerWindowReader(window: $hostingWindow))
+        #elseif targetEnvironment(macCatalyst)
+        .background(CatalystMovieWindowGeometry())
         #endif
         .onChange(of: enhancements) { _, _ in
             scheduleEnhancementApply()
@@ -610,6 +709,14 @@ struct MovieViewer: View {
         .task {
             if let initialTime { playback.seek(initialTime) }
             refreshPausedFrame()
+        }
+        .task(id: url) {
+            posterHasContent = await hasPosterFrame(from: url)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .sbjPosterFrameDidChange)) { notification in
+            guard let changed = notification.object as? URL,
+                  changed.standardizedFileURL == url.standardizedFileURL else { return }
+            Task { posterHasContent = await hasPosterFrame(from: url) }
         }
         #if os(iOS) || os(visionOS)
         .fullScreenCover(isPresented: $fullscreen) {
@@ -653,7 +760,7 @@ struct MovieViewer: View {
     /// Read the original full-resolution image once, before launching the editor
     /// or invoking the application callback.
     @MainActor
-    private func savePoster() async {
+    private func savePoster(edit: Bool) async {
         guard !working else { return }
         playback.pause()
         working = true
@@ -672,7 +779,7 @@ struct MovieViewer: View {
             )),
             color: options.colorEdits && enhancementsEnabled ? enhancements : .init()
         )
-        if options.posterEdits {
+        if edit && options.posterEdits {
             guard let resource = Self.posterResource(from: frame) else {
                 errorMessage = "Could not prepare the selected movie frame for editing."
                 working = false
@@ -714,6 +821,57 @@ struct MovieViewer: View {
         }
     }
 
+    /// Async PhotoMenu's persistence boundary. Never silently discard a second
+    /// edit while a previous export is still running.
+    @MainActor
+    private func savePosterFromMenu(_ resource: SBJResourceContent) async throws {
+        if let previous = posterSaveTask { try await previous.value }
+        guard let image = resource.sbjImage?.sbjCGImage else {
+            throw NSError(domain: "SBJImaging.MovieViewer", code: 5,
+                userInfo: [NSLocalizedDescriptionKey: "Could not decode the poster image."])
+        }
+        let task = Task { @MainActor in
+            working = true
+            defer { working = false }
+            let shouldEmbed = try await setPosterHandler?(playback.seconds, image) ?? true
+            if shouldEmbed { try await setPosterFrame(from: url, image: image) }
+            posterHasContent = await hasPosterFrame(from: url)
+        }
+        posterSaveTask = task
+        defer { posterSaveTask = nil }
+        try await task.value
+    }
+
+    @MainActor
+    private func clearPosterFromMenu() async throws {
+        if let previous = posterSaveTask { try await previous.value }
+        let task = Task { @MainActor in
+            working = true
+            defer { working = false }
+            try await clearPosterFrame(from: url)
+            posterHasContent = await hasPosterFrame(from: url)
+            guard posterHasContent == false else {
+                throw NSError(domain: "SBJImaging.MovieViewer", code: 6,
+                    userInfo: [NSLocalizedDescriptionKey: "Movie still contains poster artwork after Clear."])
+            }
+        }
+        posterSaveTask = task
+        defer { posterSaveTask = nil }
+        try await task.value
+    }
+
+    /// PhotoMenu commits imported, chosen, or edited content via its binding.
+    @MainActor
+    private func commitPosterResource(_ resource: SBJResourceContent, at time: TimeInterval) async {
+        guard !working else { return }
+        guard let image = resource.sbjImage?.sbjCGImage else {
+            errorMessage = "Could not decode the selected poster image."
+            return
+        }
+        working = true
+        await commitPoster(at: time, image: image)
+    }
+
     @MainActor
     private func commitPoster(at time: TimeInterval, image: CGImage) async {
         defer { working = false }
@@ -751,6 +909,89 @@ private struct MovieViewerWindowReader: NSViewRepresentable {
 
     func updateNSView(_ view: NSView, context: Context) {
         DispatchQueue.main.async { window = view.window }
+    }
+}
+#endif
+
+#if targetEnvironment(macCatalyst)
+/// Persists the position and dimensions of the movie window, not the poster
+/// editor overlay. Uses public Catalyst scene geometry APIs (macCatalyst 16+).
+private struct CatalystMovieWindowGeometry: UIViewRepresentable {
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> WindowAttachmentView {
+        let view = WindowAttachmentView()
+        view.isUserInteractionEnabled = false
+        view.onWindowChange = { [weak coordinator = context.coordinator] window in
+            coordinator?.attach(to: window?.windowScene)
+        }
+        return view
+    }
+
+    func updateUIView(_ view: WindowAttachmentView, context: Context) {}
+
+    static func dismantleUIView(_ view: WindowAttachmentView, coordinator: Coordinator) {
+        view.onWindowChange = nil
+        coordinator.detach()
+    }
+
+    final class WindowAttachmentView: UIView {
+        var onWindowChange: ((UIWindow?) -> Void)?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            onWindowChange?(window)
+        }
+    }
+
+    @MainActor
+    final class Coordinator {
+        private static let frameKey = "SBJImaging.MovieViewer.CatalystWindowFrame"
+        private weak var scene: UIWindowScene?
+        private var observation: NSKeyValueObservation?
+        private var pendingObservation: Task<Void, Never>?
+
+        func attach(to newScene: UIWindowScene?) {
+            guard scene !== newScene else { return }
+            detach()
+            guard let newScene else { return }
+            scene = newScene
+
+            // Restore before observing so initial system default geometry
+            // doesn't overwrite the user's last saved dimensions.
+            if let data = UserDefaults.standard.data(forKey: Self.frameKey),
+               let frame = try? JSONDecoder().decode(CGRect.self, from: data),
+               frame.width > 200, frame.height > 200,
+               frame.width <= newScene.screen.bounds.width,
+               frame.height <= newScene.screen.bounds.height,
+               frame.minX >= 0, frame.minY >= 0,
+               frame.maxX <= newScene.screen.bounds.maxX,
+               frame.maxY <= newScene.screen.bounds.maxY {
+                newScene.requestGeometryUpdate(.Mac(systemFrame: frame)) { error in
+                    print("Movie window frame restoration: \(error.localizedDescription)")
+                }
+            }
+            pendingObservation = Task { @MainActor [weak self, weak newScene] in
+                // Allow geometry restoration to finish before saving changes.
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled, let self, let newScene,
+                      self.scene === newScene else { return }
+                self.observation = newScene.observe(\.effectiveGeometry, options: [.new]) { _, change in
+                    guard let frame = change.newValue?.systemFrame,
+                          frame.width > 200, frame.height > 200,
+                          frame.origin != .zero,
+                          let data = try? JSONEncoder().encode(frame) else { return }
+                    UserDefaults.standard.set(data, forKey: Self.frameKey)
+                }
+            }
+        }
+
+        func detach() {
+            pendingObservation?.cancel()
+            pendingObservation = nil
+            observation?.invalidate()
+            observation = nil
+            scene = nil
+        }
     }
 }
 #endif

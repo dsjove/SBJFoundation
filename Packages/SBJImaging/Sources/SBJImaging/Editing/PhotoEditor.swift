@@ -537,13 +537,8 @@ public struct PhotoEditor: View {
                     Button {
                         model.selectCrop(option)
                     } label: {
-                        if model.geometry.crop.option == option {
-                            Label(cropTitle(for: option), symbol: SBJSymbology.selected)
-                        } else {
-                            Text(cropTitle(for: option))
-                        }
+                        Text((model.geometry.crop.option == option ? "✓ " : "   ") + cropTitle(for: option))
                     }
-                    .labelStyle(.titleAndIcon)
                 }
 
                 Divider()
@@ -564,6 +559,7 @@ public struct PhotoEditor: View {
                 .accessibility(cropOptionInfo)
                 .accessibilityValue(cropTitle(for: model.geometry.crop.option))
         }
+        .labelStyle(.titleAndIcon)
 
         if options.availableMirrorAxes.contains(.horizontal) {
             SBJSymbolButton(

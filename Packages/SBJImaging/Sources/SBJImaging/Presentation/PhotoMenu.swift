@@ -41,6 +41,7 @@ private final class PhotoMenuState {
     var isPhotoClearPresented = false
     var canPasteImage = false
     var viewingResource: SBJResourceContent?
+    var resourceLoadError: String?
     var editingResource: SBJResourceContent?
     var resourceBeforeImportedEdit: SBJResourceContent?
     var restoresResourceOnEditCancel = false
@@ -65,11 +66,59 @@ public struct PhotoMenu<Content: View>: View {
     @State private var isSuppressingPresentationChrome = false
 
     private let options: PhotoMenuOptions
+    private let source: SBJResourceSource?
+
+    /// Known absence suppresses read actions; unknown permits an attempt.
+    private var canAcquireResource: Bool {
+        if let source { return source.hasContent != false }
+        return resource != nil
+    }
+
+    @MainActor
+    private func acquireResource() async -> SBJResourceContent? {
+        do {
+            return try await source?.resolve() ?? resource
+        } catch {
+            state.resourceLoadError = error.localizedDescription
+            return nil
+        }
+    }
+
+    @MainActor
+    private func saveResource(_ value: SBJResourceContent?) async {
+        guard let source else {
+            resource = value
+            return
+        }
+        do {
+            try await source.save(value)
+        } catch {
+            state.resourceLoadError = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func viewAcquiredResource() {
+        Task { @MainActor in
+            guard let acquired = await acquireResource(), !Task.isCancelled else { return }
+            state.viewingResource = acquired
+        }
+    }
+
+    @MainActor
+    private func editAcquiredResource() {
+        Task { @MainActor in
+            guard let acquired = await acquireResource(), !Task.isCancelled else { return }
+            beginEditing(acquired, restoringOnCancel: false)
+        }
+    }
+
     private let viewerTitle: String?
     private let editImports: Bool
     private let editorOptions: PhotoEditorOptions
     private let label: () -> Content
 
+    // Original binding-based API remains unchanged.
     public init(
         resource: Binding<SBJResourceContent?>,
         options: PhotoMenuOptions = .all,
@@ -78,13 +127,12 @@ public struct PhotoMenu<Content: View>: View {
         editorOptions: PhotoEditorOptions = .default
     ) where Content == _DefaultPhotoMenuLabel {
         self._resource = resource
+        self.source = nil
         self.options = options
         self.viewerTitle = viewerTitle
         self.editImports = editImports
         self.editorOptions = editorOptions
-        self.label = {
-            _DefaultPhotoMenuLabel(isFilled: resource.wrappedValue != nil)
-        }
+        self.label = { _DefaultPhotoMenuLabel(isFilled: resource.wrappedValue != nil) }
     }
 
     public init(
@@ -96,6 +144,41 @@ public struct PhotoMenu<Content: View>: View {
         @ViewBuilder label: @escaping () -> Content
     ) {
         self._resource = resource
+        self.source = nil
+        self.options = options
+        self.viewerTitle = viewerTitle
+        self.editImports = editImports
+        self.editorOptions = editorOptions
+        self.label = label
+    }
+
+    // Async-binding API: identical options; source replaces the binding.
+    public init(
+        source: SBJResourceSource,
+        options: PhotoMenuOptions = .all,
+        viewerTitle: String? = nil,
+        editImports: Bool = true,
+        editorOptions: PhotoEditorOptions = .default
+    ) where Content == _DefaultPhotoMenuLabel {
+        self._resource = .constant(nil)
+        self.source = source
+        self.options = options
+        self.viewerTitle = viewerTitle
+        self.editImports = editImports
+        self.editorOptions = editorOptions
+        self.label = { _DefaultPhotoMenuLabel(isFilled: source.hasContent == true) }
+    }
+
+    public init(
+        source: SBJResourceSource,
+        options: PhotoMenuOptions = .modify,
+        viewerTitle: String? = nil,
+        editImports: Bool = true,
+        editorOptions: PhotoEditorOptions = .default,
+        @ViewBuilder label: @escaping () -> Content
+    ) {
+        self._resource = .constant(nil)
+        self.source = source
         self.options = options
         self.viewerTitle = viewerTitle
         self.editImports = editImports
@@ -104,34 +187,25 @@ public struct PhotoMenu<Content: View>: View {
     }
 
 #if !os(tvOS)
-    @MainActor
-    private var image: SBJImage? {
-        resource?.sbjImage
-    }
-
     @ViewBuilder
     private func menuItems(_ labelIsHidden: Bool, sharePresenter: SBJSharePresenter) -> some View {
-        if options.contains(.view), resource != nil {
+        if options.contains(.view), canAcquireResource {
             menuButton("View", labeled: !labelIsHidden, image: SBJImageSymbology.viewPhoto) {
-                state.viewingResource = resource
+                viewAcquiredResource()
             }
         }
 
-        if options.contains(.share), let image {
-            SBJShareButton(
-                presenter: sharePresenter,
-                prepare: { SBJSharePayload(image) }
-            ) {
-                if !labelIsHidden {
-                    Label("Share", symbol: SBJSymbology.share)
-                } else {
-                    Image(symbol: SBJSymbology.share)
-                        .accessibilityLabel("Share")
+        if options.contains(.share), canAcquireResource {
+            menuButton("Share", labeled: !labelIsHidden, image: SBJSymbology.share) {
+                Task { @MainActor in
+                    guard let acquired = await acquireResource(),
+                          let image = acquired.sbjImage, !Task.isCancelled else { return }
+                    sharePresenter.present(SBJSharePayload(image))
                 }
             }
         }
 
-        if options.contains(.photos) {
+        if options.contains(.photos), PhotoMenuOptions.canShowPhotos {
             menuButton("Photos", labeled: !labelIsHidden, image: SBJImageSymbology.choosePhotos) {
                 state.isPhotoPickerPresented = true
             }
@@ -143,7 +217,7 @@ public struct PhotoMenu<Content: View>: View {
             }
         }
 
-        if options.contains(.files) {
+        if options.contains(.files), PhotoMenuOptions.canShowFiles {
             menuButton("Files", labeled: !labelIsHidden, image: SBJImageSymbology.chooseFile) {
                 state.isFileImporterPresented = true
             }
@@ -156,13 +230,13 @@ public struct PhotoMenu<Content: View>: View {
             .disabled(!state.canPasteImage)
         }
 
-        if options.contains(.edit), let resource {
+        if options.contains(.edit), canAcquireResource {
             menuButton("Edit", labeled: !labelIsHidden, image: SBJImageSymbology.editPhoto) {
-                beginEditing(resource, restoringOnCancel: false)
+                editAcquiredResource()
             }
         }
 
-        if options.contains(.clear), resource != nil {
+        if options.contains(.clear), canAcquireResource {
             Button(role: .destructive) {
                 state.isPhotoClearPresented = true
             } label: {
@@ -228,7 +302,7 @@ public struct PhotoMenu<Content: View>: View {
             .photoModal(
                 isPresented: Binding(
                     get: { state.editingResource != nil },
-                    set: { if !$0 { state.editingResource = nil } }
+                    set: { if !$0 { finishEditing(with: nil) } }
                 )
             ) {
                 if let editingResource = state.editingResource {
@@ -272,9 +346,17 @@ public struct PhotoMenu<Content: View>: View {
                 guard case .success(let urls) = result, let url = urls.first else { return }
                 Task { await importFile(url) }
             }
+            .alert("Unable to Load Photo", isPresented: Binding(
+                get: { state.resourceLoadError != nil },
+                set: { if !$0 { state.resourceLoadError = nil } }
+            )) {
+                Button("OK") { state.resourceLoadError = nil }
+            } message: {
+                Text(state.resourceLoadError ?? "Unknown error")
+            }
             .alert("Clear Photo", isPresented: $state.isPhotoClearPresented) {
                 Button("Clear", role: .destructive) {
-                    resource = nil
+                    Task { await saveResource(nil) }
                 }
                 Button("Cancel", role: .cancel) { }
             }
@@ -342,10 +424,19 @@ public struct PhotoMenu<Content: View>: View {
         // then read it back: a model that requires complete image documents can
         // normalize the value in its Binding setter, while ordinary models simply
         // retain the imported JPEG/PNG/HEIC.
+        if source != nil {
+            if editImports {
+                // Editing a new import is transactional for an async source:
+                // cancel leaves its persisted content unchanged.
+                beginEditing(imported, restoringOnCancel: false, allowsUnchangedCompletion: true)
+            } else {
+                Task { await saveResource(imported) }
+            }
+            return
+        }
         let previous = resource
         resource = imported
         guard let stored = resource else { return }
-
         if editImports {
             state.resourceBeforeImportedEdit = previous
             beginEditing(stored, restoringOnCancel: true)
@@ -353,9 +444,13 @@ public struct PhotoMenu<Content: View>: View {
     }
 
     @MainActor
-    private func beginEditing(_ value: SBJResourceContent, restoringOnCancel: Bool) {
+    private func beginEditing(
+        _ value: SBJResourceContent,
+        restoringOnCancel: Bool,
+        allowsUnchangedCompletion: Bool = false
+    ) {
         state.restoresResourceOnEditCancel = restoringOnCancel
-        state.allowsUnchangedEditCompletion = restoringOnCancel
+        state.allowsUnchangedEditCompletion = restoringOnCancel || allowsUnchangedCompletion
         if !restoringOnCancel {
             state.resourceBeforeImportedEdit = nil
         }
@@ -365,7 +460,11 @@ public struct PhotoMenu<Content: View>: View {
     @MainActor
     private func finishEditing(with result: SBJResourceContent?) {
         if let result {
-            resource = result
+            if source != nil {
+                Task { await saveResource(result) }
+            } else {
+                resource = result
+            }
         } else if state.restoresResourceOnEditCancel {
             resource = state.resourceBeforeImportedEdit
         }
@@ -427,7 +526,7 @@ public struct PhotoMenu<Content: View>: View {
     public var body: some View {
 #if os(tvOS)
         Menu {
-            if options.contains(.clear), resource != nil {
+            if options.contains(.clear), canAcquireResource {
                 Button(role: .destructive) {
                     state.isPhotoClearPresented = true
                 } label: {
@@ -437,23 +536,38 @@ public struct PhotoMenu<Content: View>: View {
         } label: {
             label()
         }
-        .disabled(resource == nil || !options.contains(.clear))
+        .disabled(!canAcquireResource || !options.contains(.clear))
         .alert("Clear Photo", isPresented: Binding(
             get: { state.isPhotoClearPresented },
             set: { state.isPhotoClearPresented = $0 }
         )) {
-            Button("Clear", role: .destructive) { resource = nil }
+            Button("Clear", role: .destructive) {
+                Task { await saveResource(nil) }
+            }
             Button("Cancel", role: .cancel) { }
         }
 #else
         SBJSharePresentationHost { sharePresenter in
             actions(
-                content: SBJSelectionMenu {
-                    menuItems(false, sharePresenter: sharePresenter)
-                } collapsedContent: {
-                    menuItems(true, sharePresenter: sharePresenter)
-                } label: {
-                    label()
+                content: Group {
+                    if source != nil {
+                        // Deferred sources expose a stable menu; avoid the
+                        // single-action collapsing behavior during async updates.
+                        Menu {
+                            menuItems(false, sharePresenter: sharePresenter)
+                        } label: {
+                            label()
+                        }
+                    } else {
+                        // Preserve the original binding-based presentation.
+                        SBJSelectionMenu {
+                            menuItems(false, sharePresenter: sharePresenter)
+                        } collapsedContent: {
+                            menuItems(true, sharePresenter: sharePresenter)
+                        } label: {
+                            label()
+                        }
+                    }
                 }
                 .menuStyle(.button)
             )

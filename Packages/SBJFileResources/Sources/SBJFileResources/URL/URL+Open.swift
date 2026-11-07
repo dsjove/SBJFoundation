@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 #if os(watchOS)
 import WatchKit
 #elseif canImport(UIKit)
@@ -51,15 +52,7 @@ public extension URL {
     }
 
     /// Whether the current platform provides a native Finder handoff.
-    static var hasFinder: Bool {
-#if os(macOS)
-        true
-#elseif os(iOS)
-        ProcessInfo.processInfo.isiOSAppOnMac
-#else
-        false
-#endif
-    }
+    static var hasFinder: Bool { ProcessInfo.isAnyMac }
 
     /// Reveal a file in Finder on macOS, otherwise open its containing folder.
     /// Security-scoped access is retained for the duration of the handoff.

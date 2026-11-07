@@ -61,9 +61,19 @@ public extension String {
 public extension TimeInterval {
     /// Display from the largest significant unit within the selected range.
     /// Fields after the first are zero-padded; trailing fractional zeros omitted.
-    func timestampString(units: ClosedRange<DurationUnit> = .milliseconds ... .day) -> String {
+    func timestampString(
+        units: ClosedRange<DurationUnit> = .milliseconds ... .day,
+        minimumWholeFields: Int = 1,
+        fractionalDigits: Int? = nil
+    ) -> String {
         guard isFinite, self >= 0,
               self < Double(Int64.max) / 1000 else { return "" }
+        // With whole-second precision, distinguish positive subsecond times
+        // from an actual zero-length interval.
+        if fractionalDigits == 0 && units.lowerBound == .milliseconds {
+            if self == 0 { return "0" }
+            if self < 1 { return "\(Int((self * 1000).rounded()))ms" }
+        }
         let small = units.lowerBound
         let wholeUnits = DurationUnit.ordered.filter {
             $0 >= .second && $0 >= small && $0 <= units.upperBound
@@ -81,12 +91,18 @@ public extension TimeInterval {
             values.append(remainder / divisor)
             remainder %= divisor
         }
-        let first = values.firstIndex(where: { $0 != 0 }) ?? (values.count - 1)
+        let significant = values.firstIndex(where: { $0 != 0 }) ?? (values.count - 1)
+        let first = min(significant, max(0, values.count - max(1, minimumWholeFields)))
         let text = values[first...].enumerated().map { index, value in
             index == 0 ? String(value) : String(format: "%02lld", value)
         }.joined(separator: ":")
-        guard small == .milliseconds, adjusted % 1000 != 0 else { return text }
+        guard small == .milliseconds else { return text }
         var fractional = String(format: "%03lld", adjusted % 1000)
+        if let fractionalDigits {
+            let count = min(3, max(0, fractionalDigits))
+            return count == 0 ? text : text + "." + String(fractional.prefix(count))
+        }
+        guard adjusted % 1000 != 0 else { return text }
         while fractional.last == "0" { fractional.removeLast() }
         return text + "." + fractional
     }

@@ -14,6 +14,11 @@ struct PhotoPublicAPIParityTests {
         _ = PhotoDisplayView(resource: nil)
         _ = PhotoThumbnailView(resource: resource)
         _ = PhotoMenu(resource: resource)
+        let deferred = SBJResourceSource.deferred(
+            hasContent: nil, load: { nil }, save: { _ in }
+        )
+        _ = PhotoMenu(source: deferred)
+        _ = PhotoMenu(source: deferred) { Image(systemName: "photo") }
         _ = PhotoMenu(resource: resource) { Image(systemName: "photo") }
         _ = PhotoLibrary.isAuthorized
     }

@@ -18,6 +18,28 @@ public enum DurationUnit: String, UnitType {
         }
     }
 
+    /// Largest whole-number field required to display a time interval.
+    /// Use the movie's maximum frame time to keep the elapsed-time width stable.
+    public init(_ interval: TimeInterval) {
+        let duration = interval.isFinite && interval > 0 ? interval : 0
+        switch duration {
+        case ..<60: self = .second
+        case ..<3_600: self = .minute
+        case ..<86_400: self = .hour
+        default: self = .day
+        }
+    }
+
+    /// Count of whole-number fields in an elapsed-time display.
+    public var timestampWholeFields: Int {
+        switch self {
+        case .milliseconds, .second: 1
+        case .minute: 2
+        case .hour: 3
+        case .day: 4
+        }
+    }
+
     public var measurementSystem: MeasurementSystem { .universal }
 
     public var numberFormat: SBJNumberFormatStyle { .decimal(significantDigits: 4) }
