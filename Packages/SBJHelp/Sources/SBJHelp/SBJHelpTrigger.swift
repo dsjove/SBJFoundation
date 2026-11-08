@@ -63,7 +63,8 @@ public struct SBJHelpTrigger<Label: View>: View {
                         substitutions: substitutions,
                         configuration: configuration,
                         showAbout: showAbout,
-                        presenter: presenter
+                        presenter: presenter,
+                        onDismiss: { showHelp = false }
                     )
                 }
                 .onAppear {

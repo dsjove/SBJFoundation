@@ -17,6 +17,7 @@ public struct SBJHelpSheet: View {
     public let configuration: SBJHelpConfiguration
     public let showAbout: Bool
     public let presenter: SBJAnyHelpContentPresenter?
+    private let onDismiss: (() -> Void)?
 
     @State private var showAboutSheet = false
 
@@ -25,13 +26,15 @@ public struct SBJHelpSheet: View {
         substitutions: [String: String] = [:],
         configuration: SBJHelpConfiguration = .standard,
         showAbout: Bool = true,
-        presenter: SBJAnyHelpContentPresenter? = nil
+        presenter: SBJAnyHelpContentPresenter? = nil,
+        onDismiss: (() -> Void)? = nil
     ) {
         self.asset = asset
         self.substitutions = substitutions
         self.configuration = configuration
         self.showAbout = showAbout
         self.presenter = presenter
+        self.onDismiss = onDismiss
     }
 
     private var resolvedSource: String? {
@@ -75,7 +78,9 @@ public struct SBJHelpSheet: View {
                 #endif
                 .toolbar {
                     ToolbarItem(placement: dismissToolbarPlacement) {
-                        Button { dismiss() } label: {
+                        Button {
+                            if let onDismiss { onDismiss() } else { dismiss() }
+                        } label: {
                             Label("Dismiss", symbol: SBJSymbology.dismiss)
                         }
                     }
@@ -104,7 +109,8 @@ public struct SBJHelpSheet: View {
                     asset: about,
                     substitutions: substitutions,
                     configuration: configuration,
-                    showAbout: false
+                    showAbout: false,
+                    onDismiss: { showAboutSheet = false }
                 )
             }
         }

@@ -73,7 +73,10 @@ public extension Tagging {
 
 	func _tearDownTagRelations() {
 		guard let users = __users else { return }
-		users.forEach { $0.removeTag(self) }
+		// SwiftData maintains reference-type inverse relationships. A value-type
+		// user is a snapshot: mutating it here would only change a copy.
+		guard User.self is AnyObject.Type else { return }
+		for var user in users { user.removeTag(self) }
 		//Let SwiftData manage this tag's __user list
 	}
 }
@@ -104,13 +107,16 @@ public extension Tagging {
 	}
 }
 
-public protocol TagUser: AnyObject, Identifiable {
+/// A taggable entity. Both observable reference models (including SwiftData)
+/// and value models may conform. For value models, edits must be applied through
+/// a writable binding or an owning store so mutations are not lost.
+public protocol TagUser: Identifiable {
 	associatedtype Tag: Tagging where Tag.User == Self
 
 	func hasTag(_ tag: Tag) -> Bool
 	var sortedTags: [Tag] { get }
-	func addTag(_ tag: Tag, makePrimary: Bool)
-	func removeTag(_ tag: Tag)
+	mutating func addTag(_ tag: Tag, makePrimary: Bool)
+	mutating func removeTag(_ tag: Tag)
 
 	var __tags: [Tag]? { get set }
 	var __primaryTagID: Tag.ID? { get set }
@@ -154,7 +160,7 @@ public extension TagUser {
 		__tags?.findIdentified(__primaryTagID)
 	}
 
-	func _tearDownTagRelations() {
+	mutating func _tearDownTagRelations() {
 		__primaryTagID = nil
 		__tags?.forEach { $0._userRemoved(self) }
 	}
@@ -163,7 +169,7 @@ public extension TagUser {
 		__tags?.containsIdentified(tag) ?? false
 	}
 
-	func addTag(_ tag: Tag) {
+	mutating func addTag(_ tag: Tag) {
 		addTag(tag, makePrimary: false)
 	}
 
@@ -171,7 +177,7 @@ public extension TagUser {
 		__tags?.sorted() ?? []
 	}
 
-	func addTag(_ tag: Tag, makePrimary: Bool = false) {
+	mutating func addTag(_ tag: Tag, makePrimary: Bool = false) {
 		if __tags == nil {
 			__tags = []
 		}
@@ -181,7 +187,7 @@ public extension TagUser {
 		}
 	}
 
-	func togglePrimary(_ tag: Tag) {
+	mutating func togglePrimary(_ tag: Tag) {
 		if self.isTagPrimary(tag) {
 			__primaryTagID = nil
 		} else {
@@ -189,7 +195,7 @@ public extension TagUser {
 		}
 	}
 
-	func removeTag(_ tag: Tag) {
+	mutating func removeTag(_ tag: Tag) {
 		if __primaryTagID == tag.id {
 			__primaryTagID = nil
 		}

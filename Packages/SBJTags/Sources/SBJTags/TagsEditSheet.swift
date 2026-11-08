@@ -32,7 +32,19 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 	@Environment(\.dismiss) private var dismiss
 
 	@Bindable var tagBag: B
-	let user: T?
+	private let referenceUser: T?
+	private let valueUser: Binding<T>?
+	private let commit: (() -> Bool)?
+
+	/// Reads the latest value from a binding when editing a value-type user.
+	private var user: T? { valueUser?.wrappedValue ?? referenceUser }
+
+	/// Applies mutations to the owner of a struct, or to the original class instance.
+	private func updateUser(_ change: (inout T) -> Void) {
+		guard var current = user else { return }
+		change(&current)
+		valueUser?.wrappedValue = current
+	}
 
 	@State private var searchText = ""
 	@State private var editColorTag: Tag?
@@ -45,9 +57,21 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 	}
 	@State private var deletionRequest: DeletionRequest?
 
+	/// Existing reference-model initializer; source-compatible with SwiftData apps.
+	/// Value-model users should use the Binding initializer instead.
 	public init(tagBag: B, user: T?) {
 		self.tagBag = tagBag
-		self.user = user
+		self.referenceUser = user
+		self.valueUser = nil
+		self.commit = nil
+	}
+
+	/// Writable value-model initializer. Tag edits are written back to the owner.
+	public init(tagBag: B, user: Binding<T>, onDone: (() -> Bool)? = nil) {
+		self.tagBag = tagBag
+		self.referenceUser = nil
+		self.valueUser = user
+		self.commit = onDone
 	}
 
 	public var body: some View {
@@ -100,7 +124,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 			.toolbar {
 				ToolbarItemGroup(placement: leadingToolbarPlacement) {
 					Button("Done") {
-						dismiss()
+						if commit?() != false { dismiss() }
 					}
 				}
 				ToolbarItemGroup(placement: trailingToolbarPlacement) {
@@ -211,8 +235,10 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
         Toggle(isOn: Binding(
             get: { user.hasTag(tag) },
             set: { enabled in
-                if enabled { user.addTag(tag) }
-                else { user.removeTag(tag) }
+                updateUser { current in
+                    if enabled { current.addTag(tag) }
+                    else { current.removeTag(tag) }
+                }
             }
         )) {}
         .toggleStyle(.sbjCheckbox)
@@ -229,7 +255,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
             accessibilityLabel: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityLabel ?? "Primary tag",
             accessibilityHint: T.propertyInfo(for: \T.__primaryTagID)?.accessibilityHint
         ) {
-            user.togglePrimary(tag)
+            updateUser { $0.togglePrimary(tag) }
         }
         .accessibilityValue(tag.displayName)
     }
@@ -252,7 +278,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 
 	func addTag() {
 		let newTag = tagBag.addNewTag(named: searchText)
-		user?.addTag(newTag)
+		updateUser { $0.addTag(newTag) }
 		searchText = ""
 		isTagFieldFocused = newTag.id
 		lastAddedTagID = newTag.id
