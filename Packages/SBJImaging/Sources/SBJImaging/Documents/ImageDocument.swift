@@ -11,6 +11,7 @@ import SBJLocation
 import SBJFileResources
 import SBJDataDefinition
 import SBJUIVocabulary
+import SBJTags
 
 #if !os(watchOS) && (canImport(UIKit) || canImport(AppKit))
 
@@ -19,6 +20,16 @@ import SBJUIVocabulary
 /// The encoded source and edit recipe are authoritative. Thumbnail and/or fully rendered
 /// derivatives may be persisted as disposable caches. The source image is only the fallback
 /// when a requested rendered derivative cannot be produced.
+/// Portable document tags. Unlike a text sidecar, this retains the tag ID,
+/// name, and color so a document can carry its complete tag values.
+public struct ImageTags: Codable, Equatable, @unchecked Sendable {
+    public var tags: [TagCodableValue<String>]
+
+    public init(tags: [TagCodableValue<String>] = []) {
+        self.tags = tags
+    }
+}
+
 public struct SBJImageDocument: Sendable, Equatable {
     /// Identifies the on-disk package schema. This is not a Uniform Type Identifier.
     /// Apps may optionally register `.sbjimage` as a standalone document type; embedding apps do not need to.
@@ -53,6 +64,7 @@ public struct SBJImageDocument: Sendable, Equatable {
 
     private var source: SBJResourceContent
     public var location: CLLocation?
+    public var tags: ImageTags
     private var edits: PhotoEditResult
 
     /// User-facing name stored in the image document manifest.
@@ -76,6 +88,7 @@ public struct SBJImageDocument: Sendable, Equatable {
     ) {
         self.source = source
         self.location = location
+        self.tags = ImageTags()
         let size = source.sbjImage?.size ?? .init(width: 1, height: 1)
         self.edits = .init(geometry: .init(crop: .init(option: .none, sourceSize: size)))
         self.renderCache = renderCache
@@ -218,6 +231,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         var geometry: Component
         var color: Component
         var location: Component?
+        var tags: Component?
         var markup: Markup?
 
         var renderCache: RenderCache
@@ -228,6 +242,7 @@ public struct SBJImageDocument: Sendable, Equatable {
     private init(
         source: SBJResourceContent,
         location: CLLocation?,
+        tags: ImageTags,
         edits: PhotoEditResult,
         renderCache: RenderCache,
         thumbnail: SBJResourceContent?,
@@ -235,6 +250,7 @@ public struct SBJImageDocument: Sendable, Equatable {
     ) {
         self.source = source
         self.location = location
+        self.tags = tags
         self.edits = edits
         self.renderCache = renderCache
         self.thumbnail = thumbnail
@@ -343,9 +359,18 @@ public struct SBJImageDocument: Sendable, Equatable {
             location = nil
         }
 
+        let tags: ImageTags
+        if let descriptor = manifest.tags {
+            guard let tagData = data(at: descriptor.path) else { throw Error.invalidComponent }
+            tags = try JSONDecoder().decode(ImageTags.self, from: tagData)
+        } else {
+            tags = ImageTags() // Older packages do not have tags.
+        }
+
         self.init(
             source: source,
             location: location,
+            tags: tags,
             edits: .init(
                 displayName: manifest.displayName,
                 description: manifest.description,
@@ -505,6 +530,7 @@ public struct SBJImageDocument: Sendable, Equatable {
         let geometryPath = "edits/geometry.json"
         let colorPath = "edits/color.json"
         let locationPath = location.map { _ in "location.json" }
+        let tagsPath = "tags.json"
         let markupPath = edits.markup.map { _ in "edits/markup.data" }
         let persistedThumbnail = thumbnailForPersistence()
         let persistedRendered = renderedForPersistence()
@@ -537,6 +563,7 @@ public struct SBJImageDocument: Sendable, Equatable {
                     contentType: UTType.json.identifier
                 )
             },
+            tags: .init(path: tagsPath, contentType: UTType.json.identifier),
             markup: edits.markup.map {
                 .init(
                     path: markupPath!,
@@ -570,6 +597,7 @@ public struct SBJImageDocument: Sendable, Equatable {
 
         var root: [String: FileWrapper] = [
             "manifest.json": .init(regularFileWithContents: try encoder.encode(manifest)),
+            "tags.json": .init(regularFileWithContents: try encoder.encode(tags)),
             "source": .init(directoryWithFileWrappers: [
                 "original.\(sourceExtension)": .init(regularFileWithContents: source.data)
             ]),

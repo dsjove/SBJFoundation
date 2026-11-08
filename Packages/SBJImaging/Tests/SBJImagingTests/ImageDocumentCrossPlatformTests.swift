@@ -5,6 +5,8 @@ import ImageIO
 import Testing
 import UniformTypeIdentifiers
 import SBJFileResources
+import SBJTags
+import SBJUIVocabulary
 @testable import SBJImaging
 
 @Suite("Image document cross-platform")
@@ -43,6 +45,16 @@ struct ImageDocumentCrossPlatformTests {
         #expect(reopened.editorInput.source == source)
         #expect(SBJImageDocument.thumbnailImage(at: url, renderIfNeeded: false) != nil)
         #expect(SBJImageDocument.renderedImage(at: url, renderIfNeeded: false) != nil)
+    }
+
+    @Test func roundTripsImageTags() throws {
+        let source = SBJResourceContent(data: try makePNG(), contentType: .png)
+        var document = SBJImageDocument(source: source, renderCache: [])
+        document.tags = ImageTags(tags: [
+            TagCodableValue(id: "family", name: "Family", color: CodableColor(0.2, 0.4, 0.6))
+        ])
+        let reopened = try SBJImageDocument(serializedRepresentation: document.serializedRepresentation)
+        #expect(reopened.tags == document.tags)
     }
 
     @Test func preservesUnknownMarkupWithoutReinterpretingIt() throws {

@@ -662,6 +662,15 @@ public final class PackageDocumentLibrary<Document: PackageDocument> {
 		return try await createPersisted(Document(restoring: snapshot))
 	}
 
+	/// Reveal a document in Finder using the storage directory pinned when this
+	/// library was constructed. The caller should not derive a parent URL: the
+	/// storage root may be an iCloud or other resolved security-scoped location.
+	/// URL.showInFinder owns the async Catalyst access lifetime.
+	@MainActor
+	public func showInFinder(_ packageURL: URL) {
+		packageURL.showInFinder(directory: rootDirectory)
+	}
+
 	public func packageURL(for document: Document) -> URL? {
 		guard document.role == .user else { return nil }
 		return location.packageURL(for: document.id, root: rootDirectory)

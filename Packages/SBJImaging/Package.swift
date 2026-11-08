@@ -21,6 +21,7 @@ let package = Package(
         .package(path: "../SBJDocuments"),
         .package(path: "../SBJUIVocabulary"),
         .package(path: "../SBJHelp"),
+        .package(path: "../SBJTags"),
         .package(path: "../SBJSharing"),
     ],
     targets: [
@@ -35,6 +36,7 @@ let package = Package(
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
+                .product(name: "SBJTags", package: "SBJTags"),
                 .product(name: "SBJSharing", package: "SBJSharing"),
             ],
             resources: [.process("Resources")],
@@ -50,6 +52,7 @@ let package = Package(
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
+                .product(name: "SBJTags", package: "SBJTags"),
             ],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
