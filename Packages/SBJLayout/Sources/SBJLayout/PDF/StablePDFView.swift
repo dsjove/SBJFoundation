@@ -13,8 +13,6 @@ struct StablePDFNativeView: UIViewRepresentable {
 	let initialPageIndex: Int
 	let onReady: @MainActor () -> Void
 
-
-
 	func makeCoordinator() -> Coordinator {
 		Coordinator(controller: controller)
 	}
@@ -507,15 +505,17 @@ public final class StablePDFHostView: UIView {
 		switch layout {
 		case .horizontalTwoPage:
 			reportDisplayCount(2)
+			// UIKit PDFKit ignores displayMode while UIPageViewController is enabled:
+			// its internal layout is single-page continuous, even when .twoUp was
+			// requested. This was visible as single-page vertical scrolling on
+			// Intel Mac Catalyst while Apple silicon appeared to tolerate it.
+			// Use PDFView's own two-up layout; no custom renderer is needed.
+			if pdfView.isUsingPageViewController {
+				pdfView.usePageViewController(false, withViewOptions: nil)
+			}
 			pdfView.displayMode = .twoUp
 			pdfView.displayDirection = .horizontal
 			pdfView.displaysAsBook = false
-			if !pdfView.isUsingPageViewController {
-				pdfView.usePageViewController(
-					true,
-					withViewOptions: [UIPageViewController.OptionsKey.interPageSpacing: 12]
-				)
-			}
 
 		case .horizontalSinglePage:
 			reportDisplayCount(1)
@@ -585,8 +585,10 @@ public final class StablePDFHostView: UIView {
 		switch desiredLayout {
 		case .verticalSinglePage:
 			return pdfView.isUsingPageViewController || pdfView.displayDirection != .vertical
-		case .horizontalSinglePage, .horizontalTwoPage:
+		case .horizontalSinglePage:
 			return !pdfView.isUsingPageViewController || pdfView.displayDirection != .horizontal
+		case .horizontalTwoPage:
+			return pdfView.isUsingPageViewController || pdfView.displayDirection != .horizontal
 		case .adaptive:
 			return false
 		}
