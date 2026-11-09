@@ -25,7 +25,7 @@ struct MovieViewerPosterAPITests {
     @Test @MainActor func handlerCanDeclineEmbedding() async throws {
         let handler: MoviePosterHandler = { time, image in
             #expect(time == 1.5)
-            #expect(image.width == 1)
+            #expect(image?.width == 1)
             return false
         }
         let space = CGColorSpaceCreateDeviceRGB()
@@ -34,6 +34,18 @@ struct MovieViewerPosterAPITests {
                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         let image = context.makeImage()!
         #expect(try await handler(1.5, image) == false)
+    }
+
+    @Test @MainActor func handlerReceivesNilForClear() async throws {
+        var cleared = false
+        let handler: MoviePosterHandler = { time, image in
+            #expect(time == nil)
+            #expect(image == nil)
+            cleared = true
+            return false
+        }
+        #expect(try await handler(nil, nil) == false)
+        #expect(cleared)
     }
 
     @Test @MainActor func existingEditRecipeCanInitializeEditor() {

@@ -241,14 +241,15 @@ public struct MovieViewerOptions: Sendable, Equatable {
     }
 }
 
-/// The caller is given the selected timestamp and full-resolution, edited image.
-/// Return true to embed it into the movie, false to persist it elsewhere only.
-public typealias MoviePosterHandler = @MainActor (TimeInterval, CGImage) async throws -> Bool
+/// Non-nil values select a full-resolution frame. (nil, nil) clears the selection.
+/// Return false to keep all changes external to movie metadata.
+/// Return true to embed a selected image or clear embedded artwork.
+public typealias MoviePosterHandler = @MainActor (TimeInterval?, CGImage?) async throws -> Bool
 
 struct MovieViewer: View {
     let title: String
     let url: URL
-    var initialTime: TimeInterval? = nil
+    let initialTime: TimeInterval?
     let options: MovieViewerOptions
     var setPosterHandler: MoviePosterHandler? = nil
     @State private var playback: MoviePlayback
@@ -474,6 +475,31 @@ struct MovieViewer: View {
         ), range: 0...max(playback.duration, 0.001))
     }
 
+    private var externalPosterControls: some View {
+        Group {
+            if options.setPoster && setPosterHandler != nil && !options.posterEdits {
+                HStack {
+					Button {
+						Task { await savePoster(edit: false) }
+					} label: {
+						Image(systemName: "photo.on.rectangle.angled")
+					}
+					.labelStyle(.iconOnly)
+					.help("Set poster frame")
+					.disabled(working)
+					Button {
+                        Task { await clearExternalPoster() }
+					} label: {
+						Image(systemName: "photo.slash")
+					}
+					.labelStyle(.iconOnly)
+					.help("Clear poster frame")
+					.disabled(working)
+				}
+            }
+        }
+    }
+
     private var remainingControls: some View {
         HStack(spacing: 7) {
             Image(systemName: "speaker.wave.2")
@@ -510,18 +536,7 @@ struct MovieViewer: View {
                 }
                 .help("Image enhancements")
             }
-            if options.setPoster && setPosterHandler != nil && !options.posterEdits {
-                // Casting-edit mode records a frame timestamp in the owning app.
-                // It does not edit embedded artwork and must not offer PhotoMenu.
-                Button {
-                    Task { await savePoster(edit: false) }
-                } label: {
-                    Image(systemName: "photo.on.rectangle.angled")
-                }
-                .labelStyle(.iconOnly)
-                .help("Set casting frame")
-                .disabled(working)
-            } else if options.setPoster {
+            if options.setPoster && (setPosterHandler == nil || options.posterEdits) {
                 PhotoMenu(
                     source: .deferred(
                         hasContent: posterHasContent,
@@ -576,6 +591,7 @@ struct MovieViewer: View {
                         timeline
                         Text(currentTimeText)
                             .monospacedDigit().frame(minWidth: 65, alignment: .leading)
+                        externalPosterControls
                     }
                     remainingControls
                 }
@@ -585,6 +601,7 @@ struct MovieViewer: View {
                     timeline
                     Text(currentTimeText)
                         .monospacedDigit().frame(minWidth: 74, alignment: .leading)
+                    externalPosterControls
                     remainingControls
                 }
             }
@@ -854,14 +871,29 @@ struct MovieViewer: View {
     }
 
     @MainActor
+    private func clearExternalPoster() async {
+        guard !working else { return }
+        working = true
+        defer { working = false }
+        do {
+            // External mode never modifies embedded movie artwork.
+            _ = try await setPosterHandler?(nil, nil)
+            errorMessage = nil
+        } catch {
+            errorMessage = "Could not clear poster frame: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
     private func clearPosterFromMenu() async throws {
         if let previous = posterSaveTask { try await previous.value }
         let task = Task { @MainActor in
             working = true
             defer { working = false }
-            try await clearPosterFrame(from: url)
+            let shouldClearEmbedded = try await setPosterHandler?(nil, nil) ?? true
+            if shouldClearEmbedded { try await clearPosterFrame(from: url) }
             posterHasContent = await hasPosterFrame(from: url)
-            guard posterHasContent == false else {
+            guard !shouldClearEmbedded || posterHasContent == false else {
                 throw NSError(domain: "SBJImaging.MovieViewer", code: 6,
                     userInfo: [NSLocalizedDescriptionKey: "Movie still contains poster artwork after Clear."])
             }

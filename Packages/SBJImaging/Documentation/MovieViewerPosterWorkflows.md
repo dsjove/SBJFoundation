@@ -2,7 +2,7 @@
 
 `MovieViewerOptions` defaults to `setPoster: true`, `colorEdits: true`,
 `posterEdits: true`. The last `MediaOpenRequest` initializer argument is
-`setPoster: MoviePosterHandler? = nil`, which receives `(TimeInterval, CGImage)`.
+`setPoster: MoviePosterHandler? = nil`, which receives `(TimeInterval?, CGImage?)`. The pair `(nil, nil)` means clear the selection.
 `false` means the owner handled the selected image and does **not** want the
 movie artwork updated. `true` means embed the edited full-resolution image in
 movie metadata. With no handler, the viewer embeds the image.
@@ -21,6 +21,7 @@ MediaOpenRequest(
     title: title, file: file,
     options: .init(setPoster: true, colorEdits: true, posterEdits: false),
     setPoster: { time, image in
+        // A nil timestamp clears the external casting marker.
         // Save the selected casting timestamp/image in the app's model.
         // No change to the movie's embedded artwork.
         await persistCastingPoster(time: time, image: image)
