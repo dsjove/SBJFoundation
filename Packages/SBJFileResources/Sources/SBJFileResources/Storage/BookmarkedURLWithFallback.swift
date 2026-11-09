@@ -16,6 +16,12 @@ public struct BookmarkedURLWithFallback {
         self.defaults = defaults
     }
 
+    public init(defaultsKey: String, defaults: UserDefaults = .standard) {
+        self.bookmarkKey = defaultsKey + ".bookmark"
+        self.pathKey = defaultsKey + ".path"
+        self.defaults = defaults
+    }
+
     /// The last known location, even when its volume is disconnected.
     public var fallbackURL: URL? {
         guard let path = defaults.string(forKey: pathKey), !path.isEmpty else { return nil }
