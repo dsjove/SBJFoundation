@@ -228,16 +228,27 @@ private struct NativeVideoSurface: UIViewControllerRepresentable {
 }
 #endif
 
-/// Controls the shared movie viewer's editing and poster actions on all platforms.
+/// Controls the poster source and available image tools on all platforms.
 public struct MovieViewerOptions: Sendable, Equatable {
-    public var setPoster: Bool
-    public var colorEdits: Bool
-    public var posterEdits: Bool
+    public enum PosterSource: Sendable, Equatable {
+        /// Select a frame at the current playback time; Set Frame and Clear controls.
+        case frame
+        /// Manage embedded movie artwork using PhotoMenu.
+        case photoMenu
+        /// Playback only; optionally inspect an adjusted current frame.
+        case none
+    }
 
-    public init(setPoster: Bool = true, colorEdits: Bool = true, posterEdits: Bool = true) {
-        self.setPoster = setPoster
-        self.colorEdits = colorEdits
-        self.posterEdits = posterEdits
+    public var posterSource: PosterSource
+    public var allowsColorAdjustments: Bool
+    public var allowsImageTools: Bool
+
+    public init(posterSource: PosterSource = .frame,
+                allowsColorAdjustments: Bool = true,
+                allowsImageTools: Bool = true) {
+        self.posterSource = posterSource
+        self.allowsColorAdjustments = allowsColorAdjustments
+        self.allowsImageTools = allowsImageTools
     }
 }
 
@@ -258,6 +269,8 @@ struct MovieViewer: View {
     @State private var posterSaveTask: Task<Void, Error>?
 
     @State private var posterEditInput: PosterEditInput?
+    @FocusState private var playbackKeyboardFocused: Bool
+    @State private var inspectedFrame: CGImage?
     @State private var posterEditOptions = PhotoEditorOptions.default
     @State private var enhancements = PhotoColorAdjustments()
     @State private var enhancementsEnabled = true
@@ -477,10 +490,10 @@ struct MovieViewer: View {
 
     private var externalPosterControls: some View {
         Group {
-            if options.setPoster && setPosterHandler != nil && !options.posterEdits {
+            if options.posterSource == .frame {
                 HStack {
 					Button {
-						Task { await savePoster(edit: false) }
+						Task { await savePoster(edit: options.allowsImageTools) }
 					} label: {
 						Image(systemName: "photo.on.rectangle.angled")
 					}
@@ -518,7 +531,7 @@ struct MovieViewer: View {
             } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
             .help("Full screen")
             ShowInFinder(url: url)
-            if options.colorEdits {
+            if options.allowsColorAdjustments {
             Button("Enhancements", systemImage: "slider.horizontal.3") {
                 showingEnhancements.toggle()
             }
@@ -536,7 +549,15 @@ struct MovieViewer: View {
                 }
                 .help("Image enhancements")
             }
-            if options.setPoster && (setPosterHandler == nil || options.posterEdits) {
+            if options.posterSource == .none && options.allowsImageTools {
+                Button("Inspect Current Frame", systemImage: "photo") {
+                    Task { await inspectCurrentFrame() }
+                }
+                .labelStyle(.iconOnly)
+                .help("View current frame")
+                .disabled(working)
+            }
+            if options.posterSource == .photoMenu {
                 PhotoMenu(
                     source: .deferred(
                         hasContent: posterHasContent,
@@ -563,6 +584,24 @@ struct MovieViewer: View {
                 .help("Poster frame options")
                 .disabled(working)
             }
+        }
+    }
+
+    /// A read-only photo inspection path; no poster callback or file modification.
+    @MainActor
+    private func inspectCurrentFrame() async {
+        guard !working else { return }
+        playback.pause()
+        working = true
+        defer { working = false }
+        guard let image = await getPosterFrame(from: url, at: playback.seconds) else {
+            errorMessage = "Could not extract the selected movie frame."
+            return
+        }
+        if options.allowsColorAdjustments && enhancementsEnabled && !enhancements.isNeutral {
+            inspectedFrame = enhancements.applying(to: image, context: pausedFrameContext) ?? image
+        } else {
+            inspectedFrame = image
         }
     }
 
@@ -702,6 +741,38 @@ struct MovieViewer: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
         #if os(macOS) || targetEnvironment(macCatalyst)
+        // The viewer itself receives Space when no control has keyboard focus.
+        // Never capture typing while the poster editor or image inspector is open.
+        .focusable()
+        .focused($playbackKeyboardFocused)
+        .onKeyPress(.space) {
+            guard posterEditInput == nil, inspectedFrame == nil, !working else {
+                return .ignored
+            }
+            playback.toggle()
+            return .handled
+        }
+        .task { playbackKeyboardFocused = true }
+        #endif
+        .overlay {
+            if let image = inspectedFrame {
+                ZStack(alignment: .topTrailing) {
+                    Color.black.ignoresSafeArea()
+                    Image(decorative: image, scale: 1)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    Button("Close image", systemImage: "xmark") {
+                        inspectedFrame = nil
+                    }
+                    .labelStyle(.iconOnly)
+                    .padding(18)
+                    .foregroundStyle(.white)
+                }
+                .zIndex(2)
+            }
+        }
+        #if os(macOS) || targetEnvironment(macCatalyst)
         // Replace the contents of this movie viewer window without entering
         // system fullscreen or presenting another scene/controller.
         // The overlay is constrained to the MovieViewer bounds.
@@ -805,9 +876,9 @@ struct MovieViewer: View {
                 option: posterEditOptions.effectiveInitialCrop,
                 sourceSize: CGSize(width: frame.width, height: frame.height)
             )),
-            color: options.colorEdits && enhancementsEnabled ? enhancements : .init()
+            color: options.allowsColorAdjustments && enhancementsEnabled ? enhancements : .init()
         )
-        if edit && options.posterEdits {
+        if edit && options.allowsImageTools {
             guard let resource = Self.posterResource(from: frame) else {
                 errorMessage = "Could not prepare the selected movie frame for editing."
                 working = false
@@ -861,7 +932,7 @@ struct MovieViewer: View {
         let task = Task { @MainActor in
             working = true
             defer { working = false }
-            let shouldEmbed = try await setPosterHandler?(playback.seconds, image) ?? true
+            let shouldEmbed = try await setPosterHandler?(nil, image) ?? true
             if shouldEmbed { try await setPosterFrame(from: url, image: image) }
             posterHasContent = await hasPosterFrame(from: url)
         }
@@ -876,8 +947,11 @@ struct MovieViewer: View {
         working = true
         defer { working = false }
         do {
-            // External mode never modifies embedded movie artwork.
-            _ = try await setPosterHandler?(nil, nil)
+            // The application's callback chooses whether clearing should also
+            // remove embedded artwork. An absent callback defaults to embedding.
+            let shouldClearEmbedded = try await setPosterHandler?(nil, nil) ?? true
+            if shouldClearEmbedded { try await clearPosterFrame(from: url) }
+            posterHasContent = await hasPosterFrame(from: url)
             errorMessage = nil
         } catch {
             errorMessage = "Could not clear poster frame: \(error.localizedDescription)"
@@ -891,7 +965,16 @@ struct MovieViewer: View {
             working = true
             defer { working = false }
             let shouldClearEmbedded = try await setPosterHandler?(nil, nil) ?? true
-            if shouldClearEmbedded { try await clearPosterFrame(from: url) }
+            if shouldClearEmbedded {
+                do {
+                    try await clearPosterFrame(from: url)
+                } catch {
+                    // PhotoMenu may replace the detailed failure with a generic alert.
+                    NSLog("Movie poster clear failed for %@: %@", url.lastPathComponent,
+                          String(describing: error))
+                    throw error
+                }
+            }
             posterHasContent = await hasPosterFrame(from: url)
             guard !shouldClearEmbedded || posterHasContent == false else {
                 throw NSError(domain: "SBJImaging.MovieViewer", code: 6,

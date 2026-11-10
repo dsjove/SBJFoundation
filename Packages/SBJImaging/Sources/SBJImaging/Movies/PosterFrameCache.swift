@@ -37,6 +37,9 @@ public final class PosterFrameCache {
     }
 
     private let images = NSCache<Key, Value>()
+    /// One extraction per key, shared by simultaneous requesters.
+    /// An invalidated request may finish, but cannot repopulate the cache.
+    private var inFlight: [Key: (id: UUID, task: Task<CGImage?, Never>)] = [:]
     private let fetch: @MainActor (Key) async -> CGImage?
 
     public init(countLimit: Int = 320, totalCostLimit: Int = 120 * 1024 * 1024,
@@ -53,22 +56,48 @@ public final class PosterFrameCache {
     @discardableResult
     public func thumbnail(for key: Key) async -> Value {
         if let existing = cached(key) { return existing }
-        let image = await fetch(key)
-        // An update may have populated the key while the fetch was running.
+        let request: (id: UUID, task: Task<CGImage?, Never>)
+        if let existingRequest = inFlight[key] {
+            request = existingRequest
+        } else {
+            let newRequest = (id: UUID(), task: Task { await fetch(key) })
+            inFlight[key] = newRequest
+            request = newRequest
+        }
+        let image = await request.task.value
+        // Invalidation may have started a new request while this one ran.
+        // Return its result to its original waiter, but never cache stale data.
+        guard inFlight[key]?.id == request.id else {
+            return Value(image, key: key)
+        }
+        inFlight.removeValue(forKey: key)
         if let existing = cached(key) { return existing }
+        // A cached Value with nil image is a negative result; a missing key
+        // means no extraction has yet been requested.
         let value = Value(image, key: key)
         images.setObject(value, forKey: key, cost: image.map { $0.bytesPerRow * $0.height } ?? 1)
         return value
     }
 
-    /// Replace one timestamp, without invalidating other frames for this file.
-    public func update(_ url: URL, old: TimeInterval?, new: TimeInterval?) async {
+    /// Invalidate synchronously on the main actor before publishing an observable
+    /// timestamp change. Otherwise a SwiftUI thumbnail task can reuse the old
+    /// cached (including nil-image) result before an asynchronous update runs.
+    /// In-flight extractions for either key must not repopulate stale entries.
+    public func invalidate(_ url: URL, old: TimeInterval?, new: TimeInterval?) {
         let oldKey = Key(url, old)
         let newKey = Key(url, new)
         images.removeObject(forKey: oldKey)
-        // Force a fresh thumbnail even when old and new times are equal.
+        inFlight.removeValue(forKey: oldKey)?.task.cancel()
         images.removeObject(forKey: newKey)
-        _ = await thumbnail(for: newKey)
+        inFlight.removeValue(forKey: newKey)?.task.cancel()
+    }
+
+    /// Invalidate and prefetch when an operation explicitly requests a refreshed
+    /// entry. Interactive timestamp edits instead use synchronous invalidation,
+    /// letting the thumbnail view request its visible frame.
+    public func update(_ url: URL, old: TimeInterval?, new: TimeInterval?) async {
+        invalidate(url, old: old, new: new)
+        _ = await thumbnail(for: Key(url, new))
     }
 }
 

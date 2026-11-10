@@ -65,7 +65,7 @@ public func getPosterFrame(
     // Videos must go through AVFoundation. ImageIO can return a container's
     // tiny preview image rather than a frame at the requested timestamp.
     #if !os(watchOS)
-    if url.isMovieMediaFile {
+    if url.isMovieMedia {
         let asset = AVURLAsset(url: url)
         if let time {
             guard time.isFinite else {
@@ -128,7 +128,7 @@ public func getPosterFrame(
 /// The asset metadata lookup is asynchronous and may still require file I/O.
 public func hasPosterFrame(from url: URL) async -> Bool {
     #if !os(watchOS)
-    guard url.isMovieMediaFile else { return false }
+    guard url.isMovieMedia else { return false }
     let asset = AVURLAsset(url: url)
     do {
         let metadata = try await asset.load(.metadata)
@@ -328,13 +328,21 @@ public enum PosterFrameWriteResult {
 
 public enum PosterFrameWriteError: LocalizedError {
     case invalidMovieURL, invalidTime, frameUnavailable, cannotEncodeFrame, cannotWriteArtwork
+    case exportUnavailable, unsupportedExportFormat, metadataReadFailed(String)
+    case exportFailed(String), verificationFailed(String), replacementFailed(String)
     public var errorDescription: String? {
         switch self {
         case .invalidMovieURL: return "Select a local movie file (.mov, .mp4, or .m4v)."
         case .invalidTime: return "The supplied movie time must be finite."
         case .frameUnavailable: return "No frame was available at the requested time."
         case .cannotEncodeFrame: return "Could not encode the selected frame."
-        case .cannotWriteArtwork: return "Could not embed the poster artwork in the movie."
+        case .cannotWriteArtwork: return "Could not write the poster artwork in the movie."
+        case .exportUnavailable: return "AVFoundation cannot create a passthrough export for this movie."
+        case .unsupportedExportFormat: return "AVFoundation cannot export this movie in its original format."
+        case .metadataReadFailed(let reason): return "Could not read movie metadata: \(reason)"
+        case .exportFailed(let reason): return "Movie metadata export failed: \(reason)"
+        case .verificationFailed(let reason): return "Exported movie verification failed: \(reason)"
+        case .replacementFailed(let reason): return "Could not replace the original movie: \(reason)"
         }
     }
 }
@@ -346,7 +354,7 @@ public func setPosterFrame(
     from url: URL,
     at time: TimeInterval
 ) async throws -> PosterFrameWriteResult {
-    guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    guard url.isMovieMedia else { throw PosterFrameWriteError.invalidMovieURL }
     guard time.isFinite else { throw PosterFrameWriteError.invalidTime }
 
     let started = CACurrentMediaTime()
@@ -375,20 +383,116 @@ public func setPosterFrame(
     from url: URL,
     image: CGImage
 ) async throws -> PosterFrameWriteResult {
-    guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    guard url.isMovieMedia else { throw PosterFrameWriteError.invalidMovieURL }
     posterLogger.notice("SET begin source=image file=\(url.lastPathComponent, privacy: .public)")
     let asset = AVURLAsset(url: url)
     return try await embedPosterFrame(image, in: url, asset: asset)
 }
 
+// Inspect each container metadata format, not only AVAsset.metadata. In some
+// QuickTime files artwork is exposed through format-specific keys and/or a
+// common-key projection, neither of which is safe to ignore when clearing.
+struct PosterMetadataSnapshot {
+    let items: [AVMetadataItem]
+    let commonItems: [AVMetadataItem]
+    let byFormat: [(format: AVMetadataFormat, items: [AVMetadataItem])]
+
+    var containsArtwork: Bool {
+        items.contains(where: isPosterArtworkItem)
+            || commonItems.contains(where: isPosterArtworkItem)
+            || byFormat.contains { $0.items.contains(where: isPosterArtworkItem) }
+    }
+}
+
+/// Detect AVFoundation's normalized identifiers as well as artwork-specific
+/// container keys. Avoid filtering unrelated binary metadata by data type.
+func isPosterArtworkItem(_ item: AVMetadataItem) -> Bool {
+    if item.identifier == .quickTimeMetadataArtwork || item.commonKey == .commonKeyArtwork {
+        return true
+    }
+    let identifier = item.identifier?.rawValue.lowercased() ?? ""
+    let key = (item.key as? String)?.lowercased() ?? ""
+    return identifier.contains("artwork")
+        || identifier.contains("coverart")
+        || identifier.contains("covr")
+        || identifier.contains("attachedpicture")
+        || key == "covr" || key == "apic"
+}
+
+private func posterMetadataIdentity(_ item: AVMetadataItem) -> String {
+    // Used only to avoid re-adding the same identifier from AVAsset.metadata
+    // and a format-specific collection. Keep distinct localized variants.
+    "\(item.keySpace?.rawValue ?? "")|\(item.identifier?.rawValue ?? "")|\(item.locale?.identifier ?? "")"
+}
+
+private func loadPosterMetadataSnapshot(from asset: AVAsset) async throws -> PosterMetadataSnapshot {
+    let items = try await asset.load(.metadata)
+    let commonItems = try await asset.load(.commonMetadata)
+    let formats = try await asset.load(.availableMetadataFormats)
+    var byFormat: [(format: AVMetadataFormat, items: [AVMetadataItem])] = []
+    for format in formats {
+        byFormat.append((format, try await asset.loadMetadata(for: format)))
+    }
+    return PosterMetadataSnapshot(items: items, commonItems: commonItems, byFormat: byFormat)
+}
+
+private func logPosterMetadata(_ snapshot: PosterMetadataSnapshot, stage: String) {
+    let top = snapshot.items.filter(isPosterArtworkItem)
+    let common = snapshot.commonItems.filter(isPosterArtworkItem)
+    posterLogger.notice("METADATA \(stage, privacy: .public) all=\(snapshot.items.count) common=\(snapshot.commonItems.count) artworkTop=\(top.count) artworkCommon=\(common.count)")
+    for (source, matching) in [("all", top), ("common", common)] {
+        for item in matching {
+            posterLogger.notice("METADATA \(stage, privacy: .public) source=\(source, privacy: .public) artwork identifier=\(item.identifier?.rawValue ?? "nil", privacy: .public) keySpace=\(item.keySpace?.rawValue ?? "nil", privacy: .public)")
+        }
+    }
+    for (format, items) in snapshot.byFormat {
+        let artwork = items.filter(isPosterArtworkItem)
+        posterLogger.notice("METADATA \(stage, privacy: .public) format=\(format.rawValue, privacy: .public) total=\(items.count) artwork=\(artwork.count)")
+        for item in artwork {
+            posterLogger.notice("METADATA \(stage, privacy: .public) artwork identifier=\(item.identifier?.rawValue ?? "nil", privacy: .public) keySpace=\(item.keySpace?.rawValue ?? "nil", privacy: .public)")
+        }
+    }
+}
+
+/// Prepare a complete explicit metadata replacement. AVFoundation's exported
+/// top-level metadata may omit keys surfaced by a container-specific format.
+/// Do not introduce duplicates when a key is already in the main collection.
+func filteredPosterMetadata(_ snapshot: PosterMetadataSnapshot) -> [AVMetadataItem] {
+    let legacyTimestampID = AVMetadataIdentifier(rawValue: "mdta/com.example.Casting.posterTime")
+    var kept = snapshot.items.filter {
+        !isPosterArtworkItem($0) && $0.identifier != legacyTimestampID
+    }
+    // Count occurrences rather than using a Set: multiple values can share
+    // the same identifier (e.g. multilingual or repeated metadata entries).
+    var existingCounts: [String: Int] = [:]
+    for item in kept { existingCounts[posterMetadataIdentity(item), default: 0] += 1 }
+    for entry in snapshot.byFormat {
+        var seenInFormat: [String: Int] = [:]
+        for item in entry.items where !isPosterArtworkItem(item)
+            && item.identifier != legacyTimestampID {
+            let identity = posterMetadataIdentity(item)
+            seenInFormat[identity, default: 0] += 1
+            if seenInFormat[identity, default: 0] > existingCounts[identity, default: 0] {
+                kept.append(item)
+                existingCounts[identity, default: 0] += 1
+            }
+        }
+    }
+    return kept
+}
+
 /// Removes embedded poster artwork while preserving the movie's other metadata
 /// and tracks. Uses the same staged passthrough export as poster updates.
 public func clearPosterFrame(from url: URL) async throws {
-    guard url.isFileURL && url.isMovieMediaFile else { throw PosterFrameWriteError.invalidMovieURL }
+    guard url.isMovieMedia else { throw PosterFrameWriteError.invalidMovieURL }
     let asset = AVURLAsset(url: url)
-    guard await writePosterMetadata(in: url, asset: asset, artwork: nil) else {
-        throw PosterFrameWriteError.cannotWriteArtwork
-    }
+    // A failed metadata read is not proof that the artwork is absent.
+    let snapshot: PosterMetadataSnapshot
+    do { snapshot = try await loadPosterMetadataSnapshot(from: asset) }
+    catch { throw PosterFrameWriteError.metadataReadFailed(error.localizedDescription) }
+    logPosterMetadata(snapshot, stage: "original-clear")
+    if !snapshot.containsArtwork { return }
+    try await writePosterMetadata(in: url, asset: asset, artwork: nil)
     await MainActor.run { posterFrameDidChange(at: url) }
 }
 
@@ -400,9 +504,7 @@ private func embedPosterFrame(
         throw PosterFrameWriteError.cannotEncodeFrame
     }
     posterLogger.notice("SET JPEG encoded sourceSize=\(imageDimensions(image), privacy: .public), bytes=\(data.count), elapsed=\(posterElapsed(started), privacy: .public)s")
-    guard await writePosterMetadata(in: url, asset: asset, artwork: data) else {
-        throw PosterFrameWriteError.cannotWriteArtwork
-    }
+    try await writePosterMetadata(in: url, asset: asset, artwork: data)
     posterLogger.notice("SET metadata committed elapsed=\(posterElapsed(started), privacy: .public)s")
     await MainActor.run { posterFrameDidChange(at: url) }
     return .embeddedArtwork
@@ -422,7 +524,7 @@ private func jpegData(for image: CGImage) -> Data? {
 /// before replacing the original file.
 private func writePosterMetadata(
     in url: URL, asset: AVURLAsset, artwork: Data?
-) async -> Bool {
+) async throws {
     let format: AVFileType
     switch url.pathExtension.lowercased() {
     case "mov": format = .mov
@@ -430,35 +532,30 @@ private func writePosterMetadata(
     case "m4v": format = .m4v
     default:
         posterLogger.error("METADATA unsupported file extension")
-        return false
+        throw PosterFrameWriteError.invalidMovieURL
     }
     guard let session = AVAssetExportSession(
         asset: asset, presetName: AVAssetExportPresetPassthrough
     ) else {
         posterLogger.warning("METADATA no passthrough export session")
-        return false
+        throw PosterFrameWriteError.exportUnavailable
     }
     guard session.supportedFileTypes.contains(format) else {
         posterLogger.warning("METADATA format not supported by passthrough export: \(url.pathExtension, privacy: .public)")
-        return false
+        throw PosterFrameWriteError.unsupportedExportFormat
     }
     let started = CACurrentMediaTime()
     posterLogger.notice("METADATA begin source=\(url.lastPathComponent, privacy: .public)")
-    let originalItems: [AVMetadataItem]
-    do { originalItems = try await asset.load(.metadata) }
+    let snapshot: PosterMetadataSnapshot
+    do { snapshot = try await loadPosterMetadataSnapshot(from: asset) }
     catch {
         posterLogger.error("METADATA original metadata read failed: \(error.localizedDescription, privacy: .public)")
-        return false
+        throw PosterFrameWriteError.metadataReadFailed(error.localizedDescription)
     }
-    posterLogger.notice("METADATA loaded source items=\(originalItems.count), elapsed=\(posterElapsed(started), privacy: .public)s")
-    // Remove legacy Casting timestamp and previous artwork entries, preserving
-    // every other metadata item.
-    let legacyTimestampID = AVMetadataIdentifier(rawValue: "mdta/com.example.Casting.posterTime")
-    var items = originalItems.filter {
-        $0.identifier != legacyTimestampID
-            && $0.identifier != .quickTimeMetadataArtwork
-            && $0.commonKey != .commonKeyArtwork
-    }
+    logPosterMetadata(snapshot, stage: "original-export")
+    // Explicit replacement, including format-specific keys, not merely the
+    // generic AVAsset.metadata projection.
+    var items = filteredPosterMetadata(snapshot)
     if let artwork {
         let item = AVMutableMetadataItem()
         item.identifier = .quickTimeMetadataArtwork
@@ -466,6 +563,21 @@ private func writePosterMetadata(
         item.dataType = "com.apple.metadata.datatype.JPEG"
         items.append(item)
     }
+    // AVAssetExportSession interprets an empty metadata array as permission to
+    // copy the source asset's metadata. When artwork was the only metadata,
+    // our filtered list is empty, so the artwork survives the export.
+    // Force an explicit, non-empty replacement with a blank QuickTime comment.
+    // This intentionally introduces a harmless blank comment; it is preferable
+    // to silently retaining poster artwork. The staged output is still verified
+    // and NEVER replaces the original if artwork survives.
+    if artwork == nil && items.isEmpty {
+        let sentinel = AVMutableMetadataItem()
+        sentinel.identifier = AVMetadataIdentifier(rawValue: "mdta/com.apple.quicktime.comment")
+        sentinel.value = " " as NSString
+        items.append(sentinel)
+        posterLogger.notice("METADATA clear: added blank QuickTime comment to prevent empty-metadata passthrough")
+    }
+    posterLogger.notice("METADATA supplying replacement items=\(items.count), elapsed=\(posterElapsed(started), privacy: .public)s")
     session.metadata = items
 
     let stagingURL = url.deletingLastPathComponent()
@@ -474,27 +586,40 @@ private func writePosterMetadata(
     do {
         posterLogger.notice("METADATA export starting elapsed=\(posterElapsed(started), privacy: .public)s")
         try await session.export(to: stagingURL, as: format)
-        posterLogger.notice("METADATA export completed elapsed=\(posterElapsed(started), privacy: .public)s")
-        if artwork != nil {
-            guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
-                posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
-                return false
-            }
-        } else {
-            guard !(await hasPosterFrame(from: stagingURL)) else {
-                posterLogger.error("METADATA exported movie still contains artwork; refusing replacement")
-                return false
-            }
+    } catch {
+        posterLogger.error("METADATA export failed: \(error.localizedDescription, privacy: .public)")
+        throw PosterFrameWriteError.exportFailed(error.localizedDescription)
+    }
+    posterLogger.notice("METADATA export completed elapsed=\(posterElapsed(started), privacy: .public)s")
+    if artwork != nil {
+        guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
+            posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
+            throw PosterFrameWriteError.verificationFailed("Selected poster artwork was not present or decodable in the exported movie.")
         }
-        posterLogger.notice("METADATA verification completed elapsed=\(posterElapsed(started), privacy: .public)s")
+    } else {
+        // Verification includes format-specific metadata (the original failure
+        // survived a filter based solely on top-level/common metadata).
+        let stagedAsset = AVURLAsset(url: stagingURL)
+        let staged: PosterMetadataSnapshot
+        do { staged = try await loadPosterMetadataSnapshot(from: stagedAsset) }
+        catch { throw PosterFrameWriteError.verificationFailed(error.localizedDescription) }
+        logPosterMetadata(staged, stage: "exported")
+        guard !staged.containsArtwork else {
+            posterLogger.error("METADATA exported movie still contains artwork; refusing replacement")
+            throw PosterFrameWriteError.verificationFailed(
+                "The exported movie still contains poster artwork; see per-format metadata identifiers in the console."
+            )
+        }
+    }
+    posterLogger.notice("METADATA verification completed elapsed=\(posterElapsed(started), privacy: .public)s")
+    do {
         _ = try FileManager.default.replaceItemAt(url, withItemAt: stagingURL,
                                                   backupItemName: nil, options: [])
-        posterLogger.notice("METADATA embedded artwork persisted format=\(url.pathExtension, privacy: .public), elapsed=\(posterElapsed(started), privacy: .public)s")
-        return true
     } catch {
-        posterLogger.error("METADATA export/replacement failed: \(error.localizedDescription, privacy: .public)")
-        return false
+        posterLogger.error("METADATA file replacement failed: \(error.localizedDescription, privacy: .public)")
+        throw PosterFrameWriteError.replacementFailed(error.localizedDescription)
     }
+    posterLogger.notice("METADATA poster artwork persisted format=\(url.pathExtension, privacy: .public), elapsed=\(posterElapsed(started), privacy: .public)s")
 }
 #endif
 

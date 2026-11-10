@@ -1,5 +1,8 @@
 import Foundation
 import SBJLocalization
+#if DEBUG && targetEnvironment(macCatalyst)
+import ObjectiveC.runtime
+#endif
 #if os(watchOS)
 import WatchKit
 #elseif canImport(UIKit)
@@ -26,6 +29,44 @@ private final class FinderOpenHandoff: @unchecked Sendable {
         // Retain the lease until after UIKit's completion callback.
         withExtendedLifetime(scope) {}
     }
+}
+#endif
+
+#if DEBUG && targetEnvironment(macCatalyst) && !WIDGET_TARGET
+/// Experimental Finder selection for Catalyst debug builds only. AppKit is not
+/// linked or imported: this works only if NSWorkspace is already available in
+/// the process's Objective-C runtime. Failure means "use the UIKit fallback".
+/// The Objective-C implementation returns Void, so a call is not confirmation
+/// that Finder actually selected the file.
+@MainActor
+private func debugRevealInFinder(_ file: URL, directory: URL?) -> Bool {
+    let attempt: () -> Bool = {
+        guard let workspaceClass = NSClassFromString("NSWorkspace") else {
+            NSLog("ShowInFinder: DEBUG NSWorkspace unavailable; falling back to folder")
+            return false
+        }
+        let sharedSelector = NSSelectorFromString("sharedWorkspace")
+        let revealSelector = NSSelectorFromString("activateFileViewerSelectingURLs:")
+        guard let sharedMethod = class_getClassMethod(workspaceClass, sharedSelector),
+              let revealMethod = class_getInstanceMethod(workspaceClass, revealSelector) else {
+            NSLog("ShowInFinder: DEBUG Finder selectors unavailable; falling back to folder")
+            return false
+        }
+
+        typealias SharedWorkspaceIMP = @convention(c) (AnyClass, Selector) -> Unmanaged<AnyObject>
+        typealias RevealFileIMP = @convention(c) (AnyObject, Selector, NSArray) -> Void
+        let getWorkspace = unsafeBitCast(method_getImplementation(sharedMethod), to: SharedWorkspaceIMP.self)
+        let reveal = unsafeBitCast(method_getImplementation(revealMethod), to: RevealFileIMP.self)
+        let workspace = getWorkspace(workspaceClass, sharedSelector).takeUnretainedValue()
+        NSLog("ShowInFinder: DEBUG attempting NSWorkspace selection: %@", file.path)
+        reveal(workspace, revealSelector, [file] as NSArray)
+        return true
+    }
+
+    if let directory {
+        return directory.withSecurityScopedAccess { _ in attempt() }
+    }
+    return file.withSecurityScopedAccess { _ in attempt() }
 }
 #endif
 
@@ -92,9 +133,12 @@ public extension URL {
             }
         }
 #elseif canImport(UIKit) && !WIDGET_TARGET
-        // Do not change the fallback behavior: Catalyst opens the containing
-        // folder, not the file selection, because AppKit's Finder selection API
-        // is unavailable here. Resource-value lookup occurs under the lease.
+        #if DEBUG && targetEnvironment(macCatalyst)
+        if debugRevealInFinder(self, directory: directory) { return }
+        #endif
+        // Keep the fallback behavior: Catalyst opens the containing
+        // folder when runtime selection is unavailable. Resource-value lookup
+        // occurs under the lease.
         let handoff = FinderOpenHandoff(file: self, directory: directory)
         let isDirectory = (try? resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory
         let folder = (isDirectory ?? (hasDirectoryPath || pathExtension.isEmpty))
