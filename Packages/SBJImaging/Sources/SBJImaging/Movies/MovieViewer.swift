@@ -576,7 +576,30 @@ struct MovieViewer: View {
                         }
                     ),
                     options: .all,
-                    viewerTitle: title
+                    viewerTitle: title,
+                    additionalSources: [
+                        PhotoMenuImportSource(
+                            id: "movie-current-frame",
+                            title: "Current Frame",
+                            systemImage: "film",
+                            load: {
+                                // Capture the position when the menu action is chosen,
+                                // not when the asynchronous frame extraction finishes.
+                                let seconds = playback.seconds
+                                playback.pause()
+                                guard let image = await getPosterFrame(from: url, at: seconds),
+                                      let resource = Self.posterResource(from: image) else {
+                                    throw NSError(
+                                        domain: "SBJImaging.MovieViewer",
+                                        code: 1,
+                                        userInfo: [NSLocalizedDescriptionKey:
+                                            "Could not extract the current movie frame."]
+                                    )
+                                }
+                                return resource
+                            }
+                        )
+                    ]
                 ) {
                     Image(systemName: "photo.on.rectangle.angled")
                         .accessibilityLabel("Poster frame options")

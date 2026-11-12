@@ -19,6 +19,20 @@ struct PhotoPublicAPIParityTests {
         )
         _ = PhotoMenu(source: deferred)
         _ = PhotoMenu(source: deferred) { Image(systemName: "photo") }
+        let currentFrame = PhotoMenuImportSource(
+            id: "current-frame",
+            title: "Current Frame",
+            systemImage: "film",
+            load: { SBJResourceContent(data: Data([0x89]), contentType: .png) }
+        )
+        _ = PhotoMenu(source: deferred, additionalSources: [currentFrame])
+        _ = PhotoMenu(resource: resource, additionalSources: [currentFrame])
+        _ = PhotoMenu(source: deferred, additionalSources: [currentFrame]) {
+            Image(systemName: "photo")
+        }
+        _ = PhotoMenu(resource: resource, additionalSources: [currentFrame]) {
+            Image(systemName: "photo")
+        }
         _ = PhotoMenu(resource: resource) { Image(systemName: "photo") }
         _ = PhotoLibrary.isAuthorized
     }

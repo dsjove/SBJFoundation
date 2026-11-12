@@ -59,6 +59,30 @@ private final class PhotoMenuState {
 /// with its saved geometry/color/markup, while an ordinary image is edited
 /// destructively in memory. Applications choose persistence semantics by what
 /// their resource binding stores; `PhotoMenu` has no separate preservation flag.
+/// An additional image-import choice supplied by a PhotoMenu client.
+///
+/// Loading is deferred until selection. The returned resource goes through the
+/// same optional editor and persistence boundary as Photos, Files, and Paste.
+/// Return nil to leave the saved image unchanged (for example, if cancelled).
+public struct PhotoMenuImportSource: Identifiable {
+    public let id: String
+    public let title: String
+    public let systemImage: String
+    public let load: @MainActor () async throws -> SBJResourceContent?
+
+    public init(
+        id: String,
+        title: String,
+        systemImage: String,
+        load: @escaping @MainActor () async throws -> SBJResourceContent?
+    ) {
+        self.id = id
+        self.title = title
+        self.systemImage = systemImage
+        self.load = load
+    }
+}
+
 public struct PhotoMenu<Content: View>: View {
     @Binding private var resource: SBJResourceContent?
     @Environment(\.presentationChromeSuppression) private var presentationChromeSuppression
@@ -67,6 +91,7 @@ public struct PhotoMenu<Content: View>: View {
 
     private let options: PhotoMenuOptions
     private let source: SBJResourceSource?
+    private let additionalSources: [PhotoMenuImportSource]
 
     /// Known absence suppresses read actions; unknown permits an attempt.
     private var canAcquireResource: Bool {
@@ -124,7 +149,8 @@ public struct PhotoMenu<Content: View>: View {
         options: PhotoMenuOptions = .all,
         viewerTitle: String? = nil,
         editImports: Bool = true,
-        editorOptions: PhotoEditorOptions = .default
+        editorOptions: PhotoEditorOptions = .default,
+        additionalSources: [PhotoMenuImportSource] = []
     ) where Content == _DefaultPhotoMenuLabel {
         self._resource = resource
         self.source = nil
@@ -132,6 +158,7 @@ public struct PhotoMenu<Content: View>: View {
         self.viewerTitle = viewerTitle
         self.editImports = editImports
         self.editorOptions = editorOptions
+        self.additionalSources = additionalSources
         self.label = { _DefaultPhotoMenuLabel(isFilled: resource.wrappedValue != nil) }
     }
 
@@ -141,6 +168,7 @@ public struct PhotoMenu<Content: View>: View {
         viewerTitle: String? = nil,
         editImports: Bool = true,
         editorOptions: PhotoEditorOptions = .default,
+        additionalSources: [PhotoMenuImportSource] = [],
         @ViewBuilder label: @escaping () -> Content
     ) {
         self._resource = resource
@@ -149,6 +177,7 @@ public struct PhotoMenu<Content: View>: View {
         self.viewerTitle = viewerTitle
         self.editImports = editImports
         self.editorOptions = editorOptions
+        self.additionalSources = additionalSources
         self.label = label
     }
 
@@ -158,7 +187,8 @@ public struct PhotoMenu<Content: View>: View {
         options: PhotoMenuOptions = .all,
         viewerTitle: String? = nil,
         editImports: Bool = true,
-        editorOptions: PhotoEditorOptions = .default
+        editorOptions: PhotoEditorOptions = .default,
+        additionalSources: [PhotoMenuImportSource] = []
     ) where Content == _DefaultPhotoMenuLabel {
         self._resource = .constant(nil)
         self.source = source
@@ -166,6 +196,7 @@ public struct PhotoMenu<Content: View>: View {
         self.viewerTitle = viewerTitle
         self.editImports = editImports
         self.editorOptions = editorOptions
+        self.additionalSources = additionalSources
         self.label = { _DefaultPhotoMenuLabel(isFilled: source.hasContent == true) }
     }
 
@@ -175,6 +206,7 @@ public struct PhotoMenu<Content: View>: View {
         viewerTitle: String? = nil,
         editImports: Bool = true,
         editorOptions: PhotoEditorOptions = .default,
+        additionalSources: [PhotoMenuImportSource] = [],
         @ViewBuilder label: @escaping () -> Content
     ) {
         self._resource = .constant(nil)
@@ -183,6 +215,7 @@ public struct PhotoMenu<Content: View>: View {
         self.viewerTitle = viewerTitle
         self.editImports = editImports
         self.editorOptions = editorOptions
+        self.additionalSources = additionalSources
         self.label = label
     }
 
@@ -203,6 +236,22 @@ public struct PhotoMenu<Content: View>: View {
                     sharePresenter.present(SBJSharePayload(image))
                 }
             }
+        }
+
+        ForEach(additionalSources) { importSource in
+            Button {
+                Task { @MainActor in
+                    await importFromAdditionalSource(importSource)
+                }
+            } label: {
+                if labelIsHidden {
+                    Image(systemName: importSource.systemImage)
+                        .accessibilityLabel(Text(importSource.title))
+                } else {
+                    Label(importSource.title, systemImage: importSource.systemImage)
+                }
+            }
+            .labelStyle(.titleAndIcon)
         }
 
         if options.contains(.photos), PhotoMenuOptions.canShowPhotos {
@@ -242,6 +291,7 @@ public struct PhotoMenu<Content: View>: View {
             } label: {
                 Label("Clear", symbol: SBJSymbology.delete)
             }
+            .labelStyle(.titleAndIcon)
         }
     }
 
@@ -260,6 +310,7 @@ public struct PhotoMenu<Content: View>: View {
                     .accessibilityLabel(title)
             }
         }
+        .labelStyle(.titleAndIcon)
     }
 
     @ViewBuilder
@@ -371,6 +422,16 @@ public struct PhotoMenu<Content: View>: View {
             withDataConformingToTypes: [UTType.image.identifier]
         ) || NSImage(pasteboard: .general) != nil
         #endif
+    }
+
+    @MainActor
+    private func importFromAdditionalSource(_ importSource: PhotoMenuImportSource) async {
+        do {
+            guard let imported = try await importSource.load(), !Task.isCancelled else { return }
+            acceptImported(imported)
+        } catch {
+            state.resourceLoadError = error.localizedDescription
+        }
     }
 
     @MainActor
