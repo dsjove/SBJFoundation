@@ -53,8 +53,23 @@ public final class PosterFrameCache {
         images.object(forKey: key)
     }
 
+    /// Record that an explicitly invalid time has no poster. This caches a
+    /// negative lookup without scheduling a frame extraction. In-flight work
+    /// for this key cannot overwrite the negative entry.
+    public func cacheMissingPoster(for key: Key) {
+        inFlight.removeValue(forKey: key)?.task.cancel()
+        images.setObject(Value(nil, key: key), forKey: key, cost: 1)
+    }
+
     @discardableResult
     public func thumbnail(for key: Key) async -> Value {
+        // Negative times are control sentinels, never valid extraction requests.
+        // A cache eviction must not cause a negative-time frame to be fetched.
+        if key.time.map({ $0 < 0 }) == true {
+            if let existing = cached(key) { return existing }
+            cacheMissingPoster(for: key)
+            return Value(nil, key: key)
+        }
         if let existing = cached(key) { return existing }
         let request: (id: UUID, task: Task<CGImage?, Never>)
         if let existingRequest = inFlight[key] {

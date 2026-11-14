@@ -4,13 +4,7 @@ import ImageIO
 import SwiftUI
 import UniformTypeIdentifiers
 import SBJFileResources
-import os
-import QuartzCore
 
-private let posterLogger = Logger(subsystem: "SBJImaging", category: "PosterFrame")
-private func posterElapsed(_ start: CFTimeInterval) -> String {
-    String(format: "%.3f", CACurrentMediaTime() - start)
-}
 
 /// Posted after embedded poster artwork has been successfully updated on disk.
 /// The object is the affected movie's file URL.
@@ -23,7 +17,6 @@ private func posterFrameDidChange(at url: URL) {
     NotificationCenter.default.post(name: .sbjPosterFrameDidChange, object: url.standardizedFileURL)
 }
 
-private func imageDimensions(_ image: CGImage) -> String { "\(image.width)x\(image.height)" }
 
 #if os(macOS)
 import AppKit
@@ -38,6 +31,23 @@ import AVFoundation
 #endif
 
 // MARK: - Common API
+
+/// A missing poster is represented by nil; failures to load or extract one throw.
+public enum PosterFrameReadError: LocalizedError {
+    case invalidTime
+    case unsupportedURL
+    case httpStatus(Int)
+    case unreadableImage
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidTime: "The movie frame time must be finite."
+        case .unsupportedURL: "The URL does not identify a supported image or movie."
+        case .httpStatus(let code): "The image server returned HTTP status \(code)."
+        case .unreadableImage: "The image could not be decoded."
+        }
+    }
+}
 
 /// Policy for movie files without a specified time and without a saved poster.
 /// The default respects an intentionally missing poster.
@@ -59,8 +69,7 @@ public func getPosterFrame(
     at time: TimeInterval? = nil,
     fitting size: CGSize? = nil,
     ifMissingPoster missingPoster: MissingPosterBehavior = .none
-) async -> CGImage? {
-    posterLogger.info("GET file=\(url.lastPathComponent, privacy: .public), timestamp=\(time.map(String.init(describing:)) ?? "none", privacy: .public)")
+) async throws -> CGImage? {
 
     // Videos must go through AVFoundation. ImageIO can return a container's
     // tiny preview image rather than a frame at the requested timestamp.
@@ -68,56 +77,40 @@ public func getPosterFrame(
     if url.isMovieMedia {
         let asset = AVURLAsset(url: url)
         if let time {
-            guard time.isFinite else {
-                posterLogger.error("GET invalid explicit timestamp")
-                return nil
-            }
+            guard time.isFinite else { throw PosterFrameReadError.invalidTime }
             let bounded = await boundedPosterTime(time, in: asset)
-            do {
-                let frame = try await generateFrameAtTime(
-                    from: asset,
-                    at: CMTime(seconds: bounded, preferredTimescale: 600)
-                )
-                posterLogger.info("GET source=explicitTimestamp at=\(bounded), size=\(imageDimensions(frame), privacy: .public)")
-                return fit(frame, within: size)
-            } catch {
-                posterLogger.error("GET explicit timestamp extraction failed: \(error.localizedDescription, privacy: .public)")
-                return nil
-            }
+            let frame = try await generateFrameAtTime(
+                from: asset,
+                at: CMTime(seconds: bounded, preferredTimescale: 600)
+            )
+            return fit(frame, within: size)
         }
 
         // Poster artwork is embedded in the movie. No timestamp or Finder icon is used.
-        if let image = await extractNativeEmbeddedPoster(from: url) {
-            posterLogger.info("GET source=embeddedArtwork size=\(imageDimensions(image), privacy: .public)")
+        if let image = try await extractNativeEmbeddedPoster(from: url) {
             return fit(image, within: size)
         }
-        posterLogger.debug("GET embedded artwork absent or undecodable")
 
         if missingPoster == .firstFrame {
-            do {
-                let frame = try await generateFrameAtTime(from: asset, at: .zero)
-                posterLogger.info("GET source=firstFrame size=\(imageDimensions(frame), privacy: .public)")
-                return fit(frame, within: size)
-            } catch {
-                posterLogger.error("GET first-frame extraction failed: \(error.localizedDescription, privacy: .public)")
-            }
+            let frame = try await generateFrameAtTime(from: asset, at: .zero)
+            return fit(frame, within: size)
         }
-        posterLogger.notice("GET no readable embedded poster")
         return nil
     }
     #endif
 
     // Still image input. No movie/poster metadata involved.
     if url.isFileURL {
-        let image = loadLocalImage(from: url, fitting: size)
-        if let image { posterLogger.info("GET source=imageFile size=\(imageDimensions(image), privacy: .public)") }
+        guard let image = loadLocalImage(from: url, fitting: size) else {
+            throw PosterFrameReadError.unreadableImage
+        }
         return image
     }
     if let scheme = url.scheme?.lowercased(),
        (scheme == "https" || scheme == "http"), isLikelyImageURL(url) {
-        return await loadRemoteImage(from: url, fitting: size)
+        return try await loadRemoteImage(from: url, fitting: size)
     }
-    return nil
+    throw PosterFrameReadError.unsupportedURL
 }
 
 /// Tests whether a movie advertises embedded poster artwork without decoding
@@ -126,23 +119,16 @@ public func getPosterFrame(
 /// This is a metadata-presence check, not a guarantee that the artwork can be
 /// decoded. A movie with only video frames (and no embedded artwork) returns false.
 /// The asset metadata lookup is asynchronous and may still require file I/O.
-public func hasPosterFrame(from url: URL) async -> Bool {
+public func hasPosterFrame(from url: URL) async throws -> Bool {
     #if !os(watchOS)
     guard url.isMovieMedia else { return false }
     let asset = AVURLAsset(url: url)
-    do {
-        let metadata = try await asset.load(.metadata)
-        if metadata.contains(where: { $0.identifier == .quickTimeMetadataArtwork }) {
-            return true
-        }
-        let common = try await asset.load(.commonMetadata)
-        return !AVMetadataItem.metadataItems(
-            from: common, withKey: AVMetadataKey.commonKeyArtwork, keySpace: .common
-        ).isEmpty
-    } catch {
-        posterLogger.debug("POSTER presence lookup failed file=\(url.lastPathComponent, privacy: .public): \(error.localizedDescription, privacy: .public)")
-        return false
-    }
+    // Mirror the same metadata sources and priority used by
+    // extractNativeEmbeddedPoster, without loading item values or image bytes.
+    let metadata = try await asset.load(.metadata)
+    if !quickTimePosterItems(in: metadata).isEmpty { return true }
+    let common = try await asset.load(.commonMetadata)
+    return !commonPosterItems(in: common).isEmpty
     #else
     return false
     #endif
@@ -152,24 +138,24 @@ public func hasPosterFrame(from url: URL) async -> Bool {
 
 #if os(iOS) || os(tvOS) || os(visionOS)
 func getPosterFrameAsUIImage(from url: URL, at time: TimeInterval? = nil, fitting size: CGSize? = nil,
-                                   ifMissingPoster missingPoster: MissingPosterBehavior = .none) async -> UIImage? {
-    guard let image = await getPosterFrame(from: url, at: time, fitting: size, ifMissingPoster: missingPoster) else { return nil }
+                                   ifMissingPoster missingPoster: MissingPosterBehavior = .none) async throws -> UIImage? {
+    guard let image = try await getPosterFrame(from: url, at: time, fitting: size, ifMissingPoster: missingPoster) else { return nil }
     return UIImage(cgImage: image)
 }
 #endif
 
 #if os(macOS)
 func getPosterFrameAsNSImage(from url: URL, at time: TimeInterval? = nil, fitting size: CGSize? = nil,
-                                    ifMissingPoster missingPoster: MissingPosterBehavior = .none) async -> NSImage? {
-    guard let image = await getPosterFrame(from: url, at: time, fitting: size, ifMissingPoster: missingPoster) else { return nil }
+                                    ifMissingPoster missingPoster: MissingPosterBehavior = .none) async throws -> NSImage? {
+    guard let image = try await getPosterFrame(from: url, at: time, fitting: size, ifMissingPoster: missingPoster) else { return nil }
     return NSImage(cgImage: image, size: CGSize(width: image.width, height: image.height))
 }
 #endif
 
 /// Available on iOS, macOS, and watchOS without UIKit or AppKit conversions.
 func getPosterFrameAsSwiftUIImage(from url: URL, at time: TimeInterval? = nil, fitting size: CGSize? = nil,
-                                         ifMissingPoster missingPoster: MissingPosterBehavior = .none) async -> SwiftUI.Image? {
-    guard let image = await getPosterFrame(from: url, at: time, fitting: size, ifMissingPoster: missingPoster) else { return nil }
+                                         ifMissingPoster missingPoster: MissingPosterBehavior = .none) async throws -> SwiftUI.Image? {
+    guard let image = try await getPosterFrame(from: url, at: time, fitting: size, ifMissingPoster: missingPoster) else { return nil }
     return SwiftUI.Image(decorative: image, scale: 1)
 }
 
@@ -244,32 +230,58 @@ private func decodeImage(_ data: Data, fitting size: CGSize? = nil) -> CGImage? 
 }
 
 private func loadLocalImage(from url: URL, fitting size: CGSize? = nil) -> CGImage? {
-    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
-    return imageFromSource(source, fitting: size)
+    if let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+       let image = imageFromSource(source, fitting: size) {
+        return image
+    }
+    // Some file types (notably WebP on certain OS versions) are supported by
+    // the platform image loader even when ImageIO cannot decode them directly.
+    #if os(macOS)
+    if let image = NSImage(contentsOf: url),
+       let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+        return fit(cgImage, within: size)
+    }
+    #elseif os(iOS) || os(tvOS) || os(visionOS)
+    if let image = UIImage(contentsOfFile: url.path), let cgImage = image.cgImage {
+        return fit(cgImage, within: size)
+    }
+    #endif
+    return nil
 }
 
-private func loadRemoteImage(from url: URL, fitting size: CGSize? = nil) async -> CGImage? {
-    guard let (data, response) = try? await URLSession.shared.data(from: url) else {
-        return nil
-    }
+private func loadRemoteImage(from url: URL, fitting size: CGSize? = nil) async throws -> CGImage? {
+    let (data, response) = try await URLSession.shared.data(from: url)
     if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-        return nil
+        throw PosterFrameReadError.httpStatus(http.statusCode)
     }
-    return decodeImage(data, fitting: size)
+    guard let image = decodeImage(data, fitting: size) else {
+        throw PosterFrameReadError.unreadableImage
+    }
+    return image
 }
 
 #if !os(watchOS)
 // MARK: - Videos
 
+// Both the inexpensive presence check and the artwork reader use precisely
+// these keys. Neither helper decodes or validates an image.
+private func quickTimePosterItems(in metadata: [AVMetadataItem]) -> [AVMetadataItem] {
+    metadata.filter { $0.identifier == .quickTimeMetadataArtwork }
+}
+
+private func commonPosterItems(in metadata: [AVMetadataItem]) -> [AVMetadataItem] {
+    AVMetadataItem.metadataItems(
+        from: metadata, withKey: AVMetadataKey.commonKeyArtwork, keySpace: .common
+    )
+}
+
 // Reads embedded artwork (when present), not a guaranteed video poster frame.
-private func extractNativeEmbeddedPoster(from url: URL) async -> CGImage? {
+private func extractNativeEmbeddedPoster(from url: URL) async throws -> CGImage? {
     let asset = AVURLAsset(url: url)
     do {
         let metadata = try await asset.load(.metadata)
         let common = try await asset.load(.commonMetadata)
-        let items = metadata.filter { $0.identifier == .quickTimeMetadataArtwork } +
-            AVMetadataItem.metadataItems(from: common,
-                withKey: AVMetadataKey.commonKeyArtwork, keySpace: .common)
+        let items = quickTimePosterItems(in: metadata) + commonPosterItems(in: common)
 
         guard let item = items.first else { return nil }
         let value = try await item.load(.value)
@@ -282,7 +294,7 @@ private func extractNativeEmbeddedPoster(from url: URL) async -> CGImage? {
             return try await generateFrameAtTime(from: asset, at: time)
         }
     } catch {
-        return nil
+        throw error
     }
     return nil
 }
@@ -356,12 +368,8 @@ public func setPosterFrame(
 ) async throws -> PosterFrameWriteResult {
     guard url.isMovieMedia else { throw PosterFrameWriteError.invalidMovieURL }
     guard time.isFinite else { throw PosterFrameWriteError.invalidTime }
-
-    let started = CACurrentMediaTime()
-    posterLogger.notice("SET begin source=timestamp file=\(url.lastPathComponent, privacy: .public)")
     let asset = AVURLAsset(url: url)
     let bounded = await boundedPosterTime(time, in: asset)
-    posterLogger.notice("SET bounded time elapsed=\(posterElapsed(started), privacy: .public)s")
     let frame: CGImage
     do {
         frame = try await generateFrameAtTime(
@@ -369,10 +377,8 @@ public func setPosterFrame(
             at: CMTime(seconds: bounded, preferredTimescale: 600)
         )
     } catch {
-        posterLogger.error("SET frame extraction failed: \(error.localizedDescription, privacy: .public)")
         throw PosterFrameWriteError.frameUnavailable
     }
-    posterLogger.notice("SET extracted at=\(bounded), size=\(imageDimensions(frame), privacy: .public), elapsed=\(posterElapsed(started), privacy: .public)s")
     return try await embedPosterFrame(frame, in: url, asset: asset)
 }
 
@@ -384,7 +390,6 @@ public func setPosterFrame(
     image: CGImage
 ) async throws -> PosterFrameWriteResult {
     guard url.isMovieMedia else { throw PosterFrameWriteError.invalidMovieURL }
-    posterLogger.notice("SET begin source=image file=\(url.lastPathComponent, privacy: .public)")
     let asset = AVURLAsset(url: url)
     return try await embedPosterFrame(image, in: url, asset: asset)
 }
@@ -436,23 +441,6 @@ private func loadPosterMetadataSnapshot(from asset: AVAsset) async throws -> Pos
     return PosterMetadataSnapshot(items: items, commonItems: commonItems, byFormat: byFormat)
 }
 
-private func logPosterMetadata(_ snapshot: PosterMetadataSnapshot, stage: String) {
-    let top = snapshot.items.filter(isPosterArtworkItem)
-    let common = snapshot.commonItems.filter(isPosterArtworkItem)
-    posterLogger.notice("METADATA \(stage, privacy: .public) all=\(snapshot.items.count) common=\(snapshot.commonItems.count) artworkTop=\(top.count) artworkCommon=\(common.count)")
-    for (source, matching) in [("all", top), ("common", common)] {
-        for item in matching {
-            posterLogger.notice("METADATA \(stage, privacy: .public) source=\(source, privacy: .public) artwork identifier=\(item.identifier?.rawValue ?? "nil", privacy: .public) keySpace=\(item.keySpace?.rawValue ?? "nil", privacy: .public)")
-        }
-    }
-    for (format, items) in snapshot.byFormat {
-        let artwork = items.filter(isPosterArtworkItem)
-        posterLogger.notice("METADATA \(stage, privacy: .public) format=\(format.rawValue, privacy: .public) total=\(items.count) artwork=\(artwork.count)")
-        for item in artwork {
-            posterLogger.notice("METADATA \(stage, privacy: .public) artwork identifier=\(item.identifier?.rawValue ?? "nil", privacy: .public) keySpace=\(item.keySpace?.rawValue ?? "nil", privacy: .public)")
-        }
-    }
-}
 
 /// Prepare a complete explicit metadata replacement. AVFoundation's exported
 /// top-level metadata may omit keys surfaced by a container-specific format.
@@ -490,7 +478,6 @@ public func clearPosterFrame(from url: URL) async throws {
     let snapshot: PosterMetadataSnapshot
     do { snapshot = try await loadPosterMetadataSnapshot(from: asset) }
     catch { throw PosterFrameWriteError.metadataReadFailed(error.localizedDescription) }
-    logPosterMetadata(snapshot, stage: "original-clear")
     if !snapshot.containsArtwork { return }
     try await writePosterMetadata(in: url, asset: asset, artwork: nil)
     await MainActor.run { posterFrameDidChange(at: url) }
@@ -499,13 +486,10 @@ public func clearPosterFrame(from url: URL) async throws {
 private func embedPosterFrame(
     _ image: CGImage, in url: URL, asset: AVURLAsset
 ) async throws -> PosterFrameWriteResult {
-    let started = CACurrentMediaTime()
     guard let data = jpegData(for: image) else {
         throw PosterFrameWriteError.cannotEncodeFrame
     }
-    posterLogger.notice("SET JPEG encoded sourceSize=\(imageDimensions(image), privacy: .public), bytes=\(data.count), elapsed=\(posterElapsed(started), privacy: .public)s")
     try await writePosterMetadata(in: url, asset: asset, artwork: data)
-    posterLogger.notice("SET metadata committed elapsed=\(posterElapsed(started), privacy: .public)s")
     await MainActor.run { posterFrameDidChange(at: url) }
     return .embeddedArtwork
 }
@@ -531,28 +515,21 @@ private func writePosterMetadata(
     case "mp4": format = .mp4
     case "m4v": format = .m4v
     default:
-        posterLogger.error("METADATA unsupported file extension")
         throw PosterFrameWriteError.invalidMovieURL
     }
     guard let session = AVAssetExportSession(
         asset: asset, presetName: AVAssetExportPresetPassthrough
     ) else {
-        posterLogger.warning("METADATA no passthrough export session")
         throw PosterFrameWriteError.exportUnavailable
     }
     guard session.supportedFileTypes.contains(format) else {
-        posterLogger.warning("METADATA format not supported by passthrough export: \(url.pathExtension, privacy: .public)")
         throw PosterFrameWriteError.unsupportedExportFormat
     }
-    let started = CACurrentMediaTime()
-    posterLogger.notice("METADATA begin source=\(url.lastPathComponent, privacy: .public)")
     let snapshot: PosterMetadataSnapshot
     do { snapshot = try await loadPosterMetadataSnapshot(from: asset) }
     catch {
-        posterLogger.error("METADATA original metadata read failed: \(error.localizedDescription, privacy: .public)")
         throw PosterFrameWriteError.metadataReadFailed(error.localizedDescription)
     }
-    logPosterMetadata(snapshot, stage: "original-export")
     // Explicit replacement, including format-specific keys, not merely the
     // generic AVAsset.metadata projection.
     var items = filteredPosterMetadata(snapshot)
@@ -575,25 +552,22 @@ private func writePosterMetadata(
         sentinel.identifier = AVMetadataIdentifier(rawValue: "mdta/com.apple.quicktime.comment")
         sentinel.value = " " as NSString
         items.append(sentinel)
-        posterLogger.notice("METADATA clear: added blank QuickTime comment to prevent empty-metadata passthrough")
     }
-    posterLogger.notice("METADATA supplying replacement items=\(items.count), elapsed=\(posterElapsed(started), privacy: .public)s")
     session.metadata = items
 
     let stagingURL = url.deletingLastPathComponent()
         .appendingPathComponent(".CastingPoster-\(UUID().uuidString).\(url.pathExtension)")
     defer { try? FileManager.default.removeItem(at: stagingURL) }
     do {
-        posterLogger.notice("METADATA export starting elapsed=\(posterElapsed(started), privacy: .public)s")
         try await session.export(to: stagingURL, as: format)
     } catch {
-        posterLogger.error("METADATA export failed: \(error.localizedDescription, privacy: .public)")
         throw PosterFrameWriteError.exportFailed(error.localizedDescription)
     }
-    posterLogger.notice("METADATA export completed elapsed=\(posterElapsed(started), privacy: .public)s")
     if artwork != nil {
-        guard await extractNativeEmbeddedPoster(from: stagingURL) != nil else {
-            posterLogger.error("METADATA exported artwork cannot be decoded; refusing replacement")
+        let verified: CGImage?
+        do { verified = try await extractNativeEmbeddedPoster(from: stagingURL) }
+        catch { throw PosterFrameWriteError.verificationFailed(error.localizedDescription) }
+        guard verified != nil else {
             throw PosterFrameWriteError.verificationFailed("Selected poster artwork was not present or decodable in the exported movie.")
         }
     } else {
@@ -603,23 +577,18 @@ private func writePosterMetadata(
         let staged: PosterMetadataSnapshot
         do { staged = try await loadPosterMetadataSnapshot(from: stagedAsset) }
         catch { throw PosterFrameWriteError.verificationFailed(error.localizedDescription) }
-        logPosterMetadata(staged, stage: "exported")
         guard !staged.containsArtwork else {
-            posterLogger.error("METADATA exported movie still contains artwork; refusing replacement")
             throw PosterFrameWriteError.verificationFailed(
-                "The exported movie still contains poster artwork; see per-format metadata identifiers in the console."
+                "The exported movie still contains poster artwork."
             )
         }
     }
-    posterLogger.notice("METADATA verification completed elapsed=\(posterElapsed(started), privacy: .public)s")
     do {
         _ = try FileManager.default.replaceItemAt(url, withItemAt: stagingURL,
                                                   backupItemName: nil, options: [])
     } catch {
-        posterLogger.error("METADATA file replacement failed: \(error.localizedDescription, privacy: .public)")
         throw PosterFrameWriteError.replacementFailed(error.localizedDescription)
     }
-    posterLogger.notice("METADATA poster artwork persisted format=\(url.pathExtension, privacy: .public), elapsed=\(posterElapsed(started), privacy: .public)s")
 }
 #endif
 

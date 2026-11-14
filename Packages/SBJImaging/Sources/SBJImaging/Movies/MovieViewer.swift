@@ -413,7 +413,7 @@ struct MovieViewer: View {
         pausedFrameTask = Task { @MainActor in
             // Limit decoding to display resolution. The saved poster still
             // uses the original full-resolution frame-generation path.
-            let frame = await getPosterFrame(from: url, at: time,
+            let frame = try? await getPosterFrame(from: url, at: time,
                                              fitting: CGSize(width: 1920, height: 1080))
             guard !Task.isCancelled, !playback.isPlaying,
                   abs(playback.seconds - time) < 0.05 else { return }
@@ -564,7 +564,7 @@ struct MovieViewer: View {
                         load: {
                             // The resource is the existing poster, not a temporary
                             // frame at the current playback position.
-                            guard let image = await getPosterFrame(from: url) else { return nil }
+                            guard let image = try await getPosterFrame(from: url) else { return nil }
                             return Self.posterResource(from: image)
                         },
                         save: { resource in
@@ -587,7 +587,7 @@ struct MovieViewer: View {
                                 // not when the asynchronous frame extraction finishes.
                                 let seconds = playback.seconds
                                 playback.pause()
-                                guard let image = await getPosterFrame(from: url, at: seconds),
+                                guard let image = try await getPosterFrame(from: url, at: seconds),
                                       let resource = Self.posterResource(from: image) else {
                                     throw NSError(
                                         domain: "SBJImaging.MovieViewer",
@@ -617,7 +617,7 @@ struct MovieViewer: View {
         playback.pause()
         working = true
         defer { working = false }
-        guard let image = await getPosterFrame(from: url, at: playback.seconds) else {
+        guard let image = try? await getPosterFrame(from: url, at: playback.seconds) else {
             errorMessage = "Could not extract the selected movie frame."
             return
         }
@@ -833,12 +833,12 @@ struct MovieViewer: View {
             refreshPausedFrame()
         }
         .task(id: url) {
-            posterHasContent = await hasPosterFrame(from: url)
+            posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
         }
         .onReceive(NotificationCenter.default.publisher(for: .sbjPosterFrameDidChange)) { notification in
             guard let changed = notification.object as? URL,
                   changed.standardizedFileURL == url.standardizedFileURL else { return }
-            Task { posterHasContent = await hasPosterFrame(from: url) }
+            Task { posterHasContent = (try? await hasPosterFrame(from: url)) ?? false }
         }
         #if os(iOS) || os(visionOS)
         .fullScreenCover(isPresented: $fullscreen) {
@@ -888,7 +888,7 @@ struct MovieViewer: View {
         working = true
         errorMessage = nil
         let time = playback.seconds
-        guard let frame = await getPosterFrame(from: url, at: time) else {
+        guard let frame = try? await getPosterFrame(from: url, at: time) else {
             errorMessage = "Could not extract the selected movie frame."
             working = false
             return
@@ -957,7 +957,7 @@ struct MovieViewer: View {
             defer { working = false }
             let shouldEmbed = try await setPosterHandler?(nil, image) ?? true
             if shouldEmbed { try await setPosterFrame(from: url, image: image) }
-            posterHasContent = await hasPosterFrame(from: url)
+            posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
         }
         posterSaveTask = task
         defer { posterSaveTask = nil }
@@ -974,7 +974,7 @@ struct MovieViewer: View {
             // remove embedded artwork. An absent callback defaults to embedding.
             let shouldClearEmbedded = try await setPosterHandler?(nil, nil) ?? true
             if shouldClearEmbedded { try await clearPosterFrame(from: url) }
-            posterHasContent = await hasPosterFrame(from: url)
+            posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
             errorMessage = nil
         } catch {
             errorMessage = "Could not clear poster frame: \(error.localizedDescription)"
@@ -998,7 +998,7 @@ struct MovieViewer: View {
                     throw error
                 }
             }
-            posterHasContent = await hasPosterFrame(from: url)
+            posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
             guard !shouldClearEmbedded || posterHasContent == false else {
                 throw NSError(domain: "SBJImaging.MovieViewer", code: 6,
                     userInfo: [NSLocalizedDescriptionKey: "Movie still contains poster artwork after Clear."])

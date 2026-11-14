@@ -20,11 +20,5 @@ public extension SBJResourceContent {
         guard contentType.conforms(to: .image) else { return nil }
         return SBJImage(data: data)
     }
-
-    /// UIKit compatibility. Prefer `sbjImage` in shared APIs.
-    #if canImport(UIKit)
-    @available(*, deprecated, renamed: "sbjImage")
-    var uiImage: UIImage? { sbjImage }
-    #endif
 }
 #endif

@@ -114,13 +114,10 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 					}
 				}
 			}
-	#if os(macOS)
-			.navigationTitle(tagBag.title)
-	#elseif !os(watchOS) && !os(tvOS)
-			.navigationBarTitle(tagBag.title, displayMode: .inline)
-	#else
-			.navigationBarTitle(tagBag.title)
-	#endif
+            .navigationTitle(tagBag.title)
+#if !os(watchOS)
+            .sbjInlineNavigationTitle()
+#endif
 			.toolbar {
 				ToolbarItemGroup(placement: leadingToolbarPlacement) {
 					Button("Done") {
