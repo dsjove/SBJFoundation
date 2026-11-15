@@ -58,6 +58,7 @@ public struct CachedPosterThumbnail: View {
 
     @State private var lastKey: PosterFrameCache.Key?
     @State private var lastRevision: UInt64?
+    @State private var embeddedPosterRevision: UInt64 = 0
     @State private var current: CGImage?
 
     // Read the binding on every body evaluation. The editable initializer's
@@ -70,6 +71,7 @@ public struct CachedPosterThumbnail: View {
     private struct RequestID: Hashable {
         let key: PosterFrameCache.Key
         let revision: UInt64
+        let embeddedPosterRevision: UInt64
     }
     private var isInvalidTime: Bool {
         editableTime != nil && displayedTime.map { $0 < 0 } == true
@@ -102,7 +104,16 @@ public struct CachedPosterThumbnail: View {
         }
         .buttonStyle(.plain)
         .help(tapHelp)
-        .task(id: RequestID(key: key, revision: revision)) {
+        .onReceive(NotificationCenter.default.publisher(for: .sbjPosterFrameDidChange)) { notification in
+            guard let changed = notification.object as? URL,
+                  changed.standardizedFileURL == url.standardizedFileURL else { return }
+            // View-local revision forces this specific thumbnail to reload;
+            // shared cache eviction is handled by the cache below.
+            cache.invalidateEmbeddedPoster(for: url)
+            embeddedPosterRevision &+= 1
+        }
+        .task(id: RequestID(key: key, revision: revision,
+                            embeddedPosterRevision: embeddedPosterRevision)) {
             let requested = key
             // Evict before consulting the cache. This includes negative results
             // and prevents a changed observable timestamp reusing a stale frame.
@@ -111,11 +122,12 @@ public struct CachedPosterThumbnail: View {
             }
             // Embedded artwork changes only the nil-time frame. Explicit
             // selected video frames remain cached.
-            if let previousRevision = lastRevision, previousRevision != revision {
-                cache.invalidate(url, old: nil, new: nil)
+            let currentRevision = revision &+ embeddedPosterRevision
+            if let previousRevision = lastRevision, previousRevision != currentRevision {
+                cache.invalidateEmbeddedPoster(for: url)
             }
             lastKey = requested
-            lastRevision = revision
+            lastRevision = currentRevision
             if isInvalidTime {
                 current = nil
                 cache.cacheMissingPoster(for: requested)

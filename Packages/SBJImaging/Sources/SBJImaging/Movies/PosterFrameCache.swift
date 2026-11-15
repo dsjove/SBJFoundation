@@ -107,6 +107,14 @@ public final class PosterFrameCache {
         inFlight.removeValue(forKey: newKey)?.task.cancel()
     }
 
+    /// Embedded artwork is the nil-time entry; explicit video-frame thumbnails
+    /// must survive an embedded-poster update.
+    public func invalidateEmbeddedPoster(for url: URL) {
+        let key = Key(url, nil)
+        images.removeObject(forKey: key)
+        inFlight.removeValue(forKey: key)?.task.cancel()
+    }
+
     /// Invalidate and prefetch when an operation explicitly requests a refreshed
     /// entry. Interactive timestamp edits instead use synchronous invalidation,
     /// letting the thumbnail view request its visible frame.
