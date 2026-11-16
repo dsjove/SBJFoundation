@@ -5,6 +5,17 @@ import Testing
 @MainActor
 struct PosterFrameCacheTests {
 
+    @Test func keyIdentityUsesURLTimeAndReservedZeroRevision() {
+        let url = URL(fileURLWithPath: "/tmp/Key.mp4")
+        let first = PosterFrameCache.Key(url, 5)
+        let same = PosterFrameCache.Key(url, 5)
+        let differentTime = PosterFrameCache.Key(url, 6)
+        #expect(first.revision == 0)
+        #expect(first == same)
+        #expect(first.hash == same.hash)
+        #expect(first != differentTime)
+    }
+
     @Test func negativeTimeIsCachedAsMissingWithoutExtraction() async {
         var fetches = 0
         let cache = PosterFrameCache { _ in fetches += 1; return nil }
@@ -28,19 +39,4 @@ struct PosterFrameCacheTests {
         #expect(count == 1)
         #expect(cache.cached(PosterFrameCache.Key(url, 0)) == nil)
     }
-    @Test func embeddedPosterChangeInvalidatesOnlyNilTimestamp() async {
-        var fetches = 0
-        let cache = PosterFrameCache { _ in fetches += 1; return nil }
-        let url = URL(fileURLWithPath: "/tmp/poster-revision.mov")
-        let embedded = PosterFrameCache.Key(url, nil)
-        let explicit = PosterFrameCache.Key(url, 9)
-        _ = await cache.thumbnail(for: embedded)
-        _ = await cache.thumbnail(for: explicit)
-        cache.invalidateEmbeddedPoster(for: url)
-        #expect(cache.cached(embedded) == nil)
-        #expect(cache.cached(explicit) != nil)
-        _ = await cache.thumbnail(for: embedded)
-        #expect(fetches == 3)
-    }
-
 }

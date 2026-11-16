@@ -835,11 +835,6 @@ struct MovieViewer: View {
         .task(id: url) {
             posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
         }
-        .onReceive(NotificationCenter.default.publisher(for: .sbjPosterFrameDidChange)) { notification in
-            guard let changed = notification.object as? URL,
-                  changed.standardizedFileURL == url.standardizedFileURL else { return }
-            Task { posterHasContent = (try? await hasPosterFrame(from: url)) ?? false }
-        }
         #if os(iOS) || os(visionOS)
         .fullScreenCover(isPresented: $fullscreen) {
             VStack(spacing: 0) {

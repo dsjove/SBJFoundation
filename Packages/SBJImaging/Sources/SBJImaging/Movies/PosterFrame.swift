@@ -6,17 +6,6 @@ import UniformTypeIdentifiers
 import SBJFileResources
 
 
-/// Posted after embedded poster artwork has been successfully updated on disk.
-/// The object is the affected movie's file URL.
-public extension Notification.Name {
-    static let sbjPosterFrameDidChange = Notification.Name("SBJImaging.posterFrameDidChange")
-}
-
-@MainActor
-private func posterFrameDidChange(at url: URL) {
-    NotificationCenter.default.post(name: .sbjPosterFrameDidChange, object: url.standardizedFileURL)
-}
-
 
 #if os(macOS)
 import AppKit
@@ -480,7 +469,6 @@ public func clearPosterFrame(from url: URL) async throws {
     catch { throw PosterFrameWriteError.metadataReadFailed(error.localizedDescription) }
     if !snapshot.containsArtwork { return }
     try await writePosterMetadata(in: url, asset: asset, artwork: nil)
-    await MainActor.run { posterFrameDidChange(at: url) }
 }
 
 private func embedPosterFrame(
@@ -490,7 +478,6 @@ private func embedPosterFrame(
         throw PosterFrameWriteError.cannotEncodeFrame
     }
     try await writePosterMetadata(in: url, asset: asset, artwork: data)
-    await MainActor.run { posterFrameDidChange(at: url) }
     return .embeddedArtwork
 }
 

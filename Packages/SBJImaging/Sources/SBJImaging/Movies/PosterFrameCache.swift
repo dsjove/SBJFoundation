@@ -7,6 +7,10 @@ public final class PosterFrameCache {
     public final class Key: NSObject {
         public let url: URL
         public let time: TimeInterval?
+        /// Reserved for replacing image content without changing its URL or
+        /// poster timestamp. Such replacements are not currently supported,
+        /// so this revision remains zero.
+        public let revision: Int = 0
 
         public init(_ url: URL, _ time: TimeInterval?) {
             self.url = url.standardizedFileURL
@@ -17,12 +21,13 @@ public final class PosterFrameCache {
             var hasher = Hasher()
             hasher.combine(url)
             hasher.combine(time)
+            hasher.combine(revision)
             return hasher.finalize()
         }
 
         public override func isEqual(_ object: Any?) -> Bool {
             guard let other = object as? Key else { return false }
-            return url == other.url && time == other.time
+            return url == other.url && time == other.time && revision == other.revision
         }
     }
 
@@ -105,14 +110,6 @@ public final class PosterFrameCache {
         inFlight.removeValue(forKey: oldKey)?.task.cancel()
         images.removeObject(forKey: newKey)
         inFlight.removeValue(forKey: newKey)?.task.cancel()
-    }
-
-    /// Embedded artwork is the nil-time entry; explicit video-frame thumbnails
-    /// must survive an embedded-poster update.
-    public func invalidateEmbeddedPoster(for url: URL) {
-        let key = Key(url, nil)
-        images.removeObject(forKey: key)
-        inFlight.removeValue(forKey: key)?.task.cancel()
     }
 
     /// Invalidate and prefetch when an operation explicitly requests a refreshed
