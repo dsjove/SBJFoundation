@@ -97,7 +97,13 @@ public struct SBJEditorScrollView<Content: View>: View {
         ScrollViewReader { proxy in
             ScrollView {
                 content
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    // Catalyst needs a real hit-testable surface in the empty
+                    // gaps between editor controls to receive wheel scrolling.
+                    .background(Rectangle().fill(.background))
+                    .contentShape(Rectangle())
             }
+            .contentShape(Rectangle())
             .task(id: presentationModel.navigationRevision) {
                 guard let target = presentationModel.navigationTarget else { return }
 

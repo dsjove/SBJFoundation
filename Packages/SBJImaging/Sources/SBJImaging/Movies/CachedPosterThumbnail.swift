@@ -11,6 +11,7 @@ public struct CachedPosterThumbnail: View {
     public let cache: PosterFrameCache
     public let onPreview: (PosterFrameCache.Key) -> Void
 
+    private let missingPosterBehavior: MissingPosterBehavior
     private let size: CGSize
     private let placeholderSymbol: String
     private let editableTime: Binding<TimeInterval?>?
@@ -21,12 +22,14 @@ public struct CachedPosterThumbnail: View {
     public init(url: URL, time: TimeInterval?, cache: PosterFrameCache,
                 size: CGSize = CGSize(width: 76, height: 54),
                 placeholderSymbol: String = "film",
+                missingPosterBehavior: MissingPosterBehavior = .none,
                 onPreview: @escaping (PosterFrameCache.Key) -> Void) {
         self.url = url
         self.time = time
         self.cache = cache
         self.size = size
         self.placeholderSymbol = placeholderSymbol
+        self.missingPosterBehavior = missingPosterBehavior
         self.editableTime = nil
         self.noPosterTime = -1
         self.onPreview = onPreview
@@ -39,6 +42,7 @@ public struct CachedPosterThumbnail: View {
     public init(url: URL, time: Binding<TimeInterval?>, cache: PosterFrameCache,
                 size: CGSize = CGSize(width: 76, height: 54),
                 placeholderSymbol: String = "film",
+                missingPosterBehavior: MissingPosterBehavior = .none,
                 noPosterTime: TimeInterval = -1,
                 onPreview: @escaping (PosterFrameCache.Key) -> Void) {
         self.url = url
@@ -46,11 +50,13 @@ public struct CachedPosterThumbnail: View {
         self.cache = cache
         self.size = size
         self.placeholderSymbol = placeholderSymbol
+        self.missingPosterBehavior = missingPosterBehavior
         self.editableTime = time
         self.noPosterTime = noPosterTime
         self.onPreview = onPreview
     }
 
+    @State private var lastKey: PosterFrameCache.Key?
     @State private var current: CGImage?
 
     // Read the binding on every body evaluation. The editable initializer's
@@ -59,7 +65,9 @@ public struct CachedPosterThumbnail: View {
         if let editableTime { return editableTime.wrappedValue }
         return time
     }
-    private var key: PosterFrameCache.Key { PosterFrameCache.Key(url, displayedTime) }
+    private var key: PosterFrameCache.Key {
+        cache.key(for: url, at: displayedTime)
+    }
     private var isInvalidTime: Bool {
         editableTime != nil && displayedTime.map { $0 < 0 } == true
     }
@@ -91,19 +99,34 @@ public struct CachedPosterThumbnail: View {
         }
         .buttonStyle(.plain)
         .help(tapHelp)
-        // The URL and poster time completely identify supported image content.
-        // A changed key starts a new task; no NotificationCenter or client-owned
-        // revision is needed. Key.revision is reserved for future replacements.
         .task(id: key) {
             let requested = key
+            // Evict before consulting the cache. This includes negative results
+            // and prevents a changed observable timestamp reusing a stale frame.
+            if let previous = lastKey, previous.time != requested.time {
+                cache.invalidate(url, old: previous.time, new: requested.time)
+            }
+            lastKey = requested
             if isInvalidTime {
                 current = nil
                 cache.cacheMissingPoster(for: requested)
                 return
             }
+            // A nil casting time means no poster. Do not request or reuse the
+            // movie row's embedded artwork for the same URL and nil time.
+            if displayedTime == nil && missingPosterBehavior == .skipEmbedded {
+                current = nil
+                return
+            }
+            // The first-frame fallback is a distinct extraction policy. Keep
+            // it uncached rather than aliasing the nil-time embedded-poster key.
+            if displayedTime == nil && missingPosterBehavior == .firstFrame {
+                current = try? await getPosterFrame(from: url, ifMissingPoster: .firstFrame)
+                return
+            }
             current = cache.cached(requested)?.image
             let entry = await cache.thumbnail(for: requested)
-            guard !Task.isCancelled, key == requested else { return }
+            guard !Task.isCancelled, lastKey == requested else { return }
             current = entry.image
         }
     }

@@ -1,20 +1,22 @@
 import Foundation
 import CoreGraphics
+import Observation
 
 /// The optional time is part of the identity. Nil means no frame, not frame zero.
 @MainActor
+@Observable
 public final class PosterFrameCache {
     public final class Key: NSObject {
         public let url: URL
         public let time: TimeInterval?
-        /// Reserved for replacing image content without changing its URL or
-        /// poster timestamp. Such replacements are not currently supported,
-        /// so this revision remains zero.
-        public let revision: Int = 0
+        /// Explicit content replacement for the same URL and poster time.
+        public let revision: UInt64
 
-        public init(_ url: URL, _ time: TimeInterval?) {
+        public init(_ url: URL, _ time: TimeInterval?,
+                    revision: UInt64 = 0) {
             self.url = url.standardizedFileURL
             self.time = time
+            self.revision = revision
         }
 
         public override var hash: Int {
@@ -41,11 +43,33 @@ public final class PosterFrameCache {
         }
     }
 
-    private let images = NSCache<Key, Value>()
+    /// Embedded artwork revisions are local to the cache. Observing this value
+    /// causes only thumbnails for the changed movie to request new artwork.
+    private var embeddedRevisions: [URL: UInt64] = [:]
+
+    /// Identity used by a thumbnail. Explicit-time frames are independent of
+    /// embedded poster replacement and therefore always use revision zero.
+    public func key(for url: URL, at time: TimeInterval?) -> Key {
+        let normalized = url.standardizedFileURL
+        return Key(normalized, time,
+                   revision: time == nil ? embeddedRevisions[normalized, default: 0] : 0)
+    }
+
+    /// Call only after an embedded poster is successfully written or cleared.
+    /// Views observe key(for:at:) and refresh through their full key identity.
+    public func embeddedPosterDidChange(at url: URL) {
+        let normalized = url.standardizedFileURL
+        let old = key(for: normalized, at: nil)
+        images.removeObject(forKey: old)
+        inFlight.removeValue(forKey: old)?.task.cancel()
+        embeddedRevisions[normalized, default: 0] &+= 1
+    }
+
+    @ObservationIgnored private let images = NSCache<Key, Value>()
     /// One extraction per key, shared by simultaneous requesters.
     /// An invalidated request may finish, but cannot repopulate the cache.
-    private var inFlight: [Key: (id: UUID, task: Task<CGImage?, Never>)] = [:]
-    private let fetch: @MainActor (Key) async -> CGImage?
+    @ObservationIgnored private var inFlight: [Key: (id: UUID, task: Task<CGImage?, Never>)] = [:]
+    @ObservationIgnored private let fetch: @MainActor (Key) async -> CGImage?
 
     public init(countLimit: Int = 320, totalCostLimit: Int = 120 * 1024 * 1024,
                 fetch: @escaping @MainActor (Key) async -> CGImage?) {
@@ -104,12 +128,10 @@ public final class PosterFrameCache {
     /// cached (including nil-image) result before an asynchronous update runs.
     /// In-flight extractions for either key must not repopulate stale entries.
     public func invalidate(_ url: URL, old: TimeInterval?, new: TimeInterval?) {
-        let oldKey = Key(url, old)
-        let newKey = Key(url, new)
-        images.removeObject(forKey: oldKey)
-        inFlight.removeValue(forKey: oldKey)?.task.cancel()
-        images.removeObject(forKey: newKey)
-        inFlight.removeValue(forKey: newKey)?.task.cancel()
+        for key in [Key(url, old), Key(url, new)] {
+            images.removeObject(forKey: key)
+            inFlight.removeValue(forKey: key)?.task.cancel()
+        }
     }
 
     /// Invalidate and prefetch when an operation explicitly requests a refreshed

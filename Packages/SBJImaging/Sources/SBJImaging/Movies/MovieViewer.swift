@@ -228,34 +228,37 @@ private struct NativeVideoSurface: UIViewControllerRepresentable {
 }
 #endif
 
-/// Controls the poster source and available image tools on all platforms.
+/// Independent controls for selecting a sidecar frame and managing embedded artwork.
+/// Both workflows can coexist in one MovieViewer session.
 public struct MovieViewerOptions: Sendable, Equatable {
-    public enum PosterSource: Sendable, Equatable {
-        /// Select a frame at the current playback time; Set Frame and Clear controls.
-        case frame
-        /// Manage embedded movie artwork using PhotoMenu.
-        case photoMenu
-        /// Playback only; optionally inspect an adjusted current frame.
-        case none
-    }
-
-    public var posterSource: PosterSource
+    public var allowsFrameSelection: Bool
+    public var allowsEmbeddedPosterEditing: Bool
     public var allowsColorAdjustments: Bool
     public var allowsImageTools: Bool
 
-    public init(posterSource: PosterSource = .frame,
+    public init(allowsFrameSelection: Bool = true,
+                allowsEmbeddedPosterEditing: Bool = false,
                 allowsColorAdjustments: Bool = true,
                 allowsImageTools: Bool = true) {
-        self.posterSource = posterSource
+        self.allowsFrameSelection = allowsFrameSelection
+        self.allowsEmbeddedPosterEditing = allowsEmbeddedPosterEditing
         self.allowsColorAdjustments = allowsColorAdjustments
         self.allowsImageTools = allowsImageTools
     }
 }
 
-/// Non-nil values select a full-resolution frame. (nil, nil) clears the selection.
-/// Return false to keep all changes external to movie metadata.
-/// Return true to embed a selected image or clear embedded artwork.
-public typealias MoviePosterHandler = @MainActor (TimeInterval?, CGImage?) async throws -> Bool
+/// Explicitly distinguishes sidecar timestamp operations from embedded-artwork edits.
+/// In particular, clearing a timestamp must never clear embedded artwork.
+public enum MoviePosterAction {
+    case selectFrame(time: TimeInterval, image: CGImage)
+    case clearFrame
+    case embedArtwork(CGImage)
+    case clearArtwork
+}
+
+/// Return false if the application already persisted the action.
+/// Return true to let the viewer persist an embedded-artwork modification.
+public typealias MoviePosterHandler = @MainActor (MoviePosterAction) async throws -> Bool
 
 struct MovieViewer: View {
     let title: String
@@ -490,12 +493,14 @@ struct MovieViewer: View {
 
     private var externalPosterControls: some View {
         Group {
-            if options.posterSource == .frame {
+            if options.allowsFrameSelection {
                 HStack {
 					Button {
-						Task { await savePoster(edit: options.allowsImageTools) }
+						// When embedded-photo controls coexist, editing belongs to PhotoMenu,
+                        // not the sidecar timestamp-selection action.
+                        Task { await savePoster(edit: options.allowsImageTools && !options.allowsEmbeddedPosterEditing) }
 					} label: {
-						Image(systemName: "photo.on.rectangle.angled")
+						Image(systemName: "photo.stack")
 					}
 					.labelStyle(.iconOnly)
 					.help("Set poster frame")
@@ -549,7 +554,7 @@ struct MovieViewer: View {
                 }
                 .help("Image enhancements")
             }
-            if options.posterSource == .none && options.allowsImageTools {
+            if !options.allowsFrameSelection && !options.allowsEmbeddedPosterEditing && options.allowsImageTools {
                 Button("Inspect Current Frame", systemImage: "photo") {
                     Task { await inspectCurrentFrame() }
                 }
@@ -557,7 +562,7 @@ struct MovieViewer: View {
                 .help("View current frame")
                 .disabled(working)
             }
-            if options.posterSource == .photoMenu {
+            if options.allowsEmbeddedPosterEditing {
                 PhotoMenu(
                     source: .deferred(
                         hasContent: posterHasContent,
@@ -601,10 +606,10 @@ struct MovieViewer: View {
                         )
                     ]
                 ) {
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .accessibilityLabel("Poster frame options")
+                    Image(systemName: "person.crop.artframe")
+                        .accessibilityLabel("Embedded photo options")
                 }
-                .help("Poster frame options")
+                .help("Embedded photo options")
                 .disabled(working)
             }
         }
@@ -950,7 +955,7 @@ struct MovieViewer: View {
         let task = Task { @MainActor in
             working = true
             defer { working = false }
-            let shouldEmbed = try await setPosterHandler?(nil, image) ?? true
+            let shouldEmbed = try await setPosterHandler?(.embedArtwork(image)) ?? true
             if shouldEmbed { try await setPosterFrame(from: url, image: image) }
             posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
         }
@@ -967,7 +972,7 @@ struct MovieViewer: View {
         do {
             // The application's callback chooses whether clearing should also
             // remove embedded artwork. An absent callback defaults to embedding.
-            let shouldClearEmbedded = try await setPosterHandler?(nil, nil) ?? true
+            let shouldClearEmbedded = try await setPosterHandler?(.clearFrame) ?? false
             if shouldClearEmbedded { try await clearPosterFrame(from: url) }
             posterHasContent = (try? await hasPosterFrame(from: url)) ?? false
             errorMessage = nil
@@ -982,7 +987,7 @@ struct MovieViewer: View {
         let task = Task { @MainActor in
             working = true
             defer { working = false }
-            let shouldClearEmbedded = try await setPosterHandler?(nil, nil) ?? true
+            let shouldClearEmbedded = try await setPosterHandler?(.clearArtwork) ?? true
             if shouldClearEmbedded {
                 do {
                     try await clearPosterFrame(from: url)
@@ -1021,7 +1026,7 @@ struct MovieViewer: View {
         defer { working = false }
         do {
             // The handler is optional. Without it, the viewer embeds artwork.
-            let shouldEmbed = try await setPosterHandler?(time, image) ?? true
+            let shouldEmbed = try await setPosterHandler?(.selectFrame(time: time, image: image)) ?? true
             if shouldEmbed { try await setPosterFrame(from: url, image: image) }
             errorMessage = nil
         } catch {

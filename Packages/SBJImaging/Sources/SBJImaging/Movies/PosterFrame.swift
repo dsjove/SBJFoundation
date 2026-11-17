@@ -6,6 +6,17 @@ import UniformTypeIdentifiers
 import SBJFileResources
 
 
+/// Posted after embedded poster artwork has been successfully updated on disk.
+/// The object is the affected movie's file URL.
+public extension Notification.Name {
+    static let sbjPosterFrameDidChange = Notification.Name("SBJImaging.posterFrameDidChange")
+}
+
+@MainActor
+private func posterFrameDidChange(at url: URL) {
+    NotificationCenter.default.post(name: .sbjPosterFrameDidChange, object: url.standardizedFileURL)
+}
+
 
 #if os(macOS)
 import AppKit
@@ -40,9 +51,13 @@ public enum PosterFrameReadError: LocalizedError {
 
 /// Policy for movie files without a specified time and without a saved poster.
 /// The default respects an intentionally missing poster.
-public enum MissingPosterBehavior: Sendable {
+public enum MissingPosterBehavior: Hashable, Sendable {
+    /// Prefer the embedded poster when no timestamp is supplied.
     case none
+    /// If no poster is embedded, extract the first video frame.
     case firstFrame
+    /// For casting thumbnails, nil means no image even when a movie has an embedded poster.
+    case skipEmbedded
 }
 
 
@@ -74,6 +89,10 @@ public func getPosterFrame(
             )
             return fit(frame, within: size)
         }
+
+        // Casting thumbnails do not inherit a movie's embedded poster when the
+        // casting has no selected timestamp. Explicit times still extract frames.
+        if missingPoster == .skipEmbedded { return nil }
 
         // Poster artwork is embedded in the movie. No timestamp or Finder icon is used.
         if let image = try await extractNativeEmbeddedPoster(from: url) {
@@ -469,6 +488,7 @@ public func clearPosterFrame(from url: URL) async throws {
     catch { throw PosterFrameWriteError.metadataReadFailed(error.localizedDescription) }
     if !snapshot.containsArtwork { return }
     try await writePosterMetadata(in: url, asset: asset, artwork: nil)
+    await MainActor.run { posterFrameDidChange(at: url) }
 }
 
 private func embedPosterFrame(
@@ -478,6 +498,7 @@ private func embedPosterFrame(
         throw PosterFrameWriteError.cannotEncodeFrame
     }
     try await writePosterMetadata(in: url, asset: asset, artwork: data)
+    await MainActor.run { posterFrameDidChange(at: url) }
     return .embeddedArtwork
 }
 

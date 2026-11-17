@@ -83,9 +83,10 @@ public enum MovieFolderJoiner {
                                                            includingPropertiesForKeys: [.isRegularFileKey],
                                                            options: [.skipsHiddenFiles])
         let urls = contents.filter { url in
-            (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true &&
-            (UTType(filenameExtension: url.pathExtension)?.conforms(to: .movie) == true ||
-             ["mov", "mp4", "m4v", "avi", "mkv", "mpg", "mpeg"].contains(url.pathExtension.lowercased()))
+            guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .contentTypeKey]) else {
+                return false
+            }
+            return values.isRegularFile == true && values.contentType?.conforms(to: .movie) == true
         }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
         guard !urls.isEmpty else { throw JoinError.noMovies }
 

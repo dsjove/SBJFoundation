@@ -9,23 +9,31 @@ import SBJFileResources
 struct MovieViewerPosterAPITests {
     @Test func defaultOptionsAndConfigurations() {
         let defaults = MovieViewerOptions()
-        #expect(defaults.setPoster)
-        #expect(defaults.colorEdits)
-        #expect(defaults.posterEdits)
+        #expect(defaults.allowsFrameSelection)
+        #expect(!defaults.allowsEmbeddedPosterEditing)
+        #expect(defaults.allowsColorAdjustments)
+        #expect(defaults.allowsImageTools)
 
-        let casting = MovieViewerOptions(setPoster: true, colorEdits: true, posterEdits: false)
-        #expect(casting.setPoster)
-        #expect(casting.colorEdits)
-        #expect(!casting.posterEdits)
+        let combined = MovieViewerOptions(allowsFrameSelection: true,
+            allowsEmbeddedPosterEditing: true, allowsColorAdjustments: true,
+            allowsImageTools: true)
+        #expect(combined.allowsFrameSelection)
+        #expect(combined.allowsEmbeddedPosterEditing)
 
-        let movie = MovieViewerOptions(setPoster: true, colorEdits: true, posterEdits: true)
-        #expect(movie.posterEdits)
+        let playbackOnly = MovieViewerOptions(allowsFrameSelection: false,
+            allowsEmbeddedPosterEditing: false)
+        #expect(!playbackOnly.allowsFrameSelection)
+        #expect(!playbackOnly.allowsEmbeddedPosterEditing)
     }
 
     @Test @MainActor func handlerCanDeclineEmbedding() async throws {
-        let handler: MoviePosterHandler = { time, image in
+        let handler: MoviePosterHandler = { action in
+            guard case .selectFrame(let time, let image) = action else {
+                Issue.record("Expected a frame selection")
+                return false
+            }
             #expect(time == 1.5)
-            #expect(image?.width == 1)
+            #expect(image.width == 1)
             return false
         }
         let space = CGColorSpaceCreateDeviceRGB()
@@ -33,19 +41,24 @@ struct MovieViewerPosterAPITests {
                                 bitsPerComponent: 8, bytesPerRow: 0, space: space,
                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         let image = context.makeImage()!
-        #expect(try await handler(1.5, image) == false)
+        #expect(try await handler(.selectFrame(time: 1.5, image: image)) == false)
     }
 
-    @Test @MainActor func handlerReceivesNilForClear() async throws {
-        var cleared = false
-        let handler: MoviePosterHandler = { time, image in
-            #expect(time == nil)
-            #expect(image == nil)
-            cleared = true
+    @Test @MainActor func clearOperationsAreDistinct() async throws {
+        var clearedFrame = false
+        var clearedArtwork = false
+        let handler: MoviePosterHandler = { action in
+            switch action {
+            case .clearFrame: clearedFrame = true
+            case .clearArtwork: clearedArtwork = true
+            default: Issue.record("Unexpected poster action")
+            }
             return false
         }
-        #expect(try await handler(nil, nil) == false)
-        #expect(cleared)
+        #expect(try await handler(.clearFrame) == false)
+        #expect(clearedFrame && !clearedArtwork)
+        #expect(try await handler(.clearArtwork) == false)
+        #expect(clearedArtwork)
     }
 
     @Test @MainActor func existingEditRecipeCanInitializeEditor() {
