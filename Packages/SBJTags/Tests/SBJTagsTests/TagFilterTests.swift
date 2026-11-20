@@ -42,7 +42,8 @@ struct TagFilterTests {
         ])
         #expect(filter.matches(tagIDs: Set([a.id, b.id])))
         #expect(filter.matches(tagIDs: Set([a.id])))
-        #expect(!filter.matches(tagIDs: Set([b.id])))
+        // The last matching rule re-includes B.
+        #expect(filter.matches(tagIDs: Set([b.id])))
         #expect(!filter.matches(tagIDs: Set<String>()))
     }
 
@@ -57,6 +58,74 @@ struct TagFilterTests {
         let copied = try JSONDecoder().decode(TagFilter<TestTag>.self,
             from: JSONEncoder().encode(filter))
         #expect(copied == filter)
+    }
+
+    @Test func hasTagAndItsExclusionMatchCardinality() {
+        let a = TestTag(name: "A")
+        let tagged = TagFilter<TestTag>(startAll: false,
+            operations: [.init(criterion: .hasTag, add: true)])
+        let untagged = TagFilter<TestTag>(startAll: true,
+            operations: [.init(criterion: .hasTag, add: false)])
+        #expect(tagged.matches(tagIDs: [a.id]))
+        #expect(!tagged.matches(tagIDs: []))
+        #expect(untagged.matches(tagIDs: []))
+        #expect(!untagged.matches(tagIDs: [a.id]))
+    }
+
+    @Test func cardinalityRulesFollowOrderedOverrideSemantics() {
+        let a = TestTag(name: "A")
+        let filter = TagFilter<TestTag>(startAll: true, operations: [
+            .init(criterion: .hasTag, add: false),
+            .init(tagID: a.id, add: true)
+        ])
+        #expect(filter.matches(tagIDs: []))
+        #expect(filter.matches(tagIDs: [a.id]))
+        let b = TestTag(name: "B")
+        #expect(!filter.matches(tagIDs: [b.id]))
+        #expect(filter.invalidTagIDs(availableTags: [a,b]).isEmpty)
+    }
+
+    @Test func newAndLegacyOperationEncodingRoundTrips() throws {
+        let a = TestTag(name: "A")
+        let filter = TagFilter<TestTag>(startAll: false, operations: [
+            .init(tagID: a.id, add: true),
+            .init(criterion: .hasTag, add: false)
+        ])
+        let data = try JSONEncoder().encode(filter)
+        let copied = try JSONDecoder().decode(TagFilter<TestTag>.self, from: data)
+        #expect(copied == filter)
+        let legacy = Data("{\"startAll\":true,\"operations\":[{\"tagID\":\"a\",\"add\":false}]}".utf8)
+        let decoded = try JSONDecoder().decode(TagFilter<TestTag>.self, from: legacy)
+        #expect(decoded.operations == [.init(tagID: "a", add: false)])
+    }
+
+    @Test func legacyHasNoTagMigratesWithoutChangingOrderedResults() throws {
+        let a = TestTag(name: "A")
+        // A legacy rule after a named-tag rule must affect only the empty set.
+        let legacy = Data("""
+            {"startAll":false,"operations":[
+              {"tagID":"\(a.id)","add":true},
+              {"condition":"hasNoTag","add":true},
+              {"condition":"hasTag","add":false},
+              {"tagID":"\(a.id)","add":true}]}
+            """.utf8)
+        let decoded = try JSONDecoder().decode(TagFilter<TestTag>.self, from: legacy)
+        #expect(decoded.matches(tagIDs: []))
+        #expect(decoded.matches(tagIDs: [a.id]))
+        #expect(!decoded.matches(tagIDs: ["other"]))
+        let encoded = try JSONEncoder().encode(decoded)
+        #expect(!String(decoding: encoded, as: UTF8.self).contains("hasNoTag"))
+        #expect(try JSONDecoder().decode(TagFilter<TestTag>.self, from: encoded) == decoded)
+
+        // Repeated legacy rules use the LAST matching rule for an empty set.
+        let repeated = Data("""
+            {"startAll":true,"operations":[
+              {"condition":"hasNoTag","add":true},
+              {"condition":"hasNoTag","add":false}]}
+            """.utf8)
+        let migrated = try JSONDecoder().decode(TagFilter<TestTag>.self, from: repeated)
+        #expect(!migrated.matches(tagIDs: []))
+        #expect(migrated.matches(tagIDs: [a.id]))
     }
 
     @Test func tagUserPredicateUsesTagRelationships() {

@@ -70,8 +70,7 @@ public struct TagFilterEditor<Tag: Tagging>: View where Tag.ID: Hashable {
                 }
                 ToolbarItemGroup(placement: trailingToolbarPlacement) {
                     SBJAddButton("Rule", action: addRule)
-                        .disabled(availableTags.isEmpty)
-                        .help("Add a tag rule")
+                        .help("Add a tag or tag-count rule")
 #if !os(watchOS)
                     SBJHelpLink(asset: .tagFilterHelp)
 #endif
@@ -85,8 +84,11 @@ public struct TagFilterEditor<Tag: Tagging>: View where Tag.ID: Hashable {
     }
 
     private func addRule() {
-        guard let tag = availableTags.sorted().first else { return }
-        filter.operations.append(.init(tagID: tag.id, add: true))
+        if let tag = availableTags.sorted().first {
+            filter.operations.append(.init(tagID: tag.id, add: true))
+        } else {
+            filter.operations.append(.init(criterion: .hasTag, add: true))
+        }
     }
 
     private func includeExcludePicker(_ selection: Binding<Bool>) -> some View {
@@ -100,17 +102,35 @@ public struct TagFilterEditor<Tag: Tagging>: View where Tag.ID: Hashable {
     }
 
     private func tagMenu(at index: Int) -> some View {
-        let identifier = filter.operations[index].tagID
+        let criterion = filter.operations[index].criterion
         let sorted = availableTags.sorted()
-        let selected = sorted.first { $0.id == identifier }
-        let title = selected?.displayName ?? "Missing tag: \(identifier)"
-        let choices = sorted.map(\.displayName)
+        let selected: Tag?
+        let title: String
+        let isMissing: Bool
+        switch criterion {
+        case .tag(let id):
+            selected = sorted.first { $0.id == id }
+            title = selected?.displayName ?? "Missing tag: \(id)"
+            isMissing = selected == nil
+        case .hasTag:
+            selected = nil
+            title = "Has Tag"
+            isMissing = false
+        }
+        let choices = ["Has Tag"] + sorted.map(\.displayName)
         return SBJSelectionMenu {
+            Button {
+                filter.operations[index].criterion = .hasTag
+            } label: {
+                if criterion == .hasTag { Label("Has Tag", systemImage: "checkmark") }
+                else { Text("Has Tag") }
+            }
+            if !sorted.isEmpty { Divider() }
             ForEach(sorted, id: \.id) { tag in
                 Button {
-                    filter.operations[index].tagID = tag.id
+                    filter.operations[index].criterion = .tag(tag.id)
                 } label: {
-                    if tag.id == identifier {
+                    if criterion == .tag(tag.id) {
                         Label(tag.displayName, systemImage: "checkmark")
                     } else {
                         Text(tag.displayName)
@@ -119,7 +139,7 @@ public struct TagFilterEditor<Tag: Tagging>: View where Tag.ID: Hashable {
             }
         } label: {
             SBJSelectionMenuLabel(text: title, options: choices)
-                .foregroundStyle(selected == nil ? Color.red : Color.primary)
+                .foregroundStyle(isMissing ? Color.red : Color.primary)
         }
         .accessibilityLabel("Tag rule: \(title)")
     }

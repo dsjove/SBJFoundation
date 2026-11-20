@@ -1,6 +1,20 @@
 import Foundation
 import UniformTypeIdentifiers
 
+/// Filename collision handling used by backups and other filesystem workflows.
+/// Returns the unmodified filename when available, then adds ` 1`, ` 2`, etc.
+extension URL {
+    public func uniqueNumberedDestination(in directory: URL,
+                                   fileManager: FileManager = .default) -> URL {
+        var index = 0
+        while true {
+            let candidate = directory.appendingPathComponent(lastPathComponent.appendingNumber(index))
+            if !fileManager.fileExists(atPath: candidate.path) { return candidate }
+            index += 1
+        }
+    }
+}
+
 public extension String {
 	func sanitizedFilename(
 		removeInnerWhiteSpace: Bool = false,

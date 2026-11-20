@@ -64,4 +64,7 @@ private struct DurationFixture: Codable {
     #expect(format(0.001, maximum: 60, digits: 0) == "1ms")
     #expect(format(0, maximum: 60, digits: 0) == "0")
     #expect(format(65.5, maximum: 120, digits: 0) == "1:06")
+    #expect(format(65.499, maximum: 120, digits: 0) == "1:05")
+    #expect(format(59.999, maximum: 120, digits: 0) == "1:00")
+    #expect(format(3599.5, maximum: 3600, digits: 0) == "1:00:00")
 }

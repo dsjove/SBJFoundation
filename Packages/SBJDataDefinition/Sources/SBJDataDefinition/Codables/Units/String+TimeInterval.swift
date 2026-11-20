@@ -81,9 +81,17 @@ public extension TimeInterval {
         guard !wholeUnits.isEmpty else { return "" }
         let milliseconds = Int64((self * 1000).rounded())
         let quantum: Int64 = small == .milliseconds ? 1 : Int64(small.seconds * 1000)
-        let adjusted = small == .second
-            ? Int64((Double(milliseconds) / 1000).rounded()) * 1000
-            : milliseconds / quantum * quantum
+        // Whole-second display precision must round BEFORE splitting the
+        // duration into fields, so carry propagates (e.g. 65.5 -> 1:06).
+        // Positive subsecond values were already handled above as milliseconds.
+        let adjusted: Int64
+        if fractionalDigits == 0 {
+            adjusted = Int64((Double(milliseconds) / 1000).rounded()) * 1000
+        } else if small == .second {
+            adjusted = Int64((Double(milliseconds) / 1000).rounded()) * 1000
+        } else {
+            adjusted = milliseconds / quantum * quantum
+        }
         var remainder = adjusted / 1000
         var values: [Int64] = []
         for unit in wholeUnits {

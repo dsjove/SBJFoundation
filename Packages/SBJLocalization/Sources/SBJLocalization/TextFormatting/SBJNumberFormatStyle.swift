@@ -79,3 +79,26 @@ private func gcd(_ a: Int, _ b: Int) -> Int {
     }
     return max(1, x)
 }
+
+extension String {
+	/// Advance an existing trailing collision number, or append the first one.
+	/// Numbering precedes the filename extension, when present.
+	/// `number` is an offset from the current suffix (or zero if none).
+	public func appendingNumber(_ number: Int) -> String {
+		guard number > 0 else { return self }
+		let dot = lastIndex(of: ".").flatMap { position -> String.Index? in
+			guard position != startIndex, index(after: position) != endIndex,
+				  (lastIndex(of: "/").map { $0 < position } ?? true) else { return nil }
+			return position
+		}
+		let stem = String(dot.map { self[..<$0] } ?? self[...])
+		let suffix = dot.map { String(self[$0...]) } ?? ""
+		let parts = stem.split(separator: " ", omittingEmptySubsequences: false)
+		if let last = parts.last, let previous = Int(last), previous >= 0,
+		   !previous.addingReportingOverflow(number).overflow {
+			let base = parts.dropLast().joined(separator: " ")
+			if !base.isEmpty { return "\(base) \(previous + number)\(suffix)" }
+		}
+		return "\(stem) \(number)\(suffix)"
+	}
+}
