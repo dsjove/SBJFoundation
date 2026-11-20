@@ -12,14 +12,12 @@ private final class TestTag: Tagging {
     let id: String
     var name: String
     var color: CodableColor = CodableColor(0.2, 0.4, 0.8)
-    var __users: [TestTagAssignment]?
 
     init(name: String) {
         self.id = UUID().uuidString
         self.name = name
     }
     static func == (lhs: TestTag, rhs: TestTag) -> Bool { lhs.id == rhs.id }
-    func tearDown() { _tearDownTagRelations() }
 }
 
 @MainActor

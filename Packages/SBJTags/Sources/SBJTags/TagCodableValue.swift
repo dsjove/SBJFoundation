@@ -9,8 +9,8 @@ import SBJUIVocabulary
 /// type provides a stable representation for export, recovery, interchange, and
 /// other serialization without coupling Codable to SwiftData relationships.
 @SBJStructure
-public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable, SBJTextPresentable {
-	public var id: ID
+public struct TagCodableValue<ID: Codable & Comparable & Hashable>: Tagging, Codable, SBJTextPresentable {
+	public let id: ID
 	public var name: String
 	public var color: CodableColor
 
@@ -26,22 +26,9 @@ public struct TagCodableValue<ID: Codable & Equatable>: Codable, Equatable, SBJT
 
 	public var presentedValue: String { name }
 
-	public static var nameInfo: SBJPropertyInfo { .init(
-		title: "Tag Name",
-		summary: "The exported user-visible tag name.",
-		details: "This is the portable value representation of a tag's name.",
-		accessibilityLabel: "Tag name"
-	)}
-
-	public static var colorInfo: SBJPropertyInfo { .init(
-		title: "Tag Color",
-		summary: "The exported tag color.",
-		details: "This is the portable value representation of a tag's color.",
-		accessibilityLabel: "Tag color"
-	)}
 }
 
-public extension Tagging where ID: Codable & Equatable {
+public extension Tagging where ID: Codable & Comparable {
 	var codableValue: TagCodableValue<ID> {
 		TagCodableValue(self)
 	}

@@ -6,7 +6,7 @@ import SBJLocalization
 @MainActor
 @Observable
 public final class TagBagSwiftData<F>: @MainActor TagBag
-where F: TagBagFactory, F.Tag: PersistentModel {
+where F: TagBagFactory, F.Tag: PersistentModel & TaggingSwiftData {
 	public typealias Tag = F.Tag
 	public typealias Factory = F
 

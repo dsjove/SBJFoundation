@@ -6,10 +6,7 @@ import SBJDocuments
 import SBJUIVocabulary
 
 public protocol Tagging:
-	AnyObject,
-	Observable,
 	Identifiable,
-	Teardownable,
 	Predicated,
 	CustomDebugStringConvertible,
 	Comparable where ID: Comparable {
@@ -18,66 +15,26 @@ public protocol Tagging:
 	var color: CodableColor { get set }
 
 	var displayName: String { get }
-
-	static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo?
-
-	associatedtype User: TagUser where User.Tag == Self
-	var __users: [User]? { get set }
 }
 
 public extension Tagging {
-	static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
-		switch keyPath as AnyKeyPath {
-		case \Self.name:
-			return SBJPropertyInfo(
-				title: "Tag Name",
-				summary: "The user-visible name of the tag.",
-				details: "Names identify tags in tag lists, search, and editors.",
-				accessibilityLabel: "Tag name"
-			)
-		case \Self.color:
-			return SBJPropertyInfo(
-				title: "Tag Color",
-				summary: "Color used to visually identify the tag.",
-				details: "The tag label automatically chooses a contrasting foreground color.",
-				accessibilityLabel: "Tag color",
-				accessibilityHint: "Changes the tag color."
-			)
-		default:
-			return nil
-		}
+	static var nameInfo: SBJPropertyInfo {
+		SBJPropertyInfo(
+			title: "Tag Name",
+			summary: "The user-visible name of the tag.",
+			details: "Names identify tags in tag lists, search, and editors.",
+			accessibilityLabel: "Tag name"
+		)
 	}
 
-	/// Tags use the migrated CoreDataStorage lifecycle: teardown prepares
-	/// relationships and `deleteNow()` performs the persistent deletion.
-	var tearDownDeletesSelf: Bool { false }
-
-	var userCount: Int {
-		__users?.count ?? 0
-	}
-
-	func isSoleUser(_ user: User?) -> Bool {
-		if let __users, let user {
-			if __users.count == 1 {
-				return __users.first?.id == user.id
-			}
-			return __users.isEmpty == true
-		}
-		return true
-	}
-
-	func _userRemoved(_ user: User) {
-		__users?.removeIdentified(user)
-		//Let SwiftData manage the soon to be deleted user._tags
-	}
-
-	func _tearDownTagRelations() {
-		guard let users = __users else { return }
-		// SwiftData maintains reference-type inverse relationships. A value-type
-		// user is a snapshot: mutating it here would only change a copy.
-		guard User.self is AnyObject.Type else { return }
-		for var user in users { user.removeTag(self) }
-		//Let SwiftData manage this tag's __user list
+	static var colorInfo: SBJPropertyInfo {
+		SBJPropertyInfo(
+			title: "Tag Color",
+			summary: "Color used to visually identify the tag.",
+			details: "The tag label automatically chooses a contrasting foreground color.",
+			accessibilityLabel: "Tag color",
+			accessibilityHint: "Changes the tag color."
+		)
 	}
 }
 
@@ -111,7 +68,7 @@ public extension Tagging {
 /// and value models may conform. For value models, edits must be applied through
 /// a writable binding or an owning store so mutations are not lost.
 public protocol TagUser: Identifiable {
-	associatedtype Tag: Tagging where Tag.User == Self
+	associatedtype Tag: Tagging & AnyObject & Observable
 
 	func hasTag(_ tag: Tag) -> Bool
 	var sortedTags: [Tag] { get }
@@ -160,11 +117,6 @@ public extension TagUser {
 		__tags?.findIdentified(__primaryTagID)
 	}
 
-	mutating func _tearDownTagRelations() {
-		__primaryTagID = nil
-		__tags?.forEach { $0._userRemoved(self) }
-	}
-
 	func hasTag(_ tag: Tag) -> Bool {
 		__tags?.containsIdentified(tag) ?? false
 	}
@@ -200,12 +152,81 @@ public extension TagUser {
 			__primaryTagID = nil
 		}
 		__tags?.removeIdentified(tag)
-		//Let SwiftData update the tag's __users.
+	}
+}
+
+/// Reference-only tag definitions with inverse model relationships.
+/// The stored relationship itself remains in each app's existing persistence model.
+public protocol TaggingSwiftData: Tagging, AnyObject, Observable, Teardownable {
+	associatedtype User: TagUser & AnyObject where User.Tag == Self
+	var __users: [User]? { get set }
+}
+
+public extension TaggingSwiftData {
+	/// Preserve the existing manual relationship cleanup / deleteNow contract.
+	var tearDownDeletesSelf: Bool { false }
+
+	var userCount: Int { __users?.count ?? 0 }
+
+	func isSoleUserID(_ id: AnyHashable?) -> Bool {
+		guard let users = __users, let id else { return true }
+		if users.count == 1 { return AnyHashable(users[0].id) == id }
+		return users.isEmpty
+	}
+
+	func _userRemoved(_ user: User) {
+		__users?.removeIdentified(user)
+		// Let SwiftData manage the soon-to-be-deleted user's relationship.
+	}
+
+	func _tearDownTagRelations() {
+		guard let users = __users else { return }
+		for user in users { user.removeTag(self) }
+		// Let SwiftData manage this tag's inverse list.
+	}
+}
+
+/// Reference-backed owners use nonmutating API calls while still allowing
+/// value-backed TagUser models to use the same mutating operations.
+public extension TagUser where Self: AnyObject, Tag: TaggingSwiftData, Tag.User == Self {
+	func _tearDownTagRelations() {
+		var owner = self
+		owner.__primaryTagID = nil
+		owner.__tags?.forEach { $0._userRemoved(self) }
+	}
+
+	func addTag(_ tag: Tag) {
+		addTag(tag, makePrimary: false)
+	}
+
+	func addTag(_ tag: Tag, makePrimary: Bool = false) {
+		var owner = self
+		if owner.__tags == nil { owner.__tags = [] }
+		owner.__tags?.addIdentified(tag)
+		if makePrimary || owner.__primaryTagID == nil {
+			owner.__primaryTagID = tag.id
+		}
+	}
+
+	func togglePrimary(_ tag: Tag) {
+		var owner = self
+		if isTagPrimary(tag) {
+			owner.__primaryTagID = nil
+		} else {
+			addTag(tag, makePrimary: true)
+		}
+	}
+
+	func removeTag(_ tag: Tag) {
+		var owner = self
+		if owner.__primaryTagID == tag.id { owner.__primaryTagID = nil }
+		owner.__tags?.removeIdentified(tag)
+		// Let SwiftData update the tag's inverse relationship.
 	}
 }
 
 public protocol TagBag: AnyObject, Observable {
-	associatedtype Tag: Tagging
+	associatedtype Tag: Tagging & AnyObject & Observable
 	var title: String { get }
 	func tags(_ search: String) -> [Tag]
 	func addNewTag(named name: String) -> Tag
@@ -219,7 +240,7 @@ public extension TagBag {
 }
 
 public protocol TagBagFactory {
-	associatedtype Tag: Tagging
+	associatedtype Tag: Tagging & AnyObject & Observable
 	var title: String { get }
 	func seedTags()
 	func createTag(named: String) -> Tag

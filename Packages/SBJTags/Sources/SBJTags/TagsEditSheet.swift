@@ -46,6 +46,12 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 		valueUser?.wrappedValue = current
 	}
 
+	/// Value-backed assignments have no persistent inverse relationship.
+	private func isSoleUser(_ tag: Tag) -> Bool {
+		guard let referenceTag = tag as? any TaggingSwiftData else { return true }
+		return referenceTag.isSoleUserID(user.map { AnyHashable($0.id) })
+	}
+
 	@State private var searchText = ""
 	@State private var editColorTag: Tag?
 	@FocusState private var isTagFieldFocused: Tag.ID?
@@ -93,7 +99,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 							}
 							.onDelete { offsets in
 								let toBeDeleted = offsets.map { sortedTags[$0] }
-								let shouldPrompt = toBeDeleted.allSatisfy { !$0.isSoleUser(user) }
+								let shouldPrompt = toBeDeleted.allSatisfy { !isSoleUser($0) }
 								if shouldPrompt {
 									deletionRequest = DeletionRequest(tags: toBeDeleted)
 								} else {
@@ -135,7 +141,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 			.sheet(item: $editColorTag) { tag in
 				ColorPickerView(title: tag.name, selectedColor: Binding(
 					get: { tag.color.swiftUIColor },
-					set: { tag.color.swiftUIColor = $0 }
+					set: { var t = tag; t.color.swiftUIColor = $0 }
 				))
 #if !os(macOS)
 				.presentationDetents([.medium])
@@ -193,10 +199,10 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
             .frame(width: 44, height: 44)
             .cornerRadius(8)
             .onTapGesture { editColorTag = tag }
-            .applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityLabel) { view, label in
+            .applyIf(Tag.colorInfo.accessibilityLabel) { view, label in
                 view.accessibilityLabel(label)
             }
-            .applyIf(Tag.propertyInfo(for: \Tag.color)?.accessibilityHint) { view, hint in
+            .applyIf(Tag.colorInfo.accessibilityHint) { view, hint in
                 view.accessibilityHint(hint)
             }
             .accessibilityValue(tag.displayName)
@@ -207,7 +213,7 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
         VStack(alignment: .leading, spacing: 2) {
             TextField("Name", text: Binding(
                 get: { tag.name },
-                set: { tag.name = $0 }
+                set: { var t = tag; t.name = $0 }
             ))
             .submitLabel(.done)
             .onSubmit { isTagFieldFocused = nil }
@@ -216,11 +222,11 @@ public struct TagsEditSheet<T: TagUser, B: TagBag> : View where T.Tag == B.Tag {
 #endif
             .disableAutocorrection(true)
             .sbjFocusedControl(isFocused: $isTagFieldFocused, id: tag.id)
-            .applyIf(Tag.propertyInfo(for: \Tag.name)?.accessibilityLabel) { view, label in
+            .applyIf(Tag.nameInfo.accessibilityLabel) { view, label in
                 view.accessibilityLabel(label)
             }
-            if !tag.isSoleUser(user) {
-                Text("(\(tag.userCount))")
+            if !isSoleUser(tag), let referenceTag = tag as? any TaggingSwiftData {
+                Text("(\(referenceTag.userCount))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
