@@ -1,5 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
 
 @MainActor
 public struct SBJMoveToButton: View {
@@ -15,14 +14,14 @@ public struct SBJMoveToButton: View {
         action: (() -> Void)?
     ) {
         self.direction = direction
-        self.accessibilityLabel = accessibilityLabel ?? (direction == .first ? "Move to first" : "Move to last")
+        self.accessibilityLabel = accessibilityLabel ?? (direction == .first ? SBJCommonNomenclature.moveToFirst.title : SBJCommonNomenclature.moveToLast.title)
         self.accessibilityHint = accessibilityHint
         self.action = action
     }
 
     public var body: some View {
         SBJSymbolButton(
-            direction == .first ? SBJSymbology.moveToFirst : SBJSymbology.moveToLast,
+            direction == .first ? SBJCommonNomenclature.moveToFirst.symbol! : SBJCommonNomenclature.moveToLast.symbol!,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint
         ) {

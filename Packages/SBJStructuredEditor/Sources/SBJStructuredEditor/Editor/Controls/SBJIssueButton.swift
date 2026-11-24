@@ -2,20 +2,16 @@ import SwiftUI
 import SBJLocalization
 import SBJUIVocabulary
 
-// TODO: editor only?
 @MainActor
 public struct SBJIssueButton: View {
     public let hasIssues: Bool?
-    private let accessibilityLabel: String
     private let action: () -> Void
 
     public init(
         hasIssues: Bool?,
-        accessibilityLabel: String = "Show issues",
         action: @escaping () -> Void
     ) {
         self.hasIssues = hasIssues
-        self.accessibilityLabel = accessibilityLabel
         self.action = action
     }
 
@@ -23,8 +19,7 @@ public struct SBJIssueButton: View {
     public var body: some View {
         if hasIssues != false {
             SBJSymbolButton(
-                SBJStructuredEditorSymbology.issues,
-                accessibilityLabel: accessibilityLabel,
+                hasIssues == nil ? SBJStructuredEditorNomenclature.checkIssues : SBJStructuredEditorNomenclature.issues,
                 action: action
             )
             .foregroundStyle(hasIssues == true ? SBJUIAppearance.issueColor : SBJUIAppearance.inactiveControlColor)

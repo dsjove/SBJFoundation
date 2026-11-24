@@ -14,14 +14,14 @@ public protocol Attaching:
 	var name: String { get set }
 	var displayName: String { get }
 
-	static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo?
+	static func propertyNomenclature<Value>(for keyPath: KeyPath<Self, Value>) -> SBJNomenclature?
 }
 
 public extension Attaching {
-	static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+	static func propertyNomenclature<Value>(for keyPath: KeyPath<Self, Value>) -> SBJNomenclature? {
 		switch keyPath as AnyKeyPath {
 		case \Self.name:
-			return SBJPropertyInfo(
+			return SBJNomenclature(
 				title: "Attachment Name",
 				summary: "The user-visible filename of the attachment.",
 				details: "Renaming preserves the filename extension.",

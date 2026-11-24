@@ -72,7 +72,7 @@ public struct BookmarkedURLWithFallback {
         ) else { return fallbackURL }
 
         defaults.set(url.path, forKey: pathKey)
-        if stale { try? save(url) }
+        if stale { renewBookmark(for: url) }
         return url
     }
 
@@ -93,6 +93,19 @@ public struct BookmarkedURLWithFallback {
 
     /// Re-attempt resolution after an external drive is connected.
     public func refresh() -> URL? { resolve() }
+
+    /// Renewal is best-effort: a failure must not discard the previously saved
+    /// bookmark. Explicit selection via `save(_:)` retains its separate policy.
+    private func renewBookmark(for url: URL) {
+        guard let renewed = try? url.withSecurityScopedAccess({ scopedURL in
+            try scopedURL.bookmarkData(
+                options: Self.creationOptions,
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        }) else { return }
+        defaults.set(renewed, forKey: bookmarkKey)
+    }
 
     private static var creationOptions: URL.BookmarkCreationOptions {
 #if os(macOS) && !targetEnvironment(macCatalyst)

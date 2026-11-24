@@ -4,11 +4,11 @@
 
 ## Responsibilities today
 
-`SBJLocalization` provides declaration-site property text metadata (`SBJPropertyInfo`), runtime presentation (`SBJTextPresentable`), assembled accessibility metadata (`AccessibleItem`), SwiftUI application of accessibility metadata, semantic symbols (`SBJSymbol`, `SBJSymbology`), and text helpers. It does **not** currently implement a full locale-/vendor-/document-/layout-context resolver or alternate localized-resource candidate selection.
+`SBJLocalization` provides declaration-site property text metadata (`SBJNomenclature`), runtime presentation (`SBJTextPresentable`), assembled accessibility metadata (`AccessibleItem`), SwiftUI application of accessibility metadata, semantic symbols (`SBJSymbol`, `SBJSymbology`), and text helpers. It does **not** currently implement a full locale-/vendor-/document-/layout-context resolver or alternate localized-resource candidate selection.
 
 | Layer | Type / API | Actual responsibility |
 | --- | --- | --- |
-| Property declaration | `SBJPropertyInfo` | `title`, `summary`, `details`, `symbol`, `accessibilityLabel`, `accessibilityHint`; `.accessibility` resolves label as `accessibilityLabel ?? title` and hint as `accessibilityHint ?? summary`; no instance value |
+| Property declaration | `SBJNomenclature` | `title`, `summary`, `details`, `symbol`, `accessibilityLabel`, `accessibilityHint`; `.accessibility` resolves label as `accessibilityLabel ?? title` and hint as `accessibilityHint ?? summary`; no instance value |
 | Runtime model value | `SBJTextPresentable` | `presentedValue`, `abbreviation`, `multiLineDescription`, optional `accessibilityValue` |
 | Combined result | `AccessibleItem` | Optional label, hint and value |
 | Structured property access | `SBJStructured.accessibilityItem(for:)` in **SBJDataDefinition** | Combines property info and runtime presentation for a key path; returns `nil` when neither source exists |
@@ -29,7 +29,7 @@ Current defaults: `abbreviation` is `presentedValue`; `multiLineDescription` rep
 
 ## Property metadata and accessibility
 
-`SBJPropertyInfo` describes a declaration; it never contains or derives the current property value. Its `accessibility` accessor defaults the spoken label to `title` and hint to `summary` only when the explicit corresponding field is `nil`. It never uses `details` as a hint, and it does not modify the stored metadata. Use generated `@SBJPropertyInfo` / `@SBJStructure` key-path lookup where applicable.
+`SBJNomenclature` describes a declaration; it never contains or derives the current property value. Its `accessibility` accessor defaults the spoken label to `title` and hint to `summary` only when the explicit corresponding field is `nil`. It never uses `details` as a hint, and it does not modify the stored metadata. Use generated `@SBJNomenclature` / `@SBJStructure` key-path lookup where applicable.
 
 ```swift
 // model is SBJStructured and its property has declaration metadata
@@ -53,4 +53,4 @@ The assembler checks whether the **value conforms to `SBJTextPresentable`**; if 
 - **SBJLayout / CharacterSheet:** measure, render, and select presentation in the context of layout; they should not define the shared translation policy.
 - **Apps:** domain terminology and user-authored content decisions. User-entered strings are verbatim by default.
 
-See [LAYERED_CONTEXT_AWARE_LOCALIZATION.md](LAYERED_CONTEXT_AWARE_LOCALIZATION.md) for the *proposed*, not-yet-implemented system; [Character-specific guidance](CHARACTERS_LOCALIZATION.md), [SBJLayout guidance](SBJLAYOUT_LOCALIZATION.md), and [dated audit](LOCALIZATION_AUDIT_2026-09-17.md).
+See [LayeredContextAwareLocalization.md](LayeredContextAwareLocalization.md) for the *proposed*, not-yet-implemented system; [Character-specific guidance](CharactersLocalization.md), [SBJLayout guidance](SbjlayoutLocalization.md), and [dated audit](LocalizationAudit20260917.md).

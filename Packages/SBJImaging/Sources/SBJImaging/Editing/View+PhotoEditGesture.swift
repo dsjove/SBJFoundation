@@ -1,6 +1,6 @@
 #if !os(watchOS) && !os(tvOS)
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 private struct PhotoEditGestureModifier<G: Gesture>: ViewModifier {

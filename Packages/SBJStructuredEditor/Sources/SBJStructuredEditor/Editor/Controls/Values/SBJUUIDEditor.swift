@@ -30,8 +30,8 @@ struct SBJUUIDEditor: View {
             .textInputAutocapitalization(.characters)
 #endif
             SBJSymbolButton(
-                SBJStructuredEditorSymbology.regenerate,
-                accessibilityLabel: "Generate new \(label)"
+                SBJStructuredEditorNomenclature.regenerate,
+                context: label
             ) {
                 value = UUID()
                 draft.reset(to: value.uuidString)

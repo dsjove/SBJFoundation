@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 /// Presentation mode derived from the SBJUnitValue unitMutable constraint.
@@ -103,7 +103,7 @@ struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
                     .sbjSingleLineField()
                     .frame(width: 92)
                     .multilineTextAlignment(.trailing)
-                    .accessibilityLabel("\(label) first")
+                    .accessibilityLabel("\(label): \(SBJStructuredEditorNomenclature.editorFirstUnitValue.title)")
                 if value.second != nil {
                     Text("–")
                         .foregroundStyle(.secondary)
@@ -113,7 +113,7 @@ struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
                         .sbjSingleLineField()
                         .frame(width: 92)
                         .multilineTextAlignment(.trailing)
-                        .accessibilityLabel("\(label) second")
+                        .accessibilityLabel("\(label): \(SBJStructuredEditorNomenclature.editorSecondUnitValue.title)")
                 }
                 if editor == .editable {
                     SBJSelectionMenu(
@@ -133,10 +133,10 @@ struct SBJPairedUnitValueEditor<Unit: UnitType>: View {
                 Button {
                     value.second = value.second == nil ? 0 : nil
                 } label: {
-                    Image(systemName: value.second == nil ? "plus.circle" : "minus.circle")
+                    Image(symbol: (value.second == nil ? SBJStructuredEditorNomenclature.editorAddSecondUnitValue : SBJStructuredEditorNomenclature.editorRemoveSecondUnitValue).symbol!)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(value.second == nil ? "Add second \(label)" : "Remove second \(label)")
+                .accessibilityLabel("\((value.second == nil ? SBJStructuredEditorNomenclature.editorAddSecondUnitValue : SBJStructuredEditorNomenclature.editorRemoveSecondUnitValue).title): \(label)")
             }.fixedSize(horizontal: true, vertical: false)
         }
     }

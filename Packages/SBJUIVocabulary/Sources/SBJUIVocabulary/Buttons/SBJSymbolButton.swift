@@ -1,3 +1,4 @@
+import SBJLocalization
 import SwiftUI
 
 /// Shared primitive for compact symbol-only actions.
@@ -30,6 +31,32 @@ public struct SBJSymbolButton: View {
                 title: accessibilityLabel,
                 accessibilityLabel: accessibilityLabel,
                 accessibilityHint: accessibilityHint
+            ),
+            role: role,
+            action: action
+        )
+    }
+
+    /// Use the same nomenclature as help and other UI surfaces. A contextual
+    /// field name may qualify the spoken label without redefining the action.
+    public init(
+        _ nomenclature: SBJNomenclature,
+        context: String? = nil,
+        role: ButtonRole? = nil,
+        action: @escaping () -> Void
+    ) {
+        guard let symbol = nomenclature.symbol else {
+            preconditionFailure("A nomenclature-backed symbol button requires a symbol")
+        }
+        let baseLabel = nomenclature.accessibilityLabel ?? nomenclature.title
+        precondition(!baseLabel.isEmpty, "An icon-only button requires an accessible name")
+        let spokenLabel = context.map { "\(baseLabel): \($0)" } ?? baseLabel
+        self.init(
+            SBJLabeledSymbol(
+                symbol: symbol,
+                title: nomenclature.title,
+                accessibilityLabel: spokenLabel,
+                accessibilityHint: nomenclature.accessibilityHint ?? nomenclature.summary
             ),
             role: role,
             action: action

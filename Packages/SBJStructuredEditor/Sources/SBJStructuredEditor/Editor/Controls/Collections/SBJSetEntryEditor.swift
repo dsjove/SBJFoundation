@@ -86,7 +86,7 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
             .padding(.trailing, sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing)
             .overlay(alignment: .topTrailing) {
                 if let remove {
-                    SBJConfirmedRemoveButton(accessibilityLabel: "Remove \(title)", remove: remove)
+                    SBJConfirmedRemoveButton(context: title, remove: remove)
                         .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
                         .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
                 }

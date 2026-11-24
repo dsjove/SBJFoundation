@@ -1,3 +1,4 @@
+#if !os(watchOS) && !os(tvOS)
 import Foundation
 import Observation
 
@@ -56,3 +57,5 @@ public final class MovieJoinCoordinator {
         }
     }
 }
+
+#endif

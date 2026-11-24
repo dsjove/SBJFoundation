@@ -1,3 +1,4 @@
+import SBJLocalization
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
@@ -94,8 +95,8 @@ struct SBJEditorDisclosureHeader: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(title)
-                .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
-                .accessibilityHint(isExpanded ? "Activate to collapse" : "Activate to expand")
+                .accessibilityValue((isExpanded ? SBJCommonNomenclature.expanded : SBJCommonNomenclature.collapsed).title)
+                .accessibilityHint((isExpanded ? SBJCommonNomenclature.collapse : SBJCommonNomenclature.expand).details!)
             }
         }
         .padding(.vertical, 2)

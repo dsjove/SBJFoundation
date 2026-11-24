@@ -1,43 +1,23 @@
-# Tags
+# SBJTags — client contracts and integration boundaries
 
-`Tags` contains the generic tag model contracts, SwiftData-backed tag collection,
-Codable value representation, and reusable SwiftUI editing/display controls.
+## Model
 
-## Responsibilities
+`Tagging` defines a tag's stable ID, mutable name, color, searchable name, display name, and comparison. Sorting is case-insensitive by name, then by color, then by ID. The default `TagUser` implementation manages assignment and primary-tag selection; application models own storage and persistence. `TaggingSwiftData` provides the optional inverse-reference/teardown integration for reference models.
 
-- `Tagging` defines the user-visible tag state and inverse user relationship.
-- `TagUser` defines tag ownership/use from a domain model.
-- `TagBag` abstracts a collection of available tags.
-- `TagBagSwiftData` provides the standard SwiftData implementation and explicit
-  reload support for CloudKit/remote-store changes.
-- `TagCodableValue` serializes the stable tag value (`id`, `name`, `color`) without
-  attempting to Codable-encode persistence relationships.
-- `TagsListView`, `TagsControlView`, and `TagsEditSheet` provide generic SwiftUI UI.
+`TagUser` supports value owners as well as observable reference owners. Bind value owners to `TagsEditSheet` using `Binding<T>`; changing a copied value without writing it back to its owner will not persist the edit.
 
-Domain models remain in the client app. A client persisted tag model conforms to
-`Tagging`; a client model that consumes tags conforms to `TagUser`.
+## Filtering
 
-## Persistence and CloudKit
+A `TagFilter<Tag>` is an ordered include/exclude expression over available tag IDs. Matching rules override earlier matches, while nonmatching rules leave the current result unchanged. `hasTag` matches nonempty assignments **among the available tag definitions supplied for evaluation**. Keep the `availableTags` list sufficiently up-to-date for correct results, including after CloudKit imports. Missing tag IDs are retained, reported by `invalidTagIDs`, and can be corrected in the editor. Encoding retains the existing data shape, and decoding migrates legacy `hasNoTag` conditions.
 
-Tag relationship teardown is explicit because synchronized SwiftData relationship
-mutation and deletion ordering have historically required deterministic behavior.
-`TagBagSwiftData` uses `CoreDataStorage` lifecycle helpers and exposes `reload()`
-because its UI-stable cache cannot assume the first fetch remains authoritative
-after CloudKit imports.
+## Persistence
 
-TODO(CoreDataStorage production compatibility): validate the generic tag lifecycle
-against the remaining production CoreData/iCloud apps before making stronger
-assumptions about relationship ownership, delete timing, or cache invalidation.
+`TagBagSwiftData` fetches lazily and caches even an empty successful result. Applications explicitly call `reload()` after external changes. Failure to fetch leaves the previous cache available; a failed initial fetch can be retried. Deletion uses deferred `deleteNow()` to preserve the existing relationship teardown contract. This remains a persistence integration point that should be verified in each production application; do not assume CloudKit synchronization itself updates the bag cache.
 
-## Codable
+## Presentation and rendering
 
-Do not make a persistence model Codable merely to serialize tags. Use
-`TagCodableValue` for the common value state and let the client archive any
-app-specific relationships separately.
+Tag screens and controls are in `Presentation`. Printing-oriented tag chips are in `Rendering` and use `SBJLayout`. Both represent the same `Tagging` values, but neither controls data persistence. Help assets are package resources.
 
-## Rendering
+## Future design
 
-Printable/Core Graphics representation belongs in `SBJTags` as `JCSTag` and
-`JCSTagGroup` (`Tagging+JCS.swift`). The tag-specific rendering code depends
-on the general-purpose drawing abstractions in `SBJLayout`; `SBJLayout`
-does not depend on `SBJTags`.
+Consider an explicit persistence error/reporting interface for applications that need to display fetch failures. Any change to deferred deletion should first be validated against the production SwiftData/CloudKit models. Those are future considerations, not current guarantees.

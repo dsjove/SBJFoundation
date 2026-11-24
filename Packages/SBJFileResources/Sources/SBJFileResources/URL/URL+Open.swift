@@ -132,7 +132,7 @@ public extension URL {
                 NSWorkspace.shared.activateFileViewerSelecting([self])
             }
         }
-#elseif canImport(UIKit) && !WIDGET_TARGET
+#elseif canImport(UIKit) && !os(watchOS) && !WIDGET_TARGET
         #if DEBUG && targetEnvironment(macCatalyst)
         if debugRevealInFinder(self, directory: directory) { return }
         #endif

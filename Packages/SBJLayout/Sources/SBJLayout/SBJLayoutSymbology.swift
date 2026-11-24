@@ -16,32 +16,19 @@ public enum SBJLayoutSymbology: SBJSymbolSet {
     ]
 }
 
-public extension SBJLayoutSymbology {
-    static var pageLayoutLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.pageLayout, title: "Page Layout", accessibilityLabel: "Edit page layout", accessibilityHint: "Configure page layout")
-    }
-    static var firstPageLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.firstPage, title: "First Page", accessibilityLabel: "Go to first page")
-    }
-    static var previousPageLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.previousPage, title: "Previous Page", accessibilityLabel: "Go to previous page")
-    }
-    static var nextPageLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.nextPage, title: "Next Page", accessibilityLabel: "Go to next page")
-    }
-    static var lastPageLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.lastPage, title: "Last Page", accessibilityLabel: "Go to last page")
-    }
-    static var searchPDFLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.searchPDF, title: "Search PDF", accessibilityLabel: "Search PDF")
-    }
-    static var previousSearchMatchLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.previousSearchMatch, title: "Previous Match", accessibilityLabel: "Go to previous search result")
-    }
-    static var nextSearchMatchLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.nextSearchMatch, title: "Next Match", accessibilityLabel: "Go to next search result")
-    }
-    static var closeSearchLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.closeSearch, title: "Close Search", accessibilityLabel: "Close search")
-    }
+
+
+/// Shared nomenclature used by the UI and help. The UI and help consume these same nomenclature definitions.
+public enum SBJLayoutNomenclature: SBJNomenclatureSet {
+    public static let all: [String: SBJNomenclature] = [
+        "layout.ui.page-layout": .init(title: "Page Layout", symbol: SBJLayoutSymbology.pageLayout, accessibilityLabel: "Edit page layout", accessibilityHint: "Configure page layout"),
+        "layout.ui.first-page": .init(title: "First Page", symbol: SBJLayoutSymbology.firstPage, accessibilityLabel: "Go to first page"),
+        "layout.ui.previous-page": .init(title: "Previous Page", symbol: SBJLayoutSymbology.previousPage, accessibilityLabel: "Go to previous page"),
+        "layout.ui.next-page": .init(title: "Next Page", symbol: SBJLayoutSymbology.nextPage, accessibilityLabel: "Go to next page"),
+        "layout.ui.last-page": .init(title: "Last Page", symbol: SBJLayoutSymbology.lastPage, accessibilityLabel: "Go to last page"),
+        "layout.ui.search-p-d-f": .init(title: "Search PDF", symbol: SBJLayoutSymbology.searchPDF, accessibilityLabel: "Search PDF"),
+        "layout.ui.previous-search-match": .init(title: "Previous Match", symbol: SBJLayoutSymbology.previousSearchMatch, accessibilityLabel: "Go to previous search result"),
+        "layout.ui.next-search-match": .init(title: "Next Match", symbol: SBJLayoutSymbology.nextSearchMatch, accessibilityLabel: "Go to next search result"),
+        "layout.ui.close-search": .init(title: "Close Search", symbol: SBJLayoutSymbology.closeSearch, accessibilityLabel: "Close search"),
+    ]
 }

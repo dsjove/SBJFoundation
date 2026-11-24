@@ -18,8 +18,8 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 		self.manager = manager
 		let authorizationStatus = manager.authorizationStatus
 		self.authorizationStatus = authorizationStatus
-		self.currentLocation = Self.validLocation(manager.location)
 		self.canGetLocation = Self.canGetLocation(for: authorizationStatus)
+		self.currentLocation = Self.canGetLocation(for: authorizationStatus) ? Self.validLocation(manager.location) : nil
 		super.init()
 
 		manager.delegate = self
@@ -36,16 +36,19 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 	private func requestAccessAndStart() {
 		authorizationStatus = manager.authorizationStatus
 		canGetLocation = Self.canGetLocation(for: authorizationStatus)
-		if let cached = Self.validLocation(manager.location) {
-			accept(cached)
-		}
-
 		if canGetLocation {
+			if let cached = Self.validLocation(manager.location) { accept(cached) }
 #if !os(tvOS)
 			manager.startUpdatingLocation()
 #endif
-		} else if authorizationStatus == .notDetermined {
-			manager.requestWhenInUseAuthorization()
+		} else {
+			currentLocation = nil
+#if !os(tvOS)
+			manager.stopUpdatingLocation()
+#endif
+			if authorizationStatus == .notDetermined {
+				manager.requestWhenInUseAuthorization()
+			}
 		}
 	}
 
@@ -58,7 +61,7 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 		}
 	}
 
-	private static func canGetLocation(for status: CLAuthorizationStatus) -> Bool {
+	static func canGetLocation(for status: CLAuthorizationStatus) -> Bool {
 #if os(macOS)
 		return status == .authorizedAlways
 #else
@@ -73,9 +76,19 @@ final class LocationManager: NSObject, LocationProvider, @unchecked Sendable {
 #endif
 	}
 
-	private static func validLocation(_ location: CLLocation?) -> CLLocation? {
-		guard let location, location.horizontalAccuracy >= 0 else { return nil }
+	/// Core Location uses a negative horizontal accuracy for an invalid fix.
+	static func validLocation(_ location: CLLocation?) -> CLLocation? {
+		guard let location,
+			location.horizontalAccuracy.isFinite,
+			location.horizontalAccuracy >= 0,
+			CLLocationCoordinate2DIsValid(location.coordinate) else { return nil }
 		return location
+	}
+
+	/// A batch is not guaranteed to be ordered by timestamp. Choose its freshest
+	/// valid fix, then compare it with the cached fix in `accept(_:)`.
+	static func newestValidLocation(in locations: [CLLocation]) -> CLLocation? {
+		locations.compactMap(validLocation).max { $0.timestamp < $1.timestamp }
 	}
 
 	@MainActor
@@ -98,19 +111,25 @@ extension LocationManager: CLLocationManagerDelegate {
 			guard let self else { return }
 			self.authorizationStatus = status
 			self.canGetLocation = Self.canGetLocation(for: status)
-			if let cached { self.accept(cached) }
 			if self.canGetLocation {
-			#if !os(tvOS)
+				if let cached { self.accept(cached) }
+#if !os(tvOS)
 				self.manager.startUpdatingLocation()
-			#endif
+#endif
+			} else {
+				self.currentLocation = nil
+#if !os(tvOS)
+				self.manager.stopUpdatingLocation()
+#endif
 			}
 		}
 	}
 
 	func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-		guard let latest = locations.last(where: { $0.horizontalAccuracy >= 0 }) else { return }
+		guard let latest = Self.newestValidLocation(in: locations) else { return }
 		DispatchQueue.main.async { [weak self] in
-			self?.accept(latest)
+			guard let self, self.canGetLocation else { return }
+			self.accept(latest)
 		}
 	}
 }

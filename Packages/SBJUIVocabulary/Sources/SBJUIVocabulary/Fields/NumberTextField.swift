@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 /// The reusable SBJ integer text field.
 ///
 /// `NumberTextField` is a standalone input control. Surrounding labels, status,
@@ -11,7 +10,6 @@ import SBJDataDefinition
 /// the field shows the standard invalid chrome so the value can be inspected and fixed.
 /// This avoids the previous split where the standalone field silently clamped/defaulted
 /// input while the owning interface preserved invalid values.
-// TODO: editor only?
 @MainActor
 public struct NumberTextField: View {
     let title: String

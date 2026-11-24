@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import SBJUIVocabulary
 /// Stable logical identity for one item in an editor snapshot.
@@ -85,7 +85,7 @@ public struct SBJEditorRowStatus: Hashable, Sendable {
     }
 }
 
-public enum SBJEditorPropertyInfoPlacement: Hashable, Sendable {
+public enum SBJEditorNomenclaturePlacement: Hashable, Sendable {
     case overlay
     case inline
     case hidden
@@ -96,20 +96,20 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
     public var placement: SBJEditorRowPlacement
     public var status: SBJEditorRowStatus
     public var disclosureMode: SBJPresentationDisclosureMode
-    public var propertyInfoPlacement: SBJEditorPropertyInfoPlacement
+    public var nomenclaturePlacement: SBJEditorNomenclaturePlacement
 
     public init(
         searchCriteria: SBJStructuralSearchCriteria = .init(),
         placement: SBJEditorRowPlacement = .normal,
         status: SBJEditorRowStatus = .init(),
         disclosureMode: SBJPresentationDisclosureMode = .closed,
-        propertyInfoPlacement: SBJEditorPropertyInfoPlacement = .overlay
+        nomenclaturePlacement: SBJEditorNomenclaturePlacement = .overlay
     ) {
         self.searchCriteria = searchCriteria
         self.placement = placement
         self.status = status
         self.disclosureMode = disclosureMode
-        self.propertyInfoPlacement = propertyInfoPlacement
+        self.nomenclaturePlacement = nomenclaturePlacement
     }
 
     public func withSearchCriteria(_ criteria: SBJStructuralSearchCriteria) -> Self {
@@ -136,9 +136,9 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
         return result
     }
 
-    public func withPropertyInfoPlacement(_ placement: SBJEditorPropertyInfoPlacement) -> Self {
+    public func withNomenclaturePlacement(_ placement: SBJEditorNomenclaturePlacement) -> Self {
         var result = self
-        result.propertyInfoPlacement = placement
+        result.nomenclaturePlacement = placement
         return result
     }
 

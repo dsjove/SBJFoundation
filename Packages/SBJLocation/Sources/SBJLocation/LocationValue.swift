@@ -1,7 +1,12 @@
 import CoreLocation
 import Foundation
+import SBJLocalization
 
-public struct LocationValue: Codable, Equatable {
+/// A serializable location fix. Accuracy values can be negative when Core Location
+/// does not know them; an unknown horizontal accuracy is not a usable fix.
+/// Zero latitude and longitude are valid coordinates and are never used as a
+/// missing-value sentinel.
+public struct LocationValue: Codable, Equatable, HasContentCheckable {
 	public var latitude: CLLocationDegrees
 	public var longitude: CLLocationDegrees
 	public var altitude: CLLocationDistance
@@ -26,6 +31,16 @@ public struct LocationValue: Codable, Equatable {
 		timestamp = location.timestamp
 	}
 
+	/// A fix has meaningful location content only when its coordinate and
+	/// horizontal accuracy represent a usable position. Other measurements,
+	/// such as altitude, course, and speed, may legitimately be unknown.
+	public var hasContent: Bool {
+		horizontalAccuracy.isFinite && horizontalAccuracy >= 0 &&
+		CLLocationCoordinate2DIsValid(.init(latitude: latitude, longitude: longitude))
+	}
+
+	/// Converts the stored values back into a Core Location object. Does not
+	/// require `hasContent` to be true, preserving unknown accuracy metadata.
 	public var location: CLLocation {
 		CLLocation(
 			coordinate: .init(latitude: latitude, longitude: longitude),

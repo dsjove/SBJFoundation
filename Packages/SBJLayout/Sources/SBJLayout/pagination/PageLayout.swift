@@ -1,6 +1,5 @@
 import Foundation
-import SBJDataDefinition
-import SBJDataDefinition
+import SBJStructure
 
 @SBJStructure
 public struct PageLayout: Codable, Equatable, Sendable {
@@ -15,13 +14,13 @@ public struct PageLayout: Codable, Equatable, Sendable {
 		}
 	}
 	public var landscape: Bool
-	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch, unit: LengthUnit.inch)
 	public var left: UnitValue<LengthUnit>
-	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch, unit: LengthUnit.inch)
 	public var right: UnitValue<LengthUnit>
-	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch, unit: LengthUnit.inch)
 	public var top: UnitValue<LengthUnit>
-	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch)
+	@SBJUnitValue(unitMutable: false, defaultUnit: LengthUnit.inch, unit: LengthUnit.inch)
 	public var bottom: UnitValue<LengthUnit>
 
 	public init(

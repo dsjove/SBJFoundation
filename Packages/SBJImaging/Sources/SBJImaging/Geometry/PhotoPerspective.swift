@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import SBJLocalization
-import SBJDataDefinition
+import SBJStructure
 
 
 /// Reserved perspective state for the portable non-destructive format.

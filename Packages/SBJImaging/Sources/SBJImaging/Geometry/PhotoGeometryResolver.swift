@@ -1,7 +1,7 @@
 #if !os(watchOS)
 import CoreGraphics
 import Foundation
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 struct PhotoResolvedLayout {

@@ -1,7 +1,5 @@
 import SwiftUI
-import SBJDataDefinition
 
-// TODO: editor only?
 @MainActor
 public struct SBJMoveButton: View {
     public let direction: SBJMoveDirection
@@ -16,14 +14,14 @@ public struct SBJMoveButton: View {
         action: (() -> Void)?
     ) {
         self.direction = direction
-        self.accessibilityLabel = accessibilityLabel ?? (direction == .up ? "Move up" : "Move down")
+        self.accessibilityLabel = accessibilityLabel ?? (direction == .up ? SBJCommonNomenclature.moveUp.title : SBJCommonNomenclature.moveDown.title)
         self.accessibilityHint = accessibilityHint
         self.action = action
     }
 
     public var body: some View {
         SBJSymbolButton(
-            direction == .up ? SBJSymbology.moveUp : SBJSymbology.moveDown,
+            direction == .up ? SBJCommonNomenclature.moveUp.symbol! : SBJCommonNomenclature.moveDown.symbol!,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint
         ) {

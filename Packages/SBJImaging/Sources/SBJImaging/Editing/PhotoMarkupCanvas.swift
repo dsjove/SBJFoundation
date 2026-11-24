@@ -3,7 +3,7 @@ import Foundation
 import Observation
 import PencilKit
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 import SBJLocalization
 

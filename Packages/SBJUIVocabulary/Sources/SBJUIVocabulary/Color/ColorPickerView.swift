@@ -1,7 +1,6 @@
 #if os(iOS) || os(visionOS)
 import SwiftUI
 import UIKit
-import SBJDataDefinition
 
 // The public sheet-facing ColorPickerView API is shared across platforms.
 // UIKit's UIColorPickerViewController preserves the iOS interaction while

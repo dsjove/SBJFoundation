@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
@@ -14,6 +14,9 @@ enum SBJStructuralFieldProjection {
         for property in type.sbjPresentationProperties {
             property.visitTypedPresentationProperty(with: visitor)
         }
+        for property in type.sbjComputedProperties where property.showInEditor {
+            property.visitTypedProperty(with: visitor)
+        }
         return visitor.descriptors
     }
 }
@@ -24,8 +27,13 @@ enum SBJStructuralFieldProjection {
 // The general-purpose DataDefinition visitor does not impose actor isolation
 // on other consumers (for example, a documentation generator).
 @MainActor
-private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @preconcurrency SBJTypedStructuralPropertyVisitor, @preconcurrency SBJTypedPresentationPropertyVisitor {
+private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @preconcurrency SBJTypedStructuralPropertyVisitor, @preconcurrency SBJTypedPresentationPropertyVisitor, @preconcurrency SBJTypedComputedPropertyVisitor {
     private(set) var descriptors: [SBJEditorPropertyDescriptor<Root>] = []
+
+    func visit<Value>(_ keyPath: KeyPath<Root, Value>, name: String, showInEditor: Bool) {
+        guard showInEditor else { return }
+        descriptors.append(SBJEditorPropertyDescriptor(readOnlyName: name, keyPath))
+    }
 
     func visit<Value>(_ keyPath: WritableKeyPath<Root, Value>, name: String) {
         descriptors.append(SBJEditorPropertyDescriptor(nonStructuralName: name, keyPath))

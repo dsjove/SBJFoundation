@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
@@ -11,15 +11,11 @@ enum SBJEditorStructuralLocations {
         _ fields: [SBJEditorPropertyDescriptor<Root>], of type: Root.Type,
         startingAt: Int = 0
     ) -> [(identity: String, location: String)] {
-        let schema = Dictionary(
-            uniqueKeysWithValues: SBJStructuralTraversal.schema(of: type).map {
-                ($0.sourceName, (identity: $0.identityComponent, location: $0.locationComponent))
-            }
-        )
+        let schema = SBJStructuralLocationLookup.locations(of: type)
         return fields.enumerated().map { ordinal, field in
             if let source = field.editableField.structuralMetadata?.sourceName,
                let structural = schema[source] {
-                return structural
+                return (identity: structural.identity, location: structural.location)
             }
             return (identity: "editor-property:\(field.name)", location: "editor-field:\(startingAt + ordinal)")
         }

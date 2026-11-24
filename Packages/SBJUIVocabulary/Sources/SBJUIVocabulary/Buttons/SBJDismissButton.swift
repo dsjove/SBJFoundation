@@ -1,5 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
 
 /// Compact action to dismiss or close a presented view.
 @MainActor
@@ -10,18 +9,18 @@ public struct SBJDismissButton: View {
 	private let action: (() -> Void)?
 
 	public init(
-		accessibilityLabel: String = "Dismiss",
+		accessibilityLabel: String? = nil,
 		accessibilityHint: String? = nil,
 		action: (() -> Void)? = nil
 	) {
-		self.accessibilityLabel = accessibilityLabel
+		self.accessibilityLabel = accessibilityLabel ?? SBJCommonNomenclature.dismiss.title
 		self.accessibilityHint = accessibilityHint
 		self.action = action
 	}
 
 	public var body: some View {
 		SBJSymbolButton(
-			SBJSymbology.dismiss,
+			SBJCommonNomenclature.dismiss.symbol!,
 			accessibilityLabel: accessibilityLabel,
 			accessibilityHint: accessibilityHint,
 			action: {

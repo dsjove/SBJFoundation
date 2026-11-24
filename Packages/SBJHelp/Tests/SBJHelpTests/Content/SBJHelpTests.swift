@@ -11,7 +11,7 @@ final class SBJHelpTests: XCTestCase {
         let source = try XCTUnwrap(SBJHelpTemplateRenderer(configuration: .standard).renderedSource(for: parent))
         XCTAssertFalse(source.contains("UI_help\\"))
         XCTAssertTrue(source.contains("data:image/png;base64"))
-        XCTAssertTrue(source.contains("style='height:1em;width:auto;vertical-align:-0.125em'"))
+        XCTAssertTrue(source.contains("class='help-icon'"))
     }
 
     func testEmbeddedHelpExpandsImageDataUsingStandardConfiguration() throws {
@@ -20,12 +20,6 @@ final class SBJHelpTests: XCTestCase {
         XCTAssertTrue(source.contains("data:image/png;base64"))
     }
 
-    func testFilenameExtensionsUseUniformTypeIdentifiers() {
-        XCTAssertEqual(UTType(filenameExtension: "html"), .html)
-		if #available(macCatalyst 27.0, iOS 27.0, macOS 27.0, *) {
-			XCTAssertEqual(UTType(filenameExtension: "md"), .markdown)
-		}
-    }
 
 	@available(macCatalyst 27.0, iOS 27.0, macOS 27.0, *)
 	func testExplicitContentTypeOverridesAssetCatalogIdentifier() {

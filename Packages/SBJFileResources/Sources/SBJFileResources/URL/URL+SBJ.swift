@@ -23,6 +23,11 @@ public extension String {
     }
 }
 
+/// Failure to represent an embedded resource size in a signed 64-bit count.
+public enum EmbeddedSizeError: Error, Equatable {
+    case overflow
+}
+
 public enum URLAttachmentError: LocalizedError {
 	case unsupportedItem
 	case tooLarge(Int64)
@@ -77,8 +82,11 @@ public extension URL {
 				continue
 			}
 			guard childValues.isRegularFile == true else { continue }
-			total += Int64(childValues.fileSize ?? 0)
-			if let maximumBytes, total > maximumBytes { return total }
+            let size = Int64(childValues.fileSize ?? 0)
+            let (next, overflow) = total.addingReportingOverflow(size)
+            guard !overflow else { throw EmbeddedSizeError.overflow }
+            total = next
+            if let maximumBytes, total > maximumBytes { return total }
 		}
 		return total
 	}

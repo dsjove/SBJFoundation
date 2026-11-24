@@ -1,11 +1,11 @@
 import Foundation
 import SwiftUI
+import SBJStructure //CodableColor
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
 import AppKit
 #endif
-import SBJDataDefinition
 
 /// Common sources from which a `CodableColor` can be constructed.
 /// Platform-specific cases exist only where their native color type exists.

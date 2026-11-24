@@ -21,7 +21,6 @@ struct SBJUnsupportedEditor<Value>: View {
             Spacer(minLength: 8)
             SBJIssueButton(
                 hasIssues: true,
-                accessibilityLabel: "Show issues",
                 action: { presentationModel?.showIssues() }
             )
         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 
 /// Precision transport control: a graduated scale with a pointed playhead.
 /// A zero-distance drag lets mouse clicks and taps jump directly to position.
@@ -20,6 +21,32 @@ public struct SBJPrecisionSlider: View {
     }
 
     public var body: some View {
+        #if os(tvOS)
+        HStack(spacing: 16) {
+            Button {
+                let step = (range.upperBound - range.lowerBound) / Double(max(ticks, 1))
+                value = max(range.lowerBound, value - step)
+            } label: {
+                Image(systemName: "minus")
+            }
+            .disabled(value <= range.lowerBound)
+            .accessibilityLabel("Decrease position")
+
+            Text(value.formatted(.number.precision(.fractionLength(2))))
+                .monospacedDigit()
+                .frame(minWidth: 72)
+                .accessibilityLabel(SBJSliderNomenclature.precision.title)
+
+            Button {
+                let step = (range.upperBound - range.lowerBound) / Double(max(ticks, 1))
+                value = min(range.upperBound, value + step)
+            } label: {
+                Image(systemName: "plus")
+            }
+            .disabled(value >= range.upperBound)
+            .accessibilityLabel("Increase position")
+        }
+        #else
         GeometryReader { proxy in
             let width = max(proxy.size.width - 12, 1)
             let x = 6 + width * fraction
@@ -59,7 +86,8 @@ public struct SBJPrecisionSlider: View {
         }
         .frame(height: 24)
         .accessibilityElement()
-        .accessibilityLabel("Precision slider")
+        .accessibilityLabel(SBJSliderNomenclature.precision.accessibilityLabel ?? SBJSliderNomenclature.precision.title)
+        .accessibilityHint(SBJSliderNomenclature.precision.accessibilityHint ?? SBJSliderNomenclature.precision.summary!)
         .accessibilityValue(String(format: "%.2f", value))
         .accessibilityAdjustableAction { direction in
             let step = (range.upperBound - range.lowerBound) / Double(max(ticks, 1))
@@ -69,6 +97,7 @@ public struct SBJPrecisionSlider: View {
             @unknown default: break
             }
         }
+        #endif
     }
 }
 

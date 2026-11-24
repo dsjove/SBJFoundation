@@ -1,5 +1,5 @@
 import Foundation
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 /// Current non-destructive edit state. This is deliberately not an edit history.

@@ -1,5 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
 
 @MainActor
 public struct SBJAddButton: View {
@@ -19,18 +18,18 @@ public struct SBJAddButton: View {
         action: @escaping () -> Void
     ) {
         self.visibleLabel = labeled ? noun : nil
-        self.accessibilityLabel = "Add \(noun)"
+        self.accessibilityLabel = "\(SBJCommonNomenclature.add.title) \(noun)"
         self.accessibilityHint = accessibilityHint
         self.action = action
     }
 
     public init(
-        accessibilityLabel: String = "Add",
+        accessibilityLabel: String? = nil,
         accessibilityHint: String? = nil,
         action: @escaping () -> Void
     ) {
         self.visibleLabel = nil
-        self.accessibilityLabel = accessibilityLabel
+        self.accessibilityLabel = accessibilityLabel ?? SBJCommonNomenclature.add.title
         self.accessibilityHint = accessibilityHint
         self.action = action
     }
@@ -38,7 +37,7 @@ public struct SBJAddButton: View {
     public var body: some View {
         if let visibleLabel {
             Button(action: action) {
-                Label(visibleLabel, symbol: SBJSymbology.add)
+                Label(visibleLabel, symbol: SBJCommonNomenclature.add.symbol!)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(accessibilityLabel)
@@ -47,7 +46,7 @@ public struct SBJAddButton: View {
             }
         } else {
             SBJSymbolButton(
-                SBJSymbology.add,
+                SBJCommonNomenclature.add.symbol!,
                 accessibilityLabel: accessibilityLabel,
                 accessibilityHint: accessibilityHint,
                 action: action

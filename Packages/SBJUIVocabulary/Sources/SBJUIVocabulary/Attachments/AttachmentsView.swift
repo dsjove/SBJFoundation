@@ -112,10 +112,10 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                     Label {
                         Text("No Attachments")
                     } icon: {
-                        Image(symbol: SBJAttachmentSymbology.attachments)
+                        Image(symbol: SBJAttachmentNomenclature.uiAttachmentsCollection.symbol!)
                     }
                 } description: {
-                    Text("Select Add Attachment to add a file.")
+                    Text(SBJAttachmentNomenclature.uiAttachmentsAdd.details!)
             }
         } else {
         List {
@@ -127,10 +127,10 @@ public struct AttachmentsView<Attachment: Attaching>: View {
                             text: editableNameBinding(for: id)
                         )
                         .sbjSingleLineField()
-                        .applyIf(Attachment.propertyInfo(for: \Attachment.name)?.accessibilityLabel) { view, label in
+                        .applyIf(Attachment.propertyNomenclature(for: \Attachment.name)?.accessibilityLabel) { view, label in
                             view.accessibilityLabel(label)
                         }
-                        .applyIf(Attachment.propertyInfo(for: \Attachment.name)?.accessibilityHint) { view, hint in
+                        .applyIf(Attachment.propertyNomenclature(for: \Attachment.name)?.accessibilityHint) { view, hint in
                             view.accessibilityHint(hint)
                         }
 
@@ -141,16 +141,18 @@ public struct AttachmentsView<Attachment: Attaching>: View {
 
                         Spacer()
 
-                        SBJRemoveButton(
-                            accessibilityLabel: "Remove \(attachment.displayName)"
+                        SBJSymbolButton(
+                            SBJAttachmentNomenclature.uiAttachmentsRemove,
+                            context: attachment.displayName,
+                            role: .destructive
                         ) {
                             requestRemoval(ids: [id])
                         }
 
 #if (canImport(QuickLook) && canImport(UIKit) && !os(visionOS)) || (os(macOS) && canImport(QuickLookUI))
                         SBJSymbolButton(
-                            SBJAttachmentSymbology.previewAttachment,
-                            accessibilityLabel: "Preview \(attachment.displayName)"
+                            SBJAttachmentNomenclature.uiAttachmentsPreview,
+                            context: attachment.displayName
                         ) {
                             openAttachment(attachment)
                         }
@@ -165,7 +167,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
 #if !os(tvOS) && !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
 #endif
-        .navigationTitle("Attachments")
+        .navigationTitle(SBJAttachmentNomenclature.uiAttachmentsCollection.title)
         .toolbar {
             if hasDoneButton {
                 ToolbarItem(placement: .cancellationAction) {
@@ -174,7 +176,7 @@ public struct AttachmentsView<Attachment: Attaching>: View {
             }
 
             ToolbarItemGroup(placement: .primaryAction) {
-                SBJAddButton("Attachment") {
+                SBJSymbolButton(SBJAttachmentNomenclature.uiAttachmentsAdd) {
                     isImporterPresented = true
                 }
             }

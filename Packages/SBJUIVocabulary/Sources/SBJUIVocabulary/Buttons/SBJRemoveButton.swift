@@ -1,6 +1,4 @@
 import SwiftUI
-import SBJDataDefinition
-
 
 //TODO: rectify with SBJDeleteButton
 
@@ -11,18 +9,18 @@ public struct SBJRemoveButton: View {
     private let action: () -> Void
 
     public init(
-        accessibilityLabel: String = "Remove",
+        accessibilityLabel: String? = nil,
         accessibilityHint: String? = nil,
         action: @escaping () -> Void
     ) {
-        self.accessibilityLabel = accessibilityLabel
+        self.accessibilityLabel = accessibilityLabel ?? SBJCommonNomenclature.remove.title
         self.accessibilityHint = accessibilityHint
         self.action = action
     }
 
     public var body: some View {
         SBJSymbolButton(
-            SBJSymbology.remove,
+            SBJCommonNomenclature.remove.symbol!,
             accessibilityLabel: accessibilityLabel,
             accessibilityHint: accessibilityHint,
             action: action

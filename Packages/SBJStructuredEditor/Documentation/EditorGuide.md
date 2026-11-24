@@ -1,6 +1,6 @@
 # Editor guide
 
-The SwiftUI editor and `@SBJEditable` live in **SBJFoundation**. Structural metadata, constraints, validation, and `@SBJStructure` live in **SBJDataDefinition**. A model annotated with `@SBJEditable` receives both structural and editor generation.
+The SwiftUI editor and `@SBJEditable` live in **SBJFoundation**. Structural metadata, constraints, validation, and `@SBJStructure` live in **SBJStructure**. A model annotated with `@SBJEditable` receives both structural and editor generation.
 
 # Generic SwiftUI editor
 

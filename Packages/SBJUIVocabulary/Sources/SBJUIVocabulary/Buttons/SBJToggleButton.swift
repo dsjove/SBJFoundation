@@ -1,29 +1,31 @@
+import SBJLocalization
 import SwiftUI
-import SBJDataDefinition
 
 /// Compact binary control using the shared SBJ active-control chrome.
 ///
 /// The control owns selection presentation, the Differentiate Without Color
 /// cue, label typography, and button style. Callers provide only the semantic
 /// label, state, optional leading content, and accessibility wording.
-// TODO: editor only?
 @MainActor
 public struct SBJToggleButton<Leading: View>: View {
     private let title: String
     @Binding private var isOn: Bool
     private let accessibilityLabel: String
+    private let accessibilityHint: String?
     private let leading: Leading
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     public init(
-        _ title: String,
+        _ nomenclature: SBJNomenclature,
         isOn: Binding<Bool>,
-        accessibilityLabel: String,
         @ViewBuilder leading: () -> Leading
     ) {
-        self.title = title
+        precondition(!(nomenclature.accessibilityLabel ?? nomenclature.title).isEmpty,
+                     "A toggle requires an accessible name")
+        self.title = nomenclature.title
         self._isOn = isOn
-        self.accessibilityLabel = accessibilityLabel
+        self.accessibilityLabel = nomenclature.accessibilityLabel ?? nomenclature.title
+        self.accessibilityHint = nomenclature.accessibilityHint ?? nomenclature.summary
         self.leading = leading()
     }
 
@@ -44,5 +46,9 @@ public struct SBJToggleButton<Leading: View>: View {
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isOn ? "On" : "Off")
+        .applyIf(accessibilityHint) { view, hint in
+            view.accessibilityHint(Text(verbatim: hint))
+        }
     }
 }

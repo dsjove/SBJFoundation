@@ -59,7 +59,7 @@ and behavior.
 ## Annotation checklist
 
 The canonical sample model currently declares every annotation in
-`Sources/SBJFoundation/SBJStructure/Public/Annotations`:
+`Sources/SBJStructuredEditor/Editor/Public/Annotations`:
 
 - `@SBJStructure` — structs and an associated-value enum.
 - `@SBJArray` — ingredients and steps.

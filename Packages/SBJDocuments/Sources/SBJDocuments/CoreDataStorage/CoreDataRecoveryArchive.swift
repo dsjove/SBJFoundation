@@ -16,6 +16,16 @@ public enum CoreDataRecoveryArchive {
     }
 
     private static func directory(appIdentifier: String) throws -> URL {
+        // This identifier becomes one filesystem component, not a relative path.
+        // Never allow recovery snapshots to escape their dedicated directory.
+        guard !appIdentifier.isEmpty,
+              appIdentifier != ".", appIdentifier != "..",
+              !appIdentifier.contains("/"),
+              !appIdentifier.contains("\\"),
+              !appIdentifier.contains(":"),
+              !appIdentifier.contains("\0") else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
         let base = try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,

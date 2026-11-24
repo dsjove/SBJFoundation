@@ -1,7 +1,7 @@
 import PhotosUI
 import SwiftUI
 import SBJCamera
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 public struct PhotoMenuOptions: OptionSet, Sendable {

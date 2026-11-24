@@ -1,8 +1,13 @@
-# SBJFoundation editor organization
+# Source organization
 
-- `Sources/SBJFoundation/SBJStructure/` contains the SwiftUI editor runtime, controls, descriptors, bindings, previews, and editor-only public annotations.
-- `Sources/SBJStructuredEditorMacros/` provides the `@SBJEditable` umbrella macro and editor annotations.
-- The macro target imports `SBJStructureMacroSupport` from the SBJDataDefinition package to reuse structural generation without copying its implementation.
-- `Tests/SBJFoundationTests/SBJStructure/` contains editor and integration tests.
+`SBJStructuredEditor` organizes client-facing editing behavior under `Editor/`:
 
-The structural model, validation, search, and `@SBJStructure` are owned by SBJDataDefinition; no editor code moves into that package.
+- `Public/`: entry points, registry, presentation state, navigation, and feature vocabulary.
+- `Automatic/`: maps `SBJStructure` metadata into editable rows and live bindings.
+- `Controls/`: input controls, value drafts, and collection editors.
+- `Interaction/`: search expansion and collection actions.
+- `Layout/`: field geometry and accessibility presentation.
+- `Support/`: internal typed-binding utilities.
+- `Preview/`: example compositions and preview support.
+
+Tests mirror these responsibilities. `SBJStructure` owns model metadata, default construction, structural traversal and invariants; the editor owns only UI-specific adapters. The package does not contain a macro target.

@@ -1,17 +1,31 @@
-# Source ownership and API correction
+# SBJFoundation
 
-Apply these files relative to `SBJFoundation/` in the latest consolidated source tree and remove every path in DELETE_PATHS.txt. This is a source patch, not a verified Xcode build.
+SBJFoundation is a collection of Swift packages for typed document models, structured editing, nomenclature, accessibility, help, reporting, and application integrations. The `Packages/` directory contains the individual products; consumer applications live in separate repositories.
 
-- `SBJStructuralSearchCriteria` and its behavior tests moved from editor to DataDefinition; editor consumers import DataDefinition directly.
-- `PackageAttachmentStoreTests` no longer imports SBJUIVocabulary or SBJDataDefinition: it exercises Foundation's store and SBJFileResources' content types.
-- Added Help's own standard-configuration embedded-image test using the existing test fixture. The existing Foundation-specific `.foundation` configuration integration test intentionally remains with its implementation: `.foundation` is defined in SBJFoundation and depends on Foundation AppInfo. Moving *that exact test* to SBJHelp would introduce a reverse dependency, unlike moving the generic rendering test.
-- Editor-owned macro expansion and unit editor integration tests remain in StructuredEditor, even though their fixtures involve DataDefinition types.
+## Structured-model architecture
 
-Test human-readable output equivalence and imports across every file still require a separate exhaustive source-level review: this patch does not claim those are complete. Swift/Xcode builds have not been executed.
+The structured-data features follow a shared contract:
 
-## Image package
+1. **SBJDataDefinition** owns `@SBJStructure`/extension annotations, declared-property identity, `SBJNomenclature`, constraints, traversal, type/initializer metadata, defaults, construction, and invariant checking. The Swift encoder produces source representations; it is not a runtime Swift interpreter.
+2. **SBJStructuredEditor** is the SwiftUI consumer. It uses typed property descriptors, the shared collection creation infrastructure, and usage policies rather than imposing new model invariants.
+3. **SBJStructuredAI** uses the same structural descriptors to search/read/describe fields, list matching fields, prepare proposed scalar/collection edits, and handle explicit approval. Apple Foundation Models is a tool-calling adapter around this deterministic layer.
+4. **SBJDataDefinitionReport** produces a declaration-level PDF catalog without constructing a model instance. Editor visibility does not imply report exclusion; annotated computed members are documented without invoking getters.
+5. **SBJLocalization**, **SBJUIVocabulary**, and **SBJHelp** provide shared human-facing nomenclature, UI presentation and help.
 
-Image functionality is now owned by `Packages/SBJImage`. Clients importing image APIs directly should `import SBJImaging`; SBJFoundation depends on it for the `Bundle.icon` extension.
+Nomenclature supplies titles, alternative names, summaries, descriptions, symbols and accessibility metadata. For declarations using `#SBJAutoNomenclature`, the title is derived by macro expansion rather than recomputed by every consumer. A standalone nomenclature may have an empty title; clients that need optional-title semantics can use `nonEmptyTitle`.
 
+## Capability, policy and invariant
 
-Page-layout editing (`PageLayoutEditorCore` and `PageLayoutEditorView`) lives in the umbrella `SBJFoundation` module. `PageLayout`, `PageSize`, and `Insets` are structural models in `SBJLayout` and do not depend on `SBJStructuredEditor`.
+These are distinct layers. Swift and typed structural descriptors determine which operations are *possible*. Explicit property constraints and whole-model invariants determine whether a candidate value is *valid*. `SBJUsagePolicy` interprets existing presentation hints for visual and semantic editors; a presentation hint must not expand an unsupported operation or override an invariant. In particular, `insertable`, `removable` and `reorderable` are editor policies rather than intercepted ordinary Swift mutations. The report can describe fields that an editor excludes.
+
+Unit constraints on `@SBJUnitValue` can specify a required unit and an allowed unit system; the `UnitValue<U>` generic parameter establishes its unit family. `defaultUnit` is a construction preference, not automatically a required unit. The former `SBJUnitValuePresentation` duplicate has been removed.
+
+## Construction and approval
+
+`SBJCollectionElementCreatable` and `SBJDefaultValue` are shared by the editors. `SBJRuntimeConstruction` canonicalizes supplied member labels and aliases and constructs typed candidates using defaults with writable-member mutation when supported, otherwise Codable reconstruction. It does not dynamically execute arbitrary custom Swift initializers. Every candidate is subject to invariant validation. An AI proposal is not a mutation: the app must explicitly approve it, at which point revision/policy/invariant checks apply.
+
+## Integration and verification
+
+Read [the Assistant architecture and verification guide](Documentation/StructuredAssistantArchitecture.md) for tool routing, error handling, feedback/voice boundaries, tests and acceptance cases. Package-specific documentation remains in the respective `Packages/<name>/README.md` files. See [Nomenclature integration](Packages/SBJLocalization/Documentation/NomenclatureIntegration.md) for the shared naming/help contract.
+
+The Linux validation of the Phase 8 snapshot performs syntax and source checks only; Xcode builds, platform-specific UI behavior, microphone permissions and live Foundation Models responses must be verified on Apple hardware.

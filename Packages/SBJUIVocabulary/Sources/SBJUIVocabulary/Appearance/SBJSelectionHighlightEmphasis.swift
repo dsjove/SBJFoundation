@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 extension SBJUIAppearance {
     public static var selectionColor: Color { Self.searchActiveColor }
 

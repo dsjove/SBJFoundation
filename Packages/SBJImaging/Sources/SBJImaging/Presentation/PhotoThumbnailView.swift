@@ -2,7 +2,7 @@
 import SBJLocalization
 import SwiftUI
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 import SBJLocalization
 

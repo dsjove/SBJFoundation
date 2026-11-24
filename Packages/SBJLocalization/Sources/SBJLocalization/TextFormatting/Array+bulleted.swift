@@ -10,8 +10,8 @@ public extension Array where Element == Optional<String> {
 public extension Array where Element == String {
 	func bulleted(_ separator: String = " • ", prefix: String = "") -> String {
 		self
-			.map(prefix.appending)
 			.filter { !$0.isEmpty }
+			.map(prefix.appending)
 			.joined(separator: separator)
 	}
 }
@@ -27,8 +27,8 @@ public extension Array where Element == SBJTextPresentable {
 	func bulleted(_ separator: String = " • ", prefix: String = "") -> String {
 		self
 			.map(\.presentedValue)
-			.map(prefix.appending)
 			.filter { !$0.isEmpty }
+			.map(prefix.appending)
 			.joined(separator: separator)
 	}
 }

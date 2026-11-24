@@ -1,0 +1,24 @@
+# Testing guide
+
+Tests should verify **meaningful behavior and externally observable contracts**. Prefer focused unit tests for validation, conversion, persistence, macro expansion, transformations and state transitions. Avoid tests that merely read a stored property, echo a string literal, or instantiate a type without exercising behavior.
+
+## Run tests
+
+Each nested package has its own `Package.swift`; SwiftPM runs package test targets independently. From a package directory, run `swift test` when the current platform supports that package. For SwiftUI targets, use Xcode with an appropriate Apple-platform test destination. The enclosing Foundation package and individual nested packages do not automatically form one umbrella test target.
+
+## Package responsibilities
+
+`SBJStructure` tests cover generated metadata, structural operations, explicit validation, Codable models, macro expansion behavior, and Swift source reconstruction. General nomenclature, content, equality, and invariant contracts are tested by `SBJLocalization`. Consumer-specific editor and AI workflows belong in their respective packages.
+
+## Editor integration
+
+The editor's sample model and preview give **compile coverage** of the annotation and dependency graph; they do not substitute for behavioral tests. Preserve tests for mutation, validation, navigation, selection, filtering and state restoration. Do not test SwiftUI rendering, focus mechanics, or simple modifier behavior. Verify meaningful behavior at pure-model and editor-integration boundaries.
+
+## Do not add tests for
+
+- Plain getters, setters, initializers or computed properties with no behavior.
+- Direct string copies, or assertions that documentation strings equal their literals.
+- `#expect(true)` and tests that only prove the test target loads.
+- One-to-one forwarding that is already adequately tested at its behavioral boundary.
+
+When a simple implementation is part of a **serialization or public compatibility contract**, test the contract rather than the mechanical accessor. Test names should describe the requirement they protect.

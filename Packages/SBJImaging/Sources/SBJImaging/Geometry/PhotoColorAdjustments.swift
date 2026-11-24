@@ -1,8 +1,10 @@
 import Foundation
+#if canImport(CoreImage) && !os(watchOS)
 import CoreImage
+#endif
 import CoreGraphics
 import SBJLocalization
-import SBJDataDefinition
+import SBJStructure
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -58,6 +60,7 @@ public struct PhotoColorAdjustments: Codable, Equatable, Sendable {
         noiseReduction = try c.decodeIfPresent(Double.self, forKey: .noiseReduction) ?? 0
     }
 
+    #if canImport(CoreImage) && !os(watchOS)
     /// Uses new filter instances per call; safe to apply from AVFoundation's render queue.
     public func applying(to source: CIImage) -> CIImage {
         guard !isNeutral else { return source }
@@ -110,9 +113,11 @@ public struct PhotoColorAdjustments: Codable, Equatable, Sendable {
         return image.sbjReplacingPixels(with: result)
     }
     #endif
+    #endif // Core Image rendering availability
 
 }
 
+#if canImport(CoreImage) && !os(watchOS)
 private extension Double {
     func clamped(to range: ClosedRange<Double>) -> Double { min(max(self, range.lowerBound), range.upperBound) }
 }
@@ -132,3 +137,4 @@ private extension SBJImage {
     }
 }
 #endif
+#endif // Core Image rendering helpers

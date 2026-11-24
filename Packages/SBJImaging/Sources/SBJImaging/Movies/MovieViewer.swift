@@ -5,7 +5,7 @@ import AVFoundation
 import AVKit
 import CoreImage
 import SBJLocalization
-import SBJDataDefinition
+import SBJStructure
 import SBJFileResources
 import SBJUIVocabulary
 import UniformTypeIdentifiers
@@ -459,9 +459,9 @@ struct MovieViewer: View {
         }
     }
 
-    private func frameButton(_ direction: Int, symbol: String, title: String) -> some View {
+    private func frameButton(_ direction: Int, nomenclature: SBJNomenclature) -> some View {
         Button { playback.step(direction) } label: {
-            Image(systemName: symbol)
+            Image(symbol: nomenclature.symbol!)
                 .contentShape(Rectangle())
         }
         // High-priority zero-distance drag handles mouse/touch hold. The Button
@@ -471,16 +471,25 @@ struct MovieViewer: View {
                 .onChanged { _ in beginFramePress(direction) }
                 .onEnded { _ in stopFrameRepeat() }
         )
-        .help(title)
+        .accessibility(nomenclature)
+        .help(nomenclature.title)
     }
 
     private var playbackButtons: some View {
         HStack(spacing: 6) {
-            frameButton(-1, symbol: "backward.frame", title: "Previous frame")
+            frameButton(-1, nomenclature: SBJImageNomenclature.moviePreviousFrame)
             Button { playback.toggle() } label: {
-                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-            }.help("Play or pause")
-            frameButton(1, symbol: "forward.frame", title: "Next frame")
+                Image(symbol: (playback.isPlaying
+                    ? SBJImageNomenclature.moviePause
+                    : SBJImageNomenclature.moviePlay).symbol!)
+            }
+            .accessibility(playback.isPlaying
+                ? SBJImageNomenclature.moviePause
+                : SBJImageNomenclature.moviePlay)
+            .help((playback.isPlaying
+                ? SBJImageNomenclature.moviePause
+                : SBJImageNomenclature.moviePlay).title)
+            frameButton(1, nomenclature: SBJImageNomenclature.movieNextFrame)
         }
     }
 
@@ -500,18 +509,20 @@ struct MovieViewer: View {
                         // not the sidecar timestamp-selection action.
                         Task { await savePoster(edit: options.allowsImageTools && !options.allowsEmbeddedPosterEditing) }
 					} label: {
-						Image(systemName: "photo.stack")
+						Image(symbol: SBJImageNomenclature.movieSetPoster.symbol!)
 					}
 					.labelStyle(.iconOnly)
-					.help("Set poster frame")
+					.accessibility(SBJImageNomenclature.movieSetPoster)
+                    .help(SBJImageNomenclature.movieSetPoster.title)
 					.disabled(working)
 					Button {
                         Task { await clearExternalPoster() }
 					} label: {
-						Image(systemName: "photo.slash")
+						Image(symbol: SBJImageNomenclature.movieClearPoster.symbol!)
 					}
 					.labelStyle(.iconOnly)
-					.help("Clear poster frame")
+					.accessibility(SBJImageNomenclature.movieClearPoster)
+                    .help(SBJImageNomenclature.movieClearPoster.title)
 					.disabled(working)
 				}
             }
@@ -533,13 +544,17 @@ struct MovieViewer: View {
                 #else
                 fullscreen = true
                 #endif
-            } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
-            .help("Full screen")
+            } label: { Image(symbol: SBJImageNomenclature.movieFullscreen.symbol!) }
+            .accessibility(SBJImageNomenclature.movieFullscreen)
+            .help(SBJImageNomenclature.movieFullscreen.title)
             ShowInFinder(url: url)
             if options.allowsColorAdjustments {
-            Button("Enhancements", systemImage: "slider.horizontal.3") {
+            Button {
                 showingEnhancements.toggle()
+            } label: {
+                Label(SBJImageNomenclature.movieEnhancements)
             }
+            .accessibility(SBJImageNomenclature.movieEnhancements)
                 .labelStyle(.iconOnly)
                 .popover(isPresented: $showingEnhancements) {
                     ImageEnhancementControls(
@@ -552,14 +567,17 @@ struct MovieViewer: View {
                     .foregroundStyle(.black)
                     .background(Color.white)
                 }
-                .help("Image enhancements")
+                .help(SBJImageNomenclature.movieEnhancements.title)
             }
             if !options.allowsFrameSelection && !options.allowsEmbeddedPosterEditing && options.allowsImageTools {
-                Button("Inspect Current Frame", systemImage: "photo") {
+                Button {
                     Task { await inspectCurrentFrame() }
+                } label: {
+                    Label(SBJImageNomenclature.movieInspectFrame)
                 }
+                .accessibility(SBJImageNomenclature.movieInspectFrame)
                 .labelStyle(.iconOnly)
-                .help("View current frame")
+                .help(SBJImageNomenclature.movieInspectFrame.title)
                 .disabled(working)
             }
             if options.allowsEmbeddedPosterEditing {
@@ -606,10 +624,10 @@ struct MovieViewer: View {
                         )
                     ]
                 ) {
-                    Image(systemName: "person.crop.artframe")
-                        .accessibilityLabel("Embedded photo options")
+                    Image(symbol: SBJImageNomenclature.movieEmbeddedPhotoOptions.symbol!)
+                        .accessibility(SBJImageNomenclature.movieEmbeddedPhotoOptions)
                 }
-                .help("Embedded photo options")
+                .help(SBJImageNomenclature.movieEmbeddedPhotoOptions.title)
                 .disabled(working)
             }
         }
@@ -647,9 +665,9 @@ struct MovieViewer: View {
     private var controls: some View {
         HStack(spacing: 9) {
             Button { if let onClose { onClose() } else { dismiss() } } label: {
-                Image(systemName: "xmark")
+                Image(symbol: SBJImageNomenclature.movieClose.symbol!)
             }
-            .accessibilityLabel("Close movie")
+            .accessibility(SBJImageNomenclature.movieClose)
             Group {
             if compact {
                 VStack(spacing: 4) {
@@ -710,7 +728,7 @@ struct MovieViewer: View {
                 .padding(20)
                 .background(.white, in: RoundedRectangle(cornerRadius: 12))
                 .shadow(color: .black.opacity(0.35), radius: 10, y: 3)
-                .accessibilityLabel("Saving poster frame")
+                .accessibility(SBJImageNomenclature.movieSavingPoster)
                 .allowsHitTesting(false)
         }
     }

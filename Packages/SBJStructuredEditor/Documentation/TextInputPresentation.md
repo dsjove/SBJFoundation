@@ -1,6 +1,6 @@
 # Text input presentation API
 
-`SBJStringPresentationValue` is defined by SBJDataDefinition and contains portable
+`SBJStringPresentationValue` is defined by SBJStructure and contains portable
 text input configuration. In SBJUIVocabulary, apply the input policies through
 `.sbjTextInput(presentation)` on an existing text control. This modifier does **not**
 choose a control type, create a sheet, or apply layout.

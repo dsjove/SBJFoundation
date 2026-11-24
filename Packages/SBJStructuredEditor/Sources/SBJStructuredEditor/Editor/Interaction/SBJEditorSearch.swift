@@ -1,6 +1,6 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
-import SBJDataDefinitionReport
+import SBJStructuredReport
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
@@ -17,17 +17,15 @@ struct SBJEditorSearchBar: View {
             HStack(spacing: 8) {
                 SearchField(searching: $searchText, activeSearchBorderPadding: nil)
                 SBJToggleButton(
-                    "Changed",
-                    isOn: $criteria.showChangedOnly,
-                    accessibilityLabel: criteria.showChangedOnly ? "Show all values" : "Show changed values only"
+                    SBJStructuredEditorNomenclature.searchChanged,
+                    isOn: $criteria.showChangedOnly
                 ) {
                     SBJEditorStatusSymbol(kind: .changed)
                 }
 
                 SBJToggleButton(
-                    "Empty",
-                    isOn: $criteria.showEmptyContentOnly,
-                    accessibilityLabel: criteria.showEmptyContentOnly ? "Show all values" : "Show values with no content only"
+                    SBJStructuredEditorNomenclature.searchEmpty,
+                    isOn: $criteria.showEmptyContentOnly
                 ) {
                     SBJEditorStatusSymbol(kind: .empty)
                 }
@@ -35,14 +33,12 @@ struct SBJEditorSearchBar: View {
             .sbjActiveSearch(!criteria.isEmpty)
 
 			SBJSymbolButton(
-                SBJDataDefinitionReportSymbology.showDefinitionReport,
-                accessibilityLabel: "Show Structure report",
+                SBJStructuredReportNomenclature.showDefinitionReport,
                 action: showStructure
             )
 
             SBJIssueButton(
                 hasIssues: hasIssues,
-                accessibilityLabel: hasIssues == nil ? "Check issues" : "Show issues",
                 action: showIssues
             )
 		}

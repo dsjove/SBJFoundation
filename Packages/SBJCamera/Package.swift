@@ -12,8 +12,9 @@ let package = Package(
         .tvOS(.v17),
     ],
     products: [.library(name: "SBJCamera", targets: ["SBJCamera"])],
+    dependencies: [.package(path: "../SBJLocalization")],
     targets: [
-        .target(name: "SBJCamera", swiftSettings: [
+        .target(name: "SBJCamera", dependencies: [.product(name: "SBJLocalization", package: "SBJLocalization")], swiftSettings: [
             .enableUpcomingFeature("ApproachableConcurrency"),
             .defaultIsolation(nil),
         ]),

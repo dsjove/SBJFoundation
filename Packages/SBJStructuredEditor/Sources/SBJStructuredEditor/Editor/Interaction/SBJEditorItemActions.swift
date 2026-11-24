@@ -31,7 +31,7 @@ struct SBJEditorItemActions {
         return AnyView(
             SBJEditorActionHeight {
                 SBJConfirmedRemoveButton(
-                    accessibilityLabel: "Remove item",
+                    context: "item",
                     remove: remove
                 )
             }

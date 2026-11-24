@@ -2,7 +2,7 @@
 #if canImport(UIKit)
 import UIKit
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 import SBJLocalization
 

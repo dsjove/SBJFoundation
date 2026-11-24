@@ -13,8 +13,8 @@ struct FlashAvailability {
         present.contains(.torch)
     }
 
-    init() {
-        self.present = []
+    init(present: Set<CameraFlashMode> = []) {
+        self.present = present
     }
 
     #if os(iOS) || os(macOS)

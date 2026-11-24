@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
   import SwiftUI
@@ -133,6 +133,31 @@ import SBJUIVocabulary
             context: context,
             headerOnly: headerOnly
           )
+        )
+      }
+      self.traverseChildren = { _, _ in [] }
+      self.traverseBoundChildren = { _, _, _, _ in [] }
+      self.collectIssues = { _, _, _ in [] }
+    }
+
+    /// Displays a computed value without constructing a writable binding.
+    /// The value is read from the current root every time the row renders.
+    public init<Value>(readOnlyName name: String, _ keyPath: KeyPath<Root, Value>) {
+      self.name = name
+      self.traversalDisclosureMode = .closed
+      self.isTraversalDisclosure = false
+      self.editableField = SBJMutableProperty<Root>(readOnlyName: name, keyPath)
+      self.makeView = { root, _, _, overrideName, _, _, _, headerOnly in
+        AnyView(
+          HStack(alignment: .firstTextBaseline) {
+            Text(overrideName ?? name)
+            if !headerOnly {
+              Spacer(minLength: 8)
+              Text(String(describing: root.wrappedValue[keyPath: keyPath]))
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+            }
+          }
         )
       }
       self.traverseChildren = { _, _ in [] }

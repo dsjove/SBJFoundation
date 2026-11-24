@@ -12,11 +12,10 @@ import CoreImage
 import PencilKit
 #endif
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJDocuments
 import SBJUIVocabulary
 import SBJHelp
-import SBJSharing
 
 public extension SBJBundledContentReference {
     static var imageEditHelp: SBJBundledContentReference {
@@ -254,7 +253,7 @@ public struct PhotoEditor: View {
                                         model.freeCropEnded()
                                     }
                             )
-                            .accessibility(freeCropInfo)
+                            .accessibility(freeCropNomenclature)
                     }
                 }
             }
@@ -390,22 +389,19 @@ public struct PhotoEditor: View {
 #if canImport(UIKit) && canImport(PencilKit)
                 if options.allowsMarkup, markupActive {
                     SBJSymbolButton(
-                        SBJImageSymbology.eraseMarkup,
-                        accessibilityLabel: "Clear Markup",
+                        SBJImageNomenclature.imageClearMarkup,
                         action: markup.clear
                     )
                     .disabled(!markup.hasDrawing)
 
                     SBJSymbolButton(
-                        SBJImageSymbology.undoMarkup,
-                        accessibilityLabel: "Undo Markup",
+                        SBJImageNomenclature.imageUndoMarkup,
                         action: markup.undo
                     )
                     .disabled(!markup.canUndo)
 
                     SBJSymbolButton(
-                        SBJImageSymbology.redoMarkup,
-                        accessibilityLabel: "Redo Markup",
+                        SBJImageNomenclature.imageRedoMarkup,
                         action: markup.redo
                     )
                     .disabled(!markup.canRedo)
@@ -476,8 +472,7 @@ public struct PhotoEditor: View {
     @ViewBuilder
     private var markupToggleButton: some View {
         SBJSymbolButton(
-            markupActive ? SBJImageSymbology.hideMarkup : SBJImageSymbology.markup,
-            accessibilityLabel: markupActive ? "Hide Markup Tools" : "Show Markup Tools"
+            markupActive ? SBJImageNomenclature.imageHideMarkup : SBJImageNomenclature.imageShowMarkup
         ) {
             markupActive.toggle()
         }
@@ -488,22 +483,19 @@ public struct PhotoEditor: View {
     @ViewBuilder
     private var compactMarkupActions: some View {
         SBJSymbolButton(
-            SBJImageSymbology.eraseMarkup,
-            accessibilityLabel: "Clear Markup",
+            SBJImageNomenclature.imageClearMarkup,
             action: markup.clear
         )
         .disabled(!markup.hasDrawing)
 
         SBJSymbolButton(
-            SBJImageSymbology.undoMarkup,
-            accessibilityLabel: "Undo Markup",
+            SBJImageNomenclature.imageUndoMarkup,
             action: markup.undo
         )
         .disabled(!markup.canUndo)
 
         SBJSymbolButton(
-            SBJImageSymbology.redoMarkup,
-            accessibilityLabel: "Redo Markup",
+            SBJImageNomenclature.imageRedoMarkup,
             action: markup.redo
         )
         .disabled(!markup.canRedo)
@@ -516,17 +508,13 @@ public struct PhotoEditor: View {
             model.resetPlacementAndMagnification()
         } label: {
             if labelIsHidden {
-                Image(symbol: SBJImageSymbology.resetPanZoom)
-                    .accessibilityLabel("Reset Pan and Zoom")
+                Image(symbol: SBJImageNomenclature.imageResetPanZoom.symbol!)
             } else {
-                Label("Reset Pan & Zoom", symbol: SBJImageSymbology.resetPanZoom)
+                Label(SBJImageNomenclature.imageResetPanZoom)
             }
         }
         .disabled(!model.hasPlacementOrMagnificationEdits)
-        .accessibility(
-            label: "Reset Pan and Zoom",
-            hint: [placementInfo.summary, magnificationInfo.summary].compactMap { $0 }.joined(separator: " ")
-        )
+        .accessibility(SBJImageNomenclature.imageResetPanZoom)
     }
 
     @ViewBuilder
@@ -546,9 +534,9 @@ public struct PhotoEditor: View {
 
             if options.allowsCropDimensionSwap {
                 Toggle(isOn: cropDimensionsSwappedBinding) {
-                    Label("Swap Width & Height", symbol: SBJImageSymbology.swapCropDimensions)
+                    Label(SBJImageNomenclature.imageSwapCropDimensions)
                 }
-                .accessibility(swapDimensionsInfo)
+                .accessibility(swapDimensionsNomenclature)
             }
 
             resetPanZoomButton(labelIsHidden: false)
@@ -556,16 +544,14 @@ public struct PhotoEditor: View {
             resetPanZoomButton(labelIsHidden: true)
         } label: {
             Image(symbol: SBJImageSymbology.crop)
-                .accessibility(cropOptionInfo)
+                .accessibility(cropOptionNomenclature)
                 .accessibilityValue(cropTitle(for: model.geometry.crop.option))
         }
         .labelStyle(.titleAndIcon)
 
         if options.availableMirrorAxes.contains(.horizontal) {
             SBJSymbolButton(
-                SBJImageSymbology.mirrorHorizontal,
-                accessibilityLabel: horizontalMirrorInfo.accessibilityLabel ?? horizontalMirrorInfo.title ?? horizontalMirrorInfo.summary ?? "Mirror Horizontally",
-                accessibilityHint: horizontalMirrorInfo.accessibilityHint ?? horizontalMirrorInfo.summary
+                SBJImageNomenclature.imageMirrorHorizontal
             ) {
                 model.toggleMirror(.horizontal)
             }
@@ -574,9 +560,7 @@ public struct PhotoEditor: View {
 
         if options.allowsQuarterTurnRotation {
             SBJSymbolButton(
-                SBJImageSymbology.rotateLeft,
-                accessibilityLabel: "Rotate Left 90 Degrees",
-                accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
+                SBJImageNomenclature.imageRotateLeft
             ) {
                 model.rotate(clockwise: false)
             }
@@ -584,9 +568,7 @@ public struct PhotoEditor: View {
 
         if options.availableMirrorAxes.contains(.vertical) {
             SBJSymbolButton(
-                SBJImageSymbology.mirrorVertical,
-                accessibilityLabel: verticalMirrorInfo.accessibilityLabel ?? verticalMirrorInfo.title ?? verticalMirrorInfo.summary ?? "Mirror Vertically",
-                accessibilityHint: verticalMirrorInfo.accessibilityHint ?? verticalMirrorInfo.summary
+                SBJImageNomenclature.imageMirrorVertical
             ) {
                 model.toggleMirror(.vertical)
             }
@@ -595,9 +577,7 @@ public struct PhotoEditor: View {
 
         if options.allowsFreeRotation {
             SBJSymbolButton(
-                SBJImageSymbology.straighten,
-                accessibilityLabel: straightenInfo.accessibilityLabel ?? straightenInfo.title ?? straightenInfo.summary ?? "Straighten",
-                accessibilityHint: straightenInfo.accessibilityHint ?? straightenInfo.summary
+                SBJImageNomenclature.imageStraighten
             ) {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isRotationVisible.toggle()
@@ -616,16 +596,14 @@ public struct PhotoEditor: View {
 
                 if options.allowsQuarterTurnRotation {
                     SBJSymbolButton(
-                        SBJImageSymbology.rotateLeft,
-                        accessibilityLabel: "Rotate Left 90 Degrees",
-                        accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
+                        SBJImageNomenclature.imageRotateLeft
                     ) {
                         model.rotate(clockwise: false)
                     }
                 }
 
                 Slider(value: fineRotationBinding, in: -15...15)
-                    .accessibility(straightenInfo)
+                    .accessibility(straightenNomenclature)
                     .accessibilityValue("\(model.geometry.rotation.fineDegrees.formatted(.number.precision(.fractionLength(1)))) degrees")
 
                 Text("\(model.geometry.rotation.degrees.formatted(.number.precision(.fractionLength(1))))°")
@@ -635,18 +613,14 @@ public struct PhotoEditor: View {
 
                 if options.allowsQuarterTurnRotation {
                     SBJSymbolButton(
-                        SBJImageSymbology.rotateRight,
-                        accessibilityLabel: "Rotate Right 90 Degrees",
-                        accessibilityHint: quarterTurnInfo.accessibilityHint ?? quarterTurnInfo.summary
+                        SBJImageNomenclature.imageRotateRight
                     ) {
                         model.rotate(clockwise: true)
                     }
                 }
 
                 SBJSymbolButton(
-                    SBJImageSymbology.resetStraighten,
-                    accessibilityLabel: "Reset Straighten",
-                    accessibilityHint: straightenInfo.summary,
+                    SBJImageNomenclature.imageResetStraighten,
                     action: model.resetRotation
                 )
                 .disabled(!model.hasStraightenEdit)
@@ -657,40 +631,40 @@ public struct PhotoEditor: View {
         }
     }
 
-    private var cropOptionInfo: SBJPropertyInfo {
-        PhotoCropState.optionInfo
+    private var cropOptionNomenclature: SBJNomenclature {
+        PhotoCropState.optionNomenclature
     }
 
-    private var freeCropInfo: SBJPropertyInfo {
-        PhotoCropState.freeAspectRatioInfo
+    private var freeCropNomenclature: SBJNomenclature {
+        PhotoCropState.freeAspectRatioNomenclature
     }
 
-    private var swapDimensionsInfo: SBJPropertyInfo {
-        PhotoCropState.swapsDimensionsInfo
+    private var swapDimensionsNomenclature: SBJNomenclature {
+        PhotoCropState.swapsDimensionsNomenclature
     }
 
-    private var horizontalMirrorInfo: SBJPropertyInfo {
-        PhotoMirrorState.horizontalInfo
+    private var horizontalMirrorNomenclature: SBJNomenclature {
+        PhotoMirrorState.horizontalNomenclature
     }
 
-    private var verticalMirrorInfo: SBJPropertyInfo {
-        PhotoMirrorState.verticalInfo
+    private var verticalMirrorNomenclature: SBJNomenclature {
+        PhotoMirrorState.verticalNomenclature
     }
 
-    private var placementInfo: SBJPropertyInfo {
-        PhotoEditGeometry.placementInfo
+    private var placementNomenclature: SBJNomenclature {
+        PhotoEditGeometry.placementNomenclature
     }
 
-    private var magnificationInfo: SBJPropertyInfo {
-        PhotoEditGeometry.magnificationInfo
+    private var magnificationNomenclature: SBJNomenclature {
+        PhotoEditGeometry.magnificationNomenclature
     }
 
-    private var quarterTurnInfo: SBJPropertyInfo {
-        PhotoRotation.quarterTurnsInfo
+    private var quarterTurnNomenclature: SBJNomenclature {
+        PhotoRotation.quarterTurnsNomenclature
     }
 
-    private var straightenInfo: SBJPropertyInfo {
-        PhotoRotation.fineDegreesInfo
+    private var straightenNomenclature: SBJNomenclature {
+        PhotoRotation.fineDegreesNomenclature
     }
 
     private func cropTitle(for option: PhotoCropOption) -> String {

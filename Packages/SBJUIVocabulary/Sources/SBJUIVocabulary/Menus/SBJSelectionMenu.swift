@@ -1,5 +1,10 @@
 import SwiftUI
-import SBJDataDefinition
+
+public enum SBJSelectionNomenclature: SBJNomenclatureSet {
+    public static let all: [String: SBJNomenclature] = [
+        "selection.invalid": .init(title: "Invalid selection", summary: "Current value is not among available choices")
+    ]
+}
 
 public struct SBJSelectionMenu<Content: View>: View {
     @ViewBuilder let content: () -> Content
@@ -183,8 +188,8 @@ private extension SBJSelectionMenu {
             }
         }
         .foregroundColor(invalid ? .red : .primary)
-        .accessibilityValue(invalid ? "Invalid selection: \(title)" : title)
-        .accessibilityHint(invalid ? "Current value is not among available choices" : "")
+        .accessibilityValue(invalid ? "\(SBJSelectionNomenclature.selectionInvalid.title): \(title)" : title)
+        .accessibilityHint(invalid ? SBJSelectionNomenclature.selectionInvalid.summary! : "")
     }
 }
 

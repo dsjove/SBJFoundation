@@ -1,3 +1,4 @@
+import SBJLocalization
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
@@ -30,32 +31,13 @@ enum SBJEditorStatusKind {
     case changed
     case empty
 
-    var image: SBJSymbol {
+    var nomenclature: SBJNomenclature {
         switch self {
-        case .changed:
-            return SBJStructuredEditorSymbology.changed
-        case .empty:
-            return SBJStructuredEditorSymbology.empty
+        case .changed: SBJStructuredEditorNomenclature.changed
+        case .empty: SBJStructuredEditorNomenclature.empty
         }
     }
 
-    var accessibilityLabel: String {
-        switch self {
-        case .changed:
-            return "Value differs from the original"
-        case .empty:
-            return "No content"
-        }
-    }
-
-    var shortLabel: String {
-        switch self {
-        case .changed:
-            return "Changed"
-        case .empty:
-            return "Empty"
-        }
-    }
 }
 
 /// Shared status glyph used both by editor rows and by the matching search
@@ -66,10 +48,10 @@ struct SBJEditorStatusSymbol: View {
     let kind: SBJEditorStatusKind
 
     var body: some View {
-        Image(symbol: kind.image)
+        Image(symbol: kind.nomenclature.symbol!)
             .font(.caption.weight(.semibold))
             .fixedSize()
-            .accessibilityLabel(kind.accessibilityLabel)
+            .accessibility(kind.nomenclature)
     }
 }
 

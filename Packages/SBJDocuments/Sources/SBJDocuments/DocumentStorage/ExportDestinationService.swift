@@ -102,11 +102,35 @@ public struct ExportDestinationService: @unchecked Sendable {
 
 		coordinator.coordinate(writingItemAt: destination, options: options, error: &coordinationError) { coordinatedURL in
 			do {
-				if fileManager.fileExists(atPath: coordinatedURL.path) {
-					guard replacingExisting else { throw ExportError.destinationExists(coordinatedURL.lastPathComponent) }
-					try fileManager.removeItem(at: coordinatedURL)
+				let destinationExists = fileManager.fileExists(atPath: coordinatedURL.path)
+				if destinationExists && !replacingExisting {
+					throw ExportError.destinationExists(coordinatedURL.lastPathComponent)
 				}
-				try fileManager.copyItem(at: source, to: coordinatedURL)
+				// Never delete a source selected from its own destination folder.
+				if source.standardizedFileURL == coordinatedURL.standardizedFileURL { return }
+
+				let parent = coordinatedURL.deletingLastPathComponent()
+				let staged = parent.appendingPathComponent(".sbj-export-stage-\(UUID().uuidString)")
+				let backup = parent.appendingPathComponent(".sbj-export-backup-\(UUID().uuidString)")
+				do {
+					// Copy successfully before touching the existing destination.
+					try fileManager.copyItem(at: source, to: staged)
+					var backedUp = false
+					if destinationExists {
+						try fileManager.moveItem(at: coordinatedURL, to: backup)
+						backedUp = true
+					}
+					do {
+						try fileManager.moveItem(at: staged, to: coordinatedURL)
+					} catch {
+						if backedUp { try fileManager.moveItem(at: backup, to: coordinatedURL) }
+						throw error
+					}
+					if backedUp { try? fileManager.removeItem(at: backup) }
+				} catch {
+					try? fileManager.removeItem(at: staged)
+					throw error
+				}
 			} catch {
 				copyError = error
 			}

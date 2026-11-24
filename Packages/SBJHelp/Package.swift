@@ -20,7 +20,7 @@ let package = Package(
         .target(name: "SBJHelp", dependencies: [
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
-            ]),
+            ], resources: [.process("Resources")]),
         .testTarget(name: "SBJHelpTests", dependencies: [
                 "SBJHelp",
                 .product(name: "SBJLocalization", package: "SBJLocalization"),

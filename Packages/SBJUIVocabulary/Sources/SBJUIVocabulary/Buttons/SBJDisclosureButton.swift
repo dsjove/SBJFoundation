@@ -1,5 +1,5 @@
 import SwiftUI
-import SBJDataDefinition
+import SBJLocalization
 
 /// Compact disclosure control for expandable UI.
 ///
@@ -7,7 +7,6 @@ import SBJDataDefinition
 /// affordance. The surrounding container remains responsible for hierarchy,
 /// row layout, content semantics, and whether this control should be hidden
 /// from accessibility to avoid duplicate actions.
-// TODO: editor only?
 @MainActor
 public struct SBJDisclosureButton: View {
     public let title: String
@@ -23,7 +22,7 @@ public struct SBJDisclosureButton: View {
         Button {
             isExpanded.toggle()
         } label: {
-            Image(symbol: SBJSymbology.disclosure(expanded: isExpanded))
+            Image(symbol: (isExpanded ? SBJCommonNomenclature.collapse : SBJCommonNomenclature.expand).symbol!)
                 .font(.caption.weight(.semibold))
                 .frame(
                     minWidth: SBJUIAppearance.compactButtonMinimumSize,
@@ -39,7 +38,7 @@ public struct SBJDisclosureButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isExpanded ? "Collapse \(title)" : "Expand \(title)")
-        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+        .accessibilityLabel("\((isExpanded ? SBJCommonNomenclature.collapse : SBJCommonNomenclature.expand).title) \(title)")
+        .accessibilityValue((isExpanded ? SBJCommonNomenclature.expanded : SBJCommonNomenclature.collapsed).title)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
-import SBJDataDefinition
-import SBJDataDefinition
+import SBJStructure
 
 @SBJStructure
 public enum PageSize: Sendable, Codable, Hashable, CustomStringConvertible, CaseIterable {

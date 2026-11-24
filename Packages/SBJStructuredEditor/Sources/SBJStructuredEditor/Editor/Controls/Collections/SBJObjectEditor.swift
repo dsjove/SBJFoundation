@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
@@ -130,7 +130,7 @@ struct SBJObjectEditor<Value: SBJMutableStructure>: View {
             return nil
         }
         return AnyView(
-            SBJPropertyInfoButton(propertyName: field.name, info: info)
+            SBJNomenclatureButton(propertyName: field.name, info: info)
         )
     }
 
@@ -151,7 +151,7 @@ struct SBJObjectEditor<Value: SBJMutableStructure>: View {
                 labelIsUnknown: titleIsUnknown,
                 context: context.descended(property: field.name)
                     .withBranch(context.branch.child.withPlacement(.contentOnly)
-                        .withSearchCriteria(.init()).withPropertyInfoPlacement(.hidden)),
+                        .withSearchCriteria(.init()).withNomenclaturePlacement(.hidden)),
                 rootValidation: rootValidation
             )
             // The disclosure header already owns the row's disclosure/action/status

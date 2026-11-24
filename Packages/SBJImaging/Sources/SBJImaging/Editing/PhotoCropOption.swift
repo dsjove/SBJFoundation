@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import SBJLocalization
-import SBJDataDefinition
+import SBJStructure
 
 @SBJStructure
 public enum PhotoCropOption: Codable, Hashable, Sendable, Identifiable {

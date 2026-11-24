@@ -5,7 +5,7 @@ import SBJUIVocabulary
   /// Configuration distilled from structural property metadata for one editor field.
   @MainActor
   struct SBJEditFieldConfiguration {
-    let propertyInfo: SBJPropertyInfo?
+    let propertyNomenclature: SBJNomenclature?
     let stringPresentation: SBJStringPresentationValue
     let textMaximumLength: Int?
     let integerRange: ClosedRange<Int>?
@@ -24,7 +24,7 @@ import SBJUIVocabulary
     let collectionItemIdentifierKey: String?
 
     init<Root: SBJStructured>(metadata: SBJPropertyMetadata<Root>?) {
-      propertyInfo = metadata?.info
+      propertyNomenclature = metadata?.info
       let stringPresentation = metadata?.hints.compactMap { hint -> SBJStringPresentationValue? in
         if case .stringPresentation(let value) = hint { return value }
         return nil
@@ -69,38 +69,18 @@ import SBJUIVocabulary
           if case .colorPresentation(let value) = hint { return value.alpha }
           return nil
         }.first ?? true
-      let unitPresentation = metadata?.hints.compactMap { hint -> SBJUnitValuePresentationValue? in
-        if case .unitValuePresentation(let value) = hint { return value }
-        return nil
-      }.first
-      let ruleUnitEditor = metadata?.constraints.compactMap { constraint -> SBJUnitValueEditorMode? in
-        if case .unitMutable(let value) = constraint { return value ? .editable : .fixedUnit }
-        return nil
-      }.first
-      if let unitPresentation {
-        unitEditor = unitPresentation.mode == .editable ? .editable : .fixedUnit
-      } else {
-        unitEditor = ruleUnitEditor ?? .editable
-      }
+      unitEditor = SBJUsagePolicy.canChangeUnit(metadata?.constraints ?? []) ? .editable : .fixedUnit
       unitSystem = metadata?.constraints.compactMap { constraint -> MeasurementSystem? in
         if case .unitSystem(let system) = constraint { return system }
         return nil
       }.first
-      let arrayPresentation = metadata?.hints.compactMap { hint -> SBJArrayPresentationValue? in
-        if case .arrayPresentation(let value) = hint { return value }
-        return nil
-      }.first
-      let setPresentation = metadata?.hints.compactMap { hint -> SBJSetPresentationValue? in
-        if case .setPresentation(let value) = hint { return value }
-        return nil
-      }.first
-      let dictionaryControls = metadata?.hints.compactMap { hint -> SBJDictionaryPresentationValue? in
-        if case .dictionaryPresentation(let value) = hint { return value }
-        return nil
-      }.first
-      collectionInsertable = arrayPresentation?.insertable ?? setPresentation?.insertable ?? dictionaryControls?.insertable ?? true
-      collectionRemovable = arrayPresentation?.removable ?? setPresentation?.removable ?? dictionaryControls?.removable ?? true
-      collectionReorderable = arrayPresentation?.reorderable ?? true
+      let policy = SBJUsagePolicy.allowedCollectionOperations(
+        Set(SBJCollectionOperationKind.allCases),
+        hints: metadata?.hints ?? [], consumer: .visualEditor
+      )
+      collectionInsertable = policy.contains(.append) && policy.contains(.insertMember) && policy.contains(.insertKey)
+      collectionRemovable = policy.contains(.remove) && policy.contains(.removeMember) && policy.contains(.removeKey)
+      collectionReorderable = policy.contains(.move)
       dictionaryPresentation = metadata?.hints.compactMap { hint -> SBJDictionaryPresentationValue? in
         if case .dictionaryPresentation(let value) = hint { return value }
         return nil
@@ -109,18 +89,8 @@ import SBJUIVocabulary
         if case .elementFieldPresentation(let value) = hint { return value }
         return nil
       }.first
-      collectionItemTitleKey =
-        metadata?.hints.compactMap { hint -> String? in
-          if case .itemTitle(let value) = hint { return value }
-          return nil
-        }.first
-      collectionItemIdentifierKey =
-        metadata?.constraints.compactMap { constraint -> String? in
-          if case .uniqueBy(let value) = constraint {
-            return value.split(separator: ".").last.map(String.init)
-          }
-          return nil
-        }.first
+      collectionItemTitleKey = metadata.map { SBJStructuralCollectionKeys.title(in: $0.hints) } ?? nil
+      collectionItemIdentifierKey = metadata.map { SBJStructuralCollectionKeys.identifier(in: $0.constraints) } ?? nil
     }
   }
 
@@ -262,10 +232,10 @@ import SBJUIVocabulary
             defaultContent: defaultContent
           ) ?? defaultContent
         return AnyView(
-          SBJEditorPropertyInfoContainer(
+          SBJEditorNomenclatureContainer(
             content: AnyView(content),
             propertyName: propertyName,
-            info: configuration.propertyInfo,
+            info: configuration.propertyNomenclature,
             caseInfo: { SBJEditorEnumCaseInformation.info(for: value.wrappedValue) },
             branch: context.branch
           )
@@ -309,7 +279,7 @@ import SBJUIVocabulary
             defaultContent: defaultContent
           ) ?? defaultContent
         return AnyView(
-          SBJEditorPropertyInfoContainer(content: content, propertyName: label, info: nil, branch: context.branch)
+          SBJEditorNomenclatureContainer(content: content, propertyName: label, info: nil, branch: context.branch)
             .sbjEditorNavigationAnchor(for: context.navigationPath)
         )
       }

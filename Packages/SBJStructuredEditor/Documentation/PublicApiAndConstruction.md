@@ -2,7 +2,7 @@
 
 ## Package responsibilities
 
-`SBJStructuredEditor` owns SwiftUI editing, editor presentation, user interaction, bindings, and editor-specific creation overrides. `SBJDataDefinition` owns structural metadata, default-value construction, structural traversal, and `SBJCollectionElementCreatable` container-aware creation. The editor consumes these model capabilities without creating model-specific dependencies.
+`SBJStructuredEditor` owns SwiftUI editing, editor presentation, user interaction, bindings, and editor-specific creation overrides. `SBJStructure` owns structural metadata, default-value construction, structural traversal, and `SBJCollectionElementCreatable` container-aware creation. The editor consumes these model capabilities without creating model-specific dependencies.
 
 ## Client-facing API
 
@@ -26,8 +26,8 @@ SwiftUI view types and their initializers are public where hosting clients must 
 1. **Preserve the registry entry points.** Each has a distinct purpose and there is no proven redundancy. App-defined creators remain opt-in; basic defaults belong in DataDefinition.
 2. **Preserve public visibility for view and registry configuration APIs.** With no app build in scope, narrowing access would be speculative. The internal registration wrappers and lookup methods are already non-public.
 3. **Do not move `SBJEditorValueTraversal` into DataDefinition.** Its identity and mutation work use editor binding context, despite leveraging DataDefinition collection metadata.
-4. **Codable snapshot helpers:** `sbjCodableCopy()` is called by `SBJEditorView` to capture a baseline; `sbjEncodedIsDifferent(from:)` is currently exercised in tests. Their functions are generic, but relocating or reducing public visibility should be coordinated with the Foundation API ownership review. Keep behavior unchanged for now.
-5. **Set replacement:** `sbjReplace(_:with:)` avoids collisions and is used by editor mutation. Its generality alone is not a reason to migrate it without verifying external consumers.
+4. **Codable snapshot helpers:** `sbjCodableCopy()` and `sbjEncodedIsDifferent(from:)` now live in DataDefinition; editor continues using the same public APIs. Their regression tests moved with them.
+5. **Set replacement:** `sbjReplace(_:with:)` lives in DataDefinition and retains collision-safe semantics, preserving the editor call sites.
 6. **`SBJCodableEditor` wrapper:** Its `title` parameter is accepted but unused. This is a candidate for public API simplification, but removing it is source-breaking and should be explicitly approved.
 
 ## Test coverage and limits

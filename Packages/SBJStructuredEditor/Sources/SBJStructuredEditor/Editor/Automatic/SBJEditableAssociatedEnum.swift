@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
@@ -190,8 +190,8 @@ public struct SBJEditorEnumCase<Root> {
     public init(structuralCase: SBJAssociatedCase<Root>) {
         let sourceName = structuralCase.sourceName
         let caseInfo = (Root.self as? any SBJEnumCaseIdentifiable.Type)?
-            .sbjCaseInfo(for: sourceName)
-        self.name = caseInfo?.title ?? sourceName.uncamelCased
+            .sbjCaseNomenclature(for: sourceName)
+        self.name = caseInfo?.nonEmptyTitle ?? sourceName.uncamelCased
         self.matchesValue = { structuralCase.matches($0) }
         self.createValue = { structuralCase.makeDefaultValue() }
         self.associatedValues = structuralCase.associatedValues.map { value in

@@ -43,26 +43,31 @@ public enum SBJSymbology: SBJSymbolSet {
     }
 }
 
-public extension SBJSymbology {
-    static var addLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.add, title: "Add")
-    }
-    static var removeLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.remove, title: "Remove")
-    }
-    static var applyLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.apply, title: "Apply")
-    }
-    static var deleteLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.delete, title: "Delete")
-    }
-    static var editLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.edit, title: "Edit")
-    }
-    static var closeLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.close, title: "Close")
-    }
-    static var shareLabel: SBJLabeledSymbol {
-        SBJLabeledSymbol(symbol: self.share, title: "Share")
-    }
+/// Shared action nomenclature; applications can provide more specific contextual definitions.
+public enum SBJCommonNomenclature: SBJNomenclatureSet {
+    public static var all: [String: SBJNomenclature] { [
+        "add": .init(title: "Add", symbol: SBJSymbology.add),
+        "remove": .init(title: "Remove", symbol: SBJSymbology.remove),
+        "apply": .init(title: "Apply", symbol: SBJSymbology.apply),
+        "delete": .init(title: "Delete", symbol: SBJSymbology.delete),
+        "edit": .init(title: "Edit", symbol: SBJSymbology.edit),
+        "close": .init(title: "Close", symbol: SBJSymbology.close),
+        "dismiss": .init(title: "Dismiss", symbol: SBJSymbology.dismiss),
+        "moveUp": .init(title: "Move up", symbol: SBJSymbology.moveUp),
+        "moveDown": .init(title: "Move down", symbol: SBJSymbology.moveDown),
+        "moveToFirst": .init(title: "Move to first", symbol: SBJSymbology.moveToFirst),
+        "moveToLast": .init(title: "Move to last", symbol: SBJSymbology.moveToLast),
+        "information": .init(title: "Information", symbol: SBJSymbology.information),
+        "open": .init(title: "Open", symbol: SBJSymbology.open),
+        "editInSheet": .init(title: "Edit in sheet", symbol: SBJSymbology.edit),
+        "expand": .init(title: "Expand", details: "Expands the selected group to display its contents.", symbol: SBJSymbology.disclosureClosed),
+        "collapse": .init(title: "Collapse", details: "Collapses the selected group to hide its contents.", symbol: SBJSymbology.disclosureOpened),
+        "expanded": .init(title: "Expanded", details: "The group is currently expanded."),
+        "collapsed": .init(title: "Collapsed", details: "The group is currently collapsed."),
+        "share": .init(title: "Share", details: "Open the system sharing options.", symbol: SBJSymbology.share),
+        "search": .init(title: "Search", summary: "Filter results by entering search text."),
+        "done": .init(title: "Done", details: "Finishes editing and closes this view."),
+        "cancel": .init(title: "Cancel", details: "Dismisses the current action without applying it."),
+    ] }
 }
+

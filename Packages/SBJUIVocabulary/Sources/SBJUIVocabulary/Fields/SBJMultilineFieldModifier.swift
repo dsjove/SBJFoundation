@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 private struct SBJMultilineFieldModifier: ViewModifier {
     var isFocused: FocusState<Bool>.Binding
     let minHeight: CGFloat

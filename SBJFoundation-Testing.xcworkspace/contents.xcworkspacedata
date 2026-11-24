@@ -5,13 +5,10 @@
       location = "group:Packages/Testing.xctestplan">
    </FileRef>
    <FileRef
+      location = "group:Packages/SBJStructuredAI">
+   </FileRef>
+   <FileRef
       location = "group:Packages/SBJCamera">
-   </FileRef>
-   <FileRef
-      location = "group:Packages/SBJDataDefinition">
-   </FileRef>
-   <FileRef
-      location = "group:Packages/SBJDataDefinitionReport">
    </FileRef>
    <FileRef
       location = "group:Packages/SBJDocuments">
@@ -32,9 +29,6 @@
       location = "group:Packages/SBJLocation">
    </FileRef>
    <FileRef
-      location = "group:Packages/SBJSharing">
-   </FileRef>
-   <FileRef
       location = "group:Packages/SBJStructuredEditor">
    </FileRef>
    <FileRef
@@ -44,6 +38,9 @@
       location = "group:Packages/SBJTags">
    </FileRef>
    <FileRef
-      location = "group:Packages/SBJImaging">
+      location = "group:Packages/SBJStructure">
+   </FileRef>
+   <FileRef
+      location = "group:Packages/SBJStructuredReport">
    </FileRef>
 </Workspace>

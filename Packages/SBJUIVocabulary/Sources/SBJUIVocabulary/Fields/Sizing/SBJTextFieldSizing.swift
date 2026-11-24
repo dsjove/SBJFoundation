@@ -1,7 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 import SwiftUI
-import SBJDataDefinition
 
 /// Reusable width preferences for single-line text fields with a known length limit.
 /// Applied through `sbjPreferredFieldWidth` to scale with Dynamic Type.
@@ -10,13 +9,12 @@ import SBJDataDefinition
 // Character-count limits constrain input but do not determine measured width.
 // Share measurement infrastructure with localized candidate fitting, not the
 // semantic candidate-selection logic itself.
-// TODO: editor only?
 public enum SBJTextFieldSizing {
     /// Single-line text constraints are useful layout information, but maximum
     /// character count is not a literal pixel width. Use broad tiers so short
     /// domain values stay compact while ordinary prose remains flexible.
     public static func singleLine(maximumLength: Int?) -> SBJFieldSizing? {
-        guard let maximumLength else { return nil }
+        guard let maximumLength, maximumLength > 0 else { return nil }
         switch maximumLength {
         case ...12:
             return SBJFieldSizing(minimum: 88, ideal: 120, maximum: 176)

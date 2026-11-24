@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 
 /// Presentation-only policy: active structural filtering may reveal collapsed descendants.
 /// Kept out of DataDefinition because it describes editor disclosure, not model matching.

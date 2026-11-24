@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 
 #if os(iOS) || os(macOS)
 import AVFoundation
@@ -49,9 +50,9 @@ public struct CameraCaptureView: View {
         }
         #else
         ContentUnavailableView(
-            "Camera Unavailable",
+            SBJCameraNomenclature.unavailable.title,
             systemImage: "camera.slash",
-            description: Text("Camera capture is not available on this platform.")
+            description: Text(SBJCameraNomenclature.unavailable.summary!)
         )
         #endif
     }
@@ -81,12 +82,12 @@ private struct CameraCaptureAvailableView: View {
             controls
 
             if isStarting {
-                ProgressView("Starting camera…")
+                ProgressView(SBJCameraNomenclature.starting.title)
                     .padding(24)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             } else if let errorMessage {
                 ContentUnavailableView(
-                    "Camera Unavailable",
+                    SBJCameraNomenclature.unavailable.title,
                     systemImage: "camera.slash",
                     description: Text(errorMessage)
                 )
@@ -108,13 +109,14 @@ private struct CameraCaptureAvailableView: View {
                 Button {
                     completion(nil)
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
+                    Image(symbol: SBJCameraNomenclature.cameraCancel.symbol!)
                         .font(.system(size: 30))
                         .symbolRenderingMode(.hierarchical)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.white)
-                .accessibilityLabel("Cancel")
+                .accessibilityLabel(SBJCameraNomenclature.cameraCancel.title)
+                .accessibilityHint(SBJCameraNomenclature.cameraCancel.summary!)
 
                 Spacer()
 
@@ -122,24 +124,27 @@ private struct CameraCaptureAvailableView: View {
                     Button {
                         Task { await cycleFlash() }
                     } label: {
-                        Image(systemName: flashSymbol)
+                        Image(symbol: flashNomenclature.symbol!)
                             .font(.system(size: 24))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .accessibilityLabel("Change flash mode")
+                    .accessibilityLabel(SBJCameraNomenclature.changeFlash.title)
+                    .accessibilityHint(SBJCameraNomenclature.changeFlash.summary!)
+                    .accessibilityValue(flashNomenclature.title)
                 }
 
                 if camera.hasCameraOptions {
                     Button {
                         Task { await switchCamera() }
                     } label: {
-                        Image(systemName: "camera.rotate.fill")
+                        Image(symbol: SBJCameraNomenclature.switchCamera.symbol!)
                             .font(.system(size: 24))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.white)
-                    .accessibilityLabel("Switch camera")
+                    .accessibilityLabel(SBJCameraNomenclature.switchCamera.title)
+                    .accessibilityHint(SBJCameraNomenclature.switchCamera.summary!)
                 }
             }
             .padding()
@@ -162,19 +167,22 @@ private struct CameraCaptureAvailableView: View {
                 .buttonStyle(.plain)
                 .disabled(isStarting || isCapturing)
                 .opacity((isStarting || isCapturing) ? 0.45 : 1)
-                .accessibilityLabel("Take photo")
+                .accessibilityLabel(SBJCameraNomenclature.takePhoto.title)
+                .accessibilityHint(SBJCameraNomenclature.takePhoto.summary!)
                 .padding(.bottom, 28)
             }
         }
     }
 
-    private var flashSymbol: String {
+    private var flashNomenclature: SBJNomenclature {
+        let key: String
         switch camera.flashMode {
-        case .off: "bolt.slash.fill"
-        case .on: "bolt.fill"
-        case .auto: "bolt.badge.a.fill"
-        case .torch: "flashlight.on.fill"
+        case .off: key = "flashOff"
+        case .on: key = "flashOn"
+        case .auto: key = "flashAuto"
+        case .torch: key = "torch"
         }
+        return SBJCameraNomenclature.all[key]!
     }
 
     private func start() async {
@@ -185,7 +193,14 @@ private struct CameraCaptureAvailableView: View {
                 initialFlashMode: initialFlashMode,
                 initialCameraPosition: initialCameraPosition
             )
+            // Authorization can outlive the presenting view. A cancelled view
+            // task must not leave a newly started capture session running.
+            if Task.isCancelled {
+                camera.stop()
+                return
+            }
         } catch {
+            guard !Task.isCancelled else { return }
             errorMessage = error.localizedDescription
         }
         isStarting = false

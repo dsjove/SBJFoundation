@@ -1,11 +1,11 @@
 import Foundation
 import SwiftUI
+import SBJStructure //CodableFont
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
 import AppKit
 #endif
-import SBJDataDefinition
 
 extension CodableFont {
 	/// Creates the described font without using a cache.

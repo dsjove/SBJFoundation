@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
   #if DEBUG

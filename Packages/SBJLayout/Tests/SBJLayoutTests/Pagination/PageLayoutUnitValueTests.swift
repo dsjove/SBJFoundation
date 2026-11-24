@@ -1,6 +1,6 @@
 import Testing
 @testable import SBJLayout
-import SBJDataDefinition
+import SBJStructure
 
 struct PageLayoutUnitValueTests {
     @Test func pdfPointMarginsUseSharedLengthConversion() {

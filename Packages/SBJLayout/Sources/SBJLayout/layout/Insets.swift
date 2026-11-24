@@ -1,5 +1,5 @@
 import CoreGraphics
-import SBJDataDefinition
+import SBJStructure
 
 @SBJStructure
 public struct Insets: Sendable, Codable, Equatable, CustomStringConvertible {

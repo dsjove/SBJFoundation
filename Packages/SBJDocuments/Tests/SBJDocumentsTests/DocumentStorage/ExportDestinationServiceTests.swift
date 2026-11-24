@@ -38,6 +38,28 @@ struct ExportDestinationServiceTests {
 		#expect(try Data(contentsOf: destination.appendingPathComponent("portrait.png")) == Data("new portrait".utf8))
 	}
 
+	@Test("A failed replacement leaves an existing export unchanged")
+	func failedCopyPreservesDestination() throws {
+		let fileManager = FileManager.default
+		let root = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		defer { try? fileManager.removeItem(at: root) }
+		let staging = root.appendingPathComponent("staging", isDirectory: true)
+		let destination = root.appendingPathComponent("destination", isDirectory: true)
+		try fileManager.createDirectory(at: staging, withIntermediateDirectories: true)
+		try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+		let missingSource = staging.appendingPathComponent("export.txt")
+		let existing = destination.appendingPathComponent("export.txt")
+		try Data("important old export".utf8).write(to: existing)
+
+		#expect(throws: (any Error).self) {
+			_ = try ExportDestinationService().export(
+				[missingSource], to: destination, replacingExisting: true
+			)
+		}
+		#expect(try Data(contentsOf: existing) == Data("important old export".utf8))
+		#expect(try fileManager.contentsOfDirectory(atPath: destination.path) == ["export.txt"])
+	}
+
 	@Test("Package export replaces an existing package only after confirmation")
 	func packageCollisionIsPromptable() throws {
 		let fileManager = FileManager.default

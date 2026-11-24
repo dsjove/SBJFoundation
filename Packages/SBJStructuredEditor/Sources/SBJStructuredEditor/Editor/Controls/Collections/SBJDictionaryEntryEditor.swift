@@ -77,7 +77,7 @@ struct SBJDictionaryEntryEditor<Key: Codable & Hashable, Value: Codable>: View {
             }
             .padding(.trailing, sbjFormatting.infoLaneWidth + sbjFormatting.laneSpacing)
             .overlay(alignment: .topTrailing) {
-                SBJConfirmedRemoveButton(accessibilityLabel: "Remove dictionary entry", remove: remove)
+                SBJConfirmedRemoveButton(context: "dictionary entry", remove: remove)
                     .frame(width: sbjFormatting.infoLaneWidth, alignment: .center)
                     .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
             }

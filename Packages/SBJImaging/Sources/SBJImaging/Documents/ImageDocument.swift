@@ -9,7 +9,7 @@ import AppKit
 #endif
 import SBJLocation
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 import SBJTags
 

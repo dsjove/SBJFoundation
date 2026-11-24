@@ -10,16 +10,16 @@ The system must retain semantic identity and typed values until sufficient conte
 
 ## Layers and responsibilities
 
-1. **Declaration localization — `SBJPropertyInfo` (present):** compile/build-time-authored descriptions of *what the property is*: title, summary, details, symbol, accessibility label and hint. A declaration can be localized later but cannot know an instance's runtime value. It must not contain `accessibilityValue`.
+1. **Declaration localization — `SBJNomenclature` (present):** compile/build-time-authored descriptions of *what the property is*: title, summary, details, symbol, accessibility label and hint. A declaration can be localized later but cannot know an instance's runtime value. It must not contain `accessibilityValue`.
 2. **Runtime value localization — `SBJTextPresentable` (present, limited):** `presentedValue`, `abbreviation`, `multiLineDescription`, optional `accessibilityValue: String?`. A value may supply domain-specific visible/spoken forms. No automatic `accessibilityValue` fallback: `nil` means no custom value. Longer-term, these plain strings may become context-resolved, typed resources rather than eager text.
 3. **Localization resolution context — proposed:** locale, cultural formatters, vocabulary providers and sparse overrides (framework → app/vendor → document/rules/settings where appropriate), typed grammatical inputs, intentional verbatim content, and resolution policy. Exact precedence must be specified per resource class; blindly using a single override chain is risky.
-4. **`AccessibilityContext` / accessibility use — proposed:** *the context of how a resolved value is used on this view*. A field label, selected menu option, interactive slider, static display, heading, image, and document/PDF element may require different announcements. It combines declaration meaning and instance value with the view's role and behavior. **This is not another property on `SBJPropertyInfo` and not a mandatory protocol conformance on models.** Traits, custom actions, grouping, focus, reading order and other view semantics belong to this context or UI infrastructure, not blindly on domain values. Exact API and representation are deferred.
+4. **`AccessibilityContext` / accessibility use — proposed:** *the context of how a resolved value is used on this view*. A field label, selected menu option, interactive slider, static display, heading, image, and document/PDF element may require different announcements. It combines declaration meaning and instance value with the view's role and behavior. **This is not another property on `SBJNomenclature` and not a mandatory protocol conformance on models.** Traits, custom actions, grouping, focus, reading order and other view semantics belong to this context or UI infrastructure, not blindly on domain values. Exact API and representation are deferred.
 5. **Layout/presentation context — proposed:** font, available bounds, writing direction, wrapping/line limits, style, and whether full/compact/abbreviated candidates fit. SBJLayout measures and renders, not translates.
 
 ## Desired resolution flow
 
 ```text
-Semantic property declaration (`SBJPropertyInfo`) ─┐
+Semantic property declaration (`SBJNomenclature`) ─┐
                                                    ├─> localization/resource resolution
 Concrete instance (`SBJTextPresentable` if useful) ─┤       (locale, grammar, app/vendor/document overrides)
                                                    │

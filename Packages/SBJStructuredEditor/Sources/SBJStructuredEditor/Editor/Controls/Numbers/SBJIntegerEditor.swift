@@ -20,7 +20,7 @@ struct SBJIntegerEditor: View {
             stepper
                 .labelsHidden()
                 .fixedSize()
-                .accessibilityLabel("Adjust \(label)")
+                .accessibilityLabel("\(SBJStructuredEditorNomenclature.editorAdjustNumber.title): \(label)")
         }
         .onAppear(perform: claimFocus)
     }

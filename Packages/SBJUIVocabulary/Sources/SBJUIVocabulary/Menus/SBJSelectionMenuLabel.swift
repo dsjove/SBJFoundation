@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 /// Shared selection-menu label presentation.
 ///
 /// When `options` are supplied, the text column reserves the width of its

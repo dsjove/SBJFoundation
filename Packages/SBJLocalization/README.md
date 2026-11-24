@@ -4,12 +4,12 @@
 
 ## Getting started
 
-Use `SBJPropertyInfo` to describe the meaning of a property and provide accessible defaults:
+Use `SBJNomenclature` to describe the meaning of a property and provide accessible defaults:
 
 ```swift
 import SBJLocalization
 
-let info = SBJPropertyInfo(
+let info = SBJNomenclature(
     title: "Attunement",
     summary: "Current attunement state"
 )
@@ -32,6 +32,15 @@ The design documents in `Documentation/` discuss proposed directions, **not guar
 
 ## Further reading
 
-- [Layered and context-aware localization](Documentation/LAYERED_CONTEXT_AWARE_LOCALIZATION.md)
-- [Layout localization](Documentation/SBJLAYOUT_LOCALIZATION.md)
-- [Character localization](Documentation/CHARACTERS_LOCALIZATION.md)
+- [Layered and context-aware localization](Documentation/LayeredContextAwareLocalization.md)
+- [Layout localization](Documentation/SbjlayoutLocalization.md)
+- [Character localization](Documentation/CharactersLocalization.md)
+
+## Shared nomenclature design
+
+See [Nomenclature integration guide](Documentation/NomenclatureIntegration.md) for the current single-source-of-truth contract, help registration, and the distinction between static metadata and runtime values.
+
+
+## Domain meaning
+
+See [Domain meaning](Documentation/DomainMeaning.md) for the public nomenclature, content, invariant, and comparison contracts, including their intended use without SBJStructure.

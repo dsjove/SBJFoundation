@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 private struct SBJActiveControlModifier: ViewModifier {
     let isSelected: Bool
     let horizontalPadding: CGFloat

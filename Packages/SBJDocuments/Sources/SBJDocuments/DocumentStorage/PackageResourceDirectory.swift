@@ -29,13 +29,31 @@ public enum PackageResourceDirectory {
             return []
         }
 
+        // Copy before replacing: a failed copy must not destroy the previously
+        // preserved resources. Staging alongside the destination also keeps
+        // subsequent moves on the same volume.
+        guard source.standardizedFileURL != destination.standardizedFileURL else { return [] }
+        let staging = destination.deletingLastPathComponent()
+            .appendingPathComponent(".sbj-resource-stage-\(UUID().uuidString)", isDirectory: true)
+        let backup = destination.deletingLastPathComponent()
+            .appendingPathComponent(".sbj-resource-backup-\(UUID().uuidString)", isDirectory: true)
+        var movedOld = false
         do {
+            try fileManager.copyItem(at: source, to: staging)
             if fileManager.fileExists(atPath: destination.path) {
-                try fileManager.removeItem(at: destination)
+                try fileManager.moveItem(at: destination, to: backup)
+                movedOld = true
             }
-            try fileManager.copyItem(at: source, to: destination)
+            do {
+                try fileManager.moveItem(at: staging, to: destination)
+            } catch {
+                if movedOld { try fileManager.moveItem(at: backup, to: destination) }
+                throw error
+            }
+            if movedOld { try? fileManager.removeItem(at: backup) }
             return []
         } catch {
+            try? fileManager.removeItem(at: staging)
             return [.init("\(primaryDataDescription), but the existing \(resourceDescription) could not be copied: \(error.localizedDescription)")]
         }
     }

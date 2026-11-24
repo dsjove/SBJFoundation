@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import SBJDataDefinition
 
 /// Domain-informed sizing for compact scalar controls.
 ///
@@ -14,7 +13,6 @@ import SBJDataDefinition
 // Consider sign, separators, digit shapes, floating-point precision and
 // unbounded-input behavior; range endpoints alone may not represent editing text.
 // Coordinate shared measurement with the localization fitting pipeline.
-// TODO: editor only?
 public enum SBJNumericFieldSizing {
     public static let unboundedInteger = SBJFieldSizing(minimum: 88, ideal: 120, maximum: 168)
     public static let unboundedNumber = SBJFieldSizing(minimum: 96, ideal: 140, maximum: 196)

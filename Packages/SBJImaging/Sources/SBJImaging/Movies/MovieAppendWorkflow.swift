@@ -1,3 +1,4 @@
+#if !os(watchOS) && !os(tvOS)
 import Foundation
 import UniformTypeIdentifiers
 import SBJFileResources
@@ -86,3 +87,5 @@ public enum MovieAppendWorkflow {
         }
     }
 }
+
+#endif

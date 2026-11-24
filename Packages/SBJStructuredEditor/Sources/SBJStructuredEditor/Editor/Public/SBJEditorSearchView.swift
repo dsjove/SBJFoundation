@@ -2,7 +2,7 @@
 import SwiftUI
 import SBJFileResources
 import SBJUIVocabulary
-import SBJDataDefinitionReport
+import SBJStructuredReport
 
 public extension SBJBundledContentReference {
     static var structuredEditorSearchHelp: SBJBundledContentReference {

@@ -17,12 +17,11 @@ let package = Package(
         .package(path: "../SBJLocation"),
         .package(path: "../SBJLocalization"),
         .package(path: "../SBJFileResources"),
-        .package(path: "../SBJDataDefinition"),
+        .package(path: "../SBJStructure"),
         .package(path: "../SBJDocuments"),
         .package(path: "../SBJUIVocabulary"),
         .package(path: "../SBJHelp"),
         .package(path: "../SBJTags"),
-        .package(path: "../SBJSharing"),
     ],
     targets: [
         .target(
@@ -32,12 +31,11 @@ let package = Package(
                 .product(name: "SBJLocation", package: "SBJLocation"),
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructure", package: "SBJStructure"),
                 .product(name: "SBJDocuments", package: "SBJDocuments"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
                 .product(name: "SBJTags", package: "SBJTags"),
-                .product(name: "SBJSharing", package: "SBJSharing"),
             ],
             resources: [.process("Resources")],
             swiftSettings: [
@@ -50,7 +48,7 @@ let package = Package(
             dependencies: [
                 "SBJImaging",
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructure", package: "SBJStructure"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJTags", package: "SBJTags"),
             ],

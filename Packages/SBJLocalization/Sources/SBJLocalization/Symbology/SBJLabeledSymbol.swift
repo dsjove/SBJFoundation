@@ -4,7 +4,7 @@ import Foundation
 ///
 /// `title` is the human-readable semantic name even when the presentation hides its text
 /// (for example, an icon-only button). Do not use this type for decorative symbols;
-/// use `SBJSymbol` directly instead. Use `SBJPropertyInfo` for data-definition metadata.
+/// use `SBJSymbol` directly instead. Use `SBJNomenclature` for data-definition metadata.
 ///
 /// Accessibility is applied by the consuming view or control, not by this definition:
 /// - For a standalone label, its visible title normally provides the accessible name.

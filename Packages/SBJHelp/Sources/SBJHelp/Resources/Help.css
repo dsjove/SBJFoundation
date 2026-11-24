@@ -1,0 +1,80 @@
+/* Canonical help presentation for SBJHelp and all consuming applications. */
+:root {
+  color-scheme: light dark;
+  --accent: #4266a3;
+  --text: #24272e;
+  --secondary: #5e6571;
+  --surface: #ffffff;
+  --surface-raised: #f5f7fa;
+  --rule: #dbe0e8;
+  --callout: #edf3fb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #a9c7ff;
+    --text: #f1f3f7;
+    --secondary: #b9c1ce;
+    --surface: #171a20;
+    --surface-raised: #252a33;
+    --rule: #414957;
+    --callout: #222e40;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding: 22px 22px 40px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+main, .container { max-width: 760px; margin-left: auto; margin-right: auto; }
+h1, h2, h3 { color: var(--text); line-height: 1.2; }
+h1 { font-size: 1.8rem; margin: 0 0 .5rem; letter-spacing: -.02em; }
+h2 { font-size: 1.28rem; margin: 1.7rem 0 .45rem; padding-bottom: .3rem; border-bottom: 1px solid var(--rule); }
+h3 { font-size: 1.04rem; margin: 1.15rem 0 .3rem; }
+p { margin: .5rem 0 .85rem; }
+ul, ol { padding-left: 1.35rem; }
+li { margin: .35rem 0; }
+a { color: var(--accent); text-underline-offset: .14em; }
+code, kbd, .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-raised); border-radius: 4px; padding: .05rem .3rem; }
+.kbd { display: inline-block; border: 1px solid var(--rule); border-bottom-width: 2px; }
+table { border-collapse: collapse; width: 100%; margin: .8rem 0; }
+th, td { text-align: left; vertical-align: top; padding: .5rem .4rem; border-bottom: 1px solid var(--rule); }
+th { font-weight: 650; }
+.lede, .note, .footer { color: var(--secondary); }
+.note { font-style: italic; }
+.footer { font-size: .9rem; margin-top: 2rem; }
+.section { margin-bottom: 1.2rem; }
+.field { font-weight: 650; }
+.callout, .tip {
+  margin: 1rem 0; padding: .8rem 1rem;
+  background: var(--callout); border-left: 4px solid var(--accent);
+  border-radius: 8px;
+}
+.card { margin: .8rem 0; padding: .8rem 1rem; background: var(--surface-raised); border: 1px solid var(--rule); border-radius: 10px; }
+.icon { color: var(--accent); }
+.help-icon { display: inline-block; width: 1.08em; height: 1.08em; vertical-align: -.14em; margin: 0 .08em; object-fit: contain; }
+.about-header { text-align: center; margin-top: .5rem; }
+.app-icon { width: 88px; height: 88px; border-radius: 20px; object-fit: contain; }
+.about-header h1 { margin-top: .7rem; }
+.subtitle, .info { color: var(--secondary); margin: .55rem 0 1rem; }
+.header { display: flex; gap: 1rem; align-items: center; }
+.header .app-icon { flex-shrink: 0; }
+.action-list p { margin: .55rem 0; }
+.sbj-editor-help { margin-top: 1.4rem; padding-top: .2rem; }
+.sbj-editor-help h2:first-of-type { margin-top: .5rem; }
+/* NOM_* entries: one visual contract across all applications. */
+.sbj-nomenclature { margin: .85rem 0; padding: .7rem .9rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface-raised); }
+.sbj-nomenclature-heading { display: flex; align-items: center; gap: .48em; font-weight: 650; }
+.sbj-nomenclature-heading .help-icon, .sbj-nomenclature-heading img { flex: 0 0 auto; width: 1.15em; height: 1.15em; object-fit: contain; margin: 0; }
+.sbj-nomenclature-title { font-weight: 650; }
+.sbj-nomenclature-summary { margin: .4rem 0; font-weight: 550; }
+.sbj-nomenclature-details { margin: .4rem 0 0; }
+/* A nomenclature block must also render correctly when embedded in a list. */
+li > .sbj-nomenclature { margin: .35rem 0; }
+
+.help-glyph { font-weight: 650; }

@@ -21,7 +21,7 @@ public struct PDFCurrentPage: Equatable, Sendable, CustomStringConvertible {
             return false
         }
 
-        return pageNumber + displayCount - 1 < pageCount
+        return pageNumber <= pageCount && displayCount <= pageCount - pageNumber
     }
 
     public var description: String {
@@ -30,7 +30,7 @@ public struct PDFCurrentPage: Equatable, Sendable, CustomStringConvertible {
         }
 
         let first = min(max(pageNumber, 1), pageCount)
-        let last = min(first + displayCount - 1, pageCount)
+        let last = first + min(displayCount - 1, pageCount - first)
 
         if first == last {
             return "\(first)/\(pageCount)"
@@ -45,7 +45,7 @@ public struct PDFCurrentPage: Equatable, Sendable, CustomStringConvertible {
 		}
 
 		let first = min(max(pageNumber, 1), pageCount)
-		let last = min(first + displayCount - 1, pageCount)
+		let last = first + min(displayCount - 1, pageCount - first)
 
 		if first == last {
 			return "Page \(first) of \(pageCount)"

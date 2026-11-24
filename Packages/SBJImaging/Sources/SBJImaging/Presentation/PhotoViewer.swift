@@ -8,11 +8,10 @@ import UIKit
 import AppKit
 #endif
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJDocuments
 import SBJUIVocabulary
 import SBJHelp
-import SBJSharing
 
 public extension SBJBundledContentReference {
     static var imageViewHelp: SBJBundledContentReference {
@@ -101,11 +100,11 @@ public struct PhotoViewer: View {
                         }
 
                         SBJShareButton(
+                            SBJImageNomenclature.imageShare,
                             presenter: sharePresenter,
                             prepare: { SBJSharePayload(imageForSharing()) }
                         ) {
-                            Image(symbol: SBJSymbology.share)
-                                .accessibility(AccessibleItem(label: "Share"))
+                            Image(symbol: SBJImageNomenclature.imageShare.symbol!)
                         }
 
                         SBJHelpLink(
@@ -117,9 +116,7 @@ public struct PhotoViewer: View {
 
                     ToolbarItem(placement: trailingToolbarPlacement) {
                         SBJSymbolButton(
-                            SBJImageSymbology.resetPanZoom,
-                            accessibilityLabel: "Reset zoom and position",
-                            accessibilityHint: "Returns the image to its fitted size and centered position.",
+                            SBJImageNomenclature.imageResetPanZoom,
                             action: resetPosition
                         )
                         .disabled(transform.isAtRest)

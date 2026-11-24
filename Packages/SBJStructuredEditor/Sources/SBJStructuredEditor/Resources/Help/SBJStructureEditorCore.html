@@ -2,14 +2,22 @@
 <h2>Using structured editors</h2>
 <p>Open a group to see its fields, then change values directly. Changes appear as you work.</p>
 <h3>Value state</h3>
-<ul><li>UI_changed\ marks a value changed since the editor opened.</li><li>UI_empty\ indicates a field with no content.</li></ul>
+NOM_editor.changed\
+NOM_editor.empty\
 <h3>Optional values</h3>
 <p>An optional value can be unset rather than empty.</p>
-<ul><li>UI_setOptional\ creates and sets a value so it can be edited.</li><li>UI_clearOptional\ clears the value and returns the field to its unset state.</li></ul>
+NOM_editor.set-optional\
+NOM_editor.clear-optional\
 <h3>Field information</h3>
-<ul><li>UI_information\ opens a description of the field and the value to enter.</li></ul>
+NOM_editor.information\
 <h3>Opening groups</h3>
-<ul><li>UI_disclosureClosed\ opens a collapsed group.</li><li>UI_disclosureOpened\ closes an expanded group.</li></ul>
+NOM_editor.expand\
+NOM_editor.collapse\
 <h3>Lists and collections</h3>
-<ul><li>UI_add\ adds an item.</li><li>UI_remove\ removes an item.</li><li>UI_moveUp\ / UI_moveDown\ move an item one position.</li><li>UI_moveToFirst\ / UI_moveToLast\ move an item to the beginning or end.</li></ul>
+NOM_editor.add-item\
+NOM_editor.remove-item\
+NOM_editor.move-up\
+NOM_editor.move-down\
+NOM_editor.move-first\
+NOM_editor.move-last\
 </section>

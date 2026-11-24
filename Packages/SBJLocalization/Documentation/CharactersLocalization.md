@@ -6,7 +6,7 @@
 
 - `Character` domain `+Nomenclature.swift` extensions may conform to `SBJTextPresentable` for **reusable** character-game vocabulary (`presentedValue`, `abbreviation`, `multiLineDescription`). They should not contain diagnostic dump descriptions or adopt a protocol just to satisfy UI calls.
 - `CharacterSheet/Sources/presentation/**/+Presentation.swift` owns **sheet-specific** wording: compact attack rows, spell/resource summaries, movement/senses aggregation, inventory rows and multiline sections. A sheet-only presentation should not be pushed into a domain conformance.
-- `SBJPropertyInfo` declares property meaning and help/accessibility labels and hints, not current values. `accessibilityValue` is `String?` on `SBJTextPresentable`, defaults to `nil`, and should be implemented only if it improves spoken output over system-provided accessibility.
+- `SBJNomenclature` declares property meaning and help/accessibility labels and hints, not current values. `accessibilityValue` is `String?` on `SBJTextPresentable`, defaults to `nil`, and should be implemented only if it improves spoken output over system-provided accessibility.
 - User-supplied character/campaign names, descriptions, notes and imported content are verbatim unless explicitly identified as localizable semantic resources.
 
 ## Audit rules

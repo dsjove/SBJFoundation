@@ -1,5 +1,5 @@
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure //Units
 
 /// Compact reusable control for a numeric value paired with a unit.
 ///
@@ -11,7 +11,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
     @Binding private var value: UnitValue<Unit>
     private let units: [Unit]
     private let accessibilityLabel: String?
-    private let propertyInfo: SBJPropertyInfo?
+    private let propertyNomenclature: SBJNomenclature?
     private let unitEditable: Bool
     @FocusState private var isFocused: Bool
 
@@ -19,13 +19,13 @@ public struct UnitValueControl<Unit: UnitType>: View {
         value: Binding<UnitValue<Unit>>,
         units: [Unit] = Array(Unit.allCases),
         accessibilityLabel: String? = nil,
-        propertyInfo: SBJPropertyInfo? = nil,
+        propertyNomenclature: SBJNomenclature? = nil,
         unitEditable: Bool = false
     ) {
         _value = value
         self.units = units
         self.accessibilityLabel = accessibilityLabel
-        self.propertyInfo = propertyInfo
+        self.propertyNomenclature = propertyNomenclature
         self.unitEditable = unitEditable
     }
 
@@ -38,7 +38,7 @@ public struct UnitValueControl<Unit: UnitType>: View {
 #if os(iOS)
                 .keyboardType(.decimalPad)
 #endif
-                .accessibilityLabel(accessibilityLabel ?? propertyInfo?.accessibilityLabel ?? UnitValue<Unit>.valueInfo.accessibilityLabel ?? "Value")
+                .accessibilityLabel(accessibilityLabel ?? propertyNomenclature?.accessibilityLabel ?? UnitValue<Unit>.valueNomenclature.accessibilityLabel ?? "Value")
 
             unitControl
         }

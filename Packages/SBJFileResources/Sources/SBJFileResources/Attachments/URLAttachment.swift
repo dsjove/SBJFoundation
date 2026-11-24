@@ -33,25 +33,25 @@ public struct URLAttachment: Identifiable, Codable, Equatable, Sendable {
 		self.displayName = displayName ?? filename
 	}
 
-	public static let urlInfo = SBJPropertyInfo(
+	public static let urlNomenclature = SBJNomenclature(
 		title: "Attachment URL",
 		summary: "File URL used to preview or share the attachment.",
 		details: "Embedded attachment content may be materialized to a temporary file URL."
 	)
 
-	public static let displayNameInfo = SBJPropertyInfo(
+	public static let displayNameNomenclature = SBJNomenclature(
 		title: "Attachment Name",
 		summary: "Name presented for the attachment.",
 		details: "Defaults to the file URL's last path component.",
 		accessibilityLabel: "Attachment"
 	)
 
-	public static func propertyInfo<Value>(for keyPath: KeyPath<Self, Value>) -> SBJPropertyInfo? {
+	public static func propertyNomenclature<Value>(for keyPath: KeyPath<Self, Value>) -> SBJNomenclature? {
 		switch keyPath as AnyKeyPath {
 		case \Self.url:
-			return Self.urlInfo
+			return Self.urlNomenclature
 		case \Self.displayName:
-			return Self.displayNameInfo
+			return Self.displayNameNomenclature
 		default:
 			return nil
 		}

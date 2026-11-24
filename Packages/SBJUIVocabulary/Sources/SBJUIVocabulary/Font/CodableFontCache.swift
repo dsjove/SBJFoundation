@@ -1,10 +1,10 @@
 import Foundation
+import SBJStructure //CodableFont
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
 import AppKit
 #endif
-import SBJDataDefinition
 
 #if canImport(UIKit)
 public typealias SBJFontDescriptor = UIFontDescriptor

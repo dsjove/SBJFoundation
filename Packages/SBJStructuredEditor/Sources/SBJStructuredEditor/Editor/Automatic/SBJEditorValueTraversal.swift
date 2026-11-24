@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
@@ -171,9 +171,7 @@ extension Array: SBJEditorTraversableValue {
             elements, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey
         ).compactMap { item in
             guard elementPresentation?.exclude != true else { return nil }
-            let rowTitle = elementPresentation?.name.map { name in
-                itemTitleKey == nil ? "\(name) \((item.index ?? 0) + 1)" : "\(name): \(item.title)"
-            } ?? item.title
+            let rowTitle = item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: rowTitle
             ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
@@ -194,7 +192,7 @@ extension Set: SBJEditorTraversableValue {
         return SBJCollectionTraversal.set(values, itemTitleKey: itemTitleKey).compactMap { item in
             guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
-            let title = elementPresentation?.name.map { "\($0): \(item.title)" } ?? item.title
+            let title = item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
@@ -258,9 +256,7 @@ extension Array: SBJEditorBoundTraversableValue {
             guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
             guard let index = item.index else { preconditionFailure("Array traversal entries always have an index") }
-            let title = elementPresentation?.name.map { name in
-                itemTitleKey == nil ? "\(name) \(index + 1)" : "\(name): \(item.title)"
-            } ?? item.title
+            let title = item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             )
@@ -269,19 +265,10 @@ extension Array: SBJEditorBoundTraversableValue {
             // current index on each access so moves and insertions cannot
             // redirect edits to an unrelated item.
             let resolvedIndex: () -> Int? = {
-                let values = parent.wrappedValue
-                // Match SBJCollectionTraversal.array's identity policy. If the
-                // identifier was ambiguous when the row was created, it is a
-                // positional row; do not silently refuse its edits or removal.
-                if item.identifier != "item:slot:\(index)", let itemIdentifierKey,
-                   let identifier = SBJCollectionItemIdentification.stableIdentifier(
-                       for: element, itemIdentifierKey: itemIdentifierKey
-                   ) {
-                    return SBJCollectionItemIdentification.uniqueIndex(
-                        in: values, identifier: identifier, itemIdentifierKey: itemIdentifierKey
-                    )
-                }
-                return values.indices.contains(index) ? index : nil
+                SBJCollectionTraversal.currentIndex(
+                    of: item, in: parent.wrappedValue,
+                    itemIdentifierKey: itemIdentifierKey
+                )
             }
             let elementBinding = Binding<Element>(
                 get: {
@@ -340,7 +327,7 @@ extension Set: SBJEditorBoundTraversableValue where Element: Codable {
         return SBJCollectionTraversal.set(parent.wrappedValue, itemTitleKey: itemTitleKey).compactMap { item in
             guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
-            let title = elementPresentation?.name.map { "\($0): \(item.title)" } ?? item.title
+            let title = item.title
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
@@ -389,15 +376,11 @@ extension Dictionary: SBJEditorBoundTraversableValue {
         registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, reorderable: Bool, removable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: [Key: Value].self)
-        return SBJCollectionTraversal.dictionary(parent.wrappedValue).compactMap { item in
+        return SBJCollectionTraversal.dictionary(parent.wrappedValue).compactMap { item -> SBJEditorTraversalNode? in
             guard dictionaryPresentation?.value?.exclude != true else { return nil }
             let key = item.value.key
-            let title = dictionaryPresentation?.key?.exclude == true
-                ? (dictionaryPresentation?.value?.name ?? "Value")
-                : (dictionaryPresentation?.key?.name.map { "\($0): \(item.title)" } ?? item.title)
-            let valueLabel = dictionaryPresentation?.key?.exclude == true
-                ? (dictionaryPresentation?.value?.name ?? "Value")
-                : (dictionaryPresentation?.value?.name.map { "\($0) (\(item.title))" } ?? title)
+            let title = dictionaryPresentation?.key?.exclude == true ? "Value" : item.title
+            let valueLabel = title
             let entryValue = item.value.value
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title

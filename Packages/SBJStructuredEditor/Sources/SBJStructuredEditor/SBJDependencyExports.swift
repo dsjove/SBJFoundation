@@ -1,2 +1,2 @@
-@_exported import SBJDataDefinition
+@_exported import SBJStructure
 @_exported import SBJLocalization

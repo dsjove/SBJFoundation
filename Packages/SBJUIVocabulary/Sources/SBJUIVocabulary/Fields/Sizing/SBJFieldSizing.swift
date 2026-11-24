@@ -1,6 +1,5 @@
 import SwiftUI
 
-import SBJDataDefinition
 // TODO: Revisit the FieldSizing model alongside localization candidate fitting.
 // The current min/ideal/max values are width preferences, not measured text extents.
 // Decide whether to represent measured content, padding, font metrics, and layout

@@ -6,7 +6,7 @@ import ImageIO
 import UniformTypeIdentifiers
 import SBJLocalization
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if canImport(UIKit) && canImport(PencilKit)
 import UIKit

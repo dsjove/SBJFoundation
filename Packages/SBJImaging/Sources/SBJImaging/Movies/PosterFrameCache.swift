@@ -15,7 +15,10 @@ public final class PosterFrameCache {
         public init(_ url: URL, _ time: TimeInterval?,
                     revision: UInt64 = 0) {
             self.url = url.standardizedFileURL
-            self.time = time
+            // Nonfinite timestamps cannot identify a frame and NaN cannot be
+            // used reliably in equality-based cache keys. Normalize them to the
+            // existing negative-time sentinel.
+            self.time = time.map { $0.isFinite ? $0 : -1 }
             self.revision = revision
         }
 
@@ -119,7 +122,10 @@ public final class PosterFrameCache {
         // A cached Value with nil image is a negative result; a missing key
         // means no extraction has yet been requested.
         let value = Value(image, key: key)
-        images.setObject(value, forKey: key, cost: image.map { $0.bytesPerRow * $0.height } ?? 1)
+        images.setObject(value, forKey: key, cost: image.map { image in
+            let (cost, overflow) = image.bytesPerRow.multipliedReportingOverflow(by: image.height)
+            return overflow ? Int.max : max(1, cost)
+        } ?? 1)
         return value
     }
 

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import SBJStructure //CodableFont
 @testable import SBJUIVocabulary
 
 #if os(macOS)

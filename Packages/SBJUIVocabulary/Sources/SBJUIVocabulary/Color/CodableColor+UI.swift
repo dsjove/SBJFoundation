@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure //CodableColor
 
 #if canImport(UIKit)
 import UIKit

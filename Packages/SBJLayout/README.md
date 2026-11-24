@@ -15,7 +15,7 @@ The core model is deliberately small:
 - `JCSLink` adds hyperlink annotations around renderables without leaking Core Graphics PDF context handling to clients.
 - `JCSText`, `JCSImage`, `JCSRect`, and `JCSLine` provide basic UIKit/Core Graphics content and drawing wrappers.
 
-SBJLayout currently targets **iOS 17+** and requires **Swift 6.4**.
+SBJLayout uses iOS 17+ and the other Apple deployment targets declared in `Package.swift`, and requires **Swift 6.4**.
 
 ## Layout model
 
@@ -218,4 +218,4 @@ swift test
 
 ## Physical units
 
-The layout engine continues to store geometry in PDF/Core Graphics points. Page-layout presentation now uses SBJDataDefinition `UnitValue<LengthUnit>` for conversion to inches or millimeters, and `PageLayout.pageWidth` / `pageHeight` expose physical dimensions as unit values. `PageLayout`, `PageSize`, and `Insets` use `@SBJStructure` and have no editor dependency. `PageLayoutEditorCore` and `PageLayoutEditorView` belong to the SBJFoundation umbrella module, which supplies the editing UI.
+The layout engine continues to store geometry in PDF/Core Graphics points. Page-layout presentation now uses SBJStructure `UnitValue<LengthUnit>` for conversion to inches or millimeters, and `PageLayout.pageWidth` / `pageHeight` expose physical dimensions as unit values. `PageLayout`, `PageSize`, and `Insets` use `@SBJStructure` and have no editor dependency. `PageLayoutEditorCore` and `PageLayoutEditorView` belong to the SBJFoundation umbrella module, which supplies the editing UI.

@@ -3,7 +3,6 @@ import CoreGraphics
 import SBJUIVocabulary
 import PDFKit
 import QuartzCore
-import SBJUIVocabulary
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)

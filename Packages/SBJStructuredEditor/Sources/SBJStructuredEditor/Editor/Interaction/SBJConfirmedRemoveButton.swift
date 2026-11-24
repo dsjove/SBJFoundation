@@ -5,16 +5,15 @@ import SwiftUI
 /// Destructive collection removal, confirmed before the model is mutated.
 @MainActor
 struct SBJConfirmedRemoveButton: View {
-    let accessibilityLabel: String
+    let context: String
     let remove: () -> Void
     @State private var askingToRemove = false
 
     var body: some View {
         SBJSymbolButton(
-            SBJSymbology.remove,
-            role: .destructive,
-            accessibilityLabel: accessibilityLabel,
-            accessibilityHint: "Asks for confirmation before removing this item"
+            SBJStructuredEditorNomenclature.removeConfirmed,
+            context: context,
+            role: .destructive
         ) {
             askingToRemove = true
         }

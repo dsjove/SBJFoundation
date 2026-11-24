@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import Foundation
@@ -169,9 +169,8 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
 
     private var clearButton: some View {
         SBJSymbolButton(
-            SBJStructuredEditorSymbology.clearOptional,
-            accessibilityLabel: "Clear \(label)",
-            accessibilityHint: "Removes the current optional value"
+            SBJStructuredEditorNomenclature.clearOptional,
+            context: label
         ) {
             value = nil
             pendingFocus = nil
@@ -181,9 +180,8 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
 
     private var setButton: some View {
         SBJSymbolButton(
-            SBJStructuredEditorSymbology.setOptional,
-            accessibilityLabel: "Set \(label)",
-            accessibilityHint: "Creates a value and moves focus into the new field"
+            SBJStructuredEditorNomenclature.setOptional,
+            context: label
         ) {
             value = registry.create(Wrapped.self)
             if value != nil {

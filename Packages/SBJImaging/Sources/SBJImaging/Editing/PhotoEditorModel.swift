@@ -1,7 +1,7 @@
 #if !os(watchOS) && !os(tvOS)
 import Observation
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 /// Mutable interaction state for a photo-editing session.

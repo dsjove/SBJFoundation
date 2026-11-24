@@ -1,7 +1,7 @@
 #if !os(watchOS) && !os(tvOS)
 import SwiftUI
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 public extension SBJBundledContentReference {
@@ -21,7 +21,7 @@ public struct PageLayoutEditorCore: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                row("Page Size", info: PageLayout.pageSizeInfo) {
+                row("Page Size", info: PageLayout.pageSizeNomenclature) {
 					SBJSelectionMenu(
 						selection: Binding<Int?>(
 							get: {
@@ -45,27 +45,27 @@ public struct PageLayoutEditorCore: View {
 					)
 					.frame(width: 180, alignment: .trailing)
 				}
-                row("Landscape", info: PageLayout.landscapeInfo) {
+                row("Landscape", info: PageLayout.landscapeNomenclature) {
                     Toggle("Landscape", isOn: $pageLayout.landscape).labelsHidden()
                 }
-                marginRow("Left", value: $pageLayout.left, info: PageLayout.leftInfo)
-                marginRow("Right", value: $pageLayout.right, info: PageLayout.rightInfo)
-                marginRow("Top", value: $pageLayout.top, info: PageLayout.topInfo)
-                marginRow("Bottom", value: $pageLayout.bottom, info: PageLayout.bottomInfo)
+                marginRow("Left", value: $pageLayout.left, info: PageLayout.leftNomenclature)
+                marginRow("Right", value: $pageLayout.right, info: PageLayout.rightNomenclature)
+                marginRow("Top", value: $pageLayout.top, info: PageLayout.topNomenclature)
+                marginRow("Bottom", value: $pageLayout.bottom, info: PageLayout.bottomNomenclature)
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
         }
     }
 
-    private func marginRow(_ name: String, value: Binding<UnitValue<LengthUnit>>, info: SBJPropertyInfo) -> some View {
+    private func marginRow(_ name: String, value: Binding<UnitValue<LengthUnit>>, info: SBJNomenclature) -> some View {
         row(name, info: info) {
-            UnitValueControl(value: value, accessibilityLabel: name, propertyInfo: info)
+            UnitValueControl(value: value, accessibilityLabel: name, propertyNomenclature: info)
         }
     }
 
     private func row<Control: View>(
-        _ name: String, info: SBJPropertyInfo,
+        _ name: String, info: SBJNomenclature,
         @ViewBuilder control: () -> Control
     ) -> some View {
         HStack(spacing: 12) {
@@ -73,7 +73,7 @@ public struct PageLayoutEditorCore: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             control()
                 .frame(width: 180, alignment: .trailing)
-            SBJPropertyInfoButton(propertyName: name, info: info)
+            SBJNomenclatureButton(propertyName: name, info: info)
                 .frame(width: 32)
         }
         .frame(minHeight: 36)

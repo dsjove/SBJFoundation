@@ -14,10 +14,9 @@ import PhotosUI
 #endif
 import SBJCamera
 import SBJFileResources
-import SBJDataDefinition
+import SBJStructure
 import SBJDocuments
 import SBJUIVocabulary
-import SBJSharing
 
 public struct _DefaultPhotoMenuLabel: View {
     let isFilled: Bool
@@ -130,6 +129,7 @@ public struct PhotoMenu<Content: View>: View {
         }
     }
 
+#if !os(tvOS)
     @MainActor
     private func editAcquiredResource() {
         Task { @MainActor in
@@ -137,6 +137,8 @@ public struct PhotoMenu<Content: View>: View {
             beginEditing(acquired, restoringOnCancel: false)
         }
     }
+
+#endif
 
     private let viewerTitle: String?
     private let editImports: Bool
@@ -223,13 +225,13 @@ public struct PhotoMenu<Content: View>: View {
     @ViewBuilder
     private func menuItems(_ labelIsHidden: Bool, sharePresenter: SBJSharePresenter) -> some View {
         if options.contains(.view), canAcquireResource {
-            menuButton("View", labeled: !labelIsHidden, image: SBJImageSymbology.viewPhoto) {
+            menuButton(SBJImageNomenclature.imageView, labeled: !labelIsHidden) {
                 viewAcquiredResource()
             }
         }
 
         if options.contains(.share), canAcquireResource {
-            menuButton("Share", labeled: !labelIsHidden, image: SBJSymbology.share) {
+            menuButton(SBJImageNomenclature.imageShare, labeled: !labelIsHidden) {
                 Task { @MainActor in
                     guard let acquired = await acquireResource(),
                           let image = acquired.sbjImage, !Task.isCancelled else { return }
@@ -255,32 +257,32 @@ public struct PhotoMenu<Content: View>: View {
         }
 
         if options.contains(.photos), PhotoMenuOptions.canShowPhotos {
-            menuButton("Photos", labeled: !labelIsHidden, image: SBJImageSymbology.choosePhotos) {
+            menuButton(SBJImageNomenclature.imageChoosePhotos, labeled: !labelIsHidden) {
                 state.isPhotoPickerPresented = true
             }
         }
 
         if options.contains(.camera), PhotoMenuOptions.canShowCamera {
-            menuButton("Camera", labeled: !labelIsHidden, image: SBJImageSymbology.camera) {
+            menuButton(SBJImageNomenclature.imageCamera, labeled: !labelIsHidden) {
                 state.isCameraPresented = true
             }
         }
 
         if options.contains(.files), PhotoMenuOptions.canShowFiles {
-            menuButton("Files", labeled: !labelIsHidden, image: SBJImageSymbology.chooseFile) {
+            menuButton(SBJImageNomenclature.imageChooseFile, labeled: !labelIsHidden) {
                 state.isFileImporterPresented = true
             }
         }
 
         if options.contains(.paste) {
-            menuButton("Paste", labeled: !labelIsHidden, image: SBJImageSymbology.pastePhoto) {
+            menuButton(SBJImageNomenclature.imagePaste, labeled: !labelIsHidden) {
                 importFromPasteboard()
             }
             .disabled(!state.canPasteImage)
         }
 
         if options.contains(.edit), canAcquireResource {
-            menuButton("Edit", labeled: !labelIsHidden, image: SBJImageSymbology.editPhoto) {
+            menuButton(SBJImageNomenclature.imageEdit, labeled: !labelIsHidden) {
                 editAcquiredResource()
             }
         }
@@ -289,7 +291,7 @@ public struct PhotoMenu<Content: View>: View {
             Button(role: .destructive) {
                 state.isPhotoClearPresented = true
             } label: {
-                Label("Clear", symbol: SBJSymbology.delete)
+                Label(SBJImageNomenclature.imageClear)
             }
             .labelStyle(.titleAndIcon)
         }
@@ -297,20 +299,19 @@ public struct PhotoMenu<Content: View>: View {
 
     @ViewBuilder
     private func menuButton(
-        _ title: LocalizedStringKey,
+        _ nomenclature: SBJNomenclature,
         labeled: Bool,
-        image: SBJSymbol,
         action: @escaping @MainActor () -> Void
     ) -> some View {
         Button(action: action) {
             if labeled {
-                Label(title, symbol: image)
+                Label(nomenclature)
             } else {
-                Image(symbol: image)
-                    .accessibilityLabel(title)
+                Image(symbol: nomenclature.symbol!)
             }
         }
         .labelStyle(.titleAndIcon)
+        .accessibility(nomenclature)
     }
 
     @ViewBuilder
@@ -591,7 +592,7 @@ public struct PhotoMenu<Content: View>: View {
                 Button(role: .destructive) {
                     state.isPhotoClearPresented = true
                 } label: {
-                    Label("Clear", symbol: SBJSymbology.delete)
+                    Label(SBJImageNomenclature.imageClear)
                 }
             }
         } label: {

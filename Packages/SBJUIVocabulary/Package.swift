@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../SBJLocalization"),
         .package(path: "../SBJFileResources"),
-        .package(path: "../SBJDataDefinition"),
+        .package(path: "../SBJStructure"),
     ],
     targets: [
         .target(
@@ -23,7 +23,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SBJLocalization", package: "SBJLocalization"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructure", package: "SBJStructure"),
             ],
             resources: [.process("Resources")],
         ),

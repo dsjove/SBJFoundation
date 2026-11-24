@@ -44,9 +44,11 @@ public enum CameraError: LocalizedError, Sendable {
 
 /// The camera capability used by clients of SBJCamera.
 ///
-/// The AVFoundation implementation remains private so the public API compiles
-/// on every Apple platform, including platforms where ordinary still-camera
-/// capture is unavailable to third-party apps.
+/// The AVFoundation implementation remains internal so this protocol can be
+/// consumed on Apple platforms without ordinary still-camera capture.
+///
+/// Create a standard implementation with ``CameraFactory/make(simulatesFrontCameraFlash:)``.
+/// Call `start` before capture; `stop` releases the running capture session.
 public protocol Camera: AnyObject, Observable {
     var isAuthorized: Bool { get }
     var hasCamera: Bool { get }

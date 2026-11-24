@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 
 /// Shared non-destructive controls used by playback and PhotoEditor.
 public struct ImageEnhancementControls: View {
@@ -13,25 +14,31 @@ public struct ImageEnhancementControls: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Image Enhancements").font(.headline)
+                Text(SBJImageNomenclature.imageEnhancementHeading.title).font(.headline)
                 Spacer()
-                Toggle("Before/After", isOn: $isEnabled)
+                Toggle(SBJImageNomenclature.imageEnhancementCompare.title, isOn: $isEnabled)
+                    #if !os(tvOS)
                     .toggleStyle(.switch)
-                    .help("Disable to compare with the original")
+                    #endif
+                    .help(SBJImageNomenclature.imageEnhancementCompare.details!)
             }
-            adjustment("Exposure", value: $adjustments.exposure, range: -2...2)
-            adjustment("Shadows", value: $adjustments.shadows, range: -1...1)
-            adjustment("Highlights", value: $adjustments.highlights, range: -1...1)
-            adjustment("Contrast", value: $adjustments.contrast, range: -1...1)
-            adjustment("Saturation", value: $adjustments.saturation, range: -1...1)
-            adjustment("Detail", value: $adjustments.detail, range: 0...1)
-            adjustment("Noise reduction", value: $adjustments.noiseReduction, range: 0...1)
+            adjustment(SBJImageNomenclature.imageEnhancementExposure, value: $adjustments.exposure, range: -2...2)
+            adjustment(SBJImageNomenclature.imageEnhancementShadows, value: $adjustments.shadows, range: -1...1)
+            adjustment(SBJImageNomenclature.imageEnhancementHighlights, value: $adjustments.highlights, range: -1...1)
+            adjustment(SBJImageNomenclature.imageEnhancementContrast, value: $adjustments.contrast, range: -1...1)
+            adjustment(SBJImageNomenclature.imageEnhancementSaturation, value: $adjustments.saturation, range: -1...1)
+            adjustment(SBJImageNomenclature.imageEnhancementDetail, value: $adjustments.detail, range: 0...1)
+            adjustment(SBJImageNomenclature.imageEnhancementNoiseReduction, value: $adjustments.noiseReduction, range: 0...1)
             HStack {
-                Button("Dark") { adjustments = .dark; isEnabled = true }
-                Button("Faded") { adjustments = .faded; isEnabled = true }
-                Button("Grainy") { adjustments = .grainy; isEnabled = true }
+                Button(SBJImageNomenclature.imageEnhancementDark.title) { adjustments = .dark; isEnabled = true }
+                    .help(SBJImageNomenclature.imageEnhancementDark.details!)
+                Button(SBJImageNomenclature.imageEnhancementFaded.title) { adjustments = .faded; isEnabled = true }
+                    .help(SBJImageNomenclature.imageEnhancementFaded.details!)
+                Button(SBJImageNomenclature.imageEnhancementGrainy.title) { adjustments = .grainy; isEnabled = true }
+                    .help(SBJImageNomenclature.imageEnhancementGrainy.details!)
                 Spacer()
-                Button("Reset") { adjustments = .init(); isEnabled = true }
+                Button(SBJImageNomenclature.imageEnhancementReset.title) { adjustments = .init(); isEnabled = true }
+                    .help(SBJImageNomenclature.imageEnhancementReset.details!)
             }
             .buttonStyle(.bordered)
         }
@@ -39,16 +46,42 @@ public struct ImageEnhancementControls: View {
         .frame(minWidth: 300, idealWidth: 340)
     }
 
-    private func adjustment(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+    private func adjustment(_ nomenclature: SBJNomenclature, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
         VStack(spacing: 2) {
             HStack {
-                Text(title)
+                Text(nomenclature.title)
                 Spacer()
                 Text(value.wrappedValue.formatted(.number.precision(.fractionLength(2))))
                     .monospacedDigit()
             }
             .font(.caption)
+            #if os(tvOS)
+            HStack(spacing: 16) {
+                Button {
+                    let step = (range.upperBound - range.lowerBound) / 20
+                    value.wrappedValue = max(range.lowerBound, value.wrappedValue - step)
+                } label: {
+                    Image(systemName: "minus")
+                }
+                .disabled(value.wrappedValue <= range.lowerBound)
+                .accessibilityLabel("Decrease " + nomenclature.title)
+
+                Spacer()
+
+                Button {
+                    let step = (range.upperBound - range.lowerBound) / 20
+                    value.wrappedValue = min(range.upperBound, value.wrappedValue + step)
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .disabled(value.wrappedValue >= range.upperBound)
+                .accessibilityLabel("Increase " + nomenclature.title)
+            }
+            #else
             Slider(value: value, in: range)
+                .accessibilityLabel(nomenclature.title)
+                .accessibilityHint(nomenclature.details!)
+            #endif
         }
     }
 }

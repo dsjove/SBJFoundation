@@ -1,18 +1,22 @@
 import SwiftUI
+import SBJLocalization
 
-import SBJDataDefinition
-/// A reusable text field for values that participate in `SearchProtocol`.
+/// A search field whose static presentation and accessibility information come
+/// from the same nomenclature used by help and other UI surfaces.
 public struct SearchField<S: SearchProtocol>: View {
-    private let titleKey: LocalizedStringKey
+    private let nomenclature: SBJNomenclature
+    private let context: String?
     private let activeSearchBorderPadding: CGFloat?
     @Binding private var searching: S
 
     public init(
-        _ titleKey: LocalizedStringKey = "Search",
+        _ nomenclature: SBJNomenclature = SBJCommonNomenclature.search,
+        context: String? = nil,
         searching: Binding<S>,
         activeSearchBorderPadding: CGFloat? = SBJUIAppearance.activeSearchStrokeWidth + 0.5
     ) {
-        self.titleKey = titleKey
+        self.nomenclature = nomenclature
+        self.context = context
         self._searching = searching
         self.activeSearchBorderPadding = activeSearchBorderPadding
     }
@@ -23,11 +27,16 @@ public struct SearchField<S: SearchProtocol>: View {
     }
 
     private var searchField: some View {
-        TextField(titleKey, text: $searching.text)
+        let title = nomenclature.title
+        let displayedTitle = context.map { "\(title) \($0)" } ?? title
+        let spokenTitle = nomenclature.accessibilityLabel ?? title
+        let accessibilityTitle = context.map { "\(spokenTitle) \($0)" } ?? spokenTitle
+        return TextField(displayedTitle, text: $searching.text)
             .sbjSingleLineField()
 #if !os(watchOS) && !os(macOS)
             .autocapitalization(.none)
 #endif
             .disableAutocorrection(true)
+            .accessibility(label: accessibilityTitle, hint: nomenclature.accessibilityHint ?? nomenclature.summary)
     }
 }

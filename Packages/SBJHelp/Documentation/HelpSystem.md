@@ -2,9 +2,6 @@
 
 SBJHelp owns the reusable Help presentation and rendering system. Applications provide their own help resources and application-specific token values; SBJFoundation integrates its feature-specific Help pages.
 
-## Design goals
-
-
 
 ## Source organization
 
@@ -176,7 +173,7 @@ Apple's own `HelpLink`, WebKit, and SwiftUI rendering behavior are not duplicate
 
 ## Semantic image tokens
 
-HTML help can use `UI_name\` tokens for controls that are part of the shared UI vocabulary. For example, `UI_help\`, `UI_restore\`, `UI_add\`, and `UI_moveUp\` render the same imagery used by the SwiftUI controls. Applications may add or replace entries through `SBJHelpConfiguration.semanticImages`. Raw `SF_symbol.name\` and `AS_assetName\` tokens remain available for help-specific imagery.
+Prefer `NOM_<id>\` for documented controls and actions, so their symbol, title, and explanation come from the same nomenclature as the UI. Use `UI_name\` only when the image is illustrative and does not correspond to a full nomenclature entry. `SF_symbol.name\` and `AS_assetName\` remain available for help-specific imagery; avoid replacing semantic controls with raw image names.
 
 ## Bundled Foundation help
 
@@ -189,3 +186,28 @@ Source resources are organized into `Resources/help`, but runtime lookup must no
 
 ## Package boundary
 
+
+
+## Nomenclature-driven help
+
+An item's `SBJNomenclature` supplies its title, summary, details, symbol,
+accessibility label and accessibility hint. `details` is the canonical longer
+explanation, including interaction instructions where appropriate. Do not
+create a parallel `help` string or repeat this explanation in HTML.
+
+The owning module declares an `SBJNomenclatureSet` of stable nonlocalized IDs.
+Register it in `SBJHelpConfiguration.addNomenclatureSet(_:)`. Help HTML embeds
+`NOM_<id>\` as a standalone entry. The renderer substitutes a complete
+semantic HTML section with the symbol, title and description. CSS classes
+`sbj-nomenclature`, `sbj-nomenclature-heading`, `sbj-nomenclature-title`,
+`sbj-nomenclature-summary`, and `sbj-nomenclature-details` belong in the
+shared help stylesheet, never in individual entries. Use `UI_<id>\` only for
+an image reference with no corresponding nomenclature item. Context-specific
+operations should use context-specific stable IDs; a generic "Remove" entry
+must not describe deleting a file and removing a display section identically.
+
+Unregistered `NOM_` tags remain visible instead of silently substituting an
+incorrect description. Embed a complete entry rather than a fragment such
+as `Use NOM_add\ to ...`, which would duplicate its descriptive content.
+
+Use nomenclature-aware UI controls directly. Do not recreate its label and symbol in an intermediate `SBJLabeledSymbol`, and do not use the removed `SBJNomenclature.labeledSymbol` conversion property. See [Nomenclature integration](../../SBJLocalization/Documentation/NomenclatureIntegration.md).

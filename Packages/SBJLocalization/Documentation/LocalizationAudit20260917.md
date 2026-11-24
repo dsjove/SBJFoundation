@@ -24,7 +24,7 @@ The audit also preserves these boundaries:
 
 Counts below exclude tests and generated/package metadata. They are migration-seam counts, not defect counts. A literal may already be correctly typed for Apple String Catalog extraction today.
 
-| Component | Swift files | UI literals | Accessibility literals | `SBJPropertyInfo` construction | `StringPresentable` refs | Raw system-image UI refs | `LocalizedError` refs | Catalogs |
+| Component | Swift files | UI literals | Accessibility literals | `SBJNomenclature` construction | `StringPresentable` refs | Raw system-image UI refs | `LocalizedError` refs | Catalogs |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | SBJFoundation | 255 | 78 | 3 | 44 | 11 | 1* | 6 | 0 |
 | SBJLayout | 41 | 3 | 4 | 0 | 0 | 0 | 0 | 0 |
@@ -46,9 +46,9 @@ No `.xcstrings` or `Localizable.strings` catalogs are currently present in these
 
 ### SBJFoundation
 
-This remains the implementation blocker and therefore the highest-priority localization component. The existing design inventory is still accurate: `StringPresentable`, `Units+StringPresentable`, `Array+bulleted`, `Jargon`, `PendingAlert`, `SBJIssue`, `Accessible`/`AccessibleImage`, `SBJPropertyInfo`, generated editor labels, and numeric editors are the important seams.
+This remains the implementation blocker and therefore the highest-priority localization component. The existing design inventory is still accurate: `StringPresentable`, `Units+StringPresentable`, `Array+bulleted`, `Jargon`, `PendingAlert`, `SBJIssue`, `Accessible`/`AccessibleImage`, `SBJNomenclature`, generated editor labels, and numeric editors are the important seams.
 
-The recent Image / Attachments / Tags / Units work is directionally correct: semantic imagery is now separated by domain and accessibility metadata is associated with model/property information. Do not convert that metadata to ad-hoc localized `String` lookups; migrate `SBJPropertyInfo` once the shared text-resource type exists.
+The recent Image / Attachments / Tags / Units work is directionally correct: semantic imagery is now separated by domain and accessibility metadata is associated with model/property information. Do not convert that metadata to ad-hoc localized `String` lookups; migrate `SBJNomenclature` once the shared text-resource type exists.
 
 `ColorPickerView` versus `SwiftUI.ColorPicker` remains explicitly unresolved and is not a localization issue. `CameraPickerView` duplication with SBJCamera is also explicitly unresolved.
 
@@ -108,7 +108,7 @@ Facility names, hardware identifiers, and dynamic model-provided labels need cla
 
 1. Implement `SBJTextResource`/presentation candidates in SBJFoundation using `LocalizedStringResource` input and explicit verbatim values.
 2. Prove Xcode String Catalog extraction with a small build fixture before mass migration.
-3. Migrate `SBJPropertyInfo`, accessibility metadata, `PendingAlert`/`SBJIssue`, and generated editor labels.
+3. Migrate `SBJNomenclature`, accessibility metadata, `PendingAlert`/`SBJIssue`, and generated editor labels.
 4. Add the SBJLayout bridge so localized candidates can survive through measurement and final rendering.
 5. Classify and migrate Jove's Characters `StringPresentable` conformances by semantic category.
 6. Integrate Units formatting/presentation through the same context.
@@ -131,4 +131,4 @@ Do **not** snapshot or assert English copy, exact localized wording, or chosen S
 
 ## Subsequent update (2026-10-16)
 
-See `PHASE2_ACCESSIBILITY_DESIGN.md` for current protocol separation, shared metadata composition, and the deferred SBJLocalization extraction boundary. `SBJPropertyInfo` and `SBJAccessibilityModifier` now reside under Localization in the existing SBJFoundation target. Existing tests stay in SBJFoundationTests until the framework migration.
+See `PHASE2_ACCESSIBILITY_DESIGN.md` for current protocol separation, shared metadata composition, and the deferred SBJLocalization extraction boundary. `SBJNomenclature` and `SBJAccessibilityModifier` now reside under Localization in the existing SBJFoundation target. Existing tests stay in SBJFoundationTests until the framework migration.

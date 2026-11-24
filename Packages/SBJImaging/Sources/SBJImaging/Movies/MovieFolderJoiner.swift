@@ -1,3 +1,4 @@
+#if !os(watchOS) && !os(tvOS)
 import Foundation
 import AVFoundation
 import CoreMedia
@@ -266,3 +267,5 @@ public enum MovieFolderJoiner {
         try track.append(sample, decodeTime: nil, presentationTime: nil)
     }
 }
+
+#endif

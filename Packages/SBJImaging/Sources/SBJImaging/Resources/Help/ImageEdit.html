@@ -2,36 +2,31 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <style>STYLE_SHEET</style>
   <title>TITLE</title>
 </head>
 <body>
   <h1>TITLE</h1>
   <p>Use the image editor to crop, position, rotate, mirror, and mark up an image before saving it.</p>
-
   <h2>Crop and position</h2>
-  <ul>
-    <li>UI_crop\ Choose a crop shape. A checkmark marks the current crop.</li>
-    <li><b>Swap Width &amp; Height:</b> Swap the width and height of a crop ratio, such as 4:3 to 3:4.</li>
-    <li>Drag the image to reposition it inside an active crop. Pinch to zoom.</li>
-    <li>Double-tap the image or select UI_resetPanZoom\ <b>Reset Pan &amp; Zoom</b> to restore its position and magnification.</li>
-    <li>For a freeform crop, drag the lower-right handle to change its proportions.</li>
-  </ul>
-
+  NOM_image.crop\
+  NOM_image.swapCropDimensions\
+  <p>Drag the image inside an active crop to reposition it. Pinch to zoom. For a freeform crop, drag the lower-right handle to change its proportions.</p>
+  NOM_image.resetPanZoom\
   <h2>Rotate and mirror</h2>
-  <ul>
-    <li>UI_rotateLeft\ rotates the image 90 degrees counterclockwise.</li>
-    <li>UI_mirrorHorizontal\ mirrors the image horizontally. If vertical mirroring is available, UI_mirrorVertical\ mirrors it vertically.</li>
-    <li>UI_straighten\ opens fine straightening. The displayed angle is the image's full rotation, including quarter turns.</li>
-    <li>In the straighten control, UI_rotateLeft\ and UI_rotateRight\ provide quarter turns and UI_resetStraighten\ restores the fine straighten value.</li>
-  </ul>
-
+  NOM_image.rotateLeft\
+  NOM_image.rotateRight\
+  NOM_image.mirrorHorizontal\
+  NOM_image.mirrorVertical\
+  NOM_image.straighten\
+  NOM_image.resetStraighten\
   <h2>Markup and sharing</h2>
-  <ul>
-    <li>UI_markup\ shows drawing tools when markup is enabled. UI_hideMarkup\ hides them.</li>
-    <li>UI_eraseMarkup\ clears markup, while UI_undoMarkup\ and UI_redoMarkup\ step through drawing changes.</li>
-    <li>UI_share\ shares the currently edited image when sharing is enabled.</li>
-  </ul>
-
+  NOM_image.showMarkup\
+  NOM_image.hideMarkup\
+  NOM_image.clearMarkup\
+  NOM_image.undoMarkup\
+  NOM_image.redoMarkup\
+  NOM_image.share\
   <p><b>Done</b> is available only when the image has an effective edit.</p>
 </body>
 </html>

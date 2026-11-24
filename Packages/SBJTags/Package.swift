@@ -18,7 +18,7 @@ let package = Package(
         .package(path: "../SBJUIVocabulary"),
         .package(path: "../SBJFileResources"),
         .package(path: "../SBJHelp"),
-        .package(path: "../SBJDataDefinition"),
+        .package(path: "../SBJStructure"),
         .package(path: "../SBJLayout"),
     ],
     targets: [
@@ -30,7 +30,7 @@ let package = Package(
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
                 .product(name: "SBJFileResources", package: "SBJFileResources"),
                 .product(name: "SBJHelp", package: "SBJHelp"),
-                .product(name: "SBJDataDefinition", package: "SBJDataDefinition"),
+                .product(name: "SBJStructure", package: "SBJStructure"),
                 .product(name: "SBJLayout", package: "SBJLayout"),
             ],
             resources: [.process("Resources")],

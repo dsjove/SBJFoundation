@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 
 /// Simple, non-glass volume control. The entire rail, including its trailing
 /// portion, remains visible; clicking or dragging anywhere seeks directly.
@@ -12,6 +13,30 @@ public struct SBJVolumeSlider: View {
     }
 
     public var body: some View {
+        #if os(tvOS)
+        HStack(spacing: 16) {
+            Button {
+                value = max(0, (value.isFinite ? value : 0) - 0.05)
+            } label: {
+                Image(systemName: "speaker.minus")
+            }
+            .disabled(value <= 0)
+            .accessibilityLabel("Decrease volume")
+
+            Text((value.isFinite ? min(1, max(0, value)) : 0).formatted(.percent.precision(.fractionLength(0))))
+                .monospacedDigit()
+                .frame(minWidth: 72)
+                .accessibilityLabel(SBJSliderNomenclature.volume.title)
+
+            Button {
+                value = min(1, (value.isFinite ? value : 0) + 0.05)
+            } label: {
+                Image(systemName: "speaker.plus")
+            }
+            .disabled(value >= 1)
+            .accessibilityLabel("Increase volume")
+        }
+        #else
         GeometryReader { geometry in
             let usable = max(geometry.size.width - thumbSize, 1)
             let progress = min(1, max(0, value.isFinite ? value : 0))
@@ -43,7 +68,8 @@ public struct SBJVolumeSlider: View {
         }
         .frame(height: 18)
         .accessibilityElement()
-        .accessibilityLabel("Volume")
+        .accessibilityLabel(SBJSliderNomenclature.volume.accessibilityLabel ?? SBJSliderNomenclature.volume.title)
+        .accessibilityHint(SBJSliderNomenclature.volume.accessibilityHint ?? SBJSliderNomenclature.volume.summary!)
         .accessibilityValue("\(Int((min(1, max(0, value)) * 100).rounded())) percent")
         .accessibilityAdjustableAction { direction in
             switch direction {
@@ -52,5 +78,6 @@ public struct SBJVolumeSlider: View {
             @unknown default: break
             }
         }
+        #endif
     }
 }

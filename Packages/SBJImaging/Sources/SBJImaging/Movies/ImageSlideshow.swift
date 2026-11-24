@@ -1,4 +1,5 @@
 import SwiftUI
+import SBJLocalization
 import CoreGraphics
 #if os(macOS)
 import AppKit
@@ -65,29 +66,44 @@ public struct ImageSlideshow: View {
 
             }
             HStack(spacing: 14) {
-                Button(action: onClose) { Image(systemName: "xmark") }
-                    .accessibilityLabel("Close slideshow")
-                Button { advance(by: -1) } label: { Image(systemName: "chevron.left") }
-                    .disabled(availableCount < 2)
-                Button { isPlaying.toggle() } label: {
-                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                Button(action: onClose) {
+                    Image(symbol: SBJImageNomenclature.imageSlideshowClose.symbol!)
+                }
+                .accessibility(SBJImageNomenclature.imageSlideshowClose)
+                Button { advance(by: -1) } label: {
+                    Image(symbol: SBJImageNomenclature.imageSlideshowPrevious.symbol!)
                 }
                 .disabled(availableCount < 2)
-                Button { advance(by: 1) } label: { Image(systemName: "chevron.right") }
-                    .disabled(availableCount < 2)
+                .accessibility(SBJImageNomenclature.imageSlideshowPrevious)
+                Button { isPlaying.toggle() } label: {
+                    Image(symbol: (isPlaying
+                        ? SBJImageNomenclature.imageSlideshowPause
+                        : SBJImageNomenclature.imageSlideshowPlay).symbol!)
+                }
+                .disabled(availableCount < 2)
+                .accessibility(isPlaying
+                    ? SBJImageNomenclature.imageSlideshowPause
+                    : SBJImageNomenclature.imageSlideshowPlay)
+                Button { advance(by: 1) } label: {
+                    Image(symbol: SBJImageNomenclature.imageSlideshowNext.symbol!)
+                }
+                .disabled(availableCount < 2)
+                .accessibility(SBJImageNomenclature.imageSlideshowNext)
                 Spacer(minLength: 0)
                 // One slide caption, displayed in the chrome instead of on top of the image.
                 Text(count > 0 ? slideTitle(index) : "")
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity)
-                    .accessibilityLabel("Slide title")
+                    .accessibilityLabel(SBJImageNomenclature.imageSlideshowTitle.title)
                 Spacer(minLength: 0)
+                #if os(macOS) || os(iOS) || os(visionOS)
                 Button { toggleFullscreen() } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    Image(symbol: SBJImageNomenclature.imageSlideshowFullscreen.symbol!)
                 }
-                .accessibilityLabel("Toggle fullscreen")
-                .help("Full screen")
+                .accessibility(SBJImageNomenclature.imageSlideshowFullscreen)
+                .help(SBJImageNomenclature.imageSlideshowFullscreen.details!)
+                #endif
                 Text("\(count == 0 ? 0 : index + 1) / \(count)")
                     .monospacedDigit()
             }
@@ -100,7 +116,7 @@ public struct ImageSlideshow: View {
         .background(Color.black.ignoresSafeArea())
         #if os(macOS)
         .background(SlideshowWindowReader(window: $hostingWindow))
-        #else
+        #elseif os(iOS) || os(visionOS)
         .fullScreenCover(isPresented: $fullscreen) {
             slideshowFullscreenContent
         }
@@ -143,7 +159,7 @@ public struct ImageSlideshow: View {
     private func toggleFullscreen() {
         #if os(macOS)
         hostingWindow?.toggleFullScreen(nil)
-        #else
+        #elseif os(iOS) || os(visionOS)
         fullscreen = true
         #endif
     }

@@ -1,6 +1,6 @@
 import Observation
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 @MainActor

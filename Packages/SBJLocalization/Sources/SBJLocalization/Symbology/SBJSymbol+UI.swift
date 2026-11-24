@@ -108,6 +108,19 @@ public extension Label where Title == Text, Icon == Image {
 /// When standalone, the title is normally the spoken label; associate separately
 /// presented labels with their controls to avoid redundant VoiceOver stops.
 public extension Label where Title == Text, Icon == Image {
+    /// Uses the canonical nomenclature for the visible name and symbol.
+    /// Accessibility metadata belongs on the containing interactive control.
+    init(_ nomenclature: SBJNomenclature) {
+        guard let symbol = nomenclature.symbol else {
+            preconditionFailure("A nomenclature-backed label requires a symbol")
+        }
+        self = Label {
+            Text(nomenclature.title)
+        } icon: {
+            Image(symbol: symbol)
+        }
+    }
+
     init(_ definition: SBJLabeledSymbol) {
         self = Label {
             Text(definition.title)

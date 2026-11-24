@@ -1,4 +1,4 @@
-import SBJDataDefinition
+import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 

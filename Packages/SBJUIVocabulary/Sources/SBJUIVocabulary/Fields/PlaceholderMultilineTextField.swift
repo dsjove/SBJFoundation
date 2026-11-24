@@ -1,6 +1,6 @@
 #if !os(watchOS) && !os(tvOS)
 import SwiftUI
-import SBJDataDefinition
+import SBJStructure //SBJStringPresentationValue
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -65,10 +65,7 @@ public struct PlaceholderMultilineTextField<Placeholder: View>: View {
 
             HStack {
                 Spacer()
-                SBJSymbolButton(
-                    SBJSymbology.edit,
-                    accessibilityLabel: "Edit in sheet"
-                ) {
+                SBJSymbolButton(SBJCommonNomenclature.editInSheet) {
                     showSheet = true
                 }
                 .padding(.trailing, 8)

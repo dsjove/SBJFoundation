@@ -6,7 +6,7 @@ import CoreGraphics
 #if canImport(PencilKit)
 import PencilKit
 #endif
-import SBJDataDefinition
+import SBJStructure
 import SBJUIVocabulary
 
 

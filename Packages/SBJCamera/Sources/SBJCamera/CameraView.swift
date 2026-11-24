@@ -5,6 +5,14 @@ import SwiftUI
 /// By default this view chooses the preferred available Apple-framework camera
 /// implementation for the current platform. A concrete implementation can be
 /// requested when an app wants a specific capture experience.
+///
+/// The completion receives an encoded still image on success or `nil` when
+/// the user cancels. Availability reflects a discoverable camera, not the
+/// application's current camera authorization. The hosting app must supply
+/// `NSCameraUsageDescription` when camera capture is supported.
+///
+/// `allowsEditing` and `remembersCameraDevice` apply only to the system picker;
+/// the AVFoundation capture experience does not edit the captured photograph.
 @MainActor
 public struct CameraView: View {
     public typealias Completion = @MainActor (CapturedAttachment?) -> Void

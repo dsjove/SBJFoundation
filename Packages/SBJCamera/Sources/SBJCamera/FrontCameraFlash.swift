@@ -14,6 +14,8 @@ public final class FrontCameraFlash {
 
     private let exposureDelay: Duration
     private let shutterHoldDuration: Duration
+    // Invalidates earlier overlapping or cancelled flash operations.
+    private var operationID = 0
 
     /// Creates a simulated front-camera flash coordinator.
     ///
@@ -33,25 +35,28 @@ public final class FrontCameraFlash {
     /// Illuminates the display, invokes the shutter action, then restores the
     /// display after the capture interval.
     public func perform(_ capture: @escaping @MainActor () -> Void) async {
+        operationID &+= 1
+        let thisOperation = operationID
         isActive = true
 
-        // Allow SwiftUI to render the white surface before waiting for the
-        // camera exposure to react to it.
+        // Render the illumination before waiting for the exposure to adjust.
         await Task.yield()
         try? await Task.sleep(for: exposureDelay)
 
-        guard !Task.isCancelled else {
-            isActive = false
+        guard thisOperation == operationID, !Task.isCancelled else {
+            if thisOperation == operationID { isActive = false }
             return
         }
 
         capture()
         try? await Task.sleep(for: shutterHoldDuration)
-        isActive = false
+        // An older capture must not switch off a newer capture's flash.
+        if thisOperation == operationID { isActive = false }
     }
 
     /// Immediately ends an in-progress simulated flash.
     public func cancel() {
+        operationID &+= 1
         isActive = false
     }
 }

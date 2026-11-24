@@ -29,10 +29,10 @@ public struct PDFPageControlView<Controller: PDFPageNavigating & PDFTextSearchin
     private var pageControls: some View {
         let pageRange = controller.currentPage
 
-        SBJSymbolButton(SBJLayoutSymbology.firstPageLabel, action: controller.goToFirstPage)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiFirstPage, action: controller.goToFirstPage)
         .disabled(!pageRange.canGoBackward)
 
-        SBJSymbolButton(SBJLayoutSymbology.previousPageLabel, action: controller.goToPreviousPage)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiPreviousPage, action: controller.goToPreviousPage)
         .disabled(!pageRange.canGoBackward)
 
         Text(pageRange.description)
@@ -40,13 +40,13 @@ public struct PDFPageControlView<Controller: PDFPageNavigating & PDFTextSearchin
             .fixedSize()
             .accessibilityLabel(pageRange.pageAccessibilityLabel)
 
-        SBJSymbolButton(SBJLayoutSymbology.nextPageLabel, action: controller.goToNextPage)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiNextPage, action: controller.goToNextPage)
         .disabled(!pageRange.canGoForward)
 
-        SBJSymbolButton(SBJLayoutSymbology.lastPageLabel, action: controller.goToLastPage)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiLastPage, action: controller.goToLastPage)
         .disabled(!pageRange.canGoForward)
 
-        SBJSymbolButton(SBJLayoutSymbology.searchPDFLabel) {
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiSearchPDF) {
             controller.isSearchPresented = true
             focusSearchField()
         }
@@ -70,13 +70,13 @@ public struct PDFPageControlView<Controller: PDFPageNavigating & PDFTextSearchin
             .fixedSize()
             .accessibilityLabel(searchMatchAccessibilityLabel)
 
-        SBJSymbolButton(SBJLayoutSymbology.previousSearchMatchLabel, action: controller.goToPreviousSearchMatch)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiPreviousSearchMatch, action: controller.goToPreviousSearchMatch)
         .disabled(controller.searchMatchCount == 0)
 
-        SBJSymbolButton(SBJLayoutSymbology.nextSearchMatchLabel, action: controller.goToNextSearchMatch)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiNextSearchMatch, action: controller.goToNextSearchMatch)
         .disabled(controller.searchMatchCount == 0)
 
-        SBJSymbolButton(SBJLayoutSymbology.closeSearchLabel, action: closeSearch)
+        SBJSymbolButton(SBJLayoutNomenclature.layoutUiCloseSearch, action: closeSearch)
     }
 
     private var searchMatchDescription: String {

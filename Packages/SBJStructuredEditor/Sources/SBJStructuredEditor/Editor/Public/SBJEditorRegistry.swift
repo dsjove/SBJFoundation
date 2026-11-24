@@ -121,10 +121,10 @@ public struct SBJEditorRegistry {
     }
 
     func createArrayElement<Value>(_ type: Value.Type, existing: [Value]) -> Value? {
-        if let arrayCreatableType = type as? any SBJCollectionElementCreatable.Type {
+        if type is any SBJCollectionElementCreatable.Type {
             // A nil result is intentional (e.g. every enum case is already used).
             // Do not fall back to default construction and create a duplicate.
-            return arrayCreatableType._sbjCreateValue(existing: existing) as? Value
+            return SBJCollectionElementCreation.create(existing: existing)
         }
         return create(type)
     }
@@ -133,6 +133,11 @@ public struct SBJEditorRegistry {
     /// Finite CaseIterable domains use their declared ordering; other types
     /// retain exact-type registration and default creation behavior.
     func createSetElement<Element: Hashable>(_ type: Element.Type, existing: Set<Element>) -> Element? {
+        if type is any SBJCollectionElementCreatable.Type {
+            guard let candidate: Element = SBJCollectionElementCreation.create(existing: Array(existing)),
+                  !existing.contains(candidate) else { return nil }
+            return candidate
+        }
         if let cases = caseIterableOptions(for: type) {
             return cases.first { !existing.contains($0) }
         }
