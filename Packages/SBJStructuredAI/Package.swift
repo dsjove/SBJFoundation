@@ -8,10 +8,12 @@ let package = Package(
         .watchOS(.v10), .visionOS(.v1), .tvOS(.v17),
     ],
     products: [.library(name: "SBJStructuredAI", targets: ["SBJStructuredAI"])],
-    dependencies: [.package(path: "../SBJStructure")],
+    dependencies: [.package(path: "../SBJStructure"), .package(path: "../SBJLocalization")],
     targets: [
         .target(name: "SBJStructuredAI", dependencies: [
-            .product(name: "SBJStructure", package: "SBJStructure")
-        ])
+            .product(name: "SBJStructure", package: "SBJStructure"),
+            .product(name: "SBJLocalization", package: "SBJLocalization")
+        ]),
+        .testTarget(name: "SBJStructuredAITests", dependencies: ["SBJStructuredAI", "SBJStructure", "SBJLocalization"])
     ]
 )

@@ -1,0 +1,44 @@
+import SBJLocalization
+
+/// Reusable Assistant presentation terminology, independent of any host document.
+/// Stable keys follow the same SBJNomenclatureSet pattern as other SBJFoundation editors.
+/// App-specific UI localization and overrides are intentionally deferred.
+public enum SBJAIAssistantNomenclature: SBJNomenclatureSet {
+    public static let all: [String: SBJNomenclature] = [
+        "emptyTitle": .init(title: "Ask the Assistant", summary: "Chat with the on-device assistant.", symbol: .system("sparkles")),
+        "emptyDescription": .init(title: "Chat with the on-device assistant. Character data is not connected yet.", summary: "Chat with the on-device assistant."),
+        "prompt": .init(title: "Message"),
+        "send": .init(title: "Send", symbol: .system("arrow.up.circle.fill")),
+        "stop": .init(title: "Stop"),
+        "approveTitle": .init(title: "Review proposed changes", symbol: .system("checkmark.shield")),
+        "approve": .init(title: "Apply"),
+        "reject": .init(title: "Cancel"),
+        "resolvedField": .init(title: "Field"),
+        "currentValue": .init(title: "Current"),
+        "proposedValue": .init(title: "Proposed"),
+        "readOnly": .init(title: "This document is read-only."),
+        "speakResponses": .init(title: "Speak responses"),
+        "shareSubject": .init(title: "Assistant conversation"),
+        "shareMessage": .init(title: "Conversation and diagnostics exported from SBJStructuredAI"),
+        "shareTranscript": .init(title: "Share transcript", symbol: .system("square.and.arrow.up"), accessibilityLabel: "Share conversation and diagnostics"),
+        "foundationModelsDiagnostics": .init(title: "Foundation Models diagnostics", symbol: .system("stethoscope")),
+        "thinking": .init(title: "Thinking…"),
+        "stopDictation": .init(title: "Stop dictation", symbol: .system("stop.circle.fill")),
+        "startDictation": .init(title: "Start dictation", symbol: .system("mic")),
+        "speakerUser": .init(title: "You"),
+        "speakerAssistant": .init(title: "Assistant"),
+        "speakerError": .init(title: "Error"),
+        "speakerDiagnostic": .init(title: "Discovery diagnostics"),
+        "feedback": .init(title: "Feedback"),
+        "feedbackTitle": .init(title: "Assistant Feedback"),
+        "collectDiagnostics": .init(title: "Collect anonymous Assistant diagnostics"),
+        "privacyDescription": .init(title: "Diagnostics remain in memory during this Assistant session. They contain categories and codes, not prompts, document values, responses, or audio."),
+        "exportDiagnostics": .init(title: "Export diagnostics", symbol: .system("square.and.arrow.up")),
+        "deleteDiagnostics": .init(title: "Delete all diagnostics"),
+        "reportMistake": .init(title: "Report an Assistant mistake"),
+        "wrongField": .init(title: "Wrong field"),
+        "wrongIntent": .init(title: "Misunderstood request"),
+        "wrongValue": .init(title: "Wrong value"),
+        "done": .init(title: "Done"),
+    ]
+}

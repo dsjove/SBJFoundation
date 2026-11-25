@@ -1,0 +1,50 @@
+#if DEBUG && canImport(FoundationModels) && canImport(SwiftUI) && !os(watchOS) && !os(tvOS)
+import Foundation
+import Testing
+@testable import SBJStructuredAI
+
+@Suite("Native conversation continuity (opt-in)", .serialized)
+@MainActor
+struct SBJAIConversationContinuityLiveTests {
+	@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SBJ_RUN_LIVE_CONTINUITY_TESTS"] == "1"))
+    func remembersEarlierTurn() async throws {
+        try #require(SBJAIAssistantAvailability.state == .ready)
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: {
+            .init(id: "test", revision: 0, model: 0, allowsEditing: false)
+        })
+        defer { coordinator.deactivate() }
+        // Run separately with SBJ_PREWARM_LIVE_TESTS=0 for a cold-session baseline.
+        let warm = ProcessInfo.processInfo.environment["SBJ_PREWARM_LIVE_TESTS"] != "0"
+        if warm {
+            coordinator.prewarm()
+            coordinator.prewarm() // Repeated hint must not replace the warmed session.
+        }
+        coordinator.activate()
+        #expect(coordinator.messages.isEmpty)
+        // Give the optional preload a useful head start, not a readiness guarantee.
+        if warm { try await Task.sleep(for: .seconds(2)) }
+        coordinator.submit("For this conversation, my favorite color is cobalt. Acknowledge this fact.")
+        try await waitForResponse(coordinator)
+        coordinator.submit("What favorite color did I tell you? Reply with just the color.")
+        try await waitForResponse(coordinator)
+        #expect(coordinator.messages.count == 4)
+        #expect(coordinator.messages.last?.speaker == .assistant)
+        #expect(coordinator.messages.last?.text.localizedCaseInsensitiveContains("cobalt") == true)
+        coordinator.deactivate()
+        coordinator.activate()
+        #expect(coordinator.messages.isEmpty)
+    }
+
+	@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    private func waitForResponse(_ coordinator: SBJAIAssistantCoordinator<Int>) async throws {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(90))
+        while coordinator.isResponding && clock.now < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try #require(!coordinator.isResponding, "Native response timed out")
+        try #require(coordinator.messages.last?.speaker == .assistant)
+    }
+}
+#endif
