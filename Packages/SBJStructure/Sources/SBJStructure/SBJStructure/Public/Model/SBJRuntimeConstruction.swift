@@ -11,6 +11,7 @@ public enum SBJRuntimeConstruction {
         case duplicateMember(String)
         case invalidValue(String)
         case decodingFailed
+        case notDecodable
     }
 
     /// Returns canonical Swift property names, rejecting unrecognized and ambiguous names.
@@ -19,7 +20,7 @@ public enum SBJRuntimeConstruction {
     private static func canonicalFields<T: SBJStructured>(
         _ supplied: [String: Any], for type: T.Type
     ) throws -> [String: Any] {
-        let members = type.sbjProperties
+        let members = type.sbjProperties.filter { $0.storage == .stored }
         let initializerMembers = type.sbjInitializerMembers
         var resolved: [String: Any] = [:]
         for (name, value) in supplied {
@@ -55,16 +56,7 @@ public enum SBJRuntimeConstruction {
         _ type: T.Type, fromJSON data: Data
     ) throws -> T {
         let fields = try canonicalFields(object(from: data), for: type)
-        var representation: [String: Any] = [:]
-        if let initial = type.sbjDefaultValue() {
-            let encoded = try JSONEncoder().encode(initial)
-            representation = try object(from: encoded)
-        }
-        for (name, value) in fields { representation[name] = value }
-        let bytes = try JSONSerialization.data(withJSONObject: representation, options: [.fragmentsAllowed])
-        let candidate = try JSONDecoder().decode(type, from: bytes)
-        try SBJInvariantCheck.validate(candidate, at: .root)
-        return candidate
+        return try constructViaCodable(type, fields: fields)
     }
 
     /// For mutable models, construct through the existing typed writable-property
@@ -77,9 +69,9 @@ public enum SBJRuntimeConstruction {
         guard var candidate = type.sbjDefaultValue() else {
             return try constructViaCodable(type, fields: fields)
         }
-        let writable = type.sbjMutableProperties.filter { $0.participatesInStructuralValidation }
+        let writable = type.sbjMutableProperties.filter { $0.structuralMetadata.storage == .stored }
         let byName = Dictionary(uniqueKeysWithValues: writable.map {
-            (($0.structuralMetadata?.sourceName ?? $0.name), $0)
+            (($0.structuralMetadata.sourceName), $0)
         })
         // A supplied immutable field requires atomic reconstruction by Decodable.
         if fields.keys.contains(where: { byName[$0] == nil }) {
@@ -103,12 +95,13 @@ public enum SBJRuntimeConstruction {
         _ type: T.Type, fields: [String: Any]
     ) throws -> T {
         var representation: [String: Any] = [:]
-        if let initial = type.sbjDefaultValue() {
+        if let initial = type.sbjDefaultValue() as? any Encodable {
             representation = try object(from: JSONEncoder().encode(initial))
         }
         for (name, value) in fields { representation[name] = value }
         let data = try JSONSerialization.data(withJSONObject: representation, options: [.fragmentsAllowed])
-        let candidate = try JSONDecoder().decode(type, from: data)
+        guard let decodable = type as? any Decodable.Type,
+              let candidate = try JSONDecoder().decode(decodable, from: data) as? T else { throw Failure.notDecodable }
         try SBJInvariantCheck.validate(candidate, at: .root)
         return candidate
     }
@@ -121,13 +114,14 @@ private final class SBJRuntimePropertyDecoder<Root: SBJStructured>: SBJTypedStru
 
     init(jsonValue: Any) { self.jsonValue = jsonValue }
 
-    func visit<Value: Codable>(
+    func visit<Value>(
         _ keyPath: WritableKeyPath<Root, Value>,
-        metadata: SBJPropertyMetadata<Root>?
+        metadata: SBJPropertyMetadata<Root>
     ) {
         do {
             let data = try JSONSerialization.data(withJSONObject: jsonValue, options: [.fragmentsAllowed])
-            value = try JSONDecoder().decode(Value.self, from: data) as Any
+            guard let decodable = Value.self as? any Decodable.Type else { throw SBJRuntimeConstruction.Failure.notDecodable }
+            value = try JSONDecoder().decode(decodable, from: data) as Any
         } catch { self.error = error }
     }
 }

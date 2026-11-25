@@ -11,9 +11,9 @@ struct SBJEditorBehaviorTests {
     @MainActor
     @Test func recipeStructuralFieldsAreProjectedForEditing() {
         let fields = SBJStructuralFieldProjection.fields(of: SBJStructureSampleModel.self)
-        #expect(fields.contains { $0.editableField.structuralMetadata?.sourceName == "name" })
-        #expect(fields.contains { $0.editableField.structuralMetadata?.sourceName == "ingredients" })
-        #expect(fields.contains { $0.editableField.structuralMetadata?.sourceName == "cookingStages" })
+        #expect(fields.contains { $0.metadata.sourceName == "name" })
+        #expect(fields.contains { $0.metadata.sourceName == "ingredients" })
+        #expect(fields.contains { $0.metadata.sourceName == "cookingStages" })
     }
 
 

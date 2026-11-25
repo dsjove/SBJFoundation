@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 /// Stable identity of separately stored content referenced from an SBJStructured model.
 /// This is a model-level identifier, not a URL, bundled resource lookup, or a document identifier.
@@ -81,8 +82,12 @@ public enum SBJReferencedContentTraversal {
         }
     }
 
-    static func appending(_ component: String, to path: String, separator: String = ".") -> String {
+    public static func appending(_ component: String, to path: String, separator: String = ".") -> String {
         guard !path.isEmpty else { return component }
         return path + separator + component
     }
+}
+
+extension SBJReferencedContentID: SBJStructuralComparable {
+    public func sbjStructuralEquals(_ other: Self) -> Bool { rawValue.sbjStructuralEquals(other.rawValue) }
 }

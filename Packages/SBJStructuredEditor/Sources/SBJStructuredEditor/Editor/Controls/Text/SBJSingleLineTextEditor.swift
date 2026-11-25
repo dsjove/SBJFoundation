@@ -13,6 +13,7 @@ struct SBJSingleLineTextEditor: View {
 
     var rowStatus: SBJEditorRowStatus = .init()
     var presentation: SBJStringPresentationValue = .init()
+    var invalid: Bool = false
 
     var body: some View {
         SBJAdaptiveFieldLayout(
@@ -32,6 +33,7 @@ struct SBJSingleLineTextEditor: View {
             .sbjSingleLineField(isFocused: $isFocused)
             .sbjTextInput(presentation)
             .sbjEditorAccessibleControl(label: label, status: rowStatus)
+                .invalidDecoration(invalid)
 
         if let sizing = SBJTextFieldSizing.singleLine(maximumLength: maximumLength) {
             base.sbjPreferredFieldWidth(sizing)

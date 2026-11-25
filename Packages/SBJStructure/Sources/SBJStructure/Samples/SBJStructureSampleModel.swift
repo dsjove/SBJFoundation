@@ -11,6 +11,7 @@ import SBJLocalization
 /// same annotations, metadata, recursive editing, validation, comparison, and
 /// Swift-source-export behavior.
 /// Shared documentation for every Recipe property whose value is a course.
+@SBJStructure
 public enum SBJStructureSampleCourse: String, Codable, CaseIterable, Hashable, SBJNomenclatureProviding {
   public static let nomenclature = SBJNomenclature(
     title: "Course",
@@ -25,6 +26,7 @@ public enum SBJStructureSampleCourse: String, Codable, CaseIterable, Hashable, S
   case dessert
 }
 
+@SBJStructure
 public enum SBJStructureSampleIngredientUnit: String, Codable, CaseIterable, Hashable {
   case gram
   case kilogram
@@ -76,7 +78,8 @@ public struct SBJStructureSampleCookingStage: Codable {
     temperature: 220, convection: true, explanation: "Use the middle rack")
 }
 
-public struct SBJStructureSampleRating: Codable, Equatable {
+public struct SBJStructureSampleRating: Codable, Equatable, SBJStructuralComparable {
+  public func sbjStructuralEquals(_ other: Self) -> Bool { value.sbjStructuralEquals(other.value) }
   public init(value: Int) { self.value = value }
   public var value: Int
 }

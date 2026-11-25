@@ -7,5 +7,7 @@ import Foundation
 public macro SBJString(
     minLength: Int? = nil,
     maxLength: Int? = nil,
-    trimming: SBJStringTrimming = .none
+    trimming: SBJStringTrimming = .none,
+    allowedValues: [String]? = nil,
+    pattern: String? = nil
 ) = #externalMacro(module: "SBJStructureMacros", type: "SBJStringMacro")

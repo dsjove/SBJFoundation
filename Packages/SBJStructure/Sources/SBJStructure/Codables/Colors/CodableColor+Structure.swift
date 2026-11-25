@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 extension CodableColor: SBJDefaultValueCreatable, SBJSwiftExpressionRepresentable {
     public static func sbjCreateDefaultValueIfPossible() -> Self? { .init() }
@@ -11,5 +12,12 @@ extension CodableColor: SBJDefaultValueCreatable, SBJSwiftExpressionRepresentabl
         ]
         if opacity != 1.0 { components.append(encoder.floatingPointExpression(opacity)) }
         return ".init(\(components.joined(separator: ", ")))"
+    }
+}
+
+extension CodableColor: SBJStructuralComparable {
+    public func sbjStructuralEquals(_ other: Self) -> Bool {
+        red.sbjStructuralEquals(other.red) && green.sbjStructuralEquals(other.green)
+            && blue.sbjStructuralEquals(other.blue) && opacity.sbjStructuralEquals(other.opacity)
     }
 }

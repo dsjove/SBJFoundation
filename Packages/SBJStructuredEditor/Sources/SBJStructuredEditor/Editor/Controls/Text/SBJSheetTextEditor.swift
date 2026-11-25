@@ -10,6 +10,7 @@ struct SBJSheetTextEditor: View {
 
     var rowStatus: SBJEditorRowStatus = .init()
     var presentation: SBJStringPresentationValue = .init(style: .sheetEdit)
+    var invalid: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -20,6 +21,7 @@ struct SBJSheetTextEditor: View {
                 requestInitialFocus: { focusRequest?.claim() ?? false }
             )
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
+                .invalidDecoration(invalid)
         }
     }
 }

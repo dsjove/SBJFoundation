@@ -2,65 +2,37 @@ import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 
-/// Builds the default presentation fields from the canonical structural schema.
-/// Presentation configuration is derived from DataDefinition metadata.
+/// Apply editor presentation policy after canonical semantic visibility.
 @MainActor
 enum SBJStructuralFieldProjection {
-    static func fields<Root: SBJMutableStructure>(of type: Root.Type) -> [SBJEditorPropertyDescriptor<Root>] {
-        let visitor = SBJStructuralFieldCollector<Root>()
-        for property in type.sbjMutableProperties {
-            property.visitTypedProperty(with: visitor)
-        }
-        for property in type.sbjPresentationProperties {
-            property.visitTypedPresentationProperty(with: visitor)
-        }
-        for property in type.sbjComputedProperties where property.showInEditor {
+    static func fields<Root: SBJMutableStructure>(of type: Root.Type, showsReadOnlyProperties: Bool = false) -> [SBJEditorPropertyDescriptor<Root>] {
+        let visitor = SBJStructuralFieldCollector<Root>(showsReadOnlyProperties: showsReadOnlyProperties)
+        for property in type.sbjUserFacingProperties {
             property.visitTypedProperty(with: visitor)
         }
         return visitor.descriptors
     }
 }
 
-/// The typed property witness constructs each field while `Value` is still
-/// known to the compiler. No name-based dispatch or force-casting is involved.
-// This collector is only created and visited by the main-actor editor projection.
-// The general-purpose DataDefinition visitor does not impose actor isolation
-// on other consumers (for example, a documentation generator).
 @MainActor
-private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @preconcurrency SBJTypedStructuralPropertyVisitor, @preconcurrency SBJTypedPresentationPropertyVisitor, @preconcurrency SBJTypedComputedPropertyVisitor {
+private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @preconcurrency SBJTypedPropertyVisitor {
     private(set) var descriptors: [SBJEditorPropertyDescriptor<Root>] = []
+    private let showsReadOnlyProperties: Bool
 
-    func visit<Value>(_ keyPath: KeyPath<Root, Value>, name: String, showInEditor: Bool) {
-        guard showInEditor else { return }
-        descriptors.append(SBJEditorPropertyDescriptor(readOnlyName: name, keyPath))
+    init(showsReadOnlyProperties: Bool) {
+        self.showsReadOnlyProperties = showsReadOnlyProperties
     }
 
-    func visit<Value>(_ keyPath: WritableKeyPath<Root, Value>, name: String) {
-        descriptors.append(SBJEditorPropertyDescriptor(nonStructuralName: name, keyPath))
-    }
-
-    func visit<Value: Codable>(
-        _ keyPath: WritableKeyPath<Root, Value>,
-        metadata: SBJPropertyMetadata<Root>?
-    ) {
-        // A presentation exclusion suppresses the field, not the property's
-        // structural metadata, validation, or its generated writable key path.
-        if metadata?.hints.contains(where: {
-            if case .fieldPresentation(let value) = $0 { return value.exclude }
-            return false
-        }) == true { return }
-
-        let disclosure: SBJPresentationDisclosureMode = metadata?.hints.compactMap { hint in
+    func visit<Value>(_ keyPath: KeyPath<Root, Value>, metadata: SBJPropertyMetadata<Root>) {
+        let disclosure: SBJPresentationDisclosureMode = metadata.hints.compactMap { hint in
             guard case .fieldPresentation(let value) = hint else { return nil }
             return value.autoExpand ? .autoOpen : .closed
         }.first ?? .closed
-
-        // Structural metadata, rather than a display title, is authoritative
-        // for the property's name and canonical traversal identity.
-        let name = metadata?.displayName ?? String(describing: keyPath)
-        descriptors.append(SBJEditorPropertyDescriptor(
-            name: name, keyPath, disclosureMode: disclosure
-        ))
+        if metadata.access == .readWrite, let writable = keyPath as? WritableKeyPath<Root, Value> {
+            descriptors.append(.init(metadata: metadata, keyPath: writable, disclosureMode: disclosure))
+        } else if showsReadOnlyProperties {
+            descriptors.append(.init(metadata: metadata, readOnly: keyPath))
+        }
     }
 }
 #endif

@@ -6,14 +6,16 @@ The `@SBJStructure` and property metadata annotations are declared in SBJStructu
 
 ## `@SBJStructure`
 
-Attaches structural metadata generation to a `Codable` struct or enum.
+Attaches structural metadata generation to a Swift struct or enum.
 
 For structs:
 
-- coded stored properties become structural metadata;
-- writable coded properties become generic editor fields;
-- immutable coded properties remain structural but are not editable;
-- writable computed properties remain outside the structure unless explicitly marked `@SBJEditorProperty`.
+- accessible instance stored and computed properties share one metadata definition;
+- `private` and `fileprivate` properties are not published;
+- `@SBJExclude` removes a property from that definition, not stored-state comparison;
+- `@SBJFieldPresentation(exclude: true)` hides a property from Editor and AI while preserving Report metadata;
+- immutable and read-only properties remain discoverable but have no writable capability;
+- Codable and CodingKeys are independent of discovery.
 
 For enums, associated-value case metadata is generated for recursive editing and source export.
 
@@ -39,7 +41,7 @@ Parameters:
 
 ## `@SBJInteger`
 
-Adds an integer closed-range or minimum constraint.
+Adds an inclusive integer lower bound, upper bound, or both.
 
 ```swift
 @SBJInteger(range: 1...24)
@@ -51,7 +53,7 @@ var experience: Int
 
 ## `@SBJNumber`
 
-Adds a floating-point closed-range or minimum constraint.
+Adds an inclusive numeric lower bound, upper bound, or both.
 
 ```swift
 @SBJNumber(range: 0...1)
@@ -255,7 +257,7 @@ let snapshot = edited.sbjCodableCopy()
 let encodedDifference = edited.sbjEncodedIsDifferent(from: original)
 ```
 
-`sbjCodableCopy()` (available through the structured editor utilities) is useful for independent snapshots. Encoded comparison remains available as a public utility and as the structural-comparison fallback for opaque Codable values, but generated SBJ structures normally use field-by-field structural comparison.
+`sbjCodableCopy()` (available through the structured editor utilities) is useful for independent snapshots. Encoded comparison remains available as a public utility but not as a structural-comparison fallback, but generated SBJ structures normally use field-by-field structural comparison.
 
 ---
 
@@ -337,9 +339,9 @@ Use macOS/iPadOS Full Keyboard Access, VoiceOver, Switch Control, and Accessibil
 
 ### Content semantics and future empty-value annotations
 
-`hasContent` represents meaningful stored content, not whether a scalar is nonzero
+`hasContent` represents meaningful user-facing content, not whether a scalar is nonzero
 or truthy. Strings and collections aggregate their contents; optionals are empty
-when `nil` and otherwise follow their wrapped value; structs aggregate members;
+when `nil` and otherwise follow their wrapped value; structured models aggregate their user-facing stored and computed members;
 plain enum cases and scalar values always have content; associated-value enum
 cases aggregate their associated values. Explicit `HasContentCheckable` behavior
 takes precedence over these defaults. Dictionary values, rather than just the
@@ -361,3 +363,9 @@ property annotations take priority. `Optional<Wrapped>` forwards the wrapped
 provider. This is independent of validation rules and presentation annotations.
 
 Accessibility information is not automatically printed in the Data Definition PDF.
+
+## Revised numeric and string constraints (Iteration 6)
+
+`@SBJInteger(max:)` and `@SBJNumber(max:)` constrain inclusive upper bounds. Existing `range:` and `min:` forms remain available. The combined `min:max:` overload emits the same single canonical rule as `range:`. Numeric rule metadata stores only `min` and `max`; the range initializer supplies both bounds.
+
+`@SBJString(allowedValues: ["A", "B"], pattern: "[A-Z]")` applies both constraints to the normalized string after declared trimming. Patterns use ICU syntax and must match the full string. Existing collection member annotation syntax and all unit annotations are unchanged.

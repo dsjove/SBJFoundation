@@ -6,15 +6,13 @@ import SBJLocalization
 /// SBJStructure declarations describe the model; they do not intercept property
 /// access or automatically enforce invariants. Consumers explicitly choose when
 /// to inspect metadata, content state, or validation rules.
-public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralComparable, SBJSwiftExpressionRepresentable {
-    /// Structural metadata for the coded stored properties of this model.
+public protocol SBJStructured: HasContentCheckable, SBJStructuralComparable, SBJSwiftExpressionRepresentable {
+    /// Canonical discoverable stored and computed properties, in declaration order.
     static var sbjProperties: [SBJPropertyMetadata<Self>] { get }
-
-    /// Explicitly selected computed properties; never part of the coded schema.
-    static var sbjComputedProperties: [SBJComputedProperty<Self>] { get }
-
-    /// Primary-declaration computed values, prior to a structural extension contribution.
-    static var _sbjDeclaredComputedProperties: [SBJComputedProperty<Self>] { get }
+    /// Primary declaration's contribution; structural extensions append to it.
+    static var _sbjDeclaredProperties: [SBJPropertyMetadata<Self>] { get }
+    /// Whether the public definition accounts for all stored state for source export.
+    static var sbjHasCompleteStoredDefinition: Bool { get }
 
     /// Supplemental documentation and accessibility information for a property.
     ///
@@ -35,7 +33,7 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
     /// Initializer parameter mapping used by Swift source export.
     static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] { get }
 
-    /// Stored coded properties that can be assigned after default construction.
+    /// Stored properties that can be assigned after default construction.
     static var sbjSwiftWritablePropertyNames: Set<String> { get }
 
     /// Recursively reports whether any structural property contains empty content.
@@ -47,8 +45,11 @@ public protocol SBJStructured: Codable, HasContentCheckable, SBJStructuralCompar
 }
 
 public extension SBJStructured {
-    static var _sbjDeclaredComputedProperties: [SBJComputedProperty<Self>] { [] }
-    static var sbjComputedProperties: [SBJComputedProperty<Self>] { _sbjDeclaredComputedProperties }
+    static var _sbjDeclaredProperties: [SBJPropertyMetadata<Self>] { [] }
+    static var sbjProperties: [SBJPropertyMetadata<Self>] { _sbjDeclaredProperties }
+    static var sbjHasCompleteStoredDefinition: Bool { false }
+    /// Shared semantic boundary for Editor and AI; Report uses the full definition.
+    static var sbjUserFacingProperties: [SBJPropertyMetadata<Self>] { sbjProperties.filter(\.isUserFacing) }
     /// Assembles declaration-site metadata with the property's runtime accessibility.
     /// Returns nil when neither source contributes accessibility semantics.
     func accessibilityItem<Value>(for keyPath: KeyPath<Self, Value>) -> AccessibleItem? {
@@ -74,19 +75,21 @@ public extension SBJStructured {
         try SBJRuntimeConstruction.construct(Self.self, fromJSON: data)
     }
 
-    func sbjReferencedContentOccurrences(path: String = "") -> [SBJReferencedContentOccurrence] {
-        Self.sbjProperties.flatMap { $0.referencedContentOccurrences(in: self, path: path) }
+    func sbjReferencedContentOccurrences(path: String) -> [SBJReferencedContentOccurrence] {
+        Self.sbjProperties.filter { $0.storage == .stored }.flatMap { $0.referencedContentOccurrences(in: self, path: path) }
     }
+
+    func sbjReferencedContentOccurrences() -> [SBJReferencedContentOccurrence] { sbjReferencedContentOccurrences(path: "") }
 
     /// Returns the unique semantic resource identifiers referenced by this structured value.
     func sbjReferencedContentIDs() -> Set<SBJReferencedContentID> {
-        Set(sbjReferencedContentOccurrences().map(\.id))
+        Set(sbjReferencedContentOccurrences(path: "").map(\.id))
     }
 
     func sbjContainsEmptyContent(treatingAsLeaf: (Any.Type) -> Bool = { _ in false }) -> Bool {
         if !hasContent { return true }
         if treatingAsLeaf(Self.self) { return false }
-        return Self.sbjProperties.contains { property in
+        return Self.sbjUserFacingProperties.contains { property in
             property.containsEmptyContent(in: self, treatingAsLeaf: treatingAsLeaf)
         }
     }
@@ -94,7 +97,7 @@ public extension SBJStructured {
     static var sbjSwiftWritablePropertyNames: Set<String> { [] }
 
     static var sbjSwiftInitializerParameters: [SBJSwiftInitializerParameter] {
-        sbjProperties.map {
+        sbjProperties.filter { $0.storage == .stored }.map {
             .init(propertyName: $0.sourceName, label: $0.sourceName)
         }
     }
@@ -103,7 +106,7 @@ public extension SBJStructured {
     /// and the corresponding structural member nomenclature. This is metadata,
     /// not an alternative constructor or a mechanism for invoking Swift initializers.
     static var sbjInitializerMembers: [SBJInitializerMember] {
-        let byName = Dictionary(uniqueKeysWithValues: sbjProperties.map { ($0.sourceName, $0) })
+        let byName = Dictionary(uniqueKeysWithValues: sbjProperties.filter { $0.storage == .stored }.map { ($0.sourceName, $0) })
         return sbjSwiftInitializerParameters.compactMap { parameter in
             guard let property = byName[parameter.propertyName] else { return nil }
             return SBJInitializerMember(parameter: parameter, nomenclature: property.info)
@@ -111,11 +114,16 @@ public extension SBJStructured {
     }
 
     func sbjSwiftExpression(using encoder: SBJSwiftEncoder, nested: Bool) -> String {
-        let propertiesByName = Dictionary(uniqueKeysWithValues: Self.sbjProperties.map {
+        guard Self.sbjHasCompleteStoredDefinition else {
+            return encoder.codableReconstructionExpression(for: self)
+                ?? "/* No complete reconstruction for \(Self.self) */"
+        }
+        let stored = Self.sbjProperties.filter { $0.storage == .stored }
+        let propertiesByName = Dictionary(uniqueKeysWithValues: stored.map {
             ($0.sourceName, $0)
         })
         let parameters = Self.sbjSwiftInitializerParameters
-        // Source construction must cover every coded property exactly once.
+        // Source construction must cover every stored property exactly once.
         // An unavailable or incomplete constructor can use Codable instead.
         let covered = parameters.map(\.propertyName)
         guard !parameters.isEmpty,
@@ -123,11 +131,11 @@ public extension SBJStructured {
               Set(covered).count == covered.count,
               covered.allSatisfy({ propertiesByName[$0] != nil }) else {
             // A default-constructible model can be reconstructed using a
-            // self-contained Swift closure, provided its entire coded schema is
+            // self-contained Swift closure, provided its entire stored definition is
             // writable. Do not attempt assignments to `let` properties.
             if Self.sbjDefaultValue() != nil,
                Set(propertiesByName.keys).isSubset(of: Self.sbjSwiftWritablePropertyNames) {
-                let assignments = Self.sbjProperties.map { property in
+                let assignments = stored.map { property in
                     let value = self[keyPath: property.keyPath]
                     return (property.sourceName, encoder.expression(for: value))
                 }
@@ -159,7 +167,15 @@ public extension SBJStructured {
     }
 }
 
-/// UI-independent metadata describing one coded stored property on `Root`.
+public enum SBJPropertyStorage: Sendable, Equatable { case stored, computed }
+public enum SBJPropertyAccess: Sendable, Equatable { case readOnly, readWrite }
+
+public protocol SBJTypedPropertyVisitor<Root>: AnyObject {
+    associatedtype Root: SBJStructured
+    func visit<Value>(_ keyPath: KeyPath<Root, Value>, metadata: SBJPropertyMetadata<Root>)
+}
+
+/// UI-independent metadata describing one discoverable property on `Root`.
 ///
 /// The key path identifies the actual model property. `sourceName` is the Swift
 /// declaration name, while `displayName` provides SBJStructure's default human-
@@ -169,10 +185,16 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
     public let displayName: String
     public let keyPath: PartialKeyPath<Root>
     public let kind: SBJPropertyKind
+    public let storage: SBJPropertyStorage
+    public let access: SBJPropertyAccess
+    public var valueType: Any.Type { type(of: keyPath).valueType }
+    public var isUserFacing: Bool { SBJUsagePolicy.isVisible(hints, to: .semanticEditor) }
+    private let typedVisit: (any SBJTypedPropertyVisitor<Root>, Self) -> Void
+    private let makeMutable: (Self) -> SBJMutableProperty<Root>?
+    private let validateAtPath: (Root, SBJValidationKeyPath) throws -> Void
     public let constraints: [SBJPropertyConstraint]
     public let hints: [SBJPropertyHint]
     public let info: SBJNomenclature?
-    private let validateValue: (Root) -> SBJValidationError?
     private let containsEmptyValue: (Root, (Any.Type) -> Bool) -> Bool
     private let structurallyEqualValue: (Root, Root) -> Bool
     private let referencedContentOccurrencesValue: (Root, String) -> [SBJReferencedContentOccurrence]
@@ -182,26 +204,34 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
         displayName: String,
         keyPath: KeyPath<Root, Value>,
         kind: SBJPropertyKind = .inferred,
+        storage: SBJPropertyStorage = .stored,
+        access: SBJPropertyAccess = .readOnly,
         constraints: [SBJPropertyConstraint] = [],
         hints: [SBJPropertyHint] = [],
         info: SBJNomenclature? = nil,
         structurallyEqual: @escaping (Value, Value) -> Bool = { lhs, rhs in
             SBJStructuralCompare.equals(lhs, rhs)
-        }
+        },
+        validate: ((Root, SBJValidationKeyPath) throws -> Void)? = nil
     ) {
         self.sourceName = sourceName
         self.displayName = info?.nonEmptyTitle ?? displayName
         self.keyPath = keyPath
         self.kind = kind
+        self.storage = storage
+        self.access = access
+        self.typedVisit = { visitor, metadata in visitor.visit(keyPath, metadata: metadata) }
+        self.makeMutable = { metadata in
+            guard access == .readWrite,
+                  let writable = keyPath as? WritableKeyPath<Root, Value> else { return nil }
+            return SBJMutableProperty(metadata: metadata, keyPath: writable)
+        }
+        self.validateAtPath = validate ?? { root, path in
+            try SBJInvariantCheck.validate(root[keyPath: keyPath], at: path.appending(keyPath))
+        }
         self.constraints = constraints
         self.hints = hints
         self.info = info
-        self.validateValue = { root in
-            SBJInvariantCheck.validationError(
-                root[keyPath: keyPath],
-                at: SBJValidationKeyPath(keyPath)
-            )
-        }
         self.containsEmptyValue = { root, treatingAsLeaf in
             SBJContentCheck.containsEmptyContent(
                 root[keyPath: keyPath],
@@ -219,6 +249,11 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
         }
     }
 
+    public func value(in root: Root) -> Any { root[keyPath: keyPath] }
+    public func visitTypedProperty(with visitor: any SBJTypedPropertyVisitor<Root>) { typedVisit(visitor, self) }
+    public func mutableProperty() -> SBJMutableProperty<Root>? { isUserFacing ? makeMutable(self) : nil }
+    public func validate(in root: Root, at path: SBJValidationKeyPath) throws { try validateAtPath(root, path) }
+
     /// Finds resource references in this property and its structured descendants.
     public func referencedContentOccurrences(in root: Root, path: String = "") -> [SBJReferencedContentOccurrence] {
         referencedContentOccurrencesValue(root, path)
@@ -231,7 +266,19 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
 
     /// Validates this property value using its structural key path.
     public func validationError(in root: Root) -> SBJValidationError? {
-        validateValue(root)
+        do { try validate(in: root, at: .root); return nil }
+        catch let error as SBJValidationError { return error }
+        catch { return nil }
+    }
+
+    /// Shared semantic search for both read-only and writable properties.
+    public func matchesSearch(in root: Root, query: String) -> Bool {
+        sbjPredicated(label: displayName, value: value(in: root), search: query)
+    }
+
+    /// User-meaningful content, independent of writability and storage.
+    public func hasContent(in root: Root) -> Bool {
+        SBJContentCheck.hasContent(value(in: root))
     }
 
     /// Recursively checks this property's value for empty content.
@@ -282,6 +329,8 @@ public enum SBJPropertyConstraint: Sendable, Equatable {
     /// Required stored measurement unit, independently of the preferred creation unit.
     case requiredUnit(SBJDefaultUnit)
     case unitSystem(MeasurementSystem)
+    /// Minimum numeric magnitude in the measurement’s stored unit.
+    case unitMinimum(Double)
     case arrayRules(SBJArrayRules)
     case setRules(SBJSetRules)
     case dictionaryRules(SBJDictionaryRules)

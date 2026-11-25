@@ -58,12 +58,12 @@ private struct ComputedPresentationFixture: Codable {
 }
 
 extension SBJPresentationAnnotationsTests {
-    func testComputedPresentationPropertyDoesNotEnterStructuralSchema() {
-        XCTAssertEqual(ComputedPresentationFixture.sbjProperties.map(\.sourceName), ["stored"])
-        XCTAssertEqual(ComputedPresentationFixture.sbjMutableProperties.count, 1)
-        let fields = ComputedPresentationFixture.sbjPresentationProperties
+    func testComputedPresentationPropertyUsesCanonicalSchema() {
+        XCTAssertEqual(ComputedPresentationFixture.sbjProperties.map(\.sourceName), ["stored", "label"])
+        XCTAssertEqual(ComputedPresentationFixture.sbjMutableProperties.count, 2)
+        let fields = ComputedPresentationFixture.sbjMutableProperties.filter { $0.structuralMetadata.storage == .computed }
         XCTAssertEqual(fields.count, 1)
-        XCTAssertNil(fields[0].structuralMetadata)
+        XCTAssertEqual(fields[0].structuralMetadata.sourceName, "label")
         var value = ComputedPresentationFixture()
         XCTAssertEqual(fields[0].value(in: value) as? String, "model")
         XCTAssertTrue(fields[0].setValue("updated", in: &value))

@@ -14,8 +14,8 @@ struct SBJRecipeAnnotationCoverageTests {
         #expect(type.propertyMetadata(for: \.ingredients)?.kind == .array)
         #expect(type.propertyMetadata(for: \.tags)?.kind == .set)
         #expect(type.propertyMetadata(for: \.substitutions)?.kind == .dictionary)
-        #expect(type.propertyMetadata(for: \.editorDisplayName) == nil)
-        #expect(type.sbjPresentationProperties.contains { $0.name == "Editor Display Name" })
+        #expect(type.propertyMetadata(for: \.editorDisplayName)?.storage == .computed)
+        #expect(type.sbjMutableProperties.contains { $0.name == "Editor Display Name" })
     }
 
     @Test func recipeCourseUsesTypeDefaultsAndPropertyOverrides() {

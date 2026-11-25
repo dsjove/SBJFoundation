@@ -20,12 +20,12 @@ private final class CapturingPropertyVisitor: SBJTypedStructuralPropertyVisitor 
     var observedValues: [String] = []
     var model = TraversedModel()
 
-    func visit<Value: Codable>(
+    func visit<Value>(
         _ keyPath: WritableKeyPath<TraversedModel, Value>,
-        metadata: SBJPropertyMetadata<TraversedModel>?
+        metadata: SBJPropertyMetadata<TraversedModel>
     ) {
         visitedTypes.append(String(reflecting: Value.self))
-        visitedSourceNames.append(metadata?.sourceName ?? "missing")
+        visitedSourceNames.append(metadata.sourceName)
         observedValues.append(String(describing: model[keyPath: keyPath]))
     }
 }
@@ -85,7 +85,7 @@ final class SBJStructuralTraversalTests: XCTestCase {
         XCTAssertTrue(schema[0].valueType == String.self)
         XCTAssertTrue(schema[1].valueType == Int.self)
         XCTAssertNotNil(schema[0].metadata)
-        XCTAssertEqual(schema[0].metadata?.sourceName, "first")
+        XCTAssertEqual(schema[0].metadata.sourceName, "first")
 
         var visited: [String] = []
         SBJStructuralTraversal.visitSchema(of: TraversedModel.self) {

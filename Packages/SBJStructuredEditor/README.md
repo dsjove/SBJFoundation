@@ -42,7 +42,7 @@ The editor provides controls for text, numbers, dates, URLs, colors, booleans, e
 
 Array actions resolve the **current** collection position when invoked, rather than trusting an old row index. Sets and dictionary entries apply uniqueness checks; some collection insertions are unavailable when valid choices are exhausted. Invalid numeric or URL drafts remain in the editing control until a valid value can be committed; they do not overwrite the bound model with invalid data.
 
-Writable stored properties are edited through `SBJStructure` metadata. Annotated writable computed properties can appear as presentation-only fields. Immutable properties are not made writable by the editor.
+The editor projects `sbjUserFacingProperties` on the `SBJStructured` type, whether stored or computed. Read/write properties are editable; immutable and read-only computed properties are hidden by default. Set `SBJEditorOptions(showsReadOnlyProperties: true)` to display them using read-only presentation. Codable is not required. Report documents the complete published definition, including presentation-excluded fields. Both consumers use the same canonical metadata.
 
 ## Search, issues, and navigation
 

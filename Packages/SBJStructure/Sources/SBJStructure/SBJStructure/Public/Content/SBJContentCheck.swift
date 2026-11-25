@@ -9,7 +9,8 @@ public enum SBJContentCheck {
 
     /// Resolve explicit content behavior first, then use the structural shape.
     /// Scalars, plain enum cases, and other atomic values always have content.
-    /// Structs aggregate their stored members, just like collections.
+    /// Annotated structs use their generated user-facing content contract; opaque
+    /// structs retain the existing aggregate fallback.
     static func hasContent(_ value: Any) -> Bool {
         if let checkable = value as? any HasContentCheckable {
             return checkable.hasContent

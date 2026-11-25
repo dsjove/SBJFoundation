@@ -19,24 +19,30 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
     private let registry: SBJEditorRegistry
     private let documentID: String?
     private let options: SBJEditorOptions
+    private let snapshot: (Value) -> Value
     @State private var originalValue: Value
 
     /// Pass a stable logical document ID when this view can switch documents
-    /// without being removed from the SwiftUI hierarchy. Changing it resets
+    /// without being removed from the SwiftUI hierarchy. The baseline is a Swift
+    /// value copy, not a serialization round trip. Models containing mutable shared
+    /// references need an independent snapshot supplied by their owning application.
+    /// Changing the document ID resets
     /// the baseline used by changed-only presentation; ordinary edits do not.
     public init(
         value: Binding<Value>,
         presentationModel: SBJEditorPresentationModel,
         registry: SBJEditorRegistry = .init(),
         documentID: String? = nil,
-        options: SBJEditorOptions = .init()
+        options: SBJEditorOptions = .init(),
+        snapshot: @escaping (Value) -> Value = { $0 }
     ) {
         self._value = value
         self.documentID = documentID
         self.options = options
         self.presentationModel = presentationModel
         self.registry = registry
-        self._originalValue = State(initialValue: value.wrappedValue.sbjCodableCopy())
+        self.snapshot = snapshot
+        self._originalValue = State(initialValue: snapshot(value.wrappedValue))
     }
 
     /// Project only the exposed nodes; closed branches never construct child
@@ -48,7 +54,7 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
                     binding: SBJAnyBinding($value),
                     originalValue: originalValue,
                     registry: registry,
-                    context: .root
+                    context: .root.withBranch(.init(showsReadOnlyProperties: options.showsReadOnlyProperties))
                 ),
                 presentationModel: presentationModel
             )
@@ -76,7 +82,7 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
         .onChange(of: documentID) { _, _ in
             // A different logical document starts a new comparison baseline.
             // Edits within one document must not reset this snapshot.
-            originalValue = value.sbjCodableCopy()
+            originalValue = snapshot(value)
         }
         .transaction { transaction in
             if !options.animationsEnabled {

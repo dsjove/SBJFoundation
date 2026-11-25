@@ -3,13 +3,14 @@ import SBJUIVocabulary
 import Foundation
 import SwiftUI
 
-struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
+struct SBJDictionaryEditor<Key: Hashable, Value>: View {
     let insertable: Bool
     let label: String
     @Binding var value: [Key: Value]
     let originalValue: [Key: Value]?
     let registry: SBJEditorRegistry
     let textStyle: SBJStringStyle?
+    var constraints: SBJConstraintProjection = .init()
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let itemActions: SBJEditorItemActions?
@@ -23,7 +24,8 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
     }
 
     private var addCandidate: (Key, Value)? {
-        registry.createDictionaryEntry(key: Key.self, value: Value.self, existing: value)
+        registry.createDictionaryEntry(key: Key.self, value: Value.self, existing: value,
+            keyConstraints: constraints.dictionaryKey, valueConstraints: constraints.dictionaryValue)
     }
 
     var body: some View {
@@ -40,7 +42,7 @@ struct SBJDictionaryEditor<Key: Codable & Hashable, Value: Codable>: View {
 							value.updateValue(entryValue, forKey: key)
 							presentationModel.open(context.itemIdentifier)
 						}
-						.disabled(!canAdd)
+						.disabled(!canAdd || !insertable)
 					}
 				), optionalControl: optionalControl,
                 trailingActions: AnyView(

@@ -84,7 +84,7 @@ struct SBJDefaultValueTests {
             typealias Root = AssociatedDefault
             var names: [String] = []
             var changed: AssociatedDefault = .available(17, label: "Before")
-            func visit<Value: Codable>(
+            func visit<Value>(
                 name: String, get: @escaping (Root) -> Value,
                 set: @escaping (inout Root, Value) -> Void
             ) {

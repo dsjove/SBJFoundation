@@ -1,30 +1,23 @@
 import Foundation
 
-// The font representation is a Codable in Localization. Its introspection and
-// validation-facing protocol conformance are owned by DataDefinition.
+// The font representation has a manually authored structural definition.
 extension CodableFont: SBJMutableStructure {
     public static var sbjProperties: [SBJPropertyMetadata<Self>] {
         [
-            .init(sourceName: "family", displayName: "Family", keyPath: \.family),
-            .init(sourceName: "size", displayName: "Size", keyPath: \.size, kind: .number),
-            .init(sourceName: "weight", displayName: "Weight", keyPath: \.weight),
-            .init(sourceName: "italic", displayName: "Italic", keyPath: \.italic, kind: .bool),
-            .init(sourceName: "width", displayName: "Width", keyPath: \.width),
-        ]
-    }
-
-    public static var sbjMutableProperties: [SBJMutableProperty<Self>] {
-        [
-            .init(name: "Family", \.family),
-            .init(name: "Size", \.size),
-            .init(name: "Weight", \.weight),
-            .init(name: "Italic", \.italic),
-            .init(name: "Width", \.width),
+            .init(sourceName: "family", displayName: "Family", keyPath: \.family, access: .readWrite),
+            .init(sourceName: "size", displayName: "Size", keyPath: \.size, kind: .number, access: .readWrite),
+            .init(sourceName: "weight", displayName: "Weight", keyPath: \.weight, access: .readWrite),
+            .init(sourceName: "italic", displayName: "Italic", keyPath: \.italic, kind: .bool, access: .readWrite),
+            .init(sourceName: "width", displayName: "Width", keyPath: \.width, access: .readWrite),
         ]
     }
 
     public var hasContent: Bool { true }
-    public func sbjStructuralEquals(_ other: Self) -> Bool { self == other }
+    public func sbjStructuralEquals(_ other: Self) -> Bool {
+        family.sbjStructuralEquals(other.family) && size.sbjStructuralEquals(other.size)
+            && weight.sbjStructuralEquals(other.weight) && italic.sbjStructuralEquals(other.italic)
+            && width.sbjStructuralEquals(other.width)
+    }
     public static func sbjDefaultValue() -> Self? { .init() }
 
     public func sbjSwiftExpression(using encoder: SBJSwiftEncoder, nested: Bool) -> String {
@@ -34,3 +27,6 @@ extension CodableFont: SBJMutableStructure {
         return "CodableFont(\(familySource), ofSize: \(encoder.floatingPointExpression(size)), weight: .\(weight.rawValue), italic: \(italic), width: .\(width.rawValue))"
     }
 }
+
+extension CodableFont.Weight: SBJStructuralScalar {}
+extension CodableFont.Width: SBJStructuralScalar {}

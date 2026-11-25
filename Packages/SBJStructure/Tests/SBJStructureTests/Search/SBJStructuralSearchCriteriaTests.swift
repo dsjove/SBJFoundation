@@ -144,3 +144,22 @@ struct SBJStructuralSearchCriteriaTests {
         #expect(!sbjPredicated(value, search: "not owned"))
     }
 }
+
+@SBJStructure
+private struct SemanticSearchFixture {
+    var visible: String = "public-value"
+    private var secret: String = "private-token"
+    @SBJFieldPresentation(exclude: true) var hidden: String = "hidden-token"
+    var computed: String { "derived-token" }
+}
+
+@Test func sharedSemanticSearchRespectsVisibilityAndComputedProperties() {
+    let root = SemanticSearchFixture()
+    #expect(sbjPredicated(root, search: "public-value"))
+    #expect(sbjPredicated(root, search: "derived-token"))
+    #expect(!sbjPredicated(root, search: "private-token"))
+    #expect(!sbjPredicated(root, search: "hidden-token"))
+    let property = SemanticSearchFixture.sbjUserFacingProperties.first { $0.sourceName == "computed" }
+    #expect(property?.matchesSearch(in: root, query: "derived-token") == true)
+    #expect(property?.hasContent(in: root) == true)
+}

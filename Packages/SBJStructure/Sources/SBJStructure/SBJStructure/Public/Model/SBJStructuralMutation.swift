@@ -45,8 +45,7 @@ public extension SBJMutableStructure {
         let writable = Self._sbjWritableSourceNames()
         guard writable.contains(name),
               let property = Self.sbjMutableProperties.first(where: {
-                  $0.participatesInStructuralValidation &&
-                  ($0.structuralMetadata?.sourceName ?? $0.name) == name
+                  ($0.structuralMetadata.sourceName) == name
               }) else {
             throw SBJStructuralMutationError.immutableProperty
         }

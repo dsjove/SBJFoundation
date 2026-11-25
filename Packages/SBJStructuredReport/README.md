@@ -24,7 +24,7 @@ let alphabetized = catalog.sorted(using: .init(
 
 `MyModel` must conform to `SBJStructured`. For multiple entry points, use `SBJDefinitionCatalog.Builder` and call `add` for `SBJStructured`, `SBJStructuredEnum`, or `SBJEnumCaseIdentifiable` types before `build()`. The catalog deduplicates by Swift type identity and follows supported nested structural references through `Optional`, `Array`, `Set`, and `Dictionary`. Registration does not evaluate instance properties or computed getters.
 
-The catalog exposes original Swift identifiers, reflected declared types, annotations, presentation hints, and nomenclature. Computed declarations reported by the structural metadata are included as read-only. Catalog sorting is configurable separately for types, fields, and enum cases. Declaration order is preserved as metadata even when display sorting changes.
+The catalog exposes original Swift identifiers, reflected declared types, annotations, presentation hints, and nomenclature. Stored and computed declarations both use canonical metadata, including constraints, access capability and user-facing visibility. Computed setters can be writable; immutable and restricted-setter properties are read-only. Report includes presentation-excluded properties but not private or structurally excluded declarations. Catalog sorting is configurable separately for types, fields, and enum cases. Declaration order is preserved as metadata even when display sorting changes.
 
 ## Generating and presenting a PDF
 
@@ -55,4 +55,4 @@ The report only describes declarations made available by compiled structural met
 - `PDF/` — PDF generation using `SBJLayout`.
 - `Presentation/` — SwiftUI viewer and report-specific nomenclature/symbology.
 
-See `MIGRATION-NOTES.md` for downstream changes and `REVIEW-NOTES.md` for correctness and verification limits.
+See `Documentation/Refactoring-Iteration-4.md` for the coordinated migration and verification limits.

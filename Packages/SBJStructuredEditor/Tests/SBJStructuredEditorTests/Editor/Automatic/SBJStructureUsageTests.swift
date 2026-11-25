@@ -31,23 +31,23 @@ private struct TestEditableValue: Codable {
 }
 
 struct SBJStructureUsageTests {
-    @Test func generatesStructuralMetadataFromCodedStoredProperties() {
+    @Test func generatesStructuralMetadataIndependentOfCodingKeys() {
         #expect(TestEditableValue.sbjProperties.map(\.sourceName) == [
-            "name", "level", "nested", "notes", "nickname", "transientState"
+            "name", "level", "nested", "notes", "nickname", "transientState", "immutableIdentifier"
         ])
         #expect(TestEditableValue.sbjProperties.map(\.displayName) == [
-            "Name", "Level", "Nested", "Notes", "Nickname", "Transient State"
+            "Name", "Level", "Nested", "Notes", "Nickname", "Transient State", "Immutable Identifier"
         ])
     }
 
     @MainActor
     @Test func editorFieldLocationsUseStructuralSourceIdentity() {
-        let fields = SBJStructuralFieldProjection.fields(of: TestEditableValue.self)
-        let schema = SBJStructuralTraversal.schema(of: TestEditableValue.self)
+        let fields = SBJStructuralFieldProjection.fields(of: TestEditableValue.self, showsReadOnlyProperties: true)
+        let definition = SBJStructuralTraversal.definition(of: TestEditableValue.self)
         for (editorOrdinal, field) in fields.enumerated() {
             let location = SBJEditorStructuralLocations.resolve([field], of: TestEditableValue.self, startingAt: editorOrdinal)[0]
-            let structural = schema.first {
-                $0.sourceName == field.editableField.structuralMetadata?.sourceName
+            let structural = definition.first {
+                $0.sourceName == field.metadata.sourceName
             }
             #expect(structural != nil)
             #expect(location.identity == structural?.identityComponent)
@@ -58,9 +58,9 @@ struct SBJStructureUsageTests {
     }
 
     @MainActor
-    @Test func generatesFieldsFromCodedMutableProperties() {
-        #expect(SBJStructuralFieldProjection.fields(of: TestEditableValue.self).map(\.name) == [
-            "Name", "Level", "Nested", "Notes", "Nickname"
+    @Test func generatesFieldsFromUserFacingProperties() {
+        #expect(SBJStructuralFieldProjection.fields(of: TestEditableValue.self, showsReadOnlyProperties: true).map(\.name) == [
+            "Name", "Level", "Nested", "Notes", "Nickname", "Immutable Identifier"
         ])
     }
 }
@@ -81,8 +81,8 @@ private struct TestEditorOnlyPropertyValue: Codable {
 
 extension SBJStructureUsageTests {
     @MainActor
-    @Test func editorPropertyCanExposeNonCodableComputedValueWithoutStructuralMetadata() {
-        #expect(TestEditorOnlyPropertyValue.sbjProperties.map(\.sourceName) == ["stored"])
+    @Test func editorPropertyCanExposeNonCodableComputedValueWithStructuralMetadata() {
+        #expect(TestEditorOnlyPropertyValue.sbjProperties.map(\.sourceName) == ["stored", "editorReference"])
         #expect(SBJStructuralFieldProjection.fields(of: TestEditorOnlyPropertyValue.self).map(\.name) == ["Stored", "Editor Reference"])
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 import SBJLocalization
 
-/// One occurrence in the stored value graph of an SBJStructured instance.
+/// One occurrence in the user-facing value graph of an SBJStructured instance.
 ///
 /// `identityPath` uses declaration names and collection identities, never
 /// localized labels or display ordinals. `locationPath` records current slots.
@@ -17,13 +17,17 @@ public struct SBJStructuralValueOccurrence {
     /// Declared invariants, distinct from editor usage hints.
     public let constraints: [SBJPropertyConstraint]
     public let isWritableProperty: Bool
+    /// Original key on a dictionary entry; nil on other occurrences.
+    public let dictionaryKey: Any?
+    public let dictionaryKeyType: Any.Type?
     public let isPositional: Bool
 
     public init(
         identityPath: [String], locationPath: [String], displayPath: [String],
         value: Any, valueType: Any.Type, info: SBJNomenclature?,
         hints: [SBJPropertyHint] = [], constraints: [SBJPropertyConstraint] = [],
-        isWritableProperty: Bool, isPositional: Bool
+        isWritableProperty: Bool, isPositional: Bool,
+        dictionaryKey: Any? = nil, dictionaryKeyType: Any.Type? = nil
     ) {
         self.identityPath = identityPath
         self.locationPath = locationPath
@@ -34,6 +38,8 @@ public struct SBJStructuralValueOccurrence {
         self.hints = hints
         self.constraints = constraints
         self.isWritableProperty = isWritableProperty
+        self.dictionaryKey = dictionaryKey
+        self.dictionaryKeyType = dictionaryKeyType
         self.isPositional = isPositional
     }
 }
@@ -45,13 +51,19 @@ public struct SBJStructuralChild {
     public let location: String
     public let title: String
     public let value: Any
+    /// Original key on a dictionary entry; nil on other occurrences.
+    public let dictionaryKey: Any?
+    public let dictionaryKeyType: Any.Type?
     public let isPositional: Bool
 
-    public init(identity: String, location: String, title: String, value: Any, isPositional: Bool = false) {
+    public init(identity: String, location: String, title: String, value: Any, isPositional: Bool = false,
+                dictionaryKey: Any? = nil, dictionaryKeyType: Any.Type? = nil) {
         self.identity = identity
         self.location = location
         self.title = title
         self.value = value
+        self.dictionaryKey = dictionaryKey
+        self.dictionaryKeyType = dictionaryKeyType
         self.isPositional = isPositional
     }
 }
@@ -85,7 +97,8 @@ public extension SBJStructured {
             guard let mutable = Self.self as? any SBJMutableStructure.Type else { return [] }
             return mutable._sbjWritableSourceNames()
         }()
-        let stored = Self.sbjProperties.enumerated().flatMap { ordinal, property in
+        return Self.sbjProperties.enumerated().flatMap { ordinal, property -> [SBJStructuralValueOccurrence] in
+            guard property.isUserFacing else { return [] }
             let value = self[keyPath: property.keyPath]
             let identity = identityPath + ["property:\(property.sourceName)"]
             let location = locationPath + ["field:\(ordinal)"]
@@ -105,38 +118,13 @@ public extension SBJStructured {
                 itemIdentifierKey: SBJStructuralCollectionKeys.identifier(in: property.constraints)
             )
         }
-        // Stored declarations retain their source order and location ordinals.
-        // Annotated computed declarations are a separate, read-only group: the
-        // primary macro and the structural extension cannot reconstruct one
-        // interleaved source order across independent declarations.
-        let computed = Self.sbjComputedProperties.enumerated().flatMap { ordinal, property in
-            let value = property.value(in: self)
-            let identity = identityPath + ["computed:\(property.sourceName)"]
-            let location = locationPath + ["computed:\(ordinal)"]
-            let display = displayPath + [property.displayName]
-            let entry = SBJStructuralValueOccurrence(
-                identityPath: identity, locationPath: location, displayPath: display,
-                value: value, valueType: property.valueType, info: property.info,
-                isWritableProperty: false, isPositional: isPositional
-            )
-            // A computed object/collection can have children, but its entire
-            // subtree is non-writable; otherwise a nested field could appear
-            // writable despite its parent being read-only.
-            return [entry] + SBJStructuralValueWalker.children(
-                of: value, identityPath: identity, locationPath: location,
-                displayPath: display, isPositional: isPositional,
-                ancestorsWritable: false
-            )
-        }
-        return stored + computed
+
     }
 }
 
 public extension SBJMutableStructure {
     static func _sbjWritableSourceNames() -> Set<String> {
-        let declaredWritable = Self.sbjSwiftWritablePropertyNames
-        if !declaredWritable.isEmpty { return declaredWritable }
-        return Set(SBJStructuralTraversal.schema(of: Self.self).map(\.sourceName))
+        Set(Self.sbjUserFacingProperties.filter { $0.access == .readWrite }.map(\.sourceName))
     }
 }
 
@@ -173,7 +161,8 @@ extension Set: SBJStructuralValueContainer {
 extension Dictionary: SBJStructuralValueContainer {
     public func sbjStructuralChildren(itemTitleKey: String?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
         SBJCollectionTraversal.dictionary(self).map {
-            .init(identity: $0.identifier, location: $0.location, title: $0.title, value: $0.value.value)
+            .init(identity: $0.identifier, location: $0.location, title: $0.title, value: $0.value.value,
+                  dictionaryKey: $0.value.key as Any, dictionaryKeyType: Key.self)
         }
     }
 }
@@ -183,7 +172,7 @@ private final class SBJAssociatedPayloadCollector<Root: SBJStructuredEnum>: SBJT
     var children: [SBJStructuralChild] = []
     init(value: Root) { self.value = value }
 
-    func visit<Value: Codable>(
+    func visit<Value>(
         name: String,
         get: @escaping (Root) -> Value,
         set: @escaping (inout Root, Value) -> Void
@@ -231,7 +220,8 @@ public enum SBJStructuralValueWalker {
                 let entry = child.identity.isEmpty ? [] : [SBJStructuralValueOccurrence(
                     identityPath: ids, locationPath: locations, displayPath: displays,
                     value: child.value, valueType: type(of: child.value), info: nil,
-                    isWritableProperty: ancestorsWritable, isPositional: positional
+                    isWritableProperty: ancestorsWritable, isPositional: positional,
+                    dictionaryKey: child.dictionaryKey, dictionaryKeyType: child.dictionaryKeyType
                 )]
                 return entry + children(of: child.value, identityPath: ids,
                                         locationPath: locations, displayPath: displays,

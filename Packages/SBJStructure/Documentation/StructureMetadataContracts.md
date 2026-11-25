@@ -1,6 +1,6 @@
 # Structure metadata and annotation contracts
 
-The structural `@SBJStructure` declaration generates coded-property descriptors, writable-property descriptors, and `_nomenclature(for:)` for metadata declared **inside** the type. Metadata in a separate extension must use `@SBJNomenclature` to generate the public `propertyNomenclature(for:)` dispatch and `_extensionNomenclature(for:)` fallback. If an extension defines a custom static `propertyNomenclature(for:)`, it should call `_extensionNomenclature(for:)` for properties it does not override.
+The structural `@SBJStructure` declaration generates a canonical definition of accessible stored and computed properties and `_nomenclature(for:)` for metadata declared inside the type. Codable is not a prerequisite. `@SBJStructureExtension` contributes accessible computed members to the same definition and generates the public `propertyNomenclature(for:)` dispatch and `_extensionNomenclature(for:)` fallback. If an extension defines a custom static `propertyNomenclature(for:)`, it should call `_extensionNomenclature(for:)` for properties it does not override. `SBJMutableProperty` is a typed writable capability derived from `SBJPropertyMetadata`, not a separate declaration catalog.
 
 `@SBJNomenclatureEnum` is a separate extension annotation for enum-case documentation. Enum cases are not key-path targets; use `sbjCaseNomenclature(for:)`. Plain enums do not automatically conform to `SBJStructuredEnum`.
 

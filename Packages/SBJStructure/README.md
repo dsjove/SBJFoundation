@@ -1,6 +1,6 @@
 # SBJStructure
 
-`SBJStructure` provides opt-in structural metadata and operations for Codable Swift models. Use it when your application needs typed inspection, traversal, validation integration, structural change detection, or Swift source export. The domain-level concepts themselves—nomenclature, meaningful content, structural equivalence, and general invariants—are provided by **SBJLocalization** and can be used without adopting `@SBJStructure`.
+`SBJStructure` provides opt-in structural metadata and operations for Swift models. Use it when your application needs typed inspection, traversal, validation integration, structural change detection, or Swift source export. The domain-level concepts themselves—nomenclature, meaningful content, structural equivalence, and general invariants—are provided by **SBJLocalization** and can be used without adopting `@SBJStructure`.
 
 ## Getting started
 
@@ -10,13 +10,14 @@ Add the `SBJStructure` library product and import it:
 import SBJStructure
 
 @SBJStructure
-struct Note: Codable {
+struct Note {
     var title: String = ""
     var count: Int = 0
+    var summary: String { title }
 }
 ```
 
-The annotation generates metadata for encoded stored properties. The generated machinery supports explicit inspection and validation; it does not intercept property access or automatically enforce invariants on mutation. See `Documentation/` for details of generated APIs and their usage.
+The annotation generates one definition for accessible stored and computed properties. Codable and CodingKeys have no role in discovery. The generated machinery supports explicit inspection and validation; it does not intercept property access or automatically enforce invariants on mutation. See `Documentation/` for details of generated APIs and their usage.
 
 ### What this package owns
 
@@ -47,6 +48,10 @@ The package depends on the current `SBJLocalization` package and the SwiftSyntax
 - Validation errors and paths come from `SBJLocalization`; structural validation adds configured property and collection context.
 
 See `Documentation/Organization.md` and `MIGRATION-LEDGER.md` for organization and migration notes.
+
+## Current refactoring contract
+
+See [Iteration 2](Documentation/Refactoring-Iteration-2.md) for the new discovery, stored-state and consumer contracts, deliberate API removals, and verification limitations. It supersedes historical migration notes.
 
 ## Typed value operations
 

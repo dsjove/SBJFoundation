@@ -6,8 +6,10 @@ public struct SBJStringRules: Codable, Sendable, Equatable {
     public var minLength: Int?
     public var maxLength: Int?
     public var trimming: SBJStringTrimming
-    public init(minLength: Int? = nil, maxLength: Int? = nil, trimming: SBJStringTrimming = .none) {
-        self.minLength = minLength; self.maxLength = maxLength; self.trimming = trimming
+    public var allowedValues: [String]?
+    public var pattern: String?
+    public init(minLength: Int? = nil, maxLength: Int? = nil, trimming: SBJStringTrimming = .none, allowedValues: [String]? = nil, pattern: String? = nil) {
+        self.minLength = minLength; self.maxLength = maxLength; self.trimming = trimming; self.allowedValues = allowedValues; self.pattern = pattern
     }
 }
 
@@ -95,25 +97,37 @@ public struct SBJColorPresentationValue: Codable, Sendable, Equatable {
 }
 
 
-/// A numeric rule may specify an inclusive range or a lower bound.
+/// A numeric rule may specify an inclusive range, lower or upper bound.
 /// The public annotation overloads select one form.
 public struct SBJIntegerRules: Codable, Sendable, Equatable {
-    public var range: ClosedRange<Int>?
     public var min: Int?
-    public init(range: ClosedRange<Int>? = nil, min: Int? = nil) {
-        self.range = range; self.min = min
+    public var max: Int?
+
+    public init(min: Int? = nil, max: Int? = nil) {
+        self.min = min
+        self.max = max
+    }
+
+    public init(range: ClosedRange<Int>) {
+        self.init(min: range.lowerBound, max: range.upperBound)
     }
 }
 
 public struct SBJNumberRules: Codable, Sendable, Equatable {
-    public var range: ClosedRange<Double>?
     public var min: Double?
-    public init(range: ClosedRange<Double>? = nil, min: Double? = nil) {
-        self.range = range; self.min = min
+    public var max: Double?
+
+    public init(min: Double? = nil, max: Double? = nil) {
+        self.min = min
+        self.max = max
+    }
+
+    public init(range: ClosedRange<Double>) {
+        self.init(min: range.lowerBound, max: range.upperBound)
     }
 }
 
-/// Serializable, type-specific descriptions of dictionary member rules.
+/// Serializable, type-specific descriptions of collection member rules.
 /// Generated invariant checks remain statically typed; this enum is metadata only.
 public enum SBJDictionaryMemberRuleValue: Codable, Sendable, Equatable {
     case string(SBJStringRules)
@@ -125,9 +139,7 @@ public enum SBJDictionaryMemberRuleValue: Codable, Sendable, Equatable {
     case data(SBJDataRules)
 }
 
-/// A rule applicable to a dictionary key or value. The annotation macro emits
-/// statically typed checks for each concrete rule; no runtime type erasure is
-/// used to decide whether a rule is applicable.
+/// A rule applicable to a dictionary key or value. Generated checks are statically typed.
 public protocol SBJDictionaryMemberRule: Sendable {}
 extension SBJStringRules: SBJDictionaryMemberRule {}
 extension SBJIntegerRules: SBJDictionaryMemberRule {}

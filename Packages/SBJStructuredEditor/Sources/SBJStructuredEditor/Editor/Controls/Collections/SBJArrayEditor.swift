@@ -3,12 +3,13 @@ import SBJUIVocabulary
 import Foundation
 import SwiftUI
 
-struct SBJArrayEditor<Element: Codable>: View {
+struct SBJArrayEditor<Element>: View {
     let label: String
     @Binding var value: [Element]
     let originalValue: [Element]?
     let registry: SBJEditorRegistry
     let textStyle: SBJStringStyle?
+    var constraints: SBJConstraintProjection = .init()
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let insertable: Bool
@@ -26,7 +27,7 @@ struct SBJArrayEditor<Element: Codable>: View {
     }
 
     var body: some View {
-        let canAdd = registry.createArrayElement(Element.self, existing: value) != nil
+        let canAdd = registry.createArrayElement(Element.self, existing: value, constraints: constraints.collectionElement) != nil
         return VStack(alignment: .leading, spacing: 6) {
             SBJEditorDisclosureHeader(
                 "\(label) (\(value.count))",
@@ -38,12 +39,12 @@ struct SBJArrayEditor<Element: Codable>: View {
 							label,
 							accessibilityHint: "Adds a new item and moves focus into it"
 						) {
-							if let newValue = registry.createArrayElement(Element.self, existing: value) {
+							if let newValue = registry.createArrayElement(Element.self, existing: value, constraints: constraints.collectionElement) {
 								value.append(newValue)
 								presentationModel.open(context.itemIdentifier)
 							}
 						}
-						.disabled(!canAdd)
+						.disabled(!canAdd || !insertable)
 					}
 				), optionalControl: optionalControl,
                 trailingActions: AnyView(

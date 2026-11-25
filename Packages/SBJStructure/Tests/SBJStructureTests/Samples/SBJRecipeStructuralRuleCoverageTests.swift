@@ -186,7 +186,7 @@ struct SBJRecipeStructuralRuleCoverageTests {
         }
     }
 
-    @Test func codingKeysDefineStructureAndAnnotationsAreNotRequiredForKinds() {
+    @Test func codingKeysDoNotDefineStructureAndAnnotationsAreNotRequiredForKinds() {
         let metadata = Dictionary(uniqueKeysWithValues: RecipeCodingShapeFixture.sbjProperties.map { ($0.sourceName, $0.kind) })
         #expect(metadata["text"] == .text)
         #expect(metadata["enabled"] == .bool)
@@ -200,7 +200,7 @@ struct SBJRecipeStructuralRuleCoverageTests {
         #expect(metadata["array"] == .array)
         #expect(metadata["set"] == .set)
         #expect(metadata["dictionary"] == .dictionary)
-        #expect(metadata["excluded"] == nil)
+        #expect(metadata["excluded"] == .text)
     }
 
     @Test func uuidZeroHelpersArePublicAndValidationIsExplicit() throws {

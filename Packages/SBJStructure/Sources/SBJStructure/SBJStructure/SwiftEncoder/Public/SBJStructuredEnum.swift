@@ -19,14 +19,14 @@ public extension SBJEnumCaseIdentifiable {
 /// Marker for an annotated enum with one or more associated-value payloads.
 /// Payload-aware consumers should use this rather than treating all enums with
 /// case-name metadata as recursive structures.
-public protocol SBJStructuredEnum: SBJEnumCaseIdentifiable, Codable, SBJDefaultValueCreatable, SBJStructuralComparable {
+public protocol SBJStructuredEnum: SBJEnumCaseIdentifiable, SBJDefaultValueCreatable, SBJStructuralComparable {
     static var sbjAssociatedCases: [SBJAssociatedCase<Self>] { get }
 }
 
 /// A presentation-neutral, type-preserving consumer of an enum payload.
 public protocol SBJTypedAssociatedValueVisitor<Root>: AnyObject {
     associatedtype Root
-    func visit<Value: Codable>(
+    func visit<Value>(
         name: String,
         get: @escaping (Root) -> Value,
         set: @escaping (inout Root, Value) -> Void
@@ -37,14 +37,16 @@ public protocol SBJTypedAssociatedValueVisitor<Root>: AnyObject {
 /// a generic closure, so no `Any` casts or SwiftUI dependencies are required.
 public struct SBJAssociatedValue<Root> {
     public let name: String
+    public let valueType: Any.Type
     private let dispatch: (any SBJTypedAssociatedValueVisitor<Root>) -> Void
 
-    public init<Value: Codable>(
+    public init<Value>(
         name: String,
         get: @escaping (Root) -> Value,
         set: @escaping (inout Root, Value) -> Void
     ) {
         self.name = name
+        self.valueType = Value.self
         self.dispatch = { $0.visit(name: name, get: get, set: set) }
     }
 

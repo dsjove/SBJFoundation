@@ -12,6 +12,7 @@ private protocol _SBJOptionalValue {
         originalValue: SBJEditorOriginalValue?,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
+        constraints: SBJConstraintProjection,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         dateRange: ClosedRange<Date>?,
@@ -38,6 +39,7 @@ private protocol _SBJCollectionValue {
         originalValue: SBJEditorOriginalValue?,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
+        constraints: SBJConstraintProjection,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -155,7 +157,7 @@ extension Dictionary: _SBJCollectionIssueValue {
     }
 }
 
-extension Optional: _SBJOptionalValue where Wrapped: Codable {
+extension Optional: _SBJOptionalValue {
     @MainActor
     static func _sbjOptionalEditor(
         label: String,
@@ -163,6 +165,7 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
         originalValue: SBJEditorOriginalValue?,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
+        constraints: SBJConstraintProjection,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         dateRange: ClosedRange<Date>?,
@@ -187,6 +190,7 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
                 originalValue: originalValue.map { $0.value(as: Wrapped?.self) },
                 registry: registry,
                 textStyle: textStyle,
+                constraints: constraints,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 dateRange: dateRange,
@@ -206,7 +210,7 @@ extension Optional: _SBJOptionalValue where Wrapped: Codable {
     }
 }
 
-extension Array: _SBJCollectionValue where Element: Codable {
+extension Array: _SBJCollectionValue {
     @MainActor
     static func _sbjCollectionEditor(
         label: String,
@@ -214,6 +218,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
         originalValue: SBJEditorOriginalValue?,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
+        constraints: SBJConstraintProjection,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -235,6 +240,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
                 originalValue: originalValue.map { $0.value(as: [Element].self) },
                 registry: registry,
                 textStyle: textStyle,
+                constraints: constraints,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 insertable: insertable,
@@ -251,7 +257,7 @@ extension Array: _SBJCollectionValue where Element: Codable {
 }
 
 
-extension Set: _SBJCollectionValue where Element: Codable {
+extension Set: _SBJCollectionValue {
     @MainActor
     static func _sbjCollectionEditor(
         label: String,
@@ -259,6 +265,7 @@ extension Set: _SBJCollectionValue where Element: Codable {
         originalValue: SBJEditorOriginalValue?,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
+        constraints: SBJConstraintProjection,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -281,6 +288,7 @@ extension Set: _SBJCollectionValue where Element: Codable {
                 originalValue: originalValue.map { $0.value(as: Set<Element>.self) },
                 registry: registry,
                 textStyle: textStyle,
+                constraints: constraints,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 itemTitleKey: itemTitleKey,
@@ -293,7 +301,7 @@ extension Set: _SBJCollectionValue where Element: Codable {
     }
 }
 
-extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
+extension Dictionary: _SBJCollectionValue {
     @MainActor
     static func _sbjCollectionEditor(
         label: String,
@@ -301,6 +309,7 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
         originalValue: SBJEditorOriginalValue?,
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
+        constraints: SBJConstraintProjection,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -323,6 +332,7 @@ extension Dictionary: _SBJCollectionValue where Key: Codable, Value: Codable {
                 originalValue: originalValue.map { $0.value(as: [Key: Value].self) },
                 registry: registry,
                 textStyle: textStyle,
+                constraints: constraints,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 itemActions: itemActions,
@@ -343,6 +353,7 @@ enum SBJValueEditor {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle? = nil,
         stringPresentation: SBJStringPresentationValue? = nil,
+        constraints: SBJConstraintProjection = .init(),
         textMaximumLength: Int? = nil,
         integerRange: ClosedRange<Int>? = nil,
         numberRange: ClosedRange<Double>? = nil,
@@ -365,6 +376,13 @@ enum SBJValueEditor {
         context: SBJEditTraversalContext = .root,
         headerOnly: Bool = false
     ) -> AnyView {
+        var status = context.branch.status
+        if constraints.scalarValidationError(for: value.wrappedValue) != nil { status.isInvalid = true }
+        let context = context.withBranch(context.branch.withStatus(status))
+        let integerRange = constraints.integerRange ?? integerRange
+        let numberRange = constraints.numberRange ?? numberRange
+        let dateRange = constraints.dateRange ?? dateRange
+        let textMaximumLength = constraints.textMaximumLength ?? textMaximumLength
         // Intentional built-in editor composition point. Concrete standard value
         // editors are selected here so the generic traversal/property layers do
         // not depend on them. Application-specific editors belong in the registry.
@@ -404,23 +422,32 @@ enum SBJValueEditor {
 
         if Value.self == String.self {
             let binding = value.sbjBinding(as: String.self)
+            if let options = constraints.allowedStrings {
+                return wrapLeaf(
+                    SBJCaseIterableEditor(label: label, value: binding, options: options,
+                        labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status,
+                        optionTitle: { $0 },
+                        optionMatches: { constraints.matchesStringChoice($0, current: $1) }),
+                    itemActions: itemActions, context: context
+                )
+            }
             let presentation = stringPresentation ?? SBJStringPresentationValue(style: textStyle ?? .singleLine)
             switch presentation.style {
             case .singleLine:
                 return wrapLeaf(
-                    SBJSingleLineTextEditor(label: label, value: binding, maximumLength: textMaximumLength, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation),
+                    SBJSingleLineTextEditor(label: label, value: binding, maximumLength: textMaximumLength, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation, invalid: !constraints.acceptsString(binding.wrappedValue)),
                     itemActions: itemActions,
                     context: context
                 )
             case .multiline:
                 return wrapLeaf(
-                    SBJMultilineTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation),
+                    SBJMultilineTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation, invalid: !constraints.acceptsString(binding.wrappedValue)),
                     itemActions: itemActions,
                     context: context
                 )
             case .sheetEdit:
                 return wrapLeaf(
-                    SBJSheetTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation),
+                    SBJSheetTextEditor(label: label, value: binding, focusRequest: focusRequest, labelIsUnknown: labelIsUnknown, rowStatus: context.branch.status, presentation: presentation, invalid: !constraints.acceptsString(binding.wrappedValue)),
                     itemActions: itemActions,
                     context: context
                 )
@@ -502,7 +529,8 @@ enum SBJValueEditor {
                     binding: erased,
                     labelIsUnknown: labelIsUnknown,
                     editor: unitEditor,
-                    unitSystem: unitSystem
+                    unitSystem: unitSystem,
+                    minimum: constraints.unitMinimum
                 ),
                 itemActions: itemActions,
                 context: context
@@ -516,6 +544,7 @@ enum SBJValueEditor {
                 originalValue: originalValue,
                 registry: registry,
                 textStyle: textStyle,
+                constraints: constraints,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 dateRange: dateRange,
@@ -540,6 +569,7 @@ enum SBJValueEditor {
                 originalValue: originalValue,
                 registry: registry,
                 textStyle: textStyle,
+                constraints: constraints,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 insertable: collectionInsertable,
@@ -588,7 +618,7 @@ enum SBJValueEditor {
             )
         }
 
-        // Unknown Codable values remain visible as unsupported rather than being
+        // Unknown values remain visible as unsupported rather than being
         // silently omitted. Applications can register a custom exact-type editor.
         return wrapLeaf(
             SBJUnsupportedEditor(label: label, type: Value.self, value: value.wrappedValue, labelIsUnknown: labelIsUnknown),

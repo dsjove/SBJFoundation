@@ -22,3 +22,7 @@ How structural annotations configure validation rules, presentation hints, and m
 - `SBJColorPresentationValue` is Codable and Sendable, like other portable values.
 - UIVocabulary modifiers use configuration-driven input policies; UI configuration remains an independent client concern.
 - Collection constraints, presentation capabilities, and sort configuration are described in [CollectionAnnotations.md](CollectionAnnotations.md). Set/Dictionary editor sorting and compiler checks for presentation sort remain unverified/incomplete.
+
+### Numeric bounds (Iteration 6)
+
+`SBJIntegerRules` and `SBJNumberRules` expose optional `min` and `max` properties. `init(range:)` converts the closed range to these bounds; `init(min:max:)` allows independent bounds. `SBJStringRules` additionally exposes optional `allowedValues` and `pattern`. Dictionary rule names and collection annotation APIs are unchanged.

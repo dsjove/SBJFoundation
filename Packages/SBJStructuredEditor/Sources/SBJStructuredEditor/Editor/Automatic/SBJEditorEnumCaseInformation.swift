@@ -1,4 +1,5 @@
 #if !os(tvOS) && !os(watchOS)
+import SBJStructure
 import Foundation
 import SBJUIVocabulary
 
@@ -20,8 +21,10 @@ enum SBJEditorEnumCaseInformation {
             guard let info = type(of: enumValue).sbjCaseNomenclature(for: sourceName) else { return nil }
             return .init(sourceName: sourceName, info: info)
         }
-        let mirror = Mirror(reflecting: value)
-        guard mirror.displayStyle == .optional, let child = mirror.children.first else { return nil }
+        guard case .optional? = SBJStructuralType.container(of: type(of: value)),
+              let container = value as? any SBJStructuralValueContainer,
+              let child = container.sbjStructuralChildren(itemTitleKey: nil, itemIdentifierKey: nil).first
+        else { return nil }
         return info(for: child.value)
     }
 }

@@ -3,8 +3,9 @@ import SBJUIVocabulary
 import Foundation
 import SwiftUI
 
-struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
+struct SBJSetEntryEditor<Element: Hashable>: View {
     struct Configuration {
+        var constraints: SBJConstraintProjection = .init()
         var textStyle: SBJStringStyle? = nil
         var integerRange: ClosedRange<Int>? = nil
         var numberRange: ClosedRange<Double>? = nil
@@ -67,6 +68,7 @@ struct SBJSetEntryEditor<Element: Codable & Hashable>: View {
                     originalValue: originalElement.map { SBJEditorOriginalValue($0) },
                     registry: registry,
                     textStyle: configuration.textStyle,
+                    constraints: configuration.constraints,
                     integerRange: configuration.integerRange,
                     numberRange: configuration.numberRange,
                     focusRequest: configuration.focusRequest,

@@ -30,8 +30,8 @@ struct UnitValueTests {
 
     @Test func structureMacroDescribesQuantityAndImmutableUnit() throws {
         typealias Value = UnitValue<LengthUnit>
-        #expect(Value.sbjProperties.map(\.sourceName) == ["value", "unit"])
-        #expect(Value.sbjMutableProperties.map(\.structuralMetadata?.sourceName) == ["value"])
+        #expect(Value.sbjProperties.map(\.sourceName) == ["value", "unit", "presentedValue"])
+        #expect(Value.sbjMutableProperties.map(\.structuralMetadata.sourceName) == ["value"])
         #expect(Value.sbjDefaultValue()?.unit == LengthUnit.allCases.first)
         let valid = Value(1, unit: .inch)
         #expect(valid.sbjStructuralEquals(Value(1, unit: .inch)))
@@ -40,7 +40,7 @@ struct UnitValueTests {
 
     @Test func structureMacroDescribesEditingPolicy() {
         typealias Policy = UnitEditingPolicy<LengthUnit>
-        #expect(Policy.sbjProperties.map(\.sourceName) == ["defaultStep", "overrides"])
+        #expect(Policy.sbjProperties.map(\.sourceName) == ["defaultStep", "overrides", "presentedValue"])
         #expect(Policy.sbjMutableProperties.count == 2)
         #expect(Policy.sbjDefaultValue()?.defaultStep == 1)
     }

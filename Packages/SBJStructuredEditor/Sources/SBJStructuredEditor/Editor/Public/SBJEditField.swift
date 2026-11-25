@@ -5,6 +5,7 @@ import SBJUIVocabulary
   /// Configuration distilled from structural property metadata for one editor field.
   @MainActor
   struct SBJEditFieldConfiguration {
+    let constraintProjection: SBJConstraintProjection
     let propertyNomenclature: SBJNomenclature?
     let stringPresentation: SBJStringPresentationValue
     let textMaximumLength: Int?
@@ -24,42 +25,18 @@ import SBJUIVocabulary
     let collectionItemIdentifierKey: String?
 
     init<Root: SBJStructured>(metadata: SBJPropertyMetadata<Root>?) {
+      let projection = SBJConstraintProjection(metadata?.constraints ?? [])
+      constraintProjection = projection
       propertyNomenclature = metadata?.info
       let stringPresentation = metadata?.hints.compactMap { hint -> SBJStringPresentationValue? in
         if case .stringPresentation(let value) = hint { return value }
         return nil
       }.first
       self.stringPresentation = stringPresentation ?? .init()
-      textMaximumLength =
-        metadata?.constraints.compactMap { constraint -> Int? in
-          if case .stringRules(let rules) = constraint { return rules.maxLength }
-          return nil
-        }.first
-      integerRange =
-        metadata?.constraints.compactMap { constraint -> ClosedRange<Int>? in
-          switch constraint {
-          case .integerRules(let rules):
-            if let range = rules.range { return range }
-            if let minimum = rules.min { return minimum...Int.max }
-            return nil
-          default: return nil
-          }
-        }.first
-      numberRange =
-        metadata?.constraints.compactMap { constraint -> ClosedRange<Double>? in
-          switch constraint {
-          case .numberRules(let rules):
-            if let range = rules.range { return range }
-            if let minimum = rules.min { return minimum...Double.greatestFiniteMagnitude }
-            return nil
-          default: return nil
-          }
-        }.first
-      dateRange =
-        metadata?.constraints.compactMap { constraint -> ClosedRange<Date>? in
-          if case .dateRules(let rules) = constraint { return rules.range }
-          return nil
-        }.first
+      textMaximumLength = projection.textMaximumLength
+      integerRange = projection.integerRange
+      numberRange = projection.numberRange
+      dateRange = projection.dateRange
       durationUnits = metadata?.constraints.compactMap { constraint -> ClosedRange<DurationUnit>? in
         if case .durationRules(let rules) = constraint { return rules.units }
         return nil
@@ -161,12 +138,9 @@ import SBJUIVocabulary
       keyPath: WritableKeyPath<Root, Value>,
       originalRoot: Root? = nil,
       registry: SBJEditorRegistry = .init()
-    ) where Value: Codable {
+    ) {
       let metadata = Root.propertyMetadata(for: keyPath)
-      let label =
-        metadata?.displayName
-        ?? Root.sbjMutableProperties.first(where: { ($0.keyPath as AnyKeyPath) == (keyPath as AnyKeyPath) })?.name
-        ?? "Value"
+      let label = metadata?.displayName ?? "Value"
       self.init(
         root: root,
         originalRoot: originalRoot,
@@ -206,6 +180,7 @@ import SBJUIVocabulary
           originalValue: originalRoot.map { SBJEditorOriginalValue($0[keyPath: keyPath]) },
           registry: registry,
           stringPresentation: configuration.stringPresentation,
+          constraints: configuration.constraintProjection,
           textMaximumLength: configuration.textMaximumLength,
           integerRange: configuration.integerRange,
           numberRange: configuration.numberRange,
@@ -240,47 +215,6 @@ import SBJUIVocabulary
             branch: context.branch
           )
           .sbjEditorNavigationAnchor(for: context.navigationPath)
-        )
-      }
-    }
-
-    init<Root: SBJMutableStructure>(
-      editorOnlyRoot root: Binding<Root>,
-      originalRoot: Root?,
-      keyPath: WritableKeyPath<Root, Value>,
-      label: String,
-      registry: SBJEditorRegistry,
-      focusRequest: SBJEditorFocusRequest?,
-      labelIsUnknown: Bool,
-      context: SBJEditTraversalContext,
-      headerOnly: Bool = false
-    ) {
-      render = {
-        let defaultValue = Binding<Value>(
-          get: { root.wrappedValue[keyPath: keyPath] },
-          set: { root.wrappedValue[keyPath: keyPath] = $0 }
-        )
-        let value = registry.customBinding(keyPath: keyPath, root: root) ?? defaultValue
-        let defaultContent = SBJValueEditor.makeView(
-          label: label,
-          value: value,
-          originalValue: originalRoot.map { SBJEditorOriginalValue($0[keyPath: keyPath]) },
-          registry: registry,
-          focusRequest: focusRequest,
-          labelIsUnknown: labelIsUnknown,
-          context: context,
-          headerOnly: headerOnly
-        )
-        let content =
-          registry.customLineItem(
-            keyPath: keyPath,
-            label: label,
-            binding: value,
-            defaultContent: defaultContent
-          ) ?? defaultContent
-        return AnyView(
-          SBJEditorNomenclatureContainer(content: content, propertyName: label, info: nil, branch: context.branch)
-            .sbjEditorNavigationAnchor(for: context.navigationPath)
         )
       }
     }

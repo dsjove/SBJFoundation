@@ -19,11 +19,29 @@ private struct SBJStructuralSearchMatcher {
         text.normalizedSearchText.contains(normalizedQuery)
     }
 
+    private func matchesStructured<Root: SBJStructured>(_ root: Root, depth: Int) -> Bool {
+        Root.sbjUserFacingProperties.contains { property in
+            matchesText(property.displayName) || matchesText(property.sourceName) ||
+                matches(property.value(in: root), depth: depth + 1)
+        }
+    }
+
     func matches(_ value: Any, depth: Int = 0) -> Bool {
         // Codable values should not form cycles in normal SBJStructure use, but
         // keep malformed/reflected object graphs from recursing without bound.
         guard depth < 64 else { return false }
 
+        // Structured subjects have an explicit visibility boundary. Do not fall
+        // back to reflection or a synthesized description for these values.
+        if let structured = value as? any SBJStructured, !(value is any SBJStructuralSearchAtomic) {
+            return matchesStructured(structured, depth: depth)
+        }
+        if let associated = value as? any SBJStructuredEnum {
+            if matchesText(associated.sbjCaseName) { return true }
+            return associated.sbjStructuralAssociatedChildren().dropFirst().contains {
+                matchesText($0.title) || matches($0.value, depth: depth + 1)
+            }
+        }
         if let predicated = value as? any Predicated {
             return predicated.predicated(search: originalQuery)
         }

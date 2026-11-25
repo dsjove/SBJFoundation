@@ -164,7 +164,9 @@ public enum SBJDefinitionPDFReport {
                      String(describing: field.info?.symbol),
                      String(describing: field.info?.accessibilityLabel),
                      String(describing: field.info?.accessibilityHint),
-                     String(describing: field.kind), String(field.isComputed),
+                     String(describing: field.kind), String(describing: field.storage),
+                     String(describing: field.access), String(field.isUserFacing),
+                     field.info?.aliases.joined(separator: "|") ?? "",
                      field.constraints.map(\.description).joined(separator: "|"),
                      field.hints.map(\.description).joined(separator: "|")].joined(separator: "\u{1f}")
                 }
@@ -226,7 +228,7 @@ public enum SBJDefinitionPDFReport {
                         }
                         hasDeclaration = true
                     }
-                    if field.isComputed { metadata("Declaration kind", "Computed, read-only") }
+                    metadata("Declaration kind", "\(field.isComputed ? "Computed" : "Stored"), \(field.access == .readWrite ? "read-write" : "read-only")")
                     if let summary = field.info?.summary {
                         metadata("Summary", summary, keepWithPrevious: !hasDeclaration)
                     }

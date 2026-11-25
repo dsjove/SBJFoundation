@@ -1,6 +1,6 @@
 # Structural model guide
 
-`SBJStructure` describes Codable structures and enums independently of any user interface. Apply `@SBJStructure` to a model to generate structural metadata and the supporting model capabilities.
+`SBJStructure` describes Swift structures and enums independently of any user interface. Apply `@SBJStructure` to a model to generate structural metadata and the supporting model capabilities.
 
 ```swift
 import SBJStructure
@@ -20,9 +20,11 @@ struct MeasurementRecord: Codable {
 
 ## Structural metadata
 
-`SBJStructured.sbjProperties` provides coded stored-property descriptors. A descriptor has a stable Swift `sourceName`, human-facing `displayName`, key path, kind, constraints, hints, and property information. Inspection does not mutate a model or enforce its invariants automatically.
+`SBJStructured.sbjProperties` provides unified stored and computed property descriptors. A descriptor has a stable Swift `sourceName`, human-facing `displayName`, key path, declared value type, storage, access, constraints, hints, kind, and property information. Inspection does not mutate a model or enforce its invariants automatically.
 
-`SBJStructuralTraversal.definition(of:)` describes a type without an instance and includes immutable properties. `schema(of:)` and `visitValues(in:_:)` operate on writable structures. `SBJMutableStructure` exposes writable-property capabilities for consumers that need mutation.
+`SBJStructuralTraversal.definition(of:)` describes a type without an instance and includes immutable and computed properties. `schema(of:)` and `visitValues(in:_:)` operate on writable structures. `SBJMutableStructure` exposes writable-property capabilities for consumers that need mutation.
+
+`sbjUserFacingProperties` filters the canonical definition for shared Editor/AI visibility. Private and fileprivate properties and `@SBJExclude` declarations are not part of the published definition. `@SBJFieldPresentation(exclude: true)` remains visible to Report but not to user-facing consumers.
 
 ## Content, validation and comparison
 
@@ -38,9 +40,9 @@ struct MeasurementRecord: Codable {
 
 ## Swift source reconstruction
 
-`SBJSwiftEncoder` exports expressions for structured values. Source reconstruction selects a complete initializer when its parameters cover the coded properties, matching internal or external parameter names. `_` labels and Swift parameter defaults do not prevent matching. `@SBJDesignatedInit` resolves explicit initializer selection.
+`SBJSwiftEncoder` exports expressions for structured values. Source reconstruction selects a complete initializer when its parameters cover all stored properties, matching internal or external parameter names. `_` labels and Swift parameter defaults do not prevent matching. `@SBJDesignatedInit` resolves explicit initializer selection.
 
-When no complete initializer is selected, a default-constructible structure whose coded properties are writable can use an immediately invoked closure with assignments. Other Codable structures use a JSON-decoding expression when encoding succeeds. The decoding expression requires Foundation at its call site. Callers that require compilable generated code must account for the selected representation, the referenced types, and any necessary imports. If no reconstruction path succeeds, the current API may emit a diagnostic comment instead of a valid expression.
+When no complete initializer is selected, a default-constructible structure whose complete stored definition is writable can use an immediately invoked closure with assignments. Other Codable structures use a JSON-decoding expression when encoding succeeds. The decoding expression requires Foundation at its call site. Callers that require compilable generated code must account for the selected representation, the referenced types, and any necessary imports. If no reconstruction path succeeds, the current API may emit a diagnostic comment instead of a valid expression.
 
 ## Presentation metadata
 

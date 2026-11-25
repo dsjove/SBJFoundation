@@ -17,7 +17,7 @@ protocol _SBJUnitValueEditorValue {
         binding: SBJAnyBinding,
         labelIsUnknown: Bool,
         editor: SBJUnitValueEditorMode,
-        unitSystem: MeasurementSystem?
+        unitSystem: MeasurementSystem?, minimum: Double?
     ) -> AnyView
 }
 
@@ -28,7 +28,7 @@ extension UnitValue: _SBJUnitValueEditorValue {
         binding: SBJAnyBinding,
         labelIsUnknown: Bool,
         editor: SBJUnitValueEditorMode,
-        unitSystem: MeasurementSystem?
+        unitSystem: MeasurementSystem?, minimum: Double?
     ) -> AnyView {
         AnyView(
             SBJUnitValueEditor(
@@ -36,7 +36,8 @@ extension UnitValue: _SBJUnitValueEditorValue {
                 value: binding.binding(as: Self.self),
                 labelIsUnknown: labelIsUnknown,
                 editor: editor,
-                unitSystem: unitSystem
+                unitSystem: unitSystem,
+                minimum: minimum
             )
         )
     }
@@ -51,7 +52,7 @@ extension MixedUnitValue: _SBJUnitValueEditorValue {
         binding: SBJAnyBinding,
         labelIsUnknown: Bool,
         editor: SBJUnitValueEditorMode,
-        unitSystem: MeasurementSystem?
+        unitSystem: MeasurementSystem?, minimum: Double?
     ) -> AnyView {
         AnyView(
             SBJMixedUnitValueEditor(
@@ -71,7 +72,7 @@ extension PairedUnitValue: _SBJUnitValueEditorValue {
     @MainActor
     static func _sbjMakeUnitValueEditor(
         label: String, binding: SBJAnyBinding, labelIsUnknown: Bool,
-        editor: SBJUnitValueEditorMode, unitSystem: MeasurementSystem?
+        editor: SBJUnitValueEditorMode, unitSystem: MeasurementSystem?, minimum: Double?
     ) -> AnyView {
         AnyView(SBJPairedUnitValueEditor(label: label,
             value: binding.binding(as: Self.self), labelIsUnknown: labelIsUnknown,
@@ -187,15 +188,28 @@ struct SBJUnitValueEditor<Unit: UnitType>: View {
     let labelIsUnknown: Bool
     let editor: SBJUnitValueEditorMode
     let unitSystem: MeasurementSystem?
+    var minimum: Double? = nil
+
+    private var minimumInvalid: Bool {
+        minimum.map { (try? SBJInvariantCheck.requireMinimum(value, $0, at: .root)) == nil } ?? false
+    }
 
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
-            UnitValueControl(
-                value: $value,
-                units: sbjAvailableUnits(for: unitSystem),
-                accessibilityLabel: label,
-                unitEditable: editor == .editable
-            )
+            VStack(alignment: .trailing, spacing: 3) {
+                UnitValueControl(
+                    value: $value,
+                    units: sbjAvailableUnits(for: unitSystem),
+                    accessibilityLabel: label,
+                    unitEditable: editor == .editable
+                )
+                .invalidDecoration(minimumInvalid)
+                if minimumInvalid, let minimum {
+                    Text("Minimum: \(minimum.formatted()) \(value.unit.symbol)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 }

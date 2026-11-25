@@ -38,13 +38,13 @@ struct SBJObjectEditor<Value: SBJMutableStructure>: View {
     private var promotedTitleField: SBJEditorPropertyDescriptor<Value>? {
         guard let promotedTitlePropertyName else { return nil }
         return fields.first { field in
-            field.editableField.structuralMetadata?.sourceName == promotedTitlePropertyName
+            field.metadata.sourceName == promotedTitlePropertyName
         }
     }
 
     private func isPromotedTitleField(_ field: SBJEditorPropertyDescriptor<Value>) -> Bool {
         guard let promotedTitlePropertyName else { return false }
-        return field.editableField.structuralMetadata?.sourceName == promotedTitlePropertyName
+        return field.metadata.sourceName == promotedTitlePropertyName
     }
 
     private var isShowingContents: Bool {
@@ -126,7 +126,7 @@ struct SBJObjectEditor<Value: SBJMutableStructure>: View {
 
     private var promotedTitleInfoAction: AnyView? {
         guard let field = promotedTitleField,
-              let info = field.editableField.structuralMetadata?.info else {
+              let info = field.metadata.info else {
             return nil
         }
         return AnyView(

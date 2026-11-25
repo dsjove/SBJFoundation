@@ -1,4 +1,4 @@
-/// Adds integer constraints to a coded property handled by `@SBJStructure`.
+/// Adds integer constraints to a structural property handled by `@SBJStructure`.
 /// An ordinary integer property requires no annotation.
 ///
 /// A closed `range` constrains both bounds. `min` constrains only the lower
@@ -15,3 +15,11 @@ public macro SBJInteger(min: Int) = #externalMacro(
     module: "SBJStructureMacros",
     type: "SBJIntegerMacro"
 )
+
+/// Constrains only the inclusive upper bound.
+@attached(peer)
+public macro SBJInteger(max: Int) = #externalMacro(module: "SBJStructureMacros", type: "SBJIntegerMacro")
+
+/// Constrains both inclusive bounds without constructing a range.
+@attached(peer)
+public macro SBJInteger(min: Int, max: Int) = #externalMacro(module: "SBJStructureMacros", type: "SBJIntegerMacro")

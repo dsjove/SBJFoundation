@@ -22,9 +22,7 @@ import SBJUIVocabulary
 
   /// Type-erased property descriptor used by the generated SwiftUI editor.
   ///
-  /// `@SBJStructure` emits this type into client code, so it must remain public even
-  /// though applications normally use ``SBJEditField`` rather than constructing
-  /// editor properties directly. The descriptor owns automatic-editor concerns such
+  /// The descriptor consumes canonical metadata and owns automatic-editor concerns such
   /// as search/filtering, validation state, and type erasure; actual field rendering
   /// is delegated to `SBJEditField`.
   @MainActor
@@ -32,7 +30,7 @@ import SBJUIVocabulary
     public let name: String
     let traversalDisclosureMode: SBJPresentationDisclosureMode
     let isTraversalDisclosure: Bool
-    public let editableField: SBJMutableProperty<Root>
+    public let metadata: SBJPropertyMetadata<Root>
     private let makeView:
       (
         Binding<Root>, Root?, SBJEditorRegistry, String?, SBJEditorFocusRequest?, Bool,
@@ -42,20 +40,20 @@ import SBJUIVocabulary
     private let traverseChildren: (Root, SBJEditTraversalContext) -> [SBJEditorTraversalNode]
     private let traverseBoundChildren: (Binding<Root>, Root?, SBJEditorRegistry, SBJEditTraversalContext) -> [SBJEditorTraversalNode]
 
-    public init<Value: Codable>(
-      name: String,
-      _ keyPath: WritableKeyPath<Root, Value>,
+    init<Value>(
+      metadata: SBJPropertyMetadata<Root>,
+      keyPath: WritableKeyPath<Root, Value>,
       disclosureMode: SBJPresentationDisclosureMode = .closed
     ) {
+      let name = metadata.displayName
       self.name = name
       self.traversalDisclosureMode = disclosureMode
       self.isTraversalDisclosure = !(Value.self is any SBJTypedEditorValue.Type) &&
         (Value.self is any SBJMutableStructure.Type
         || Value.self is any SBJEditorTraversableValue.Type
         || Value.self is any SBJStructuredEnum.Type)
-      let editableField = SBJMutableProperty<Root>(name: name, keyPath)
-      self.editableField = editableField
-      let configuration = SBJEditFieldConfiguration(metadata: editableField.structuralMetadata)
+      self.metadata = metadata
+      let configuration = SBJEditFieldConfiguration(metadata: metadata)
 
       self.makeView = {
         root, originalRoot, registry, overrideName, focusRequest, labelIsUnknown, context, headerOnly in
@@ -94,8 +92,10 @@ import SBJUIVocabulary
           itemIdentifierKey: configuration.collectionItemIdentifierKey,
           elementPresentation: configuration.collectionElementPresentation,
           dictionaryPresentation: configuration.dictionaryPresentation,
+          constraints: configuration.constraintProjection,
           reorderable: configuration.collectionReorderable,
-          removable: configuration.collectionRemovable
+          removable: configuration.collectionRemovable,
+          insertable: configuration.collectionInsertable
         )
       }
       self.collectIssues = { root, path, registry in
@@ -108,56 +108,28 @@ import SBJUIVocabulary
       }
     }
 
-    /// Creates an editor property intentionally outside `Root`'s structural
-    /// metadata. `Value` does not need to be `Codable`; the application may
-    /// provide an exact-type editor through `SBJEditorRegistry`.
-    public init<Value>(
-      nonStructuralName name: String,
-      _ keyPath: WritableKeyPath<Root, Value>
-    ) {
+    /// Read-only properties use their canonical metadata and never create a writable binding.
+    init<Value>(metadata: SBJPropertyMetadata<Root>, readOnly keyPath: KeyPath<Root, Value>) {
+      let name = metadata.displayName
       self.name = name
+      self.metadata = metadata
       self.traversalDisclosureMode = .closed
       self.isTraversalDisclosure = false
-      self.editableField = SBJMutableProperty<Root>(nonStructuralName: name, keyPath)
-      self.makeView = {
-        root, originalRoot, registry, overrideName, focusRequest, labelIsUnknown, context, headerOnly in
+      self.makeView = { root, _, _, overrideName, _, _, context, _ in
         AnyView(
-          SBJEditField(
-            editorOnlyRoot: root,
-            originalRoot: originalRoot,
-            keyPath: keyPath,
-            label: overrideName ?? name,
-            registry: registry,
-            focusRequest: focusRequest,
-            labelIsUnknown: labelIsUnknown,
-            context: context,
-            headerOnly: headerOnly
+          SBJEditorNomenclatureContainer(
+            content: AnyView(SBJEditorRow(context: context) {
+              HStack(alignment: .firstTextBaseline) {
+                Text(overrideName ?? name)
+                Spacer(minLength: 8)
+                Text(SBJEditorReadOnlyValue.text(root.wrappedValue[keyPath: keyPath], hints: metadata.hints, constraints: metadata.constraints))
+                  .foregroundStyle(.secondary)
+                  .textSelection(.enabled)
+              }
+            }), propertyName: name, info: metadata.info,
+            caseInfo: { SBJEditorEnumCaseInformation.info(for: root.wrappedValue[keyPath: keyPath]) },
+            branch: context.branch
           )
-        )
-      }
-      self.traverseChildren = { _, _ in [] }
-      self.traverseBoundChildren = { _, _, _, _ in [] }
-      self.collectIssues = { _, _, _ in [] }
-    }
-
-    /// Displays a computed value without constructing a writable binding.
-    /// The value is read from the current root every time the row renders.
-    public init<Value>(readOnlyName name: String, _ keyPath: KeyPath<Root, Value>) {
-      self.name = name
-      self.traversalDisclosureMode = .closed
-      self.isTraversalDisclosure = false
-      self.editableField = SBJMutableProperty<Root>(readOnlyName: name, keyPath)
-      self.makeView = { root, _, _, overrideName, _, _, _, headerOnly in
-        AnyView(
-          HStack(alignment: .firstTextBaseline) {
-            Text(overrideName ?? name)
-            if !headerOnly {
-              Spacer(minLength: 8)
-              Text(String(describing: root.wrappedValue[keyPath: keyPath]))
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
-            }
-          }
         )
       }
       self.traverseChildren = { _, _ in [] }
@@ -199,7 +171,8 @@ import SBJUIVocabulary
         },
         isIncluded: { [self] criteria in
           self.isIncluded(root: root.wrappedValue, originalRoot: originalRoot,
-                          registry: registry, criteria: criteria)
+                          registry: registry, criteria: criteria,
+                          showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
         },
         children: { [traverseBoundChildren] projectedContext in
           traverseBoundChildren(root, originalRoot, registry, projectedContext)
@@ -207,11 +180,18 @@ import SBJUIVocabulary
       )
     }
 
+    private func hasChanged(in root: Root, from originalRoot: Root?) -> Bool {
+      // Derived values can change even when no stored state changes (for example, age).
+      guard metadata.storage == .stored else { return false }
+      guard let originalRoot else { return true }
+      return !metadata.structurallyEquals(in: root, originalRoot)
+    }
+
     func containsEmptyContent(
       root: Root,
       registry: SBJEditorRegistry
     ) -> Bool {
-      editableField.containsEmptyContent(
+      metadata.containsEmptyContent(
         in: root,
         treatingAsLeaf: { registry.hasCustomEditor($0) }
       )
@@ -229,13 +209,15 @@ import SBJUIVocabulary
       root: Root,
       originalRoot: Root? = nil,
       registry: SBJEditorRegistry,
-      criteria: SBJStructuralSearchCriteria
+      criteria: SBJStructuralSearchCriteria,
+      showsReadOnlyProperties: Bool = false
     ) -> Bool {
       criteria.includes(
-        isChanged: editableField.hasChanged(in: root, from: originalRoot),
+        isChanged: hasChanged(in: root, from: originalRoot),
         containsEmptyContent: containsEmptyContent(root: root, registry: registry),
         matchesSearch: { query in
-          editableField.matchesSearch(in: root, query: query)
+          SBJEditorSearchMatcher.matches(label: name, value: metadata.value(in: root), query: query,
+                                        showsReadOnlyProperties: showsReadOnlyProperties)
         }
       )
     }
@@ -252,13 +234,12 @@ import SBJUIVocabulary
       applyFiltering: Bool = true,
       headerOnly: Bool = false
     ) -> AnyView {
-      let changed = editableField.hasChanged(in: root.wrappedValue, from: originalRoot)
-      let contentState = editableField.hasContent(in: root.wrappedValue)
+      let changed = hasChanged(in: root.wrappedValue, from: originalRoot)
+      let contentState = metadata.hasContent(in: root.wrappedValue)
       let rootValidationError = rootValidation.resolving(root.wrappedValue)
       let invalid =
-        editableField.participatesInStructuralValidation
-        && (editableField.validationError(in: root.wrappedValue) != nil
-          || (rootValidationError?.keyPath.contains(property: editableField.keyPath) == true))
+        (metadata.validationError(in: root.wrappedValue) != nil
+          || (rootValidationError?.keyPath.contains(property: metadata.keyPath) == true))
       let rowContext = context.withBranch(context.branch.withStatus(
         SBJEditorRowStatus(isChanged: changed, hasContent: contentState, isInvalid: invalid)
       ))
@@ -274,7 +255,8 @@ import SBJUIVocabulary
           content: { AnyView(rendered) },
           isChanged: changed,
           matchesSearch: { query in
-            editableField.matchesSearch(in: root.wrappedValue, query: query)
+            SBJEditorSearchMatcher.matches(label: name, value: metadata.value(in: root.wrappedValue), query: query,
+                                           showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
           },
           containsEmptyContent: {
             containsEmptyContent(root: root.wrappedValue, registry: registry)

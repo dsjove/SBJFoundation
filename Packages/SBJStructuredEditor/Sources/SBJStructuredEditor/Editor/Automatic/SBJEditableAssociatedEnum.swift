@@ -10,7 +10,7 @@ public struct SBJEditorAssociatedValue<Root> {
     public let name: String
     private let makeView: (Binding<Root>, Root?, SBJEditorRegistry, SBJEditorFocusRequest?, SBJEditTraversalContext) -> AnyView
     private let collectIssues: (Root, [String], SBJEditorRegistry) -> [SBJEditorCapabilityIssue]
-    private let matchesSearch: (Root, String, SBJEditorRegistry) -> Bool
+    private let matchesSearch: (Root, String, Bool) -> Bool
     private let hasChanged: (Root, Root?) -> Bool
     private let hasContent: (Root) -> Bool?
     private let containsEmptyContent: (Root, SBJEditorRegistry) -> Bool
@@ -18,7 +18,7 @@ public struct SBJEditorAssociatedValue<Root> {
     private let makeTraversalNode: (Binding<Root>, Root?, SBJEditorRegistry, SBJEditTraversalContext) -> SBJEditorTraversalNode
     private let makeSnapshotNode: (Root, SBJEditTraversalContext) -> SBJEditorTraversalNode
 
-    public init<Value: Codable>(
+    public init<Value>(
         name: String,
         get: @escaping (Root) -> Value,
         set: @escaping (inout Root, Value) -> Void
@@ -66,11 +66,10 @@ public struct SBJEditorAssociatedValue<Root> {
                 registry: registry
             )
         }
-        self.matchesSearch = { root, query, _ in
-            sbjPredicated(
-                label: name,
-                value: get(root),
-                search: query
+        self.matchesSearch = { root, query, showsReadOnlyProperties in
+            SBJEditorSearchMatcher.matches(
+                label: name, value: get(root), query: query,
+                showsReadOnlyProperties: showsReadOnlyProperties
             )
         }
         self.hasChanged = { root, originalRoot in
@@ -126,7 +125,7 @@ public struct SBJEditorAssociatedValue<Root> {
                     )
                 },
                 isChanged: changed,
-                matchesSearch: { query in matchesSearch(root.wrappedValue, query, registry) },
+                matchesSearch: { query in matchesSearch(root.wrappedValue, query, context.branch.showsReadOnlyProperties) },
                 containsEmptyContent: { containsEmptyContent(root.wrappedValue, registry) },
                 navigationPath: context.navigationPath,
                 searchCriteria: context.branch.searchCriteria
@@ -217,7 +216,7 @@ public struct SBJEditorEnumCase<Root> {
 private final class SBJEditorAssociatedValueCollector<Root>: @preconcurrency SBJTypedAssociatedValueVisitor {
     var result: SBJEditorAssociatedValue<Root>?
 
-    func visit<Value: Codable>(
+    func visit<Value>(
         name: String,
         get: @escaping (Root) -> Value,
         set: @escaping (inout Root, Value) -> Void

@@ -10,11 +10,18 @@ struct SBJCaseIterableEditor<Value>: View {
     let labelIsUnknown: Bool
 
     private var selectedIndex: Int? {
+        if let optionMatches { return options.firstIndex { optionMatches($0, value) } }
         guard let current = value as? AnyHashable else { return nil }
         return options.firstIndex { ($0 as? AnyHashable) == current }
     }
 
     var rowStatus: SBJEditorRowStatus = .init()
+    var optionTitle: ((Value) -> String)? = nil
+    var optionMatches: ((Value, Value) -> Bool)? = nil
+
+    private func title(_ value: Value) -> String {
+        optionTitle?(value) ?? sbjCaseIterablePresentation(value)
+    }
 
     var body: some View {
         SBJEditorLabeledField(label: label, labelIsUnknown: labelIsUnknown) {
@@ -27,9 +34,9 @@ struct SBJCaseIterableEditor<Value>: View {
                     }
                 ),
                 choices: options.enumerated().map {
-                    SBJMenuChoice(id: $0.offset, title: sbjCaseIterablePresentation($0.element))
+                    SBJMenuChoice(id: $0.offset, title: title($0.element))
                 },
-                currentTitle: sbjCaseIterablePresentation(value),
+                currentTitle: title(value),
                 invalidSelection: selectedIndex == nil
             )
             .sbjEditorAccessibleControl(label: label, status: rowStatus)

@@ -7,7 +7,7 @@ import SwiftUI
 @testable import SBJStructuredEditor
 
 @SBJStructure
-private struct StructuralProjectionFixture: Codable {
+private struct StructuralProjectionFixture {
     var first: String = ""
     var count: Int = 0
     let identifier: String
@@ -22,14 +22,16 @@ private struct StructuralProjectionFixture: Codable {
 struct SBJStructuralFieldProjectionTests {
     @Test @MainActor
     func structuralFieldsRetainSourceNamesAndTypedKeyPaths() {
-        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self)
-        #expect(fields.map(\.name) == ["First", "Count"])
-        #expect(fields.map { $0.editableField.structuralMetadata?.sourceName } == ["first", "count"])
-        #expect(ObjectIdentifier(fields[0].editableField.valueType) == ObjectIdentifier(String.self))
-        #expect(ObjectIdentifier(fields[1].editableField.valueType) == ObjectIdentifier(Int.self))
+        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, showsReadOnlyProperties: true)
+        #expect(fields.map(\.name) == ["First", "Count", "Identifier"])
+        #expect(fields.map { $0.metadata.sourceName } == ["first", "count", "identifier"])
+        #expect(ObjectIdentifier(fields[0].metadata.valueType) == ObjectIdentifier(String.self))
+        #expect(ObjectIdentifier(fields[1].metadata.valueType) == ObjectIdentifier(Int.self))
         let model = StructuralProjectionFixture()
-        #expect(fields[0].editableField.value(in: model) as? String == "")
-        #expect(fields[1].editableField.value(in: model) as? Int == 0)
+        #expect(fields[0].metadata.value(in: model) as? String == "")
+        #expect(fields[1].metadata.value(in: model) as? Int == 0)
+        #expect(fields[2].metadata.access == .readOnly)
+        #expect(fields[2].metadata.mutableProperty() == nil)
     }
 }
 
@@ -52,7 +54,7 @@ extension SBJStructuralFieldProjectionTests {
         #expect(fields.map(\.name) == ["Child", "Children"])
         let nodes = StructuralParentFixture._sbjStructuralTraversalNodes(value: root, context: .root)
         #expect(nodes.count == 2)
-        #expect(StructuralChildFixture._sbjStructuralFieldCount == 1)
+        #expect(StructuralChildFixture._sbjStructuralFieldCount() == 1)
         #expect(StructuralParentFixture._sbjStructuralCollectIssues(value: root, path: [], registry: .init()).isEmpty)
     }
 }
@@ -71,8 +73,8 @@ extension SBJStructuralFieldProjectionTests {
     func structuralOnlyFieldConstructsModelAwareEditor() {
         let model = StructuralProjectionFixture()
         _ = SBJEditField(root: .constant(model), keyPath: \.first)
-        let descriptor = SBJEditorPropertyDescriptor<StructuralProjectionFixture>(name: "First", \.first)
-        #expect(ObjectIdentifier(descriptor.editableField.valueType) == ObjectIdentifier(String.self))
+        let descriptor = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, showsReadOnlyProperties: true)[0]
+        #expect(ObjectIdentifier(descriptor.metadata.valueType) == ObjectIdentifier(String.self))
     }
 }
 #endif
@@ -95,22 +97,14 @@ extension SBJStructuralFieldProjectionTests {
 
     @Test @MainActor
     func projectedStoredFieldsRetainStructuralIdentity() {
-        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self)
+        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, showsReadOnlyProperties: true)
         let locations = SBJEditorStructuralLocations.resolve(fields, of: StructuralProjectionFixture.self)
-        let schema = SBJStructuralTraversal.schema(of: StructuralProjectionFixture.self)
+        let schema = SBJStructuralTraversal.definition(of: StructuralProjectionFixture.self)
         #expect(locations.map(\.identity) == schema.map(\.identityComponent))
         #expect(locations.map(\.location) == schema.map(\.locationComponent))
     }
 
-    @Test @MainActor
-    func presentationOnlyFieldsDoNotClaimStructuralIdentity() {
-        let fields = [SBJEditorPropertyDescriptor<StructuralProjectionFixture>(
-            nonStructuralName: "Temporary", \.first
-        )]
-        let locations = SBJEditorStructuralLocations.resolve(fields, of: StructuralProjectionFixture.self)
-        #expect(locations[0].identity == "editor-property:Temporary")
-        #expect(locations[0].location == "editor-field:0")
-    }
+
 }
 
 @SBJStructure
@@ -131,7 +125,7 @@ extension SBJStructuralFieldProjectionTests {
         #expect(fields[0].traversalDisclosureMode == .autoOpen)
         #expect(fields[1].traversalDisclosureMode == .closed)
         #expect(PresentationProjectionFixture.sbjProperties.contains { $0.sourceName == "internalNote" })
-        #expect(fields[1].editableField.structuralMetadata?.hints.contains {
+        #expect(fields[1].metadata.hints.contains {
             if case .stringPresentation(let value) = $0 { return value.style == .multiline }
             return false
         } == true)
@@ -151,10 +145,11 @@ private struct ComputedProjectionFixture: Codable {
 
 extension SBJStructuralFieldProjectionTests {
     @Test @MainActor
-    func computedPresentationFieldsRemainOutsideSchema() {
+    func computedWritableFieldsShareSchema() {
         let fields = SBJStructuralFieldProjection.fields(of: ComputedProjectionFixture.self)
         #expect(fields.map(\.name) == ["Stored", "Computed"])
-        #expect(fields[0].editableField.structuralMetadata != nil)
-        #expect(fields[1].editableField.structuralMetadata == nil)
+        #expect(fields[0].metadata.storage == .stored)
+        #expect(fields[1].metadata.storage == .computed)
+        #expect(fields[1].metadata.access == .readWrite)
     }
 }

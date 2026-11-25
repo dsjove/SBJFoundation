@@ -16,8 +16,7 @@ private struct MutablePropertyModel: Codable {
 struct SBJMutablePropertyTests {
     @Test func generatedMutablePropertiesAreUIIndependentAndWritable() {
         let fields = MutablePropertyModel.sbjMutableProperties
-        #expect(fields.map(\.name) == ["Title", "Count"])
-        #expect(MutablePropertyModel.sbjPresentationProperties.map(\.name) == ["Summary"])
+        #expect(fields.map(\.name) == ["Title", "Count", "Summary"])
 
         var value = MutablePropertyModel(title: "Before", count: 2)
         let title = fields[0]
@@ -31,17 +30,15 @@ struct SBJMutablePropertyTests {
     @Test func generatedMutablePropertyCarriesStructuralMetadata() {
         let fields = MutablePropertyModel.sbjMutableProperties
 
-        #expect(fields[0].structuralMetadata?.sourceName == "title")
-        #expect(fields[1].structuralMetadata?.sourceName == "count")
-        let presentationFields = MutablePropertyModel.sbjPresentationProperties
-        #expect(presentationFields.count == 1)
-        #expect(presentationFields[0].structuralMetadata == nil)
-        #expect(fields[0].participatesInStructuralValidation)
-        #expect(!presentationFields[0].participatesInStructuralValidation)
-
+        #expect(fields[0].structuralMetadata.sourceName == "title")
+        #expect(fields[1].structuralMetadata.sourceName == "count")
+        let summary = fields[2]
+        #expect(summary.structuralMetadata.sourceName == "summary")
+        #expect(summary.structuralMetadata.storage == .computed)
+        #expect(summary.structuralMetadata.access == .readWrite)
         var value = MutablePropertyModel(title: "Before", count: 2)
-        #expect(presentationFields[0].value(in: value) as? String == "Before: 2")
-        #expect(presentationFields[0].setValue("After", in: &value))
+        #expect(summary.value(in: value) as? String == "Before: 2")
+        #expect(summary.setValue("After", in: &value))
         #expect(value.title == "After")
     }
 

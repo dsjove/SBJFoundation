@@ -36,6 +36,7 @@ let package = Package(
             ]),
         .testTarget(name: "SBJStructuredEditorTests", dependencies: [
                 "SBJStructuredEditor",
+                .product(name: "SBJStructuredReport", package: "SBJStructuredReport"),
                 .product(name: "SBJStructure", package: "SBJStructure"),
                 .product(name: "SBJUIVocabulary", package: "SBJUIVocabulary"),
             ]),

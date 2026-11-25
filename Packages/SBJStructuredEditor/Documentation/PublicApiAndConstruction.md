@@ -12,6 +12,10 @@
 
 SwiftUI view types and their initializers are public where hosting clients must construct them. Helpers located outside `Editor/Public` may still need public visibility, for example the extensions on `Encodable`, `Decodable`, and `Set`; directory placement alone is not a visibility contract.
 
+## Property visibility
+
+`SBJEditorOptions(showsReadOnlyProperties: false)` is the default. Both stored and computed properties remain discoverable in Structure, but the automatic editor projects writable properties only. Set the option to `true` to include read-only rows. The policy is inherited by nested objects and collection payloads, applies to text search, and does not alter structural validation or Report definitions. Host views can pass an updated options value to implement a future toggle.
+
 ## Construction precedence
 
 - `SBJEditorRegistry.create(T.self)` first checks an exact-type registered creator, then delegates to `SBJDefaultValue.value(for:)`.
@@ -26,7 +30,7 @@ SwiftUI view types and their initializers are public where hosting clients must 
 1. **Preserve the registry entry points.** Each has a distinct purpose and there is no proven redundancy. App-defined creators remain opt-in; basic defaults belong in DataDefinition.
 2. **Preserve public visibility for view and registry configuration APIs.** With no app build in scope, narrowing access would be speculative. The internal registration wrappers and lookup methods are already non-public.
 3. **Do not move `SBJEditorValueTraversal` into DataDefinition.** Its identity and mutation work use editor binding context, despite leveraging DataDefinition collection metadata.
-4. **Codable snapshot helpers:** `sbjCodableCopy()` and `sbjEncodedIsDifferent(from:)` now live in DataDefinition; editor continues using the same public APIs. Their regression tests moved with them.
+4. **Comparison baseline:** the editor retains a Swift value snapshot, with no Codable requirement. Mutable shared reference state requires an application-owned independent snapshot.
 5. **Set replacement:** `sbjReplace(_:with:)` lives in DataDefinition and retains collision-safe semantics, preserving the editor call sites.
 6. **`SBJCodableEditor` wrapper:** Its `title` parameter is accepted but unused. This is a candidate for public API simplification, but removing it is source-breaking and should be explicitly approved.
 

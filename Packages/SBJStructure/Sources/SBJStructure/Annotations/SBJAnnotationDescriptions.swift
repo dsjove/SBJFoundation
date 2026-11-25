@@ -38,7 +38,9 @@ private enum SBJAnnotationText {
 extension SBJStringRules: CustomStringConvertible {
     public var description: String { SBJAnnotationText.join([
         SBJAnnotationText.item("Minimum length", minLength), SBJAnnotationText.item("Maximum length", maxLength),
-        trimming == .none ? nil : "Trim \(SBJAnnotationText.words(trimming.rawValue))"
+        trimming == .none ? nil : "Trim \(SBJAnnotationText.words(trimming.rawValue))",
+        allowedValues.map { "Allowed values: " + $0.joined(separator: ", ") },
+        pattern.map { "Pattern: " + $0 }
     ].compactMap { $0 }) }
 }
 extension SBJDataRules: CustomStringConvertible {
@@ -79,14 +81,20 @@ extension SBJDateRules: CustomStringConvertible {
     }
 }
 extension SBJIntegerRules: CustomStringConvertible {
-    public var description: String { SBJAnnotationText.join([
-        SBJAnnotationText.range("Range", range), SBJAnnotationText.item("Minimum", min)
-    ].compactMap { $0 }) }
+    public var description: String {
+        if let min, let max, min <= max { return "Range \(min)–\(max)" }
+        return SBJAnnotationText.join([
+            SBJAnnotationText.item("Minimum", min), SBJAnnotationText.item("Maximum", max)
+        ].compactMap { $0 })
+    }
 }
 extension SBJNumberRules: CustomStringConvertible {
-    public var description: String { SBJAnnotationText.join([
-        SBJAnnotationText.range("Range", range), min.map { "Minimum \($0)" }
-    ].compactMap { $0 }) }
+    public var description: String {
+        if let min, let max, min <= max { return "Range \(min)–\(max)" }
+        return SBJAnnotationText.join([
+            min.map { "Minimum \($0)" }, max.map { "Maximum \($0)" }
+        ].compactMap { $0 })
+    }
 }
 extension SBJStringPresentationValue: CustomStringConvertible {
     public var description: String { SBJAnnotationText.join([
@@ -145,6 +153,7 @@ extension SBJPropertyConstraint: CustomStringConvertible {
         case .unitMutable(let v): return v ? "Unit can change" : "Unit cannot change"
         case .defaultUnit(let v): return "Default unit · \(SBJAnnotationText.words(String(describing: v)))"
         case .requiredUnit(let v): return "Required unit · \(SBJAnnotationText.words(String(describing: v)))"
+        case .unitMinimum(let v): return "Measurement minimum · \(v)"
         case .unitSystem(let v): return "Unit system · \(SBJAnnotationText.words(String(describing: v)))"
         case .arrayRules(let v): return "Array · \(v)"
         case .setRules(let v): return "Set · \(v)"

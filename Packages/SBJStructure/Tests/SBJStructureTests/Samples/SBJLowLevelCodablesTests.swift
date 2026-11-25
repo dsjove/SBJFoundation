@@ -10,7 +10,7 @@ struct SBJLowLevelCodablesTests {
         let encoded = try JSONEncoder().encode(value)
         let decoded = try JSONDecoder().decode(UnitValue<LengthUnit>.self, from: encoded)
         #expect(decoded == value)
-        #expect(UnitValue<LengthUnit>.sbjProperties.map(\.sourceName) == ["value", "unit"])
+        #expect(UnitValue<LengthUnit>.sbjProperties.map(\.sourceName) == ["value", "unit", "presentedValue"])
     }
 
     @Test func fontAndColorKeepDefinitionCapabilities() throws {

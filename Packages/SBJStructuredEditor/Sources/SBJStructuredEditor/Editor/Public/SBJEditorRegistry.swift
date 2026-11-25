@@ -120,7 +120,11 @@ public struct SBJEditorRegistry {
         return registration.makeBinding(root)
     }
 
-    func createArrayElement<Value>(_ type: Value.Type, existing: [Value]) -> Value? {
+    func createArrayElement<Value>(_ type: Value.Type, existing: [Value],
+                                   constraints: SBJConstraintProjection = .init()) -> Value? {
+        if let choices = constraints.allowedStrings, type == String.self {
+            return choices.first.flatMap { $0 as? Value }
+        }
         if type is any SBJCollectionElementCreatable.Type {
             // A nil result is intentional (e.g. every enum case is already used).
             // Do not fall back to default construction and create a duplicate.
@@ -132,7 +136,11 @@ public struct SBJEditorRegistry {
     /// Creates a set member that is not already present.
     /// Finite CaseIterable domains use their declared ordering; other types
     /// retain exact-type registration and default creation behavior.
-    func createSetElement<Element: Hashable>(_ type: Element.Type, existing: Set<Element>) -> Element? {
+    func createSetElement<Element: Hashable>(_ type: Element.Type, existing: Set<Element>,
+                                            constraints: SBJConstraintProjection = .init()) -> Element? {
+        if let choices = constraints.allowedStrings, type == String.self {
+            return choices.compactMap { $0 as? Element }.first { !existing.contains($0) }
+        }
         if type is any SBJCollectionElementCreatable.Type {
             guard let candidate: Element = SBJCollectionElementCreation.create(existing: Array(existing)),
                   !existing.contains(candidate) else { return nil }
@@ -148,20 +156,35 @@ public struct SBJEditorRegistry {
     /// Creates a dictionary entry with an unused key and a constructible value.
     /// Exhausted CaseIterable key domains must not fall through to defaults.
     func createDictionaryEntry<Key: Hashable, Value>(
-        key: Key.Type, value: Value.Type, existing: [Key: Value]
+        key: Key.Type, value: Value.Type, existing: [Key: Value],
+        keyConstraints: SBJConstraintProjection = .init(),
+        valueConstraints: SBJConstraintProjection = .init()
     ) -> (Key, Value)? {
         let candidate: Key?
-        if let cases = caseIterableOptions(for: key) {
+        if let choices = keyConstraints.allowedStrings, key == String.self {
+            candidate = choices.compactMap { $0 as? Key }.first { !existing.keys.contains($0) }
+        } else if let cases = caseIterableOptions(for: key) {
             candidate = cases.first { existing[$0] == nil }
         } else {
             candidate = create(key)
         }
-        guard let candidate, existing[candidate] == nil,
-              let newValue = create(value) else { return nil }
+        guard let candidate, !existing.keys.contains(candidate) else { return nil }
+        // A finite string domain can supply a valid initial value. Other types
+        // retain the registry's construction policy; invalid defaults can be repaired.
+        let newValue: Value?
+        if let choices = valueConstraints.allowedStrings, value == String.self {
+            newValue = choices.first.flatMap { $0 as? Value }
+        } else {
+            newValue = create(value)
+        }
+        guard let newValue else { return nil }
         return (candidate, newValue)
     }
 
-    func create<Value>(_ type: Value.Type) -> Value? {
+    func create<Value>(_ type: Value.Type, constraints: SBJConstraintProjection = .init()) -> Value? {
+        if let choices = constraints.allowedStrings, type == String.self {
+            return choices.first.flatMap { $0 as? Value }
+        }
         if let registration = creators[ObjectIdentifier(type)] as? SBJCreatorRegistration<Value> {
             return registration.create()
         }

@@ -42,14 +42,14 @@ private struct StructuralOverride: Codable {
 }
 
 struct SBJStructuralCompareTests {
-    @Test func ordinaryEquatableValueUsesItsEquality() {
+    @Test func ordinaryEquatableValueRequiresExplicitStructuralComparison() {
         let lhs = EquatableLeaf(identity: 1, payload: "left")
         let rhs = EquatableLeaf(identity: 1, payload: "right")
-        #expect(SBJStructuralCompare.equals(lhs, rhs))
+        #expect(!SBJStructuralCompare.equals(lhs, rhs))
     }
 
-    @Test func opaqueCodableFallsBackToEncodedComparison() {
-        #expect(SBJStructuralCompare.equals(EncodedLeaf(value: "same"), EncodedLeaf(value: "same")))
+    @Test func opaqueCodableDoesNotFallBackToEncoding() {
+        #expect(!SBJStructuralCompare.equals(EncodedLeaf(value: "same"), EncodedLeaf(value: "same")))
         #expect(!SBJStructuralCompare.equals(EncodedLeaf(value: "left"), EncodedLeaf(value: "right")))
     }
 
@@ -69,7 +69,7 @@ struct SBJStructuralCompareTests {
         #expect(!SBJStructuralCompare.equals(lhs, rhs))
     }
 
-    @Test func generatedContainerComposesFieldStrategies() {
+    @Test func generatedContainerFailsClosedForUnsupportedFieldTypes() {
         let lhs = StructuralContainer(
             equatableLeaf: .init(identity: 1, payload: "left"),
             encodedLeaf: .init(value: "same"),
@@ -77,7 +77,7 @@ struct SBJStructuralCompareTests {
         )
         var rhs = lhs
         rhs.equatableLeaf.payload = "ignored by Equatable"
-        #expect(lhs.sbjStructuralEquals(rhs))
+        #expect(!lhs.sbjStructuralEquals(rhs))
         rhs.encodedLeaf.value = "changed"
         #expect(!lhs.sbjStructuralEquals(rhs))
     }

@@ -14,7 +14,9 @@ private struct IdentityBased: Equatable, Encodable, SBJStructuralComparable {
     let identity: Int
     let payload: String
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.identity == rhs.identity }
-    func sbjStructuralEquals(_ other: Self) -> Bool { payload == other.payload }
+    func sbjStructuralEquals(_ other: Self) -> Bool {
+        identity == other.identity && SBJStructuralCompare.equals(payload, other.payload)
+    }
 }
 
 struct DomainMeaningTests {

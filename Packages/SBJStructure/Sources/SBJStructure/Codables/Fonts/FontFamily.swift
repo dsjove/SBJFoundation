@@ -1,4 +1,5 @@
 import Foundation
+import SBJLocalization
 
 /// A normalized font-family name. A nil `FontFamily?` represents the system font.
 ///
@@ -19,4 +20,8 @@ public struct FontFamily: Hashable, Sendable, Codable, ExpressibleByStringLitera
 
 	public var description: String { name }
 	public var debugDescription: String { name.debugDescription }
+}
+
+extension FontFamily: SBJStructuralComparable {
+    public func sbjStructuralEquals(_ other: Self) -> Bool { name.sbjStructuralEquals(other.name) }
 }

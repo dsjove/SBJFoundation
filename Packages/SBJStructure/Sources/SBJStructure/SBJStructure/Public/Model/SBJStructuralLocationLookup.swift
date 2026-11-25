@@ -13,7 +13,7 @@ public struct SBJStructuralLocation: Equatable, Sendable {
 }
 
 public enum SBJStructuralLocationLookup {
-    /// Returns the declared location of a writable stored property, if present.
+    /// Returns the declared location of a writable property, if present.
     public static func resolve<Root: SBJMutableStructure>(
         sourceName: String, in type: Root.Type
     ) -> SBJStructuralLocation? {
@@ -31,7 +31,7 @@ public enum SBJStructuralLocationLookup {
         })
     }
 
-    /// Locations for every declared stored property, including immutable ones.
+    /// Locations for every discoverable property, including immutable ones.
     /// Read-only consumers should use this rather than the writable schema.
     public static func definitionLocations<Root: SBJStructured>(
         of type: Root.Type

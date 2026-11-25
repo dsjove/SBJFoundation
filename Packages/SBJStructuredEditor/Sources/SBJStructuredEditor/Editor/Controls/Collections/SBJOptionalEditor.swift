@@ -4,13 +4,14 @@ import SBJUIVocabulary
 import Foundation
 import SwiftUI
 
-struct SBJOptionalEditor<Wrapped: Codable>: View {
+struct SBJOptionalEditor<Wrapped>: View {
     private var sbjFormatting: SBJEditorFormattingOptions { presentationModel.formattingOptions }
     let label: String
     @Binding var value: Wrapped?
     let originalValue: Wrapped??
     let registry: SBJEditorRegistry
     let textStyle: SBJStringStyle?
+    var constraints: SBJConstraintProjection = .init()
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let dateRange: ClosedRange<Date>?
@@ -38,7 +39,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
     private var wrappedNeedsDisclosure: Bool {
         if Wrapped.self is any SBJTypedEditorValue.Type { return false }
         if let structural = Wrapped.self as? any SBJMutableStructure.Type {
-            return structural._sbjStructuralFieldCount > 1
+            return structural._sbjStructuralFieldCount(showsReadOnlyProperties: context.branch.showsReadOnlyProperties) > 1
         }
         return false
     }
@@ -89,6 +90,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                         label: label, value: unwrapped,
                         originalValue: originalWrapped.map { SBJEditorOriginalValue($0) },
                         registry: registry, textStyle: textStyle,
+                        constraints: constraints,
                         integerRange: integerRange, numberRange: numberRange,
                         dateRange: dateRange, colorSupportsAlpha: colorSupportsAlpha,
                         unitEditor: unitEditor, unitSystem: unitSystem,
@@ -103,7 +105,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
 
             } else if !(Wrapped.self is any SBJTypedEditorValue.Type),
                       let structural = Wrapped.self as? any SBJMutableStructure.Type,
-                      structural._sbjStructuralFieldCount > 1 {
+                      structural._sbjStructuralFieldCount(showsReadOnlyProperties: context.branch.showsReadOnlyProperties) > 1 {
                 SBJEditorDisclosureHeader(
                     label,
                     context: context,
@@ -127,6 +129,7 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
                         originalValue: originalWrapped.map { SBJEditorOriginalValue($0) },
                         registry: registry,
                         textStyle: textStyle,
+                        constraints: constraints,
                         integerRange: integerRange,
                         numberRange: numberRange,
                         dateRange: dateRange,
@@ -183,13 +186,13 @@ struct SBJOptionalEditor<Wrapped: Codable>: View {
             SBJStructuredEditorNomenclature.setOptional,
             context: label
         ) {
-            value = registry.create(Wrapped.self)
+            value = registry.create(Wrapped.self, constraints: constraints)
             if value != nil {
                 presentationModel.open(context.itemIdentifier)
                 pendingFocus = SBJEditorFocusRequest()
             }
         }
-        .disabled(registry.create(Wrapped.self) == nil)
+        .disabled(registry.create(Wrapped.self, constraints: constraints) == nil)
         .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
     }
 }

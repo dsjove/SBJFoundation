@@ -7,17 +7,19 @@ import SwiftUI
 /// This is the sole projection for mutable structural object models.
 @MainActor
 extension SBJMutableStructure {
-    private static var structuralFields: [SBJEditorPropertyDescriptor<Self>] {
-        SBJStructuralFieldProjection.fields(of: Self.self)
+    private static func structuralFields(showsReadOnlyProperties: Bool = false) -> [SBJEditorPropertyDescriptor<Self>] {
+        SBJStructuralFieldProjection.fields(of: Self.self, showsReadOnlyProperties: showsReadOnlyProperties)
     }
 
-    static var _sbjStructuralFieldCount: Int { structuralFields.count }
+    static func _sbjStructuralFieldCount(showsReadOnlyProperties: Bool = false) -> Int {
+        structuralFields(showsReadOnlyProperties: showsReadOnlyProperties).count
+    }
 
     static func _sbjStructuralTraversalNodes(
         value: Any, context: SBJEditTraversalContext
     ) -> [SBJEditorTraversalNode] {
         guard let root = value as? Self else { return [] }
-        let fields = structuralFields
+        let fields = structuralFields(showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
         let locations = SBJEditorStructuralLocations.resolve(fields, of: Self.self)
         return fields.enumerated().map { offset, field in
             let childContext = structuralContext(for: field, location: locations[offset], parent: context, bound: false)
@@ -31,7 +33,7 @@ extension SBJMutableStructure {
     ) -> [SBJEditorTraversalNode] {
         let root: Binding<Self> = binding.binding(as: Self.self)
         let original = originalValue as? Self
-        let fields = structuralFields
+        let fields = structuralFields(showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
         let locations = SBJEditorStructuralLocations.resolve(fields, of: Self.self)
         return fields.enumerated().map { offset, field in
             let childContext = structuralContext(for: field, location: locations[offset], parent: context, bound: true)
@@ -57,7 +59,7 @@ extension SBJMutableStructure {
         value: Any, path: [String], registry: SBJEditorRegistry
     ) -> [SBJEditorCapabilityIssue] {
         guard let value = value as? Self else { return [] }
-        return structuralFields.flatMap { $0.issues(root: value, path: path, registry: registry) }
+        return structuralFields().flatMap { $0.issues(root: value, path: path, registry: registry) }
     }
 
     static func _sbjStructuralMakeEditor(
@@ -69,7 +71,7 @@ extension SBJMutableStructure {
         headerOnly: Bool
     ) -> AnyView {
         AnyView(SBJObjectEditor(
-            fields: structuralFields,
+            fields: structuralFields(showsReadOnlyProperties: context.branch.showsReadOnlyProperties),
             title: label, value: binding.binding(as: Self.self),
             originalValue: originalValue.map { $0.value(as: Self.self) },
             registry: registry, itemActions: itemActions, focusRequest: focusRequest,

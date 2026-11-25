@@ -28,7 +28,7 @@ struct SBJStructurePlugin: CompilerPlugin {
         SBJDictionaryPresentationMacro.self,
         SBJSetPresentationMacro.self,
         SBJFieldPresentationMacro.self,
-        SBJComputedMacro.self,
+        SBJExcludeMacro.self,
         SBJStringPresentationMacro.self,
 
     ]

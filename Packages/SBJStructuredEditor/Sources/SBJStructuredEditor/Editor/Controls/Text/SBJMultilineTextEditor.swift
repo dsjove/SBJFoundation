@@ -12,6 +12,7 @@ struct SBJMultilineTextEditor: View {
 
     var rowStatus: SBJEditorRowStatus = .init()
     var presentation: SBJStringPresentationValue = .init()
+    var invalid: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -21,6 +22,7 @@ struct SBJMultilineTextEditor: View {
                 .sbjMultilineField(isFocused: $isFocused, minHeight: 84)
                 .sbjTextInput(presentation)
                 .sbjEditorAccessibleControl(label: label, status: rowStatus)
+                .invalidDecoration(invalid)
         }
         .onAppear(perform: claimFocus)
     }

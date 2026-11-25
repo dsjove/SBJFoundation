@@ -62,8 +62,7 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
 		.sheet(isPresented: $model.isShowingStructure) {
 			NavigationStack {
 				SBJDefinitionReportView(
-					catalog: SBJDefinitionCatalog(Value.self),
-					title: "Character Definition"
+					catalog: SBJDefinitionCatalog(Value.self)
 				)
 				.sbjInlineNavigationTitle()
 				.toolbar {

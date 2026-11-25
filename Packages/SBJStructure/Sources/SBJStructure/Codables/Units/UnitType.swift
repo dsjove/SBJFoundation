@@ -6,7 +6,7 @@ import Foundation
 /// Applications may define their own unit enums (for example game rounds) by
 /// conforming to this protocol. Unit identity and conversion belong here;
 /// editing increments and domain-specific preferred units do not.
-public protocol UnitType: Codable, Sendable, CaseIterable, Hashable, Identifiable, SBJTextPresentable {
+public protocol UnitType: Codable, Sendable, CaseIterable, Hashable, Identifiable, SBJTextPresentable, SBJStructuralComparable {
     associatedtype FoundationUnit: Dimension
 
     var foundationUnit: FoundationUnit { get }
