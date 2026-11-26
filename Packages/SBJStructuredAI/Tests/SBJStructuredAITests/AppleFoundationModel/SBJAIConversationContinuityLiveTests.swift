@@ -1,4 +1,4 @@
-#if DEBUG && canImport(FoundationModels) && canImport(SwiftUI) && !os(watchOS) && !os(tvOS)
+#if DEBUG && canImport(FoundationModels) && !os(watchOS) && !os(tvOS)
 import Foundation
 import Testing
 @testable import SBJStructuredAI
@@ -6,10 +6,10 @@ import Testing
 @Suite("Native conversation continuity (opt-in)", .serialized)
 @MainActor
 struct SBJAIConversationContinuityLiveTests {
-	@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SBJ_RUN_LIVE_CONTINUITY_TESTS"] == "1"))
     func remembersEarlierTurn() async throws {
-        try #require(SBJAIAssistantAvailability.state == .ready)
+        try #require(SBJAIAvailability.state == .ready)
         let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: {
             .init(id: "test", revision: 0, model: 0, allowsEditing: false)
         })
@@ -36,7 +36,7 @@ struct SBJAIConversationContinuityLiveTests {
         #expect(coordinator.messages.isEmpty)
     }
 
-	@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     private func waitForResponse(_ coordinator: SBJAIAssistantCoordinator<Int>) async throws {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: .seconds(90))

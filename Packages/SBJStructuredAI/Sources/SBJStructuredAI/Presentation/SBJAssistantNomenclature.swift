@@ -3,10 +3,10 @@ import SBJLocalization
 /// Reusable Assistant presentation terminology, independent of any host document.
 /// Stable keys follow the same SBJNomenclatureSet pattern as other SBJFoundation editors.
 /// App-specific UI localization and overrides are intentionally deferred.
-public enum SBJAIAssistantNomenclature: SBJNomenclatureSet {
+public enum SBJAssistantNomenclature: SBJNomenclatureSet {
     public static let all: [String: SBJNomenclature] = [
-        "emptyTitle": .init(title: "Ask the Assistant", summary: "Chat with the on-device assistant.", symbol: .system("sparkles")),
-        "emptyDescription": .init(title: "Chat with the on-device assistant. Character data is not connected yet.", summary: "Chat with the on-device assistant."),
+        "emptyTitle": .init(title: "Ask the Assistant", summary: "Chat with the assistant.", symbol: .system("sparkles")),
+        "emptyDescription": .init(title: "Ask a question to start the conversation.", summary: "Chat with the assistant."),
         "prompt": .init(title: "Message"),
         "send": .init(title: "Send", symbol: .system("arrow.up.circle.fill")),
         "stop": .init(title: "Stop"),
@@ -21,7 +21,7 @@ public enum SBJAIAssistantNomenclature: SBJNomenclatureSet {
         "shareSubject": .init(title: "Assistant conversation"),
         "shareMessage": .init(title: "Conversation and diagnostics exported from SBJStructuredAI"),
         "shareTranscript": .init(title: "Share transcript", symbol: .system("square.and.arrow.up"), accessibilityLabel: "Share conversation and diagnostics"),
-        "foundationModelsDiagnostics": .init(title: "Foundation Models diagnostics", symbol: .system("stethoscope")),
+        "backendDiagnostics": .init(title: "Assistant diagnostics", symbol: .system("stethoscope")),
         "thinking": .init(title: "Thinking…"),
         "stopDictation": .init(title: "Stop dictation", symbol: .system("stop.circle.fill")),
         "startDictation": .init(title: "Start dictation", symbol: .system("mic")),
