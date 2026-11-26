@@ -1,4 +1,5 @@
 #if canImport(FoundationModels) && !os(watchOS) && !os(tvOS)
+import FoundationModels
 import Testing
 @testable import SBJStructuredAI
 
@@ -6,9 +7,52 @@ import Testing
 @MainActor
 struct SBJAIAssistantCoordinatorTests {
     @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @Test func printInstructionsWithoutNativeSession() throws {
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: {
+            .init(id: "test", revision: 1, model: 42, allowsEditing: false)
+        }, domainInstructions: "Test document.")
+        let context = try SBJSemanticReadSnapshot(instance: 42)
+        coordinator.feedback.isEnabled = true
+        #expect(coordinator.canPrintInstructions)
+        coordinator.printInstructions()
+        #expect(coordinator.messages.count == 1)
+        #expect(coordinator.messages.last?.speaker == .diagnostic)
+        let expected = coordinator.instructions + "\n\n" + context.structuralDescription(usesTemplates: true)
+        #expect(coordinator.messages.last?.text == expected)
+        #expect(coordinator.exportText.contains(expected))
+        #expect(coordinator.sessionInstructions == nil)
+        #expect(coordinator.frameworkTranscript == nil)
+        #expect(coordinator.feedback.events.isEmpty)
+        #expect(!coordinator.isResponding)
+    }
+
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @Test func instructionsStartWithDomain() {
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, domainInstructions: "The business domain is Role Playing Game Character.")
+        #expect(coordinator.instructions.hasPrefix("The business domain is Role Playing Game Character.\n\n"))
+        #expect(coordinator.instructions.contains("readValue"))
+        #expect(!coordinator.instructions.contains("nextOffset"))
+    }
+
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @Test func rolloverRetainsTwoCompletedTurns() {
+        let initial = Transcript.Entry.instructions(.init(segments: [], toolDefinitions: []))
+        let first = Transcript.Entry.prompt(.init(segments: []))
+        let second = Transcript.Entry.prompt(.init(segments: []))
+        let third = Transcript.Entry.prompt(.init(segments: []))
+        let failed = Transcript.Entry.prompt(.init(segments: []))
+        let answer1 = Transcript.Entry.response(.init(segments: []))
+        let answer2 = Transcript.Entry.response(.init(segments: []))
+        let answer3 = Transcript.Entry.response(.init(segments: []))
+        let original = Transcript(entries: [initial, first, answer1, second, answer2, third, answer3, failed])
+        let condensed = SBJAIAssistantCoordinator<Int>.condensedTranscript(original)
+        #expect(Array(condensed).map(\.id) == [initial, second, answer2, third, answer3].map(\.id))
+    }
+
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test("Initial and reset lifecycle requires no inference")
     func initialSessionStateRequiresNoInference() {
-        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil })
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, domainInstructions: "Test document.")
         #expect(!coordinator.isActive)
         #expect(!coordinator.isResponding)
         #expect(coordinator.frameworkTranscript == nil)
@@ -31,7 +75,7 @@ struct SBJAIAssistantCoordinatorTests {
         var persistCalls = 0
         let coordinator = SBJAIAssistantCoordinator<Root>(snapshot: {
             .init(id: "test", revision: 1, model: .init(name: "Test"), allowsEditing: true)
-        }, persist: { _, _, _, _ in persistCalls += 1 })
+        }, persist: { _, _, _, _ in persistCalls += 1 }, domainInstructions: "Test document.")
         coordinator.activate()
         coordinator.approve()
         coordinator.reject()
@@ -53,7 +97,7 @@ struct SBJAIAssistantCoordinatorTests {
     @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test("Prewarm does not activate the coordinator or create messages")
     func prewarmIsConversationNeutral() {
-        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil })
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, domainInstructions: "Test document.")
         // No real inference, and no model loading in routine unit tests when ready.
         guard SBJAIAvailability.state != .ready else { return }
         coordinator.prewarm()
@@ -67,7 +111,7 @@ struct SBJAIAssistantCoordinatorTests {
     @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test("An empty draft or missing document cannot start a turn")
     func submissionGuards() {
-        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, persist: { _, _, _, _ in })
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, persist: { _, _, _, _ in }, domainInstructions: "Test document.")
         coordinator.activate()
         coordinator.submit("   ")
         coordinator.submit("Hello")

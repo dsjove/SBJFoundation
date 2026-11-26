@@ -23,7 +23,7 @@ public struct SBJCollectionTraversalElement<Element> {
 /// Consumers project these entries into editor rows, diagnostics, or visitors.
 public enum SBJCollectionTraversal {
     public static func array<Element>(
-        _ values: [Element], itemTitleKey: String? = nil, itemIdentifierKey: String? = nil
+        _ values: [Element], itemTitleKey: AnyKeyPath? = nil, itemIdentifierKey: String? = nil
     ) -> [SBJCollectionTraversalElement<Element>] {
         values.enumerated().map { index, element in
             let configured = SBJCollectionItemIdentification.stableIdentifier(
@@ -79,7 +79,7 @@ public enum SBJCollectionTraversal {
     }
 
     public static func set<Element: Hashable>(
-        _ values: Set<Element>, itemTitleKey: String? = nil
+        _ values: Set<Element>, itemTitleKey: AnyKeyPath? = nil
     ) -> [SBJCollectionTraversalElement<Element>] {
         SBJCollectionOrdering.sorted(values).map { element in
             let token = "item:\(String(reflecting: type(of: element))):\(String(reflecting: element))"
@@ -90,11 +90,13 @@ public enum SBJCollectionTraversal {
     }
 
     public static func dictionary<Key: Hashable, Value>(
-        _ values: [Key: Value]
+        _ values: [Key: Value], itemTitleKey: AnyKeyPath? = nil
     ) -> [SBJCollectionTraversalElement<(key: Key, value: Value)>] {
         SBJCollectionOrdering.sortedEntries(values).map { key, value in
             let token = "key:\(String(reflecting: key))"
-            return .init(value: (key: key, value: value), title: String(describing: key),
+            return .init(value: (key: key, value: value), title: SBJCollectionItemIdentification.configuredTitle(for: value, itemTitleKey: itemTitleKey)
+                             ?? SBJCollectionItemIdentification.declaredName(for: value)
+                             ?? String(describing: key),
                          identifier: token, location: token)
         }
     }

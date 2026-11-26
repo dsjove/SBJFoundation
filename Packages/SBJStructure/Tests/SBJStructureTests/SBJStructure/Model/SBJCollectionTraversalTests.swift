@@ -8,8 +8,8 @@ struct SBJCollectionTraversalTests {
     @Test("array produces stable identity independently of position")
     func arrayIdentity() {
         let first = [Item(id: 42, title: "One"), Item(id: 7, title: "Two")]
-        let before = SBJCollectionTraversal.array(first, itemTitleKey: "title", itemIdentifierKey: "id")
-        let after = SBJCollectionTraversal.array(first.reversed(), itemTitleKey: "title", itemIdentifierKey: "id")
+        let before = SBJCollectionTraversal.array(first, itemTitleKey: \Item.title, itemIdentifierKey: "id")
+        let after = SBJCollectionTraversal.array(first.reversed(), itemTitleKey: \Item.title, itemIdentifierKey: "id")
         #expect(before[0].identifier == after[1].identifier)
         #expect(before[0].location != after[1].location)
         #expect(before[0].title == "One")

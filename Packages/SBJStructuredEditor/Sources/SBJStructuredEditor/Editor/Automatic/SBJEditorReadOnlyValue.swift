@@ -14,6 +14,7 @@ enum SBJEditorReadOnlyValue {
             guard let child = container.sbjStructuralChildren(itemTitleKey: nil, itemIdentifierKey: nil).first else { return "—" }
             return text(child.value, hints: hints, constraints: constraints)
         }
+        if let atomic = value as? any SBJAtomicStructuralValue { return atomic.presentedValue }
         if value is any SBJStructuralSearchAtomic {
             return SBJValueDescription.describe(value) ?? String(describing: value)
         }
@@ -25,6 +26,9 @@ enum SBJEditorReadOnlyValue {
         )
         if !descendants.isEmpty {
             let description = descendants.compactMap { occurrence -> String? in
+                if let atomic = occurrence.value as? any SBJAtomicStructuralValue {
+                    return occurrence.displayPath.joined(separator: " • ") + ": " + atomic.presentedValue
+                }
                 guard occurrence.value is any SBJStructuralSearchAtomic,
                       let description = SBJValueDescription.describe(occurrence.value) else { return nil }
                 return occurrence.displayPath.joined(separator: " • ") + ": " + description

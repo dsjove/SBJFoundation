@@ -24,6 +24,7 @@ public struct TagCodableValue<ID: Codable & Comparable & Hashable>: Tagging, Cod
 		self.init(id: tag.id, name: tag.name, color: tag.color)
 	}
 
+	@SBJExclude
 	public var presentedValue: String { name }
 
 }

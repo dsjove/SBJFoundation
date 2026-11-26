@@ -36,3 +36,35 @@ extension Set: SBJStructuralContainerType {
 extension Dictionary: SBJStructuralContainerType {
     fileprivate static var sbjContainer: SBJStructuralType.Container { .dictionary(key: Key.self, value: Value.self) }
 }
+
+/// Runtime presence, separate from content and structural validity.
+public enum SBJOptionalPresence: Equatable {
+    case notOptional, notSet, set
+
+    public var count: Int? {
+        switch self {
+        case .notOptional: nil
+        case .notSet: 0
+        case .set: 1
+        }
+    }
+}
+
+private protocol SBJOptionalPresenceProviding {
+    var sbjOptionalPresence: SBJOptionalPresence { get }
+}
+
+extension Optional: SBJOptionalPresenceProviding {
+    fileprivate var sbjOptionalPresence: SBJOptionalPresence {
+        switch self {
+        case .none: .notSet
+        case .some: .set
+        }
+    }
+}
+
+public extension SBJStructuralType {
+    static func optionalPresence(of value: Any) -> SBJOptionalPresence {
+        (value as? any SBJOptionalPresenceProviding)?.sbjOptionalPresence ?? .notOptional
+    }
+}

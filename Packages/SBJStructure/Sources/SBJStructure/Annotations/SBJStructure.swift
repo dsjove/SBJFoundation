@@ -1,6 +1,7 @@
 /// Generates structural metadata for accessible stored and computed properties.
 /// Codable is independent. Stored-state comparison includes private and excluded state.
 /// No storage, property wrappers or accessors are generated.
+/// Atomic types retain their full structural definition but are presented as one business value.
 @attached(member,
     names:
         // Business
@@ -23,9 +24,9 @@
             SBJMutableStructure,
             SBJDefaultValueCreatable,
         // Swift Code Encoder Enum / payload-enum marker
-            SBJEnumCaseIdentifiable, SBJStructuredEnum, SBJStructuralComparable)
+            SBJEnumCaseIdentifiable, SBJStructuredEnum, SBJStructuralComparable, SBJAtomicStructuralValue)
 
-public macro SBJStructure() = #externalMacro(
+public macro SBJStructure(atomic: Bool = false) = #externalMacro(
     module: "SBJStructureMacros",
     type: "SBJStructureMacro"
 )

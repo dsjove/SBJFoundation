@@ -13,7 +13,7 @@ struct SBJSetEditor<Element: Hashable>: View {
     var constraints: SBJConstraintProjection = .init()
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
-    let itemTitleKey: String?
+    let itemTitleKey: AnyKeyPath?
     let itemActions: SBJEditorItemActions?
     let optionalControl: AnyView?
     let focusRequest: SBJEditorFocusRequest?

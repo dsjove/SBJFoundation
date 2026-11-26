@@ -3,6 +3,7 @@ import SBJStructure
 
 @SBJStructureExtension
 extension PhotoRotation: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String { "Rotation \(degrees)°" }
 	public static let quarterTurnsNomenclature = #SBJAutoNomenclature(summary: "Number of 90-degree clockwise rotations, normalized to zero through three.",
 		details: "Quarter-turn controls may rotate in either direction; the stored representation remains normalized modulo four.",

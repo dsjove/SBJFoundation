@@ -68,6 +68,50 @@ public enum SBJStructuralTraversal {
         for property in definition(of: type) { try visit(property) }
     }
 
+    /// Immediate declared child types, in declaration order. Collection children
+    /// describe types, never current members. Associated enums expose every case's
+    /// payload types, independently of the current case. Scalar leaves have no children.
+    public static func childTypes(of type: Any.Type) -> [Any.Type] {
+        if let container = SBJStructuralType.container(of: type) {
+            return container.childTypes
+        }
+        if let associated = type as? any SBJStructuredEnum.Type {
+            return payloadTypes(of: associated)
+        }
+        if let structure = type as? any SBJStructured.Type {
+            return propertyTypes(of: structure)
+        }
+        return []
+    }
+
+    /// All reachable declared types in depth-first declaration order. Each type
+    /// appears once, including container wrappers and scalar leaves. Repeated
+    /// references and recursive definitions terminate by metatype identity.
+    public static func reachableTypes(from root: Any.Type) -> [Any.Type] {
+        var visited = Set<ObjectIdentifier>()
+        var result: [Any.Type] = []
+        func visit(_ type: Any.Type) {
+            guard visited.insert(ObjectIdentifier(type)).inserted else { return }
+            result.append(type)
+            for child in childTypes(of: type) { visit(child) }
+        }
+        visit(root)
+        return result
+    }
+
+    /// Visits the same instance-independent type graph as reachableTypes(from:).
+    public static func visitTypes(from root: Any.Type, _ visit: (Any.Type) throws -> Void) rethrows {
+        for type in reachableTypes(from: root) { try visit(type) }
+    }
+
+    private static func propertyTypes<Root: SBJStructured>(of type: Root.Type) -> [Any.Type] {
+        definition(of: type).map(\.valueType)
+    }
+
+    private static func payloadTypes<Root: SBJStructuredEnum>(of type: Root.Type) -> [Any.Type] {
+        type.sbjAssociatedCases.flatMap { $0.associatedValues.map(\.valueType) }
+    }
+
     /// Describes writable properties without constructing a model value.
     /// The returned descriptors preserve declaration order and their original
     /// structural metadata. User-facing exclusions are respected.

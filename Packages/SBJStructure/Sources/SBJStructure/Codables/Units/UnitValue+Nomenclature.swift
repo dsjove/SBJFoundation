@@ -2,6 +2,7 @@ import Foundation
 
 @SBJStructureExtension
 extension UnitValue: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String {
 		"\(value.formatted())\(unit.symbol)"
 	}

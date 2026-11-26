@@ -17,4 +17,3 @@ public enum SBJAssistantState: Equatable, Sendable {
 		self == .ready && !hasSession && !isResponding
 	}
 }
-

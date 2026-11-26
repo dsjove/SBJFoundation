@@ -18,17 +18,14 @@ private struct ConditionalBehavior {
     #endif
 }
 
-// An intentional warning: the generator cannot enumerate conditional storage.
+// Private storage is intentionally absent from the public structural definition,
+// but must still participate in stored-state comparison.
 @SBJStructure
-private struct ConditionalStorage {
+private struct HiddenStorage {
     var value: Int = 0
-    #if swift(>=6.0)
-    #if DEBUG
-    var hidden: Int = 1
-    #else
-    var other: Int = 2
-    #endif
-    #endif
+    private var hidden: Int
+
+    init(hidden: Int) { self.hidden = hidden }
 }
 
 @Test func conditionalBehaviorDoesNotInvalidateStoredState() {
@@ -37,8 +34,9 @@ private struct ConditionalStorage {
     #expect(!ConditionalBehavior(value: 1).sbjStructuralEquals(.init(value: 2)))
 }
 
-@Test func conditionalStorageRemainsConservative() {
-    #expect(!ConditionalStorage.sbjHasCompleteStoredDefinition)
-    let value = ConditionalStorage()
-    #expect(!value.sbjStructuralEquals(value))
+@Test func incompletePublicDefinitionStillComparesPrivateState() {
+    #expect(!HiddenStorage.sbjHasCompleteStoredDefinition)
+    let value = HiddenStorage(hidden: 1)
+    #expect(value.sbjStructuralEquals(value))
+    #expect(!value.sbjStructuralEquals(HiddenStorage(hidden: 2)))
 }

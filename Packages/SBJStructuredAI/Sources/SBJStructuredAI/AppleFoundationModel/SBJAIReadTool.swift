@@ -2,64 +2,88 @@
 import Foundation
 import FoundationModels
 
-/// A native Foundation Models tool with compact dynamically generated parameters.
-/// It validates paths against immutable instance data and has no persistence,
-/// mutation, external I/O or host callbacks.
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
-struct SBJAIReadTool: Tool {
-    let name = "readStructure"
-    let description = "Find fields and collection members, describe metadata, read values, list children or count entries. Read-only."
-    let parameters: GenerationSchema
-    private let snapshot: SBJSemanticReadSnapshot
+struct SBJAIReadValueTool: Tool {
+    let name = "readValue"
+    let description = "Read a requested document value. Not for greetings or conversation."
+    let snapshot: SBJSemanticReadSnapshot
 
-    init(context: SBJAIStructureContext) {
-        parameters = context.readParameters
-        snapshot = context.snapshot
+    @Generable
+    struct Arguments: Sendable {
+        @Guide(description: "Path from root: only numeric field IDs as strings, exact collection keys, or @n array positions. Never include field labels.")
+        let keyPath: [String]
+
     }
 
     @concurrent
-    func call(arguments: GeneratedContent) async throws -> GeneratedContent {
+    func call(arguments: Arguments) async throws -> String {
+        try await SBJAIReadExecutor(snapshot: snapshot).execute(.read, keyPath: arguments.keyPath)
+    }
+}
+
+@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+struct SBJAIReadKeysTool: Tool {
+    let name = "readKeys"
+    let description = "List current member keys of a requested collection, not its values."
+    let snapshot: SBJSemanticReadSnapshot
+
+    @Generable
+    struct Arguments: Sendable {
+        @Guide(description: "Path to collection: numeric field IDs and any ancestor member keys.")
+        let keyPath: [String]
+    }
+
+    @concurrent
+    func call(arguments: Arguments) async throws -> String {
+        try await SBJAIReadExecutor(snapshot: snapshot).execute(.keys, keyPath: arguments.keyPath)
+    }
+}
+
+@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+struct SBJAIReadDescriptionTool: Tool {
+    let name = "readDescription"
+    let description = "Read the meaning, constraints and choices of a field at a key path, not its current value."
+    let snapshot: SBJSemanticReadSnapshot
+
+    @Generable
+    struct Arguments: Sendable {
+        @Guide(description: "Path from root: only numeric field IDs as strings, exact collection keys, or @n array positions. Never include field labels.")
+        let keyPath: [String]
+    }
+
+    @concurrent
+    func call(arguments: Arguments) async throws -> String {
+        try await SBJAIReadExecutor(snapshot: snapshot).execute(.describe, keyPath: arguments.keyPath)
+    }
+}
+
+/// Common validation and bounded EBNF text output, independent of argument generation.
+@available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+private struct SBJAIReadExecutor: Sendable {
+    let snapshot: SBJSemanticReadSnapshot
+
+    @concurrent
+    func execute(_ operation: SBJSemanticReadOperation, keyPath: [String]) async throws -> String {
         try Task.checkCancellation()
-        let output: GeneratedContent
         do {
-            let raw = try arguments.value(String.self, forProperty: "operation")
-            if raw == "find" {
-                let query = try arguments.value(String.self, forProperty: "query")
-                output = snapshot.find(query).nativeContent
-            } else if let operation = SBJSemanticReadOperation(rawValue: raw) {
-                let paths = try arguments.value([String].self, forProperty: "paths")
-                guard paths.count <= 6 else {
-                    return .init(properties: ["error": "Select at most six paths."])
-                }
-                let offset = (try? arguments.value(Int.self, forProperty: "offset")) ?? 0
-                if operation == .children {
-                    guard paths.count == 1 else {
-                        return .init(properties: ["error": "List children of one path at a time."])
-                    }
-                    output = try snapshot.query(.children, paths: paths, childrenOffset: offset,
-                                                childrenLimit: 12).nativeContent
-                } else {
-                    output = try snapshot.query(operation, paths: paths).nativeContent
-                }
-            } else {
-                output = .init(properties: ["error": "Unknown operation. Use find, read, children, count or describe."])
+            let result = try snapshot.modelQuery(operation, stringKeyPath: keyPath).promptText
+            let model = SystemLanguageModel.default
+            let tokens: Int?
+            if model.isAvailable {
+                do { tokens = try await model.tokenCount(for: result) }
+                catch is CancellationError { throw CancellationError() }
+                catch { tokens = nil }
+            } else { tokens = nil }
+            try Task.checkCancellation()
+            if let tokens, tokens > max(1, min(384, model.contextSize / 10)) {
+                return SBJSemanticReadResult.error("Result too large. Select a more specific field.").promptText
             }
+            return result
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            // A bad read is recoverable; the model may select a different path.
-            // Return an error as data rather than fail the whole conversation.
-            output = .init(properties: ["error": error.localizedDescription])
+            return SBJSemanticReadResult.error(error.localizedDescription).promptText
         }
-        try Task.checkCancellation()
-        let model = SystemLanguageModel.default
-        // Direct tool tests need no model availability. For a live model use its
-        // own tokenizer, not byte estimates, to avoid returning large subtrees.
-        if model.isAvailable,
-           let tokens = try? await model.tokenCount(for: output),
-           tokens > max(1, model.contextSize / 4) {
-            return .init(properties: ["error": "Result has \(tokens) tokens. Use count, find, or children and read fewer/smaller fields."])
-        }
-        try Task.checkCancellation()
-        return output
     }
 }
 #endif

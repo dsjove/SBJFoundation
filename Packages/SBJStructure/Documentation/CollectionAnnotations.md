@@ -6,13 +6,13 @@ Structural **rules** describe the validity of a snapshot. They are only checked 
 
 `@SBJArray(minCount:maxCount:unique:uniqueBy:sorted:)` describes collection-level constraints. `sorted: .ascending` and `.descending` use element `Comparable` order, scanning adjacent pairs and reporting the first out-of-order index without sorting or changing values. `uniqueBy` uses a typed Swift key path. Insertion is a mutation, not an invariant.
 
-`@SBJArrayPresentation(title:insertable:removable:reorderable:)` describes editor capabilities; each capability defaults to `true`. `title` is a typed element key path. A UI that suppresses an action does not prohibit the mutation in application code.
+`@SBJArrayPresentation(insertable:removable:reorderable:)` describes editor capabilities; each capability defaults to `true`. `@SBJArray(elementName:)` supplies a typed element name key path. A UI that suppresses an action does not prohibit the mutation in application code.
 
 ## Sets
 
 `@SBJSet(minCount:maxCount:)` describes cardinality. Sets already guarantee uniqueness under `Hashable`/`Equatable`; their storage has no positional order.
 
-`@SBJSetPresentation(title:insertable:removable:sort:)` controls editor capabilities and optional display sorting. `sort: nil` leaves display order unspecified; `.ascending` or `.descending` uses `Comparable` element semantics via constrained sorting helpers. Sorting a presentation must not mutate the underlying Set.
+`@SBJSetPresentation(insertable:removable:sort:)` controls editor capabilities and optional display sorting. `sort: nil` leaves display order unspecified; `.ascending` or `.descending` uses `Comparable` element semantics via constrained sorting helpers. Sorting a presentation must not mutate the underlying Set.
 
 ## Dictionaries
 

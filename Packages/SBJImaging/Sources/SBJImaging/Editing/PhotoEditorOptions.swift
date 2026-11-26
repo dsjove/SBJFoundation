@@ -85,6 +85,7 @@ public struct PhotoEditorOptions: Codable, Equatable, Sendable, Hashable {
     /// Quarter-turn rotation makes a vertical mirror redundant from the user's
     /// point of view (180° + horizontal mirror). When quarter-turn rotation is
     /// unavailable, expose both mirror axes.
+    @SBJExclude
     public var availableMirrorAxes: Set<PhotoMirrorAxis> {
         guard allowsMirror else { return [] }
         return allowsQuarterTurnRotation ? [.horizontal] : [.horizontal, .vertical]

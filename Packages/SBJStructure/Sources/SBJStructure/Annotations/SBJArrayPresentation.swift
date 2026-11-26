@@ -13,10 +13,8 @@ public struct SBJArrayPresentationValue: Codable, Sendable, Equatable {
 }
 
 /// Configures array editing controls; never changes the array or enforces rules.
-/// `title` is a compiler-checked element key path used to label each row.
 @attached(peer)
 public macro SBJArrayPresentation(
-    title: AnyKeyPath? = nil,
     insertable: Bool = true,
     removable: Bool = true,
     reorderable: Bool = true

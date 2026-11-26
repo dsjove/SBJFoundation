@@ -40,15 +40,18 @@ public struct PageLayout: Codable, Equatable, Sendable {
 		self.right = right ?? defaultMargin
 	}
 
+	@SBJExclude
 	public var pageRect: CGRect {
 		pageSize.rect(landscape: landscape, margin: .zero)
 	}
 
+	@SBJExclude
 	public var printableRect: CGRect {
 		pageSize.rect(landscape: landscape, margin: marginsInPDFPoints)
 	}
 
 	/// PDF rendering geometry; all unit conversion stays on PageLayout.
+	@SBJExclude
 	public var marginsInPDFPoints: Insets {
 		Insets(
 			left: CGFloat(left.converted(to: .point).value),

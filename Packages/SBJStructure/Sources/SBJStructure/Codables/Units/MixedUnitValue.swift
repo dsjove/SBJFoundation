@@ -6,7 +6,7 @@ import Foundation
 /// single `UnitValue` is explicit. This type deliberately does not normalize
 /// values automatically: some domains use signed components or noncanonical
 /// input, and Codable must preserve the values the user entered.
-@SBJStructure
+@SBJStructure(atomic: true)
 public struct MixedUnitValue<U: UnitType>: Codable, Equatable, Hashable, Sendable {
 	public typealias Unit = U
     public var major: UnitValue<Unit>

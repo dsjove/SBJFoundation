@@ -10,7 +10,7 @@ protocol SBJEditorTraversableValue {
     static func sbjTraversalChildren(
         of value: Any,
         context: SBJEditTraversalContext,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode]
@@ -23,7 +23,7 @@ protocol SBJEditorBoundTraversableValue {
         originalValue: Any?,
         context: SBJEditTraversalContext,
         registry: SBJEditorRegistry,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         elementPresentation: SBJFieldPresentationValue?,
         dictionaryPresentation: SBJDictionaryPresentationValue?,
@@ -34,19 +34,25 @@ protocol SBJEditorBoundTraversableValue {
 
 @MainActor
 enum SBJEditorValueTraversal {
+    static func isLeaf(_ type: Any.Type) -> Bool {
+        if SBJStructuralType.isAtomic(type) || type is any SBJTypedEditorValue.Type { return true }
+        if case .optional(let wrapped)? = SBJStructuralType.container(of: type) {
+            return isLeaf(wrapped)
+        }
+        return false
+    }
+
     static func children<Value>(
         of value: Value,
         context: SBJEditTraversalContext,
-        itemTitleKey: String? = nil,
+        itemTitleKey: AnyKeyPath? = nil,
         itemIdentifierKey: String? = nil,
         elementPresentation: SBJFieldPresentationValue? = nil
     ) -> [SBJEditorTraversalNode] {
+        if isLeaf(Value.self) { return [] }
         if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjAssociatedTraversalNodes(value: value, context: context)
         }
-        // A typed leaf editor owns the complete presentation of its value.
-        // Do not traverse structural implementation details (e.g. UnitValue.value).
-        if Value.self is any SBJTypedEditorValue.Type { return [] }
         if let structural = Value.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralTraversalNodes(value: value, context: context)
         }
@@ -61,19 +67,19 @@ enum SBJEditorValueTraversal {
         originalValue: Value? = nil,
         context: SBJEditTraversalContext,
         registry: SBJEditorRegistry,
-        itemTitleKey: String? = nil,
+        itemTitleKey: AnyKeyPath? = nil,
         itemIdentifierKey: String? = nil,
         elementPresentation: SBJFieldPresentationValue? = nil,
         dictionaryPresentation: SBJDictionaryPresentationValue? = nil,
         constraints: SBJConstraintProjection = .init(),
         reorderable: Bool = true, removable: Bool = true, insertable: Bool = true
     ) -> [SBJEditorTraversalNode] {
+        if registry.hasCustomEditor(Value.self) || isLeaf(Value.self) { return [] }
         if let associated = Value.self as? any SBJStructuredEnum.Type {
             return associated._sbjBoundAssociatedTraversalNodes(
                 binding: SBJAnyBinding(binding), originalValue: originalValue, registry: registry, context: context
             )
         }
-        if registry.hasCustomEditor(Value.self) || Value.self is any SBJTypedEditorValue.Type { return [] }
         if let structural = Value.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralBoundNodes(binding: SBJAnyBinding(binding), originalValue: originalValue, registry: registry, context: context)
         }
@@ -95,7 +101,7 @@ enum SBJEditorValueTraversal {
     ) -> SBJEditorTraversalNode {
         SBJEditorTraversalNode(
             context: context, name: name,
-            isDisclosure: !(Value.self is any SBJTypedEditorValue.Type) &&
+            isDisclosure: !isLeaf(Value.self) &&
                 (Value.self is any SBJMutableStructure.Type
                 || Value.self is any SBJEditorTraversableValue.Type
                 || Value.self is any SBJStructuredEnum.Type),
@@ -138,7 +144,7 @@ enum SBJEditorValueTraversal {
         SBJEditorTraversalNode(
             context: context,
             name: name,
-            isDisclosure: !(Value.self is any SBJTypedEditorValue.Type) &&
+            isDisclosure: !isLeaf(Value.self) &&
                 (Value.self is any SBJMutableStructure.Type
                 || Value.self is any SBJEditorTraversableValue.Type
                 || Value.self is any SBJStructuredEnum.Type),
@@ -153,7 +159,7 @@ extension Optional: SBJEditorTraversableValue {
     static func sbjTraversalChildren(
         of value: Any,
         context: SBJEditTraversalContext,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
@@ -168,7 +174,7 @@ extension Array: SBJEditorTraversableValue {
     static func sbjTraversalChildren(
         of value: Any,
         context: SBJEditTraversalContext,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
@@ -190,7 +196,7 @@ extension Set: SBJEditorTraversableValue {
     static func sbjTraversalChildren(
         of value: Any,
         context: SBJEditTraversalContext,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
@@ -211,12 +217,12 @@ extension Dictionary: SBJEditorTraversableValue {
     static func sbjTraversalChildren(
         of value: Any,
         context: SBJEditTraversalContext,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         elementPresentation: SBJFieldPresentationValue?
     ) -> [SBJEditorTraversalNode] {
         guard let values = value as? [Key: Value] else { return [] }
-        return SBJCollectionTraversal.dictionary(values).map { item in
+        return SBJCollectionTraversal.dictionary(values, itemTitleKey: itemTitleKey).map { item in
             let title = item.title
             let element = item.value.value
             let childContext = context.collectionChild(
@@ -232,7 +238,7 @@ extension Dictionary: SBJEditorTraversableValue {
 extension Optional: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: Optional<Wrapped>.self)
         guard let capturedWrappedValue = parent.wrappedValue else { return [] }
@@ -252,7 +258,7 @@ extension Optional: SBJEditorBoundTraversableValue {
 extension Array: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: [Element].self)
         let snapshot = parent.wrappedValue
@@ -328,7 +334,7 @@ extension Array: SBJEditorBoundTraversableValue {
 extension Set: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: Set<Element>.self)
         return SBJCollectionTraversal.set(parent.wrappedValue, itemTitleKey: itemTitleKey).compactMap { item in
@@ -382,13 +388,15 @@ extension Set: SBJEditorBoundTraversableValue {
 extension Dictionary: SBJEditorBoundTraversableValue {
     static func sbjBoundTraversalChildren(
         binding: SBJAnyBinding, originalValue: Any?, context: SBJEditTraversalContext,
-        registry: SBJEditorRegistry, itemTitleKey: String?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
+        registry: SBJEditorRegistry, itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?, elementPresentation: SBJFieldPresentationValue?, dictionaryPresentation: SBJDictionaryPresentationValue?, constraints: SBJConstraintProjection, reorderable: Bool, removable: Bool, insertable: Bool
     ) -> [SBJEditorTraversalNode] {
         let parent = binding.binding(as: [Key: Value].self)
-        return SBJCollectionTraversal.dictionary(parent.wrappedValue).flatMap { item -> [SBJEditorTraversalNode] in
+        return SBJCollectionTraversal.dictionary(parent.wrappedValue, itemTitleKey: itemTitleKey).flatMap { item -> [SBJEditorTraversalNode] in
             guard dictionaryPresentation?.value?.exclude != true else { return [] }
             let key = item.value.key
-            let title = dictionaryPresentation?.key?.exclude == true ? "Value" : item.title
+            let title = dictionaryPresentation?.key?.exclude == true
+                ? (SBJCollectionItemIdentification.configuredTitle(for: item.value.value, itemTitleKey: itemTitleKey) ?? "Value")
+                : item.title
             let valueLabel = title
             let entryValue = item.value.value
             let childContext = context.collectionChild(

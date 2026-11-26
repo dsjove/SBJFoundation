@@ -14,7 +14,7 @@ struct SBJArrayEditor<Element>: View {
     let numberRange: ClosedRange<Double>?
     let insertable: Bool
     let reorderable: Bool
-    let itemTitleKey: String?
+    let itemTitleKey: AnyKeyPath?
     let itemIdentifierKey: String?
     let itemActions: SBJEditorItemActions?
     let optionalControl: AnyView?

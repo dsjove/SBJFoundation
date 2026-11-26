@@ -226,8 +226,8 @@ public struct SBJStructureSampleModel: Codable {
   public var optionalServings: Int? = 4
   public var optionalChefNote: String? = nil
 
-  @SBJArray(minCount: 1, maxCount: 30, uniqueBy: \SBJStructureSampleIngredient.id)
-  @SBJArrayPresentation(title: \SBJStructureSampleIngredient.name, reorderable: true)
+  @SBJArray(elementName: \SBJStructureSampleIngredient.name, minCount: 1, maxCount: 30, uniqueBy: \SBJStructureSampleIngredient.id)
+  @SBJArrayPresentation(reorderable: true)
   public var ingredients = [
 	SBJStructureSampleIngredient(
 	  name: "Red bell pepper", quantity: 2, unit: .item, preparation: "sliced"),
@@ -239,8 +239,8 @@ public struct SBJStructureSampleModel: Codable {
 	SBJStructureSampleIngredient(name: "Pasta", quantity: 340, unit: .gram),
   ]
 
-  @SBJArray(minCount: 1, maxCount: 20, uniqueBy: \SBJStructureSampleStep.id)
-  @SBJArrayPresentation(title: \SBJStructureSampleStep.title, reorderable: true)
+  @SBJArray(elementName: \SBJStructureSampleStep.title, minCount: 1, maxCount: 20, uniqueBy: \SBJStructureSampleStep.id)
+  @SBJArrayPresentation(reorderable: true)
   public var steps = [
 	SBJStructureSampleStep(
 	  title: "Roast the vegetables",

@@ -166,14 +166,17 @@ public struct PhotoEditGeometry: Codable, Equatable, Sendable {
         mirror.toggle(axis)
     }
 
+    @SBJExclude
     public var hasPlacementOrMagnificationEdits: Bool {
         placement != .zero || magnification != 1
     }
 
+    @SBJExclude
     public var hasStraightenEdit: Bool {
         rotation.fineDegrees != 0
     }
 
+    @SBJExclude
     public var editComparisonValue: Self {
         var result = self
         switch result.crop.option {

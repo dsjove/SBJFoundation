@@ -4,27 +4,28 @@ import SBJLocalization
 /// UI-independent helpers for deriving stable, human-readable identities for
 /// collection elements.
 ///
-/// `itemTitleKey` corresponds to the property name recorded by the structural
-/// `.itemTitle` metadata hint. Consumers such as editors, diagnostics, loggers,
+/// `itemTitleKey` is the compiler-checked key path recorded by the structural
+/// `.elementName` metadata hint. Consumers such as editors, diagnostics, loggers,
 /// and exporters can use the same naming rules without depending on SwiftUI.
 public enum SBJCollectionItemIdentification {
     /// Returns the configured item title when available, otherwise a readable
-    /// description of the element itself.
-    public static func title<Element>(for element: Element, itemTitleKey: String? = nil) -> String {
+    /// declared name or readable description of the element itself.
+    public static func title<Element>(for element: Element, itemTitleKey: AnyKeyPath? = nil) -> String {
         configuredTitle(for: element, itemTitleKey: itemTitleKey)
+            ?? declaredName(for: element)
             ?? displayTitle(element)
             ?? String(describing: element)
     }
 
-    /// Returns a title derived specifically from the configured `.itemTitle`
+    /// Returns a title derived specifically from the configured `.elementName`
     /// property, or `nil` when no key is configured or that property has no
     /// usable value.
     public static func configuredTitle<Element>(
         for element: Element,
-        itemTitleKey: String?
+        itemTitleKey: AnyKeyPath?
     ) -> String? {
         guard let itemTitleKey,
-              let raw = propertyValue(named: itemTitleKey, in: element),
+              let raw = element[keyPath: itemTitleKey],
               let title = displayTitle(raw),
               !title.isEmpty else {
             return nil
@@ -33,16 +34,40 @@ public enum SBJCollectionItemIdentification {
     }
 
     /// Returns an array element title suitable for a structural path. Arrays
-    /// have an intrinsic position, so the index is used when no configured
-    /// item title can be derived.
+    /// have an intrinsic position, so the index is used when no configured title,
+    /// declared name or presentation value can be derived.
     public static func arrayTitle<Element>(
         for element: Element,
         index: Int,
-        itemTitleKey: String? = nil
+        itemTitleKey: AnyKeyPath? = nil
     ) -> String {
         configuredTitle(for: element, itemTitleKey: itemTitleKey)
+            ?? declaredName(for: element)
             ?? ((element as? any SBJTextPresentable)?.presentedValue).flatMap { $0.isEmpty ? nil : $0 }
             ?? "[\(index)]"
+    }
+
+    /// Whether a real discoverable Name property exists, even when its value is empty.
+    public static func hasDeclaredName(_ type: Any.Type) -> Bool {
+        guard let structured = type as? any SBJStructured.Type else { return false }
+        return structured.sbjHasDeclaredName
+    }
+
+    private static func nameProperty<Root: SBJStructured>(in type: Root.Type) -> SBJPropertyMetadata<Root>? {
+        type.sbjUserFacingProperties.first { $0.sourceName == "name" }
+    }
+
+    /// The declared Name value, independent of any generated collection label.
+    public static func declaredName(for value: Any) -> String? {
+        guard let structured = value as? any SBJStructured else { return nil }
+        return declaredName(in: structured)
+    }
+
+    private static func declaredName<Root: SBJStructured>(in value: Root) -> String? {
+        guard let property = nameProperty(in: Root.self),
+              let title = displayTitle(value[keyPath: property.keyPath]),
+              !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return title
     }
 
     /// Stable string token for a configured collection item identifier property.
@@ -92,6 +117,12 @@ public enum SBJCollectionItemIdentification {
         }
         if let string = value as? String { return string }
         return String(describing: value).uncamelCased
+    }
+}
+
+private extension SBJStructured {
+    static var sbjHasDeclaredName: Bool {
+        sbjUserFacingProperties.contains { $0.sourceName == "name" }
     }
 }
 

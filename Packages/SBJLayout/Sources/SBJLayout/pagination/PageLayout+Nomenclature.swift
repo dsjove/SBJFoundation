@@ -3,6 +3,7 @@ import SBJStructure
 
 @SBJStructureExtension
 extension PageLayout: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String {
 		"\(pageSize), \(landscape ? "landscape" : "portrait"), margins: top \(top), bottom \(bottom), left \(left), right \(right)"
 	}

@@ -32,6 +32,7 @@ public struct PhotoColorAdjustments: Codable, Equatable, Sendable {
 
     public init() {}
 
+    @SBJExclude
     public var isNeutral: Bool { self == Self() }
     public static var dark: Self {
         var s = Self(); s.exposure = 0.35; s.shadows = 0.65; s.highlights = -0.15; s.detail = 0.15

@@ -116,3 +116,24 @@ private struct CatalogContainers {
     #expect(item.payloads.count == 1)
     #expect(item.payloads.first.map { ObjectIdentifier($0.declaredType) } == ObjectIdentifier(CatalogLeaf.self))
 }
+
+@SBJStructure
+private struct AtomicReportFixture {
+    @SBJUnitValue(min: 0)
+    var distance = UnitValue<LengthUnit>(30, unit: .foot)
+}
+
+@Test func atomicDefinitionRetainsBusinessRuleMembers() throws {
+    let catalog = SBJDefinitionCatalog(AtomicReportFixture.self)
+    let root = try #require(catalog.types.first { $0.swiftType == AtomicReportFixture.self })
+    #expect(!root.isAtomic)
+    let unit = try #require(catalog.types.first { $0.swiftType == UnitValue<LengthUnit>.self })
+    #expect(unit.isAtomic)
+    guard case .structure(let fields) = unit.content else {
+        Issue.record("Expected canonical measurement definition")
+        return
+    }
+    #expect(Set(fields.map(\.swiftIdentifier)) == Set(["value", "unit"]))
+    let sorted = catalog.sorted(using: .init(propertySort: .alphabetical))
+    #expect(sorted.types.first { $0.swiftType == UnitValue<LengthUnit>.self }?.isAtomic == true)
+}

@@ -21,7 +21,7 @@ struct SBJOptionalEditor<Wrapped>: View {
     let collectionInsertable: Bool
     let collectionRemovable: Bool
     let collectionReorderable: Bool
-    let collectionItemTitleKey: String?
+    let collectionItemTitleKey: AnyKeyPath?
     let collectionItemIdentifierKey: String?
     let itemActions: SBJEditorItemActions?
     let focusRequest: SBJEditorFocusRequest?
@@ -37,7 +37,7 @@ struct SBJOptionalEditor<Wrapped>: View {
     /// value is flattened, so its nil state must not reserve a disclosure column
     /// that disappears as soon as the value is created.
     private var wrappedNeedsDisclosure: Bool {
-        if Wrapped.self is any SBJTypedEditorValue.Type { return false }
+        if SBJEditorValueTraversal.isLeaf(Wrapped.self) { return false }
         if let structural = Wrapped.self as? any SBJMutableStructure.Type {
             return structural._sbjStructuralFieldCount(showsReadOnlyProperties: context.branch.showsReadOnlyProperties) > 1
         }
@@ -103,7 +103,7 @@ struct SBJOptionalEditor<Wrapped>: View {
                         context: context
                     )
 
-            } else if !(Wrapped.self is any SBJTypedEditorValue.Type),
+            } else if !(SBJEditorValueTraversal.isLeaf(Wrapped.self)),
                       let structural = Wrapped.self as? any SBJMutableStructure.Type,
                       structural._sbjStructuralFieldCount(showsReadOnlyProperties: context.branch.showsReadOnlyProperties) > 1 {
                 SBJEditorDisclosureHeader(

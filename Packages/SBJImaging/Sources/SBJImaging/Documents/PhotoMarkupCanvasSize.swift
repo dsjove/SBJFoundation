@@ -10,7 +10,7 @@ import SBJStructure
 import SBJUIVocabulary
 
 
-@SBJStructure
+@SBJStructure(atomic: true)
 public struct PhotoMarkupCanvasSize: Codable, Equatable, Sendable {
     @SBJNumber(min: 0)
     public var width: Double
@@ -26,5 +26,6 @@ public struct PhotoMarkupCanvasSize: Codable, Equatable, Sendable {
         self.init(width: size.width, height: size.height)
     }
 
+    @SBJExclude
     public var cgSize: CGSize { .init(width: width, height: height) }
 }

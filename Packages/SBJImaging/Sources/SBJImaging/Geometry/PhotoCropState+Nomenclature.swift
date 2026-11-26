@@ -3,7 +3,12 @@ import SBJStructure
 
 @SBJStructureExtension
 extension PhotoCropState: SBJTextPresentable {
-	public var presentedValue: String { "\(option.title) crop, aspect ratio \(freeAspectRatio)" }
+	@SBJExclude
+	public var presentedValue: String {
+        if option == .free { return "Free crop, aspect ratio \(freeAspectRatio)" }
+        if option == .original && swapsDimensions { return "Original crop, dimensions swapped" }
+        return "\(option.title(swappingDimensions: swapsDimensions)) crop"
+    }
 	public static let optionNomenclature = SBJNomenclature(
 		title: "Crop",
 		summary: "Active crop mode.",

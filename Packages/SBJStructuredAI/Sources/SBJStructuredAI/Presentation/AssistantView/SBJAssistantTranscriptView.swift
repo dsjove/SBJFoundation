@@ -7,6 +7,8 @@ struct SBJAssistantTranscriptView: View {
     let messages: [SBJAssistantMessage]
     let diagnostics: [String]
     let showsDiagnostics: Bool
+    let canPrintInstructions: Bool
+    let printInstructions: () -> Void
     let shortcuts: [SBJAssistantShortcut]
     let isActive: Bool
     let isResponding: Bool
@@ -30,8 +32,10 @@ struct SBJAssistantTranscriptView: View {
                         ForEach(messages) { message in
                             SBJAssistantMessageView(message: message, displayError: displayError).id(message.id)
                         }
-                        if showsDiagnostics && !diagnostics.isEmpty {
-                            SBJAssistantDiagnosticsView(lines: diagnostics)
+                        if showsDiagnostics && (!diagnostics.isEmpty || canPrintInstructions) {
+                            SBJAssistantDiagnosticsView(lines: diagnostics,
+                                                        canPrintInstructions: canPrintInstructions,
+                                                        printInstructions: printInstructions)
                         }
                         if !shortcuts.isEmpty {
                             SBJAssistantShortcutsView(shortcuts: shortcuts, isEnabled: isActive && !isResponding, selectShortcut: selectShortcut)

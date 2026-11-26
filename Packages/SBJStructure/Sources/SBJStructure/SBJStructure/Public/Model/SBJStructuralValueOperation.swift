@@ -12,17 +12,17 @@ public enum SBJValueOperationKind: String, CaseIterable, Hashable, Sendable {
 public enum SBJValueOperationNomenclature {
     public static func info(for kind: SBJValueOperationKind) -> SBJNomenclature {
         switch kind {
-        case .assign: .init(title: "Set", summary: "Replace the value", aliases: ["change", "assign", "update"])
-        case .toggle: .init(title: "Toggle", summary: "Invert a Boolean", aliases: ["flip", "switch"])
-        case .increase: .init(title: "Increase", summary: "Add an amount to the current value", aliases: ["add", "increment", "raise"])
-        case .decrease: .init(title: "Decrease", summary: "Subtract an amount from the current value", aliases: ["subtract", "reduce", "deduct"])
-        case .multiply: .init(title: "Multiply", summary: "Multiply the current value", aliases: ["scale", "times"])
-        case .divide: .init(title: "Divide", summary: "Divide the current value", aliases: ["split"])
-        case .appendText: .init(title: "Append Text", summary: "Add text at the end", aliases: ["append", "add to end"])
-        case .prependText: .init(title: "Prepend Text", summary: "Add text at the beginning", aliases: ["prepend"])
-        case .removeText: .init(title: "Remove Text", summary: "Remove a literal substring", aliases: ["delete text"])
-        case .replaceText: .init(title: "Replace Text", summary: "Replace matching literal text", aliases: ["substitute"])
-        case .advanceDate: .init(title: "Shift Date", summary: "Shift a date by a time interval", aliases: ["advance", "postpone", "move date"])
+        case .assign: .init(title: "Set", summary: "Replace the value", aliases: ["assign"])
+        case .toggle: .init(title: "Toggle", summary: "Invert a Boolean")
+        case .increase: .init(title: "Increase", summary: "Add an amount to the current value", aliases: ["increment"])
+        case .decrease: .init(title: "Decrease", summary: "Subtract an amount from the current value", aliases: ["decrement"])
+        case .multiply: .init(title: "Multiply", summary: "Multiply the current value")
+        case .divide: .init(title: "Divide", summary: "Divide the current value")
+        case .appendText: .init(title: "Append Text", summary: "Add text at the end")
+        case .prependText: .init(title: "Prepend Text", summary: "Add text at the beginning")
+        case .removeText: .init(title: "Remove Text", summary: "Remove a literal substring")
+        case .replaceText: .init(title: "Replace Text", summary: "Replace matching literal text")
+        case .advanceDate: .init(title: "Shift Date", summary: "Shift a date by a time interval", aliases: ["postpone"])
         }
     }
 

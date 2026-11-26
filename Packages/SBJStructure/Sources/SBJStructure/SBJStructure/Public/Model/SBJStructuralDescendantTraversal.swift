@@ -68,8 +68,8 @@ public struct SBJStructuralChild {
     }
 }
 
-/// Model-only traversal entry point. A leaf is reported once; structured
-/// containers are reported and then recursively visited in declaration order.
+/// User-facing traversal entry point. A leaf or atomic value is reported once;
+/// compound containers are reported and then recursively visited in declaration order.
 public extension SBJStructuralTraversal {
     static func descendants<Root: SBJStructured>(in root: Root) -> [SBJStructuralValueOccurrence] {
         root.sbjStructuralDescendants(
@@ -93,6 +93,7 @@ public extension SBJStructured {
         identityPath: [String], locationPath: [String],
         displayPath: [String], isPositional: Bool, ancestorsWritable: Bool
     ) -> [SBJStructuralValueOccurrence] {
+        guard !SBJStructuralType.isAtomic(Self.self) else { return [] }
         let writableNames: Set<String> = {
             guard let mutable = Self.self as? any SBJMutableStructure.Type else { return [] }
             return mutable._sbjWritableSourceNames()
@@ -130,11 +131,11 @@ public extension SBJMutableStructure {
 
 /// Standard containers supply semantic children without requiring reflection.
 public protocol SBJStructuralValueContainer {
-    func sbjStructuralChildren(itemTitleKey: String?, itemIdentifierKey: String?) -> [SBJStructuralChild]
+    func sbjStructuralChildren(itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?) -> [SBJStructuralChild]
 }
 
 extension Optional: SBJStructuralValueContainer {
-    public func sbjStructuralChildren(itemTitleKey: String?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
+    public func sbjStructuralChildren(itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
         guard let wrapped = self else { return [] }
         // Optional contents do not introduce an extra identity/location component.
         return [.init(identity: "", location: "", title: "", value: wrapped)]
@@ -142,7 +143,7 @@ extension Optional: SBJStructuralValueContainer {
 }
 
 extension Array: SBJStructuralValueContainer {
-    public func sbjStructuralChildren(itemTitleKey: String?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
+    public func sbjStructuralChildren(itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
         SBJCollectionTraversal.array(self, itemTitleKey: itemTitleKey, itemIdentifierKey: itemIdentifierKey).map {
             .init(identity: $0.identifier, location: $0.location, title: $0.title,
                   value: $0.value, isPositional: SBJCollectionTraversal.isPositional($0))
@@ -151,7 +152,7 @@ extension Array: SBJStructuralValueContainer {
 }
 
 extension Set: SBJStructuralValueContainer {
-    public func sbjStructuralChildren(itemTitleKey: String?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
+    public func sbjStructuralChildren(itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
         SBJCollectionTraversal.set(self, itemTitleKey: itemTitleKey).map {
             .init(identity: $0.identifier, location: $0.location, title: $0.title, value: $0.value)
         }
@@ -159,8 +160,8 @@ extension Set: SBJStructuralValueContainer {
 }
 
 extension Dictionary: SBJStructuralValueContainer {
-    public func sbjStructuralChildren(itemTitleKey: String?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
-        SBJCollectionTraversal.dictionary(self).map {
+    public func sbjStructuralChildren(itemTitleKey: AnyKeyPath?, itemIdentifierKey: String?) -> [SBJStructuralChild] {
+        SBJCollectionTraversal.dictionary(self, itemTitleKey: itemTitleKey).map {
             .init(identity: $0.identifier, location: $0.location, title: $0.title, value: $0.value.value,
                   dictionaryKey: $0.value.key as Any, dictionaryKeyType: Key.self)
         }
@@ -200,8 +201,9 @@ public enum SBJStructuralValueWalker {
         of value: Any,
         identityPath: [String], locationPath: [String], displayPath: [String],
         isPositional: Bool, ancestorsWritable: Bool,
-        itemTitleKey: String? = nil, itemIdentifierKey: String? = nil
+        itemTitleKey: AnyKeyPath? = nil, itemIdentifierKey: String? = nil
     ) -> [SBJStructuralValueOccurrence] {
+        if value is any SBJAtomicStructuralValue { return [] }
         if let structured = value as? any SBJStructured {
             return structured.sbjStructuralDescendants(
                 identityPath: identityPath, locationPath: locationPath,
@@ -225,7 +227,9 @@ public enum SBJStructuralValueWalker {
                 )]
                 return entry + children(of: child.value, identityPath: ids,
                                         locationPath: locations, displayPath: displays,
-                                        isPositional: positional, ancestorsWritable: ancestorsWritable)
+                                        isPositional: positional, ancestorsWritable: ancestorsWritable,
+                                        itemTitleKey: child.identity.isEmpty ? itemTitleKey : nil,
+                                        itemIdentifierKey: child.identity.isEmpty ? itemIdentifierKey : nil)
             }
         }
         if let associated = value as? any SBJStructuredEnum {
@@ -256,9 +260,9 @@ public enum SBJStructuralValueWalker {
 /// Shared extraction of model-declared collection naming and identity policy.
 /// The editor and the structural walker must interpret these identically.
 public enum SBJStructuralCollectionKeys {
-    public static func title(in hints: [SBJPropertyHint]) -> String? {
+    public static func title(in hints: [SBJPropertyHint]) -> AnyKeyPath? {
         for hint in hints {
-            if case .itemTitle(let value) = hint { return value }
+            if case .elementName(let value) = hint { return value }
         }
         return nil
     }

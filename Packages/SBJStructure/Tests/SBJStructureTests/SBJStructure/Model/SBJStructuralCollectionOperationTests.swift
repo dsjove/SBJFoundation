@@ -78,14 +78,14 @@ struct SBJStructuralCollectionOperationTests {
         #expect(!SBJStructuralCollectionMutation.supportedOperations(for: Set([1, 2])).contains(.move))
     }
 
-    @Test func operationNomenclatureCanBeDisambiguatedByCapabilities() {
-        let matches = SBJCollectionOperationNomenclature.matching("add")
-        #expect(matches.contains(.append))
-        #expect(matches.contains(.insertMember))
+    @Test func operationNomenclatureUsesSpecificTerms() {
+        #expect(SBJCollectionOperationNomenclature.matching("add").isEmpty)
+        #expect(SBJCollectionOperationNomenclature.matching("push") == [.append])
+        #expect(SBJCollectionOperationNomenclature.matching("Add Member") == [.insertMember])
+        #expect(SBJCollectionOperationNomenclature.matching("unset") == [.clearOptional])
         let setCapabilities = SBJStructuralCollectionMutation.supportedOperations(for: Set([1]))
-        #expect(matches.filter { setCapabilities.contains($0) } == [.insertMember])
-        let optionalCapabilities = SBJStructuralCollectionMutation.supportedOperations(for: Optional(1) as Any)
-        #expect(matches.contains { optionalCapabilities.contains($0) })
+        #expect(setCapabilities.contains(.insertMember))
+        #expect(!setCapabilities.contains(.append))
     }
 
     @Test func invalidElementTypeCannotMutateACollection() {

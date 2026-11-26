@@ -12,6 +12,6 @@ public struct SBJSetPresentationValue: Codable, Sendable, Equatable {
     }
 }
 
-/// An optional key path selecting display titles for elements in a set.
+/// Configures set editing controls; use @SBJSet(elementName:) for naming.
 @attached(peer)
-public macro SBJSetPresentation(title: AnyKeyPath? = nil, insertable: Bool = true, removable: Bool = true, sort: SBJSortDirection? = nil) = #externalMacro(module: "SBJStructureMacros", type: "SBJSetPresentationMacro")
+public macro SBJSetPresentation(insertable: Bool = true, removable: Bool = true, sort: SBJSortDirection? = nil) = #externalMacro(module: "SBJStructureMacros", type: "SBJSetPresentationMacro")

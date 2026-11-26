@@ -2,6 +2,7 @@ import Foundation
 
 @SBJStructureExtension
 extension UnitEditingPolicy: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String {
 		"Step: \(defaultStep.formatted())"
 	}

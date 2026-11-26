@@ -19,7 +19,7 @@ struct SBJAIStructuredQueryLiveTests {
         try #require(SBJAIAvailability.state == .ready)
         let coordinator = SBJAIAssistantCoordinator<SBJLiveQueryFixture>(snapshot: {
             .init(id: "query-test", revision: 0, model: .init(), allowsEditing: false)
-        })
+        }, domainInstructions: "Test document.")
         defer { coordinator.deactivate() }
         coordinator.activate()
         coordinator.submit("What is the score for Quartz in this document? Reply with digits only.")
@@ -31,8 +31,8 @@ struct SBJAIStructuredQueryLiveTests {
         try #require(!coordinator.isResponding, "Native query timed out")
         try #require(coordinator.messages.last?.speaker == .assistant)
         #expect(coordinator.messages.last?.text.contains("7381") == true)
-        #expect(coordinator.structureContext?.snapshot.paths.contains("$/scores/key:Quartz/value") == true)
-        #expect(coordinator.frameworkTranscript?.contains("readStructure") == true)
+        #expect(coordinator.structureContext?.paths.contains("$/scores/key:Quartz/value") == true)
+        #expect(coordinator.frameworkTranscript?.contains("readValue") == true)
     }
 }
 #endif

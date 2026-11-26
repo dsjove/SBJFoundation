@@ -23,12 +23,12 @@ private struct RecipeRuleFixture: Codable {
     @SBJOptional(required: false)
     var optional: String?
 
-    @SBJArray(minCount: 1, maxCount: 2, uniqueBy: \RecipeRuleItem.id)
-    @SBJArrayPresentation(title: \RecipeRuleItem.name, reorderable: true)
+    @SBJArray(elementName: \RecipeRuleItem.name, minCount: 1, maxCount: 2, uniqueBy: \RecipeRuleItem.id)
+    @SBJArrayPresentation(reorderable: true)
     var array: [RecipeRuleItem] = [.init(id: 1, name: "one")]
 
-    @SBJSet(minCount: 1, maxCount: 2)
-    @SBJSetPresentation(title: \RecipeRuleItem.name)
+    @SBJSet(elementName: \RecipeRuleItem.name, minCount: 1, maxCount: 2)
+    @SBJSetPresentation()
     var set: Set<RecipeRuleItem> = [.init(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
@@ -101,11 +101,11 @@ struct SBJRecipeStructuralRuleCoverageTests {
 
         let array = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.array)
         #expect(array?.constraints == [.arrayRules(SBJArrayRules(minCount: 1, maxCount: 2)), .uniqueBy("\\RecipeRuleItem.id")])
-        #expect(array?.hints.contains(.arrayPresentation(SBJArrayPresentationValue(reorderable: true))) == true && array?.hints.contains(.itemTitle("name")) == true)
+        #expect(array?.hints.contains(.arrayPresentation(SBJArrayPresentationValue(reorderable: true))) == true && array?.hints.contains(.elementName(\RecipeRuleItem.name)) == true)
 
         let set = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.set)
         #expect(set?.constraints == [.setRules(SBJSetRules(minCount: 1, maxCount: 2))])
-        #expect(set?.hints == [.setPresentation(SBJSetPresentationValue(insertable: true, removable: true)), .itemTitle("name")])
+        #expect(set?.hints == [.setPresentation(SBJSetPresentationValue(insertable: true, removable: true)), .elementName(\RecipeRuleItem.name)])
 
         let data = RecipeRuleFixture.propertyMetadata(for: \RecipeRuleFixture.data)
         #expect(data?.constraints == [.dataRules(SBJDataRules(min: 2, max: 4, modulo: 2))])

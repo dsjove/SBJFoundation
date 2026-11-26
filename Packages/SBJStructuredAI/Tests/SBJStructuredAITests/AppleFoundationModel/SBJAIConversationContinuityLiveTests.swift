@@ -12,18 +12,11 @@ struct SBJAIConversationContinuityLiveTests {
         try #require(SBJAIAvailability.state == .ready)
         let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: {
             .init(id: "test", revision: 0, model: 0, allowsEditing: false)
-        })
+        }, domainInstructions: "Test document.")
         defer { coordinator.deactivate() }
-        // Run separately with SBJ_PREWARM_LIVE_TESTS=0 for a cold-session baseline.
-        let warm = ProcessInfo.processInfo.environment["SBJ_PREWARM_LIVE_TESTS"] != "0"
-        if warm {
-            coordinator.prewarm()
-            coordinator.prewarm() // Repeated hint must not replace the warmed session.
-        }
         coordinator.activate()
         #expect(coordinator.messages.isEmpty)
-        // Give the optional preload a useful head start, not a readiness guarantee.
-        if warm { try await Task.sleep(for: .seconds(2)) }
+        coordinator.prewarm() // Repeated hint must not replace the warmed session.
         coordinator.submit("For this conversation, my favorite color is cobalt. Acknowledge this fact.")
         try await waitForResponse(coordinator)
         coordinator.submit("What favorite color did I tell you? Reply with just the color.")

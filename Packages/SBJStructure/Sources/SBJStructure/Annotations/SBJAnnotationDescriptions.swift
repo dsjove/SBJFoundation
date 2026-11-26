@@ -180,7 +180,7 @@ extension SBJPropertyHint: CustomStringConvertible {
         case .dictionaryPresentation(let v): return "Dictionary · \(v)"
         case .stringPresentation(let v): return "Text · \(v)"
         case .colorPresentation(let v): return "Color · \(v)"
-        case .itemTitle(let v): return "Item title · \(v)"
+        case .elementName(let v): return "Element name · \(v)"
         }
     }
 }

@@ -158,7 +158,7 @@ public enum SBJDefinitionPDFReport {
         func signature(_ definition: SBJDefinitionType) -> [String] {
             switch definition.content {
             case .structure(let fields):
-                return ["struct"] + fields.map { field in
+                return ["struct", String(definition.isAtomic)] + fields.map { field in
                     [field.swiftIdentifier, field.displayName, field.title ?? "",
                      field.info?.summary ?? "", field.info?.details ?? "",
                      String(describing: field.info?.symbol),
@@ -171,7 +171,7 @@ public enum SBJDefinitionPDFReport {
                      field.hints.map(\.description).joined(separator: "|")].joined(separator: "\u{1f}")
                 }
             case .enumeration(let cases):
-                return ["enum"] + cases.map { item in
+                return ["enum", String(definition.isAtomic)] + cases.map { item in
                     [item.swiftIdentifier, item.title ?? "", item.info?.summary ?? "",
                      item.info?.details ?? "", String(describing: item.info?.symbol),
                      item.payloads.map { "\($0.name):\($0.typeName)" }.joined(separator: "|"),
@@ -200,6 +200,9 @@ public enum SBJDefinitionPDFReport {
             let shortName = base.split(separator: ".").last.map(String.init) ?? base
             line(String(format: "%02d  %@", index + 1, readable(shortName)), size: 16, bold: true,
                  color: blue, section: "type-\(index)")
+            if definition.isAtomic {
+                metadata("Presentation", "Atomic value; members define its business rules.", keepWithPrevious: true)
+            }
             switch definition.content {
             case .structure(let properties):
                 if variants.count > 1 {

@@ -34,7 +34,7 @@ struct SBJAIUnsupportedRuntimeTests {
     func unsupportedRuntime() {
         #expect(SBJAIAvailability.state == .unsupported)
         #expect(!SBJAIAvailability.isVisible)
-        let assistant = SBJAIAvailability.makeAssistant(snapshot: { nil as SBJAssistantDocument<Int>? })
+        let assistant = SBJAIAvailability.makeAssistant(snapshot: { nil as SBJAssistantDocument<Int>? }, domainInstructions: "Test document.")
         #expect(assistant == nil)
     }
 }

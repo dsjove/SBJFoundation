@@ -48,7 +48,7 @@ import SBJUIVocabulary
       let name = metadata.displayName
       self.name = name
       self.traversalDisclosureMode = disclosureMode
-      self.isTraversalDisclosure = !(Value.self is any SBJTypedEditorValue.Type) &&
+      self.isTraversalDisclosure = !SBJEditorValueTraversal.isLeaf(Value.self) &&
         (Value.self is any SBJMutableStructure.Type
         || Value.self is any SBJEditorTraversableValue.Type
         || Value.self is any SBJStructuredEnum.Type)

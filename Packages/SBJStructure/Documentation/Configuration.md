@@ -12,7 +12,7 @@ How structural annotations configure validation rules, presentation hints, and m
 ## Intentionally separate metadata and unit design
 
 - Array `unique` and `uniqueBy` remain typed data rules. `reorderable` is a presentation setting in `SBJArrayPresentationValue`. Uniqueness keeps typed Swift key paths in generated validation.
-- Collection `itemTitle` remains a presentation hint derived from a typed key path.
+- Collection `elementName` is a shared structural naming hint retaining the compiler-checked key path.
 - Unit `unitMutable`, `defaultUnit`, and `unitSystem` remain separate pending unit rule design.
 - Do not introduce string identifiers or registration schemes to make these options Codable.
 

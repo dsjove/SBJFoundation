@@ -83,7 +83,7 @@ Adds array constraints and usage hints.
 ```swift
 @SBJArray(minCount: 1, maxCount: 10, uniqueBy: \RecipeIngredient.id)
 @SBJArrayPresentation(reorderable: true)
-@SBJArrayPresentation(title: \RecipeIngredient.name)
+@SBJArray(elementName: \RecipeIngredient.name)
 var ingredients: [RecipeIngredient]
 ```
 
@@ -104,7 +104,7 @@ Adds Set count constraints and item-title metadata.
 
 ```swift
 @SBJSet(minCount: 1, maxCount: 20)
-@SBJSetPresentation(title: \Proficiency.name)
+@SBJSet(elementName: \Proficiency.name)
 var proficiencies: Set<Proficiency>
 ```
 

@@ -79,6 +79,8 @@ public struct SBJAssistantView<Header: View, InputAccessory: View>: View {
             SBJAssistantTranscriptView(messages: assistant.messages,
                                        diagnostics: assistant.frameworkDiagnostics,
                                        showsDiagnostics: options.hasDiagnostics,
+                                       canPrintInstructions: assistant.canPrintInstructions,
+                                       printInstructions: assistant.printInstructions,
                                        shortcuts: assistant.shortcuts,
                                        isActive: assistant.isActive,
                                        isResponding: assistant.isResponding,

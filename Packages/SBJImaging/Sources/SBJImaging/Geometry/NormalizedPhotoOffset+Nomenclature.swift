@@ -3,6 +3,7 @@ import SBJStructure
 
 @SBJStructureExtension
 extension NormalizedPhotoOffset: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String { "Horizontal offset \(x), vertical offset \(y)" }
 	public static let xNomenclature = SBJNomenclature(
 		title: "Horizontal Placement",

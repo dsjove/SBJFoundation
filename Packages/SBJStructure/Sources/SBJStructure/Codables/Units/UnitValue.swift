@@ -5,7 +5,7 @@ import Foundation
 /// `UnitValue` stores the source unit rather than normalizing values at rest.
 /// Conversion is explicit and non-mutating, which preserves the vocabulary of
 /// imported/domain data while still using Foundation `Measurement` for math.
-@SBJStructure
+@SBJStructure(atomic: true)
 public struct UnitValue<U: UnitType>: Codable, Equatable, Sendable, Hashable {
 	public typealias Unit = U
     public var value: Double

@@ -12,5 +12,6 @@ public struct PhotoSkew: Codable, Equatable, Sendable {
     public var verticalDegrees: Double
     public init(horizontalDegrees: Double = 0, verticalDegrees: Double = 0) { self.horizontalDegrees = horizontalDegrees; self.verticalDegrees = verticalDegrees }
     public static let identity = Self()
+    @SBJExclude
     public var isIdentity: Bool { self == .identity }
 }

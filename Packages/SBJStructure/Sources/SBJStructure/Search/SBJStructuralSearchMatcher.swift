@@ -31,6 +31,10 @@ private struct SBJStructuralSearchMatcher {
         // keep malformed/reflected object graphs from recursing without bound.
         guard depth < 64 else { return false }
 
+        if let atomic = value as? any SBJAtomicStructuralValue {
+            return matchesText(atomic.presentedValue)
+        }
+
         // Structured subjects have an explicit visibility boundary. Do not fall
         // back to reflection or a synthesized description for these values.
         if let structured = value as? any SBJStructured, !(value is any SBJStructuralSearchAtomic) {

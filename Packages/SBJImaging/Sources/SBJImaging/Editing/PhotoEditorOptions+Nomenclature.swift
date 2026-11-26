@@ -3,6 +3,7 @@ import SBJStructure
 
 @SBJStructureExtension
 extension PhotoEditorOptions: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String { "\(cropOptions.count) crop options, maximum zoom \(maximumMagnification)" }
 	public static let cropOptionsNomenclature = #SBJAutoNomenclature(summary: "Crop modes offered by the photo editor.",
 		details: "Include None when uncropped editing is allowed. The order is the order presented in the crop menu."

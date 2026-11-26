@@ -558,12 +558,12 @@ private struct TestDataConstraintHolder {
 
 @SBJStructure
 private struct CollectionRuleFixture: Codable {
-    @SBJArray(minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
-    @SBJArrayPresentation(title: \TestUniqueItem.name, reorderable: false)
+    @SBJArray(elementName: \TestUniqueItem.name, minCount: 1, maxCount: 3, uniqueBy: \TestUniqueItem.id)
+    @SBJArrayPresentation(reorderable: false)
     var items: [TestUniqueItem] = [TestUniqueItem(id: 1, name: "one")]
 
-    @SBJSet(minCount: 1, maxCount: 2)
-    @SBJSetPresentation(title: \TestUniqueItem.name)
+    @SBJSet(elementName: \TestUniqueItem.name, minCount: 1, maxCount: 2)
+    @SBJSetPresentation()
     var members: Set<TestUniqueItem> = [TestUniqueItem(id: 1, name: "one")]
 
     @SBJDictionary(minCount: 1, maxCount: 2)
@@ -580,7 +580,7 @@ extension SBJStructureUsageTests {
         ])
         #expect(items?.hints == [
             .arrayPresentation(SBJArrayPresentationValue(reorderable: false)),
-            .itemTitle("name"),
+            .elementName(\TestUniqueItem.name),
         ])
 
         let members = CollectionRuleFixture.propertyMetadata(for: \CollectionRuleFixture.members)
@@ -588,7 +588,7 @@ extension SBJStructureUsageTests {
         #expect(members?.constraints == [.setRules(SBJSetRules(minCount: 1, maxCount: 2))])
         #expect(members?.hints == [
             .setPresentation(SBJSetPresentationValue()),
-            .itemTitle("name"),
+            .elementName(\TestUniqueItem.name),
         ])
 
         let labels = CollectionRuleFixture.propertyMetadata(for: \CollectionRuleFixture.labels)
@@ -959,7 +959,7 @@ private struct TestTitledValidationItem: Codable, Hashable {
 
 @SBJStructure
 private struct TestTitledValidationContainer: Codable {
-    @SBJArrayPresentation(title: \TestTitledValidationItem.name)
+    @SBJArray(elementName: \TestTitledValidationItem.name)
     var abilities: [TestTitledValidationItem] = []
 }
 

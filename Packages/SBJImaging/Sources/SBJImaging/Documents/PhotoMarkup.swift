@@ -43,6 +43,7 @@ public struct PhotoMarkup: Codable, Equatable, Sendable {
         self.coordinateSpace = coordinateSpace
     }
 
+    @SBJExclude
     public var contentType: UTType? { UTType(contentTypeIdentifier) }
 }
 

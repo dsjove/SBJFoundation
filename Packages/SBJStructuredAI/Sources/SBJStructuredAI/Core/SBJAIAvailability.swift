@@ -13,14 +13,14 @@ public enum SBJAIAvailability {
 	/// Construction does not load a model, read the snapshot, or start a conversation.
 	public static func makeAssistant<Root>(
 		snapshot: @escaping @MainActor () -> SBJAssistantDocument<Root>?,
-		instructions: String? = nil,
+		domainInstructions: String,
 		diagnostic: (@MainActor (SBJAssistantDiagnostic, UUID, Int) -> Void)? = nil,
 		displayError: @escaping @MainActor (String) -> String = { $0 }
 	) -> (any SBJAssistantCoordinating & SBJAssistantPresenting)? {
 		#if canImport(FoundationModels) && !os(watchOS) && !os(tvOS) && !arch(x86_64)
 		if #available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *) {
 			return SBJAIAssistantCoordinator(
-				snapshot: snapshot, instructions: instructions,
+				snapshot: snapshot, domainInstructions: domainInstructions,
 				diagnostic: diagnostic, displayError: displayError
 			)
 		}

@@ -1047,15 +1047,15 @@ public enum SBJStructureGeneration {
         return "\"\(escaped)\""
     }
 
-    private static func editorTitle(on variable: VariableDeclSyntax, annotation: String) -> String? {
+    private static func elementName(on variable: VariableDeclSyntax, annotation: String) -> String? {
         for element in variable.attributes {
             guard case .attribute(let attribute) = element,
                   attribute.attributeName.trimmedDescription == annotation,
                   let raw = attribute.arguments,
                   case .argumentList(let args) = raw,
-                  let argument = args.first(where: { $0.label?.text == "title" }) else { continue }
+                  let argument = args.first(where: { $0.label?.text == "elementName" }) else { continue }
             let expression = argument.expression.trimmedDescription
-            return expression == "nil" ? nil : keyPathPropertyName(from: expression)
+            return expression == "nil" ? nil : expression
         }
         return nil
     }
@@ -1621,13 +1621,12 @@ public enum SBJStructureGeneration {
         // remain part of the declared model and are validated when a
         // consumer explicitly invokes the invariant.
         let arrayOptions = arrayOptions(on: variable)
-        let arrayTitle = (editorTitle(on: variable, annotation: "SBJArrayPresentation") ?? editorTitle(on: variable, annotation: "SBJEditorArray"))
         let setOptions = setOptions(on: variable)
-        let setTitle = (editorTitle(on: variable, annotation: "SBJSetPresentation") ?? editorTitle(on: variable, annotation: "SBJEditorSet"))
-        if let itemTitleKey = arrayTitle {
-            invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(swiftStringLiteral(itemTitleKey)))")
-        } else if let itemTitleKey = setTitle {
-            invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(swiftStringLiteral(itemTitleKey)))")
+        let elementName = elementName(on: variable, annotation: "SBJArray")
+            ?? elementName(on: variable, annotation: "SBJSet")
+            ?? elementName(on: variable, annotation: "SBJDictionary")
+        if let elementName {
+            invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)), itemTitleKey: \(elementName))")
         } else {
             invariantStatements.append("try SBJInvariantCheck.validate(\(name), at: keyPath.appending(\\Self.\(name)))")
         }
@@ -1831,8 +1830,8 @@ public enum SBJStructureGeneration {
             let reorderable = collectionPresentationOption("reorderable", on: variable) ?? "true"
             hintMetadata.append(".arrayPresentation(SBJArrayPresentationValue(insertable: \(insertable), removable: \(removable), reorderable: \(reorderable)))")
         }
-        if let title = arrayTitle ?? setTitle {
-            hintMetadata.append(".itemTitle(\"\(title)\")")
+        if let elementName {
+            hintMetadata.append(".elementName(\(elementName))")
         }
 
         let constraints = constraintMetadata.joined(separator: ", ")

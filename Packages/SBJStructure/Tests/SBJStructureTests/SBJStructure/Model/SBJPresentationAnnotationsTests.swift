@@ -10,7 +10,7 @@ private struct PresentationFixture: Codable {
     @SBJFieldPresentation(exclude: true)
     var hidden: String = ""
 
-    @SBJArrayPresentation(title: \PresentationFixture.Entry.title)
+    @SBJArray(elementName: \PresentationFixture.Entry.title)
     @SBJFieldPresentation()
     @SBJFieldPresentation()
     var entries: [Entry] = []
@@ -34,7 +34,7 @@ final class SBJPresentationAnnotationsTests: XCTestCase {
         XCTAssertEqual(properties[0].displayName, "Notes")
         XCTAssertTrue(properties[0].hints.contains(.fieldPresentation(SBJFieldPresentationValue(autoExpand: true))))
         XCTAssertTrue(properties[1].hints.contains(.fieldPresentation(SBJFieldPresentationValue(exclude: true))))
-        XCTAssertTrue(properties[2].hints.contains(.itemTitle("title")))
+        XCTAssertTrue(properties[2].hints.contains(.elementName(\PresentationFixture.Entry.title)))
         XCTAssertTrue(properties[2].hints.contains(.fieldPresentation(SBJFieldPresentationValue())))
         XCTAssertTrue(properties[2].hints.contains(.elementFieldPresentation(SBJFieldPresentationValue())))
         XCTAssertTrue(properties[3].hints.contains(.dictionaryPresentation(

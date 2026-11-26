@@ -22,7 +22,7 @@ private protocol _SBJOptionalValue {
         collectionInsertable: Bool,
         collectionRemovable: Bool,
         collectionReorderable: Bool,
-        collectionItemTitleKey: String?,
+        collectionItemTitleKey: AnyKeyPath?,
         collectionItemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
@@ -45,7 +45,7 @@ private protocol _SBJCollectionValue {
         insertable: Bool,
         removable: Bool,
         reorderable: Bool,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         optionalCollectionControl: AnyView?,
@@ -61,7 +61,7 @@ private protocol _SBJOptionalIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
-        collectionItemTitleKey: String?
+        collectionItemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue]
 }
 
@@ -71,7 +71,7 @@ private protocol _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
-        itemTitleKey: String?
+        itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue]
 }
 
@@ -81,7 +81,7 @@ extension Optional: _SBJOptionalIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
-        collectionItemTitleKey: String?
+        collectionItemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let optional = value as? Wrapped?, let wrapped = optional else { return [] }
         return SBJValueEditor.collectIssues(
@@ -99,7 +99,7 @@ extension Array: _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
-        itemTitleKey: String?
+        itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let values = value as? [Element] else { return [] }
         return values.enumerated().flatMap { offset, element in
@@ -124,7 +124,7 @@ extension Set: _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
-        itemTitleKey: String?
+        itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let values = value as? Set<Element> else { return [] }
         return SBJCollectionOrdering.sorted(values).flatMap { element in
@@ -144,13 +144,13 @@ extension Dictionary: _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
-        itemTitleKey: String?
+        itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let values = value as? [Key: Value] else { return [] }
         return SBJCollectionOrdering.sortedEntries(values).flatMap { key, element in
             SBJValueEditor.collectIssues(
                 value: element,
-                path: path + ["[\(String(describing: key))]"],
+                path: path + [SBJCollectionItemIdentification.configuredTitle(for: element, itemTitleKey: itemTitleKey) ?? "[\(String(describing: key))]"],
                 registry: registry
             )
         }
@@ -175,7 +175,7 @@ extension Optional: _SBJOptionalValue {
         collectionInsertable: Bool,
         collectionRemovable: Bool,
         collectionReorderable: Bool,
-        collectionItemTitleKey: String?,
+        collectionItemTitleKey: AnyKeyPath?,
         collectionItemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         focusRequest: SBJEditorFocusRequest?,
@@ -224,7 +224,7 @@ extension Array: _SBJCollectionValue {
         insertable: Bool,
         removable: Bool,
         reorderable: Bool,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         optionalCollectionControl: AnyView?,
@@ -271,7 +271,7 @@ extension Set: _SBJCollectionValue {
         insertable: Bool,
         removable: Bool,
         reorderable: Bool,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         optionalCollectionControl: AnyView?,
@@ -315,7 +315,7 @@ extension Dictionary: _SBJCollectionValue {
         insertable: Bool,
         removable: Bool,
         reorderable: Bool,
-        itemTitleKey: String?,
+        itemTitleKey: AnyKeyPath?,
         itemIdentifierKey: String?,
         itemActions: SBJEditorItemActions?,
         optionalCollectionControl: AnyView?,
@@ -365,7 +365,7 @@ enum SBJValueEditor {
         collectionInsertable: Bool = true,
         collectionRemovable: Bool = true,
         collectionReorderable: Bool = true,
-        collectionItemTitleKey: String? = nil,
+        collectionItemTitleKey: AnyKeyPath? = nil,
         collectionItemIdentifierKey: String? = nil,
         promotedTitlePropertyName: String? = nil,
         promotedTitlePrefix: String? = nil,
@@ -584,6 +584,13 @@ enum SBJValueEditor {
                 headerOnly: headerOnly
             )
         }
+        if SBJStructuralType.isAtomic(Value.self) {
+            return wrapLeaf(
+                SBJAtomicValueEditor(label: label, value: value, registry: registry,
+                    showsReadOnlyProperties: context.branch.showsReadOnlyProperties),
+                itemActions: itemActions, context: context
+            )
+        }
         if let associatedEnum = Value.self as? any SBJStructuredEnum.Type {
             return wrapLeaf(
                 associatedEnum._sbjMakeAssociatedEnumEditor(
@@ -632,7 +639,7 @@ enum SBJValueEditor {
         value: Value,
         path: [String],
         registry: SBJEditorRegistry,
-        collectionItemTitleKey: String? = nil
+        collectionItemTitleKey: AnyKeyPath? = nil
     ) -> [SBJEditorCapabilityIssue] {
         if registry.hasCustomEditor(Value.self) { return [] }
         // Built-in font selection is a leaf editor, including its optional system-font form.

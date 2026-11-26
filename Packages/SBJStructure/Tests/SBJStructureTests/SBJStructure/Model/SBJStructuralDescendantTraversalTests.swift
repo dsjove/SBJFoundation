@@ -146,7 +146,7 @@ final class SBJStructuralDescendantTraversalTests: XCTestCase {
     func testCollectionKeysFollowSamePolicyAsEditor() {
         XCTAssertNil(SBJStructuralCollectionKeys.title(in: []))
         XCTAssertNil(SBJStructuralCollectionKeys.identifier(in: []))
-        XCTAssertEqual(SBJStructuralCollectionKeys.title(in: [.itemTitle("name")]), "name")
+        XCTAssertEqual(SBJStructuralCollectionKeys.title(in: [.elementName(\IdentifiedDescendant.id)]), \IdentifiedDescendant.id)
         XCTAssertEqual(SBJStructuralCollectionKeys.identifier(in: [.uniqueBy("element.id")]), "id")
     }
 }

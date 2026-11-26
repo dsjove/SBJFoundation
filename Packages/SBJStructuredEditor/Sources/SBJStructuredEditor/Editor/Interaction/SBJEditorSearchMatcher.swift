@@ -26,7 +26,7 @@ enum SBJEditorSearchMatcher {
     private static func matchesWritableContent(_ value: Any, query: String, depth: Int) -> Bool {
         // Keep the same recursion bound and atomic boundary as structural search.
         guard depth < 64 else { return false }
-        if value is any SBJStructuralSearchAtomic {
+        if value is any SBJAtomicStructuralValue || value is any SBJStructuralSearchAtomic {
             return sbjPredicated(value, search: query)
         }
         if let structured = value as? any SBJStructured {

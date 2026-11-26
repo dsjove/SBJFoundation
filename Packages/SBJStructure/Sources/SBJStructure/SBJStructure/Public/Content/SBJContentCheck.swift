@@ -64,7 +64,7 @@ public enum SBJContentCheck {
             return true
         }
 
-        if treatingAsLeaf(Swift.type(of: value)) {
+        if SBJStructuralType.isAtomic(Swift.type(of: value)) || treatingAsLeaf(Swift.type(of: value)) {
             return false
         }
 

@@ -62,7 +62,7 @@ struct SBJCollectionUtilitiesTests {
     @Test func configuredItemTitleUsesNamedProperty() {
         let item = CollectionUtilityItem(name: "Beta", rank: 7)
         #expect(
-            SBJCollectionItemIdentification.title(for: item, itemTitleKey: "name") == "Beta"
+            SBJCollectionItemIdentification.title(for: item, itemTitleKey: \CollectionUtilityItem.name) == "Beta"
         )
     }
 
@@ -75,20 +75,20 @@ struct SBJCollectionUtilitiesTests {
             SBJCollectionItemIdentification.arrayTitle(
                 for: item,
                 index: 3,
-                itemTitleKey: "name"
+                itemTitleKey: \CollectionUtilityItem.name
             ) == "Beta"
         )
     }
 
     @Test func missingOrEmptyConfiguredTitleFallsBack() {
         let item = CollectionUtilityOptionalTitleItem(name: nil)
-        let title = SBJCollectionItemIdentification.title(for: item, itemTitleKey: "name")
+        let title = SBJCollectionItemIdentification.title(for: item, itemTitleKey: \CollectionUtilityOptionalTitleItem.name)
         #expect(!title.isEmpty)
         #expect(
             SBJCollectionItemIdentification.arrayTitle(
                 for: item,
                 index: 4,
-                itemTitleKey: "name"
+                itemTitleKey: \CollectionUtilityOptionalTitleItem.name
             ) == "[4]"
         )
     }
@@ -98,7 +98,7 @@ struct SBJCollectionUtilitiesTests {
         #expect(
             SBJCollectionItemIdentification.configuredTitle(
                 for: populated,
-                itemTitleKey: "name"
+                itemTitleKey: \CollectionUtilityOptionalTitleItem.name
             ) == "Beta"
         )
 
@@ -106,7 +106,7 @@ struct SBJCollectionUtilitiesTests {
         #expect(
             SBJCollectionItemIdentification.configuredTitle(
                 for: empty,
-                itemTitleKey: "name"
+                itemTitleKey: \CollectionUtilityOptionalTitleItem.name
             ) == nil
         )
     }

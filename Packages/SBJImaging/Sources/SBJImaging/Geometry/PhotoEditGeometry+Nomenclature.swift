@@ -3,6 +3,7 @@ import SBJStructure
 
 @SBJStructureExtension
 extension PhotoEditGeometry: SBJTextPresentable {
+	@SBJExclude
 	public var presentedValue: String { "\(crop.presentedValue), zoom \(magnification), \(rotation.presentedValue)" }
 	public static let cropNomenclature = #SBJAutoNomenclature(summary: "Crop selection and crop-specific geometry.",
 		details: "Contains the selected crop mode, free-crop aspect ratio, and width/height transpose state."

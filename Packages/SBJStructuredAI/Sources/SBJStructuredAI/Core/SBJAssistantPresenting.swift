@@ -25,6 +25,9 @@ public protocol SBJAssistantPresenting: AnyObject {
 	var frameworkDiagnostics: [String] { get }
 	/// Optional raw backend transcript supplied by the host, for export.
 	var frameworkTranscript: String? { get }
+	/// Explicit local diagnostic action; never submits a model request.
+	var canPrintInstructions: Bool { get }
+	func printInstructions()
 
 	func submit(_ text: String)
 	func stop()
@@ -44,6 +47,8 @@ public extension SBJAssistantPresenting {
 	var isPersisting: Bool { false }
 	var frameworkDiagnostics: [String] { [] }
 	var frameworkTranscript: String? { nil }
+	var canPrintInstructions: Bool { false }
+	func printInstructions() {}
 	var shortcuts: [SBJAssistantShortcut] { [] }
 	func selectShortcut(_ shortcut: SBJAssistantShortcut) { submit(shortcut.reply) }
 	func displayError(_ message: String) -> String { message }

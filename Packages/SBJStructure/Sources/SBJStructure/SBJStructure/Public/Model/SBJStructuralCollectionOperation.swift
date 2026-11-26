@@ -15,22 +15,22 @@ public enum SBJCollectionOperationKind: String, CaseIterable, Hashable, Sendable
 public enum SBJCollectionOperationNomenclature {
     public static func info(for kind: SBJCollectionOperationKind) -> SBJNomenclature {
         switch kind {
-        case .append: .init(title: "Append", summary: "Add an element to the end of a sequence", aliases: ["add", "add to", "push"])
-        case .insert: .init(title: "Insert", summary: "Insert an element at a sequence position", aliases: ["place", "put before"])
-        case .remove: .init(title: "Remove", summary: "Remove an element at a sequence position", aliases: ["delete", "take out"])
-        case .replace: .init(title: "Replace", summary: "Replace one sequence element", aliases: ["change", "update"])
-        case .move: .init(title: "Move", summary: "Reorder an element within a sequence", aliases: ["reorder", "shift"])
+        case .append: .init(title: "Append", summary: "Add an element to the end of a sequence", aliases: ["push"])
+        case .insert: .init(title: "Insert", summary: "Insert an element at a sequence position")
+        case .remove: .init(title: "Remove", summary: "Remove an element at a sequence position", aliases: ["delete"])
+        case .replace: .init(title: "Replace", summary: "Replace one sequence element")
+        case .move: .init(title: "Move", summary: "Reorder an element within a sequence", aliases: ["reorder"])
         case .duplicate: .init(title: "Duplicate", summary: "Copy an existing sequence element", aliases: ["copy"])
-        case .clear: .init(title: "Clear", summary: "Remove every collection element", aliases: ["empty", "remove all"])
-        case .putKey: .init(title: "Set Entry", summary: "Insert or update a dictionary entry", aliases: ["put", "assign", "set key"])
-        case .insertKey: .init(title: "Insert Entry", summary: "Insert a dictionary key that does not yet exist", aliases: ["add key", "new entry"])
-        case .replaceKey: .init(title: "Replace Entry", summary: "Update an existing dictionary key", aliases: ["update entry", "change key"])
-        case .removeKey: .init(title: "Remove Entry", summary: "Remove a dictionary entry", aliases: ["delete key", "remove key"])
-        case .insertMember: .init(title: "Add Member", summary: "Insert a unique set member", aliases: ["add", "include"])
-        case .replaceMember: .init(title: "Replace Member", summary: "Replace a member without creating a duplicate", aliases: ["swap member", "change member"])
-        case .removeMember: .init(title: "Remove Member", summary: "Remove a set member", aliases: ["exclude", "delete"])
-        case .setOptional: .init(title: "Set Value", summary: "Create or replace an optional value", aliases: ["assign", "some", "fill", "add"])
-        case .clearOptional: .init(title: "Clear Value", summary: "Remove an optional value", aliases: ["none", "nil", "unset", "remove"])
+        case .clear: .init(title: "Clear", summary: "Remove every collection element", aliases: ["remove all"])
+        case .putKey: .init(title: "Set Entry", summary: "Insert or update a dictionary entry")
+        case .insertKey: .init(title: "Insert Entry", summary: "Insert a dictionary key that does not yet exist")
+        case .replaceKey: .init(title: "Replace Entry", summary: "Update an existing dictionary key")
+        case .removeKey: .init(title: "Remove Entry", summary: "Remove a dictionary entry")
+        case .insertMember: .init(title: "Add Member", summary: "Insert a unique set member")
+        case .replaceMember: .init(title: "Replace Member", summary: "Replace a member without creating a duplicate")
+        case .removeMember: .init(title: "Remove Member", summary: "Remove a set member")
+        case .setOptional: .init(title: "Set Value", summary: "Create or replace an optional value")
+        case .clearOptional: .init(title: "Clear Value", summary: "Remove an optional value", aliases: ["nil", "unset"])
         }
     }
 

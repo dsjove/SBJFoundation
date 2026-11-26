@@ -29,6 +29,7 @@ public struct Insets: Sendable, Codable, Equatable, CustomStringConvertible {
 		self.init(left: dx, right: dx, top: dy, bottom: dy)
 	}
 
+	@SBJExclude
 	public var description: String {
 		"(left: \(left), right: \(right), top: \(top), bottom: \(bottom))"
 	}

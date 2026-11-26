@@ -13,7 +13,8 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        try SBJStructureGeneration.members(of: declaration, in: context, layers: [])
+        _ = try atomicArgument(node)
+        return try SBJStructureGeneration.members(of: declaration, in: context, layers: [])
     }
 
     public static func expansion(
@@ -23,7 +24,26 @@ public struct SBJStructureMacro: MemberMacro, ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        try SBJStructureGeneration.extensions(of: declaration, type: type, layers: [])
+        var extensions = try SBJStructureGeneration.extensions(of: declaration, type: type, layers: [])
+        if try atomicArgument(node), !extensions.isEmpty {
+            let atomic: DeclSyntax = """
+            extension \(type.trimmed): SBJAtomicStructuralValue {}
+            """
+            extensions.append(atomic.cast(ExtensionDeclSyntax.self))
+        }
+        return extensions
+    }
+    private static func atomicArgument(_ node: AttributeSyntax) throws -> Bool {
+        guard case .argumentList(let arguments) = node.arguments,
+              let argument = arguments.first(where: { $0.label?.text == "atomic" }) else { return false }
+        guard let literal = argument.expression.as(BooleanLiteralExprSyntax.self) else {
+            throw AtomicArgumentError.literalRequired
+        }
+        return literal.literal.text == "true"
+    }
+
+    private enum AtomicArgumentError: Error, CustomStringConvertible {
+        case literalRequired
+        var description: String { "SBJStructure atomic must be a Boolean literal" }
     }
 }
-

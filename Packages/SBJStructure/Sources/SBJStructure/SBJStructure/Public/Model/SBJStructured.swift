@@ -88,7 +88,7 @@ public extension SBJStructured {
 
     func sbjContainsEmptyContent(treatingAsLeaf: (Any.Type) -> Bool = { _ in false }) -> Bool {
         if !hasContent { return true }
-        if treatingAsLeaf(Self.self) { return false }
+        if SBJStructuralType.isAtomic(Self.self) || treatingAsLeaf(Self.self) { return false }
         return Self.sbjUserFacingProperties.contains { property in
             property.containsEmptyContent(in: self, treatingAsLeaf: treatingAsLeaf)
         }
@@ -358,6 +358,6 @@ public enum SBJPropertyHint: Sendable, Equatable {
     case dictionaryPresentation(SBJDictionaryPresentationValue)
     case stringPresentation(SBJStringPresentationValue)
     case colorPresentation(SBJColorPresentationValue)
-    /// Human-readable representation of the compiler-checked item-title key path.
-    case itemTitle(String)
+    /// Model-declared semantic name accessor for an array/set element or dictionary value.
+    case elementName(AnyKeyPath & Sendable)
 }

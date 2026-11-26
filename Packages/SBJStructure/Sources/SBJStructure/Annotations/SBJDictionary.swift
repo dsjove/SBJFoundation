@@ -4,8 +4,10 @@
 /// `minCount` and `maxCount` constrain entry count when validation is explicitly
 /// requested. Editors may edit keys only when the key type itself has an editor;
 /// key collisions are rejected rather than silently replacing an existing entry.
+/// `elementName` selects the semantic name of a dictionary value.
 @attached(peer)
 public macro SBJDictionary(
+    elementName: (AnyKeyPath & Sendable)? = nil,
     minCount: Int? = nil,
     maxCount: Int? = nil,
     key: [any SBJDictionaryMemberRule] = [],

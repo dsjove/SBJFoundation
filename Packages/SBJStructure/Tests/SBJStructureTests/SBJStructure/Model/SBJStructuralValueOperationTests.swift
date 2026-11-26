@@ -50,7 +50,8 @@ struct SBJStructuralValueOperationTests {
         #expect(later.timeIntervalSince1970 == 30)
         #expect(SBJStructuralValueMutation.supportedOperations(for: 678).contains(.increase))
         #expect(!SBJStructuralValueMutation.supportedOperations(for: [1, 2]).contains(.increase))
-        #expect(SBJValueOperationNomenclature.matching("add").contains(.increase))
+        #expect(SBJValueOperationNomenclature.matching("increment") == [.increase])
+        #expect(SBJValueOperationNomenclature.matching("add").isEmpty)
         #expect(throws: SBJStructuralValueOperationError.unsupportedOperation) {
             try SBJStructuralValueMutation.applying(.increase(5), to: [1, 2])
         }

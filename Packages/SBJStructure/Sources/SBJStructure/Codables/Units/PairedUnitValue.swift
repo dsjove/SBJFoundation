@@ -2,7 +2,7 @@ import Foundation
 
 /// Two independent numeric quantities expressed in one shared unit.
 /// Unlike MixedUnitValue, these values are not added together.
-@SBJStructure
+@SBJStructure(atomic: true)
 public struct PairedUnitValue<U: UnitType>: Codable, Equatable, Hashable, Sendable {
     public typealias Unit = U
     public var first: Double

@@ -5,7 +5,7 @@ import Foundation
 public extension SBJInvariantCheck {
     /// Validates an annotated array, retaining each configured item title in its path.
     static func validate<Element>(
-        _ value: [Element], at keyPath: SBJValidationKeyPath, itemTitleKey: String
+        _ value: [Element], at keyPath: SBJValidationKeyPath, itemTitleKey: AnyKeyPath
     ) throws {
         for (index, element) in value.enumerated() {
             guard let checkable = element as? any HasContentCheckable else { continue }
@@ -16,13 +16,40 @@ public extension SBJInvariantCheck {
 
     /// Validates an annotated set, retaining each configured item title in its path.
     static func validate<Element: Hashable>(
-        _ value: Set<Element>, at keyPath: SBJValidationKeyPath, itemTitleKey: String
+        _ value: Set<Element>, at keyPath: SBJValidationKeyPath, itemTitleKey: AnyKeyPath
     ) throws {
         for element in value {
             guard let checkable = element as? any HasContentCheckable else { continue }
             let title = SBJCollectionItemIdentification.configuredTitle(for: element, itemTitleKey: itemTitleKey)
             try checkable.invariant(at: keyPath.appending(element: element, title: title))
         }
+    }
+
+    static func validate<Element>(
+        _ value: [Element]?, at keyPath: SBJValidationKeyPath, itemTitleKey: AnyKeyPath
+    ) throws {
+        if let value { try validate(value, at: keyPath, itemTitleKey: itemTitleKey) }
+    }
+
+    static func validate<Element: Hashable>(
+        _ value: Set<Element>?, at keyPath: SBJValidationKeyPath, itemTitleKey: AnyKeyPath
+    ) throws {
+        if let value { try validate(value, at: keyPath, itemTitleKey: itemTitleKey) }
+    }
+
+    static func validate<Key: Hashable, Value>(
+        _ value: [Key: Value], at keyPath: SBJValidationKeyPath, itemTitleKey: AnyKeyPath
+    ) throws {
+        for (key, element) in value {
+            guard let checkable = element as? any HasContentCheckable else { continue }
+            try checkable.invariant(at: keyPath.appending(key: key))
+        }
+    }
+
+    static func validate<Key: Hashable, Value>(
+        _ value: [Key: Value]?, at keyPath: SBJValidationKeyPath, itemTitleKey: AnyKeyPath
+    ) throws {
+        if let value { try validate(value, at: keyPath, itemTitleKey: itemTitleKey) }
     }
 
     private static func require<Value>(

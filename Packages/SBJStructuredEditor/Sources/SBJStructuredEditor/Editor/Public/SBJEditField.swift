@@ -21,7 +21,7 @@ import SBJUIVocabulary
     let collectionReorderable: Bool
     let collectionElementPresentation: SBJFieldPresentationValue?
     let dictionaryPresentation: SBJDictionaryPresentationValue?
-    let collectionItemTitleKey: String?
+    let collectionItemTitleKey: AnyKeyPath?
     let collectionItemIdentifierKey: String?
 
     init<Root: SBJStructured>(metadata: SBJPropertyMetadata<Root>?) {
