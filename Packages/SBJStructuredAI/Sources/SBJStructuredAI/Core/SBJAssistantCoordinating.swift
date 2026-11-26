@@ -1,13 +1,8 @@
-import Foundation
-
-/// Host application lifecycle and feedback contract, independent of the assistant backend.
+/// Host application lifecycle contract, independent of the assistant backend.
 /// Compose with `SBJAssistantPresenting` when a host also presents a conversation.
 @MainActor
 public protocol SBJAssistantCoordinating: AnyObject {
 	var hasDocument: Bool { get }
-	var feedback: SBJAssistantFeedback { get }
-	var currentTurnID: UUID { get }
-	var feedbackRevision: Int { get }
 
 	/// Start or resume the host's assistant presentation lifecycle.
 	func activate()

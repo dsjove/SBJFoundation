@@ -2,8 +2,8 @@ import Foundation
 import SwiftUI
 import SBJLocalization
 
-/// Reusable, opt-in feedback presentation. The host decides whether and where
-/// to present it; no domain model or host persistence API is required.
+/// Reusable, opt-in feedback presentation owned by the assistant view.
+/// No domain model or host persistence API is required.
 ///
 /// Feedback events remain session-local and sanitized. Export is possible only
 /// through the explicit ShareLink action; no diagnostics are sent automatically.

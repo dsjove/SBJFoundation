@@ -25,7 +25,7 @@ The factory is now the supported public coordinator construction API. The concre
 - `Core/Feedback`: diagnostic categories, feedback events, and opt-in feedback collection.
 - `Core/Semantics`: semantic snapshot, values, description, and structural change summaries.
 - `AppleFoundationModel`: native session coordinator, availability mapping, dynamic schema builder, tool, and GeneratedContent conversion.
-- `Presentation/AssistantView`: generic root view, composer, toolbar, transcript, message row, diagnostics, shortcuts, and options.
+- `Presentation/AssistantView`: generic root view, composer, command field, transcript, message row, diagnostics, shortcuts, and options.
 - `Presentation`: ancillary availability and feedback views, shared assistant nomenclature, and speech adapter.
 
 Core has no direct SwiftUI or Foundation Models imports. Presentation has no Foundation Models imports or native AI type references. The coordinator supplies `availabilityState`, optional `availabilityProviderName` and optional `availabilityMessage(for:)` via `SBJAssistantPresenting`. The view does not inspect Apple Intelligence directly. Apple-specific availability guidance resides in `SBJAIAvailability`. That type remains usable on unsupported platforms and returns `.unsupported` there.
@@ -102,3 +102,9 @@ The native-null, semantic metadata, alias ranking, duplicate item, child paging,
 - https://developer.apple.com/documentation/foundationmodels/managing-the-context-window
 - https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window
 - https://developer.apple.com/documentation/testing/organizingtests
+
+## Composer layout (Iteration 13)
+
+The built-in top toolbar is removed. The composer displays feedback and transcript sharing before the text field, and microphone, speech output and send after the optional host input accessory. The existing options govern each control independently; the optional host header is unchanged. The draft remains private to the assistant view.
+
+Simple command mode uses a multiline SwiftUI text field on keyboard-capable platforms. Unmodified hardware Return submits; Shift–Return uses native text selection to replace the selection with a newline on iOS 18/macOS 15/Mac Catalyst 18/visionOS 2 and newer. Older keyboard-capable targets delegate modified Return to the system multiline editor. tvOS and watchOS retain the original simple-command field. Multiline mode retains its existing editing behavior. Keyboard event delivery and focus must be verified on Apple platforms.

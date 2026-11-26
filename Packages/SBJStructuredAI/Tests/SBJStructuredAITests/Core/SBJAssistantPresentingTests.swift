@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 import SBJLocalization
 import Testing
@@ -6,6 +7,9 @@ import Testing
 @MainActor
 @Observable
 final class TestAssistant: SBJAssistantPresenting {
+    let feedback = SBJAssistantFeedback()
+    var currentTurnID = UUID()
+    var feedbackRevision = 1
     var availabilityState: SBJAssistantState = .ready
     var messages: [SBJAssistantMessage] = []
     var pendingProposal: SBJStructuralChangeSummary? { nil }
@@ -35,6 +39,20 @@ struct SBJAssistantPresentingTests {
             }
             assistant.submit("Observed through the protocol")
         }
+    }
+
+    @Test func presentationOwnsFeedbackContext() {
+        let implementation = TestAssistant()
+        let assistant: any SBJAssistantPresenting = implementation
+        #expect(assistant.feedback === implementation.feedback)
+        #expect(!assistant.feedback.isEnabled)
+        assistant.feedback.isEnabled = true
+        assistant.feedback.recordCorrection(turnID: assistant.currentTurnID,
+                                            revision: assistant.feedbackRevision,
+                                            category: .wrongField)
+        #expect(assistant.feedback.events.count == 1)
+        #expect(assistant.feedback.events.first?.turnID == implementation.currentTurnID)
+        #expect(assistant.feedback.events.first?.documentRevision == implementation.feedbackRevision)
     }
 
     @Test func defaultShortcutSubmitsReply() {

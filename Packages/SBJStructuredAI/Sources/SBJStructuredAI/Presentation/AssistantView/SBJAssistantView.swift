@@ -5,29 +5,27 @@ import SBJLocalization
 /// Generic SwiftUI presentation for an assistant conversation.
 /// The view knows only its presentation protocol and never saves a document.
 /// Header and input accessory slots support
-/// optional feedback, dictation, and application-specific controls without making
-/// those services dependencies of SBJStructuredAI.
+/// application-specific controls. Feedback presentation is owned by this view.
 @MainActor
 public struct SBJAssistantView<Header: View, InputAccessory: View>: View {
     public let assistant: any SBJAssistantPresenting
-    @Binding private var draft: String
+    @State private var draft = ""
     private let options: SBJAssistantViewOptions
     private let header: Header
     private let inputAccessory: InputAccessory
     @FocusState private var inputFocused: Bool
     @State private var availability: SBJAssistantState
     @State private var speech = SBJAssistantSpeechController()
+    @State private var showFeedback = false
 
     public init(
         assistant: any SBJAssistantPresenting,
-        draft: Binding<String>,
         options: SBJAssistantViewOptions = .init(),
         @ViewBuilder header: () -> Header,
         @ViewBuilder inputAccessory: () -> InputAccessory
     ) {
         self.assistant = assistant
         _availability = State(initialValue: assistant.availabilityState)
-        _draft = draft
         self.options = options
         self.header = header()
         self.inputAccessory = inputAccessory()
@@ -49,6 +47,16 @@ public struct SBJAssistantView<Header: View, InputAccessory: View>: View {
             }
         }
         .frame(minWidth: 320, minHeight: 300)
+        .sheet(isPresented: $showFeedback) {
+            SBJAssistantFeedbackView(
+                feedback: assistant.feedback,
+                turnID: assistant.currentTurnID,
+                revision: assistant.feedbackRevision
+            )
+        }
+        .onChange(of: options.hasFeedbackDialog) { _, enabled in
+            if !enabled { showFeedback = false }
+        }
         .task {
             while !Task.isCancelled {
                 let next = assistant.availabilityState
@@ -68,11 +76,6 @@ public struct SBJAssistantView<Header: View, InputAccessory: View>: View {
     private var chatBody: some View {
         VStack(spacing: 0) {
             header
-            SBJAssistantToolbar(hasSpeechToggle: options.hasSpeechToggle,
-                                hasShareDialog: options.hasShareDialog,
-                                speaksResponses: $speech.speaksResponses,
-                                transcript: options.hasShareDialog ? assistant.exportText : "",
-                                canShare: !assistant.messages.isEmpty || !assistant.frameworkDiagnostics.isEmpty)
             SBJAssistantTranscriptView(messages: assistant.messages,
                                        diagnostics: assistant.frameworkDiagnostics,
                                        showsDiagnostics: options.hasDiagnostics,
@@ -84,8 +87,10 @@ public struct SBJAssistantView<Header: View, InputAccessory: View>: View {
                                        stop: assistant.stop)
             Divider()
             SBJAssistantComposer(draft: $draft, inputFocused: $inputFocused, speech: speech,
-                                 simpleCommands: options.simpleCommands,
-                                 hasMicrophoneToggle: options.hasMicrophoneToggle,
+                                 options: options,
+                                 showFeedback: { showFeedback = true },
+                                 transcript: options.hasShareDialog ? assistant.exportText : "",
+                                 canShare: !assistant.messages.isEmpty || !assistant.frameworkDiagnostics.isEmpty,
                                  canEdit: assistant.isActive && assistant.canSubmit && !assistant.isResponding,
                                  canSend: canSend, inputAccessory: inputAccessory,
                                  displayError: assistant.displayError, send: send)
@@ -117,11 +122,10 @@ public struct SBJAssistantView<Header: View, InputAccessory: View>: View {
     }
 }
 
-/// No toolbar or accessory is required for basic text-only conversations.
+/// No host-provided header or accessory is required for basic conversations.
 public extension SBJAssistantView where Header == EmptyView, InputAccessory == EmptyView {
-    init(assistant: any SBJAssistantPresenting, draft: Binding<String>,
-         options: SBJAssistantViewOptions = .init()) {
-        self.init(assistant: assistant, draft: draft, options: options) {
+    init(assistant: any SBJAssistantPresenting, options: SBJAssistantViewOptions = .init()) {
+        self.init(assistant: assistant, options: options) {
             EmptyView()
         } inputAccessory: {
             EmptyView()

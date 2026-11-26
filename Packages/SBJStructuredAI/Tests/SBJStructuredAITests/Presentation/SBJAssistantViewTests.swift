@@ -10,14 +10,14 @@ struct SBJAssistantViewTests {
         let assistant = TestAssistant()
         assistant.availabilityState = state
         let options = SBJAssistantViewOptions(hasSpeechToggle: true, hasMicrophoneToggle: true,
-                                             hasDiagnostics: true, hasShareDialog: true)
-        let view = SBJAssistantView(assistant: assistant, draft: .constant(""), options: options)
+                                             hasDiagnostics: true, hasShareDialog: true, hasFeedbackDialog: true)
+        let view = SBJAssistantView(assistant: assistant, options: options)
         _ = view.body
     }
 
     @Test func multilineConversationAndFeedbackBuildWithoutFoundationModels() {
         let assistant: any SBJAssistantPresenting = TestAssistant()
-        let conversation = SBJAssistantView(assistant: assistant, draft: .constant(""),
+        let conversation = SBJAssistantView(assistant: assistant,
                                             options: .init(simpleCommands: false)) {
             Text("Header")
         } inputAccessory: {
@@ -26,6 +26,16 @@ struct SBJAssistantViewTests {
         _ = conversation.body
         let feedback = SBJAssistantFeedbackView(feedback: SBJAssistantFeedback(), turnID: .init(), revision: 1)
         _ = feedback.body
+    }
+
+    @Test func feedbackIsOptInWithoutEnablingCollection() {
+        let assistant: any SBJAssistantPresenting = TestAssistant()
+        #expect(!SBJAssistantViewOptions().hasFeedbackDialog)
+        let options = SBJAssistantViewOptions(hasFeedbackDialog: true)
+        #expect(options.hasFeedbackDialog)
+        let view = SBJAssistantView(assistant: assistant, options: options)
+        _ = view.body
+        #expect(!assistant.feedback.isEnabled)
     }
 
     @Test func unavailableControlsAreDisabled() {

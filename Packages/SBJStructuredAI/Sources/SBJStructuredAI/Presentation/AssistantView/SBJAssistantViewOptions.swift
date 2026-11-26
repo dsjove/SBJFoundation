@@ -6,6 +6,8 @@ public struct SBJAssistantViewOptions: Sendable, Equatable {
 	public var hasMicrophoneToggle: Bool
 	public var hasDiagnostics: Bool
 	public var hasShareDialog: Bool
+	/// Exposes the feedback button and sheet; does not enable diagnostic collection.
+	public var hasFeedbackDialog: Bool
 	public var simpleCommands: Bool
 
 	public init(
@@ -13,6 +15,7 @@ public struct SBJAssistantViewOptions: Sendable, Equatable {
 		hasMicrophoneToggle: Bool = false,
 		hasDiagnostics: Bool = false,
 		hasShareDialog: Bool = false,
+		hasFeedbackDialog: Bool = false,
 		simpleCommands: Bool = true
 	) {
 #if canImport(Speech) && canImport(AVFoundation) && !os(watchOS) && !os(tvOS)
@@ -28,6 +31,7 @@ public struct SBJAssistantViewOptions: Sendable, Equatable {
 #else
 		self.hasShareDialog = hasShareDialog
 #endif
+		self.hasFeedbackDialog = hasFeedbackDialog
 		self.simpleCommands = simpleCommands
 	}
 }

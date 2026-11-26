@@ -16,34 +16,37 @@ struct SBJAssistantTranscriptView: View {
 
     var body: some View {
         ScrollViewReader { scroll in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 14) {
-                    if messages.isEmpty {
-                        ContentUnavailableView {
-                            Label(N.emptyTitle.title, systemImage: "sparkles")
-                        } description: {
-                            Text(N.emptyDescription.title)
+            GeometryReader { viewport in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 14) {
+                        if messages.isEmpty {
+                            ContentUnavailableView {
+                                Label(N.emptyTitle.title, systemImage: "sparkles")
+                            } description: {
+                                Text(N.emptyDescription.title)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: max(0, viewport.size.height - 32))
+                        }
+                        ForEach(messages) { message in
+                            SBJAssistantMessageView(message: message, displayError: displayError).id(message.id)
+                        }
+                        if showsDiagnostics && !diagnostics.isEmpty {
+                            SBJAssistantDiagnosticsView(lines: diagnostics)
+                        }
+                        if !shortcuts.isEmpty {
+                            SBJAssistantShortcutsView(shortcuts: shortcuts, isEnabled: isActive && !isResponding, selectShortcut: selectShortcut)
+                        }
+                        if isResponding {
+                            HStack {
+                                ProgressView(N.thinking.title)
+                                Spacer()
+                                Button(N.stop.title) { stop() }
+                                    .buttonStyle(.bordered)
+                            }.id("responding")
                         }
                     }
-                    ForEach(messages) { message in
-                        SBJAssistantMessageView(message: message, displayError: displayError).id(message.id)
-                    }
-                    if showsDiagnostics && !diagnostics.isEmpty {
-                        SBJAssistantDiagnosticsView(lines: diagnostics)
-                    }
-                    if !shortcuts.isEmpty {
-                        SBJAssistantShortcutsView(shortcuts: shortcuts, isEnabled: isActive && !isResponding, selectShortcut: selectShortcut)
-                    }
-                    if isResponding {
-                        HStack {
-                            ProgressView(N.thinking.title)
-                            Spacer()
-                            Button(N.stop.title) { stop() }
-                                .buttonStyle(.bordered)
-                        }.id("responding")
-                    }
+                    .padding(16)
                 }
-                .padding()
             }
             .onChange(of: messages.count) { _, _ in
                 if let id = messages.last?.id {

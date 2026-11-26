@@ -9,6 +9,10 @@ public protocol SBJAssistantPresenting: AnyObject {
 	var availabilityProviderName: String? { get }
 	/// A backend can provide guidance specific to its current availability.
 	func availabilityMessage(for state: SBJAssistantState) -> String?
+	/// Session-local feedback and the context for a user correction.
+	var feedback: SBJAssistantFeedback { get }
+	var currentTurnID: UUID { get }
+	var feedbackRevision: Int { get }
 	var messages: [SBJAssistantMessage] { get }
 	var pendingProposal: SBJStructuralChangeSummary? { get }
 	var isResponding: Bool { get }

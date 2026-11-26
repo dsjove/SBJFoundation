@@ -4,7 +4,12 @@ import SBJLocalization
 /// A display-only conversation message. The reusable coordinator owns message
 /// retention; this value does not carry a document model reference.
 public struct SBJAssistantMessage: Identifiable, Equatable, Sendable {
-	public enum Speaker: Sendable, Equatable { case user, assistant, error, diagnostic }
+	public enum Speaker: Sendable, Equatable {
+		case user
+		case assistant
+		case error
+		case diagnostic
+	}
 
 	public let id: UUID
 	public let speaker: Speaker
