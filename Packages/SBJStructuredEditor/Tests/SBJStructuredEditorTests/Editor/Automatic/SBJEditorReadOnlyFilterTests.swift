@@ -35,23 +35,23 @@ private struct ReadOnlyFilterRoot {
 @MainActor
 struct SBJEditorReadOnlyFilterTests {
     @Test func defaultsToWritableFieldsAndPreservesSemanticDefinition() {
-        #expect(!SBJEditorOptions().showsReadOnlyProperties)
-        #expect(SBJEditorOptions(showsReadOnlyProperties: true).showsReadOnlyProperties)
+        #expect(!SBJTraversalOptions.editor.contains(.readOnly))
+        #expect(SBJTraversalOptions.all.contains(.readOnly))
         let writable = SBJStructuralFieldProjection.fields(of: ReadOnlyFilterChild.self)
-        let all = SBJStructuralFieldProjection.fields(of: ReadOnlyFilterChild.self, showsReadOnlyProperties: true)
+        let all = SBJStructuralFieldProjection.fields(of: ReadOnlyFilterChild.self, traversalOptions: .all)
         #expect(writable.map { $0.metadata.sourceName } == ["value", "editableComputed"])
         #expect(all.map { $0.metadata.sourceName } == ["value", "identifier", "derived", "editableComputed"])
         #expect(all.filter { $0.metadata.access == .readOnly }.count == 2)
-        #expect(ReadOnlyFilterChild.sbjUserFacingProperties.map(\.sourceName) == all.map { $0.metadata.sourceName })
+        #expect(ReadOnlyFilterChild.sbjProperties.filter { !$0.isPresentationExcluded }.map(\.sourceName) == all.map { $0.metadata.sourceName })
         #expect(ReadOnlyFilterChild.sbjProperties.contains { $0.sourceName == "excluded" })
         #expect(ReadOnlyFilterChild._sbjStructuralFieldCount() == 2)
-        #expect(ReadOnlyFilterChild._sbjStructuralFieldCount(showsReadOnlyProperties: true) == 4)
+        #expect(ReadOnlyFilterChild._sbjStructuralFieldCount(traversalOptions: .all) == 4)
     }
 
     @Test func filterAppliesToBoundAndUnboundNestedTraversal() throws {
         let root = ReadOnlyFilterRoot()
         for showsReadOnly in [false, true] {
-            let context = SBJEditTraversalContext.root.withBranch(.init(showsReadOnlyProperties: showsReadOnly))
+            let context = SBJEditTraversalContext.root.withBranch(.init(traversalOptions: showsReadOnly ? .all : .editor))
             let snapshot = ReadOnlyFilterRoot._sbjStructuralTraversalNodes(value: root, context: context)
             let bound = ReadOnlyFilterRoot._sbjStructuralBoundNodes(
                 binding: SBJAnyBinding(Binding.constant(root)), originalValue: root,
@@ -67,7 +67,7 @@ struct SBJEditorReadOnlyFilterTests {
                     let node = try #require(nodes.first { $0.name == name })
                     let item = try #require(node.children().first)
                     #expect(item.children().map(\.name) == expected)
-                    #expect(item.context.branch.showsReadOnlyProperties == showsReadOnly)
+                    #expect(item.context.branch.traversalOptions == (showsReadOnly ? .all : .editor))
                 }
             }
         }
@@ -77,7 +77,7 @@ struct SBJEditorReadOnlyFilterTests {
         let root = ReadOnlyFilterChild()
         let hidden = ReadOnlyFilterChild._sbjStructuralTraversalNodes(value: root, context: .root)
         let shown = ReadOnlyFilterChild._sbjStructuralTraversalNodes(
-            value: root, context: .root.withBranch(.init(showsReadOnlyProperties: true))
+            value: root, context: .root.withBranch(.init(traversalOptions: .all))
         )
         for row in hidden {
             let matching = shown.first { $0.name == row.name }
@@ -90,7 +90,7 @@ struct SBJEditorReadOnlyFilterTests {
         let root = ReadOnlyFilterRoot()
         let presentation = SBJEditorPresentationModel(searchCriteria: .init(searchQuery: "derived-token"))
         for showsReadOnly in [false, true] {
-            let context = SBJEditTraversalContext.root.withBranch(.init(showsReadOnlyProperties: showsReadOnly))
+            let context = SBJEditTraversalContext.root.withBranch(.init(traversalOptions: showsReadOnly ? .all : .editor))
             let bound = ReadOnlyFilterRoot._sbjStructuralBoundNodes(
                 binding: SBJAnyBinding(Binding.constant(root)), originalValue: root,
                 registry: .init(), context: context

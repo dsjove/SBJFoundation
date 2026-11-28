@@ -18,12 +18,16 @@ struct SBJEditorLabeledField<Control: View>: View {
     }
 
     var body: some View {
-        SBJAdaptiveFieldLayout {
-            SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
-                .accessibilityHidden(true)
-                .allowsHitTesting(false)
-        } control: {
+        if label.isEmpty {
             control
+        } else {
+            SBJAdaptiveFieldLayout {
+                SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
+                    .accessibilityHidden(true)
+                    .allowsHitTesting(false)
+            } control: {
+                control
+            }
         }
         // Opacity gives both the label and the native control their familiar
         // disabled appearance without changing hit testing or control state.

@@ -71,17 +71,17 @@ public struct SBJStructuralChild {
 /// User-facing traversal entry point. A leaf or atomic value is reported once;
 /// compound containers are reported and then recursively visited in declaration order.
 public extension SBJStructuralTraversal {
-    static func descendants<Root: SBJStructured>(in root: Root) -> [SBJStructuralValueOccurrence] {
+    static func descendants<Root: SBJStructured>(in root: Root, options: SBJTraversalOptions = .all) -> [SBJStructuralValueOccurrence] {
         root.sbjStructuralDescendants(
-            identityPath: [], locationPath: [], displayPath: [], isPositional: false, ancestorsWritable: true
+            identityPath: [], locationPath: [], displayPath: [], isPositional: false, ancestorsWritable: true, options: options
         )
     }
 
     static func visitDescendants<Root: SBJStructured>(
-        in root: Root,
+        in root: Root, options: SBJTraversalOptions = .all,
         _ visit: (SBJStructuralValueOccurrence) throws -> Void
     ) rethrows {
-        for occurrence in descendants(in: root) { try visit(occurrence) }
+        for occurrence in descendants(in: root, options: options) { try visit(occurrence) }
     }
 }
 
@@ -91,7 +91,7 @@ public extension SBJStructuralTraversal {
 public extension SBJStructured {
     func sbjStructuralDescendants(
         identityPath: [String], locationPath: [String],
-        displayPath: [String], isPositional: Bool, ancestorsWritable: Bool
+        displayPath: [String], isPositional: Bool, ancestorsWritable: Bool, options: SBJTraversalOptions = .all
     ) -> [SBJStructuralValueOccurrence] {
         guard !SBJStructuralType.isAtomic(Self.self) else { return [] }
         let writableNames: Set<String> = {
@@ -99,7 +99,7 @@ public extension SBJStructured {
             return mutable._sbjWritableSourceNames()
         }()
         return Self.sbjProperties.enumerated().flatMap { ordinal, property -> [SBJStructuralValueOccurrence] in
-            guard property.isUserFacing else { return [] }
+            guard options.includes(property) else { return [] }
             let value = self[keyPath: property.keyPath]
             let identity = identityPath + ["property:\(property.sourceName)"]
             let location = locationPath + ["field:\(ordinal)"]
@@ -116,7 +116,7 @@ public extension SBJStructured {
                 displayPath: display, isPositional: isPositional,
                 ancestorsWritable: ancestorsWritable && writableNames.contains(property.sourceName),
                 itemTitleKey: SBJStructuralCollectionKeys.title(in: property.hints),
-                itemIdentifierKey: SBJStructuralCollectionKeys.identifier(in: property.constraints)
+                itemIdentifierKey: SBJStructuralCollectionKeys.identifier(in: property.constraints), options: options
             )
         }
 
@@ -125,7 +125,7 @@ public extension SBJStructured {
 
 public extension SBJMutableStructure {
     static func _sbjWritableSourceNames() -> Set<String> {
-        Set(Self.sbjUserFacingProperties.filter { $0.access == .readWrite }.map(\.sourceName))
+        Set(Self.sbjProperties.filter { $0.access == .readWrite }.map(\.sourceName))
     }
 }
 
@@ -201,14 +201,14 @@ public enum SBJStructuralValueWalker {
         of value: Any,
         identityPath: [String], locationPath: [String], displayPath: [String],
         isPositional: Bool, ancestorsWritable: Bool,
-        itemTitleKey: AnyKeyPath? = nil, itemIdentifierKey: String? = nil
+        itemTitleKey: AnyKeyPath? = nil, itemIdentifierKey: String? = nil, options: SBJTraversalOptions = .all
     ) -> [SBJStructuralValueOccurrence] {
         if value is any SBJAtomicStructuralValue { return [] }
         if let structured = value as? any SBJStructured {
             return structured.sbjStructuralDescendants(
                 identityPath: identityPath, locationPath: locationPath,
                 displayPath: displayPath, isPositional: isPositional,
-                ancestorsWritable: ancestorsWritable
+                ancestorsWritable: ancestorsWritable, options: options
             )
         }
         if let container = value as? any SBJStructuralValueContainer {
@@ -229,7 +229,7 @@ public enum SBJStructuralValueWalker {
                                         locationPath: locations, displayPath: displays,
                                         isPositional: positional, ancestorsWritable: ancestorsWritable,
                                         itemTitleKey: child.identity.isEmpty ? itemTitleKey : nil,
-                                        itemIdentifierKey: child.identity.isEmpty ? itemIdentifierKey : nil)
+                                        itemIdentifierKey: child.identity.isEmpty ? itemIdentifierKey : nil, options: options)
             }
         }
         if let associated = value as? any SBJStructuredEnum {
@@ -249,7 +249,7 @@ public enum SBJStructuralValueWalker {
                 )
                 return [entry] + children(of: part.value, identityPath: ids,
                                           locationPath: locations, displayPath: displays,
-                                          isPositional: isPositional, ancestorsWritable: ancestorsWritable)
+                                          isPositional: isPositional, ancestorsWritable: ancestorsWritable, options: options)
             }
         }
         return []

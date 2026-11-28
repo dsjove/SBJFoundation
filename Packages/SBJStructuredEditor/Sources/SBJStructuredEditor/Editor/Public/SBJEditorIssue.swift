@@ -1,4 +1,5 @@
 import SBJUIVocabulary
+import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import Foundation
 
@@ -24,11 +25,12 @@ public enum SBJEditorCapabilityDiagnostics {
     @MainActor
     public static func issues<Value: SBJMutableStructure>(
         for value: Value,
-        registry: SBJEditorRegistry = .init()
+        registry: SBJEditorRegistry = .init(),
+        traversalOptions: SBJTraversalOptions = .editor
     ) -> [SBJEditorCapabilityIssue] {
         var collection = SBJIssueCollection<SBJEditorCapabilityIssue>()
-        collection.append(contentsOf: SBJStructuralFieldProjection.fields(of: Value.self).flatMap { field in
-            field.issues(root: value, path: [], registry: registry)
+        collection.append(contentsOf: SBJStructuralFieldProjection.fields(of: Value.self, traversalOptions: traversalOptions).flatMap { field in
+            field.issues(root: value, path: [], registry: registry, traversalOptions: traversalOptions)
         })
         return SBJEditorCapabilityIssue.removingRedundantIssues(from: collection.uniqued { $0 })
     }
@@ -66,10 +68,11 @@ public enum SBJEditorDiagnostics {
     @MainActor
     public static func issues<Value: SBJMutableStructure>(
         for value: Value,
-        registry: SBJEditorRegistry = .init()
+        registry: SBJEditorRegistry = .init(),
+        traversalOptions: SBJTraversalOptions = .editor
     ) -> [SBJEditorIssue] {
         var collection = SBJIssueCollection<SBJEditorIssue>()
-        collection.append(contentsOf: SBJEditorCapabilityDiagnostics.issues(for: value, registry: registry).map { issue in
+        collection.append(contentsOf: SBJEditorCapabilityDiagnostics.issues(for: value, registry: registry, traversalOptions: traversalOptions).map { issue in
             SBJEditorIssue(
                 kind: .unsupported,
                 path: issue.path,

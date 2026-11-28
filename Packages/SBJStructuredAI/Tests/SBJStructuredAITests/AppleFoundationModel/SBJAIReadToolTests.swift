@@ -8,10 +8,27 @@ import Testing
 @Suite("Native key-path read tools")
 struct SBJAIReadToolTests {
     @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @Test @MainActor func registersAllReadTools() throws {
+        let snapshot = try SBJSemanticReadSnapshot(instance: SBJSemanticReadFixture())
+        let tools = SBJAIAssistantCoordinator<Int>.readTools(snapshot: snapshot)
+        let expected = ["readValue", "readKeys", "readDescription"]
+        #expect(tools.map(\.name) == expected)
+        #expect(tools.allSatisfy { $0.includesSchemaInInstructions })
+        guard SystemLanguageModel.default.isAvailable else { return }
+        let session = LanguageModelSession(tools: tools, instructions: "Test document.")
+        #expect(Set(SBJAIAssistantCoordinator<Int>.nativeToolNames(in: session.transcript)) == Set(expected))
+    }
+
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test func nativeToolReadsExactPath() async throws {
         let snapshot = try SBJSemanticReadSnapshot(instance: SBJSemanticReadFixture())
         let level = try #require(snapshot.declarationIdentifier(for: [.field("level")]))
         let tool = SBJAIReadValueTool(snapshot: snapshot)
+        #expect(tool.name == SBJAIInstructions.readValueName)
+        #expect(tool.description == SBJAIInstructions.readValueDescription)
+        #expect(SBJAIReadKeysTool(snapshot: snapshot).name == SBJAIInstructions.readKeysName)
+        #expect(SBJAIReadKeysTool(snapshot: snapshot).description == SBJAIInstructions.readKeysDescription)
+        #expect(SBJAIReadDescriptionTool(snapshot: snapshot).description == SBJAIInstructions.readDescriptionDescription)
         let result = try await tool.call(arguments: .init(keyPath: [String(level)]))
         #expect(result == "value:9")
         let metadata = try await SBJAIReadDescriptionTool(snapshot: snapshot).call(arguments: .init(keyPath: [String(level)]))

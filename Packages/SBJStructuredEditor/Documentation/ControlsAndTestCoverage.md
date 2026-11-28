@@ -4,7 +4,7 @@
 
 ## Collections
 
-Arrays, sets, and dictionaries have distinct insertion rules. Arrays use `SBJEditorRegistry.createArrayElement(_:existing:)` and honor collection-aware exhaustion. Sets with `CaseIterable & Hashable` elements select the first case not already stored, in `allCases` order. Dictionaries with `CaseIterable & Hashable` keys select the first unused key, then create a value through the registry. Both disable insertion when all cases are used. For other types, set elements and dictionary keys retain existing default-construction behavior, rejecting duplicate candidates. A dictionary also disables insertion when its value cannot be constructed. Selection runs through internal registry helpers; rendering controls do not duplicate the rules.
+Arrays, sets, and dictionaries have distinct insertion rules. Arrays use `SBJEditorRegistry.createArrayElement(_:existing:)` and honor collection-aware exhaustion. Sets with `CaseIterable & Hashable` elements select the first case not already stored, in `allCases` order. Dictionary insertion requires an explicit typed key generator. The registry constructs a value first, then invokes the generator with that value and the current dictionary. A missing generator hides the add action; nil, duplicate or invalid keys reject the attempted insertion. Set insertion continues to use collection-aware and default creation policies. Selection runs through internal registry helpers; rendering controls do not duplicate the rules.
 
 Array remove and move actions resolve the current index when invoked, not when the row was initially drawn; actions targeting a stale element do not mutate an unrelated position. SwiftUI confirmation and disclosure layout remain presentation responsibilities.
 

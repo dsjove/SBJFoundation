@@ -22,7 +22,7 @@ private struct StructuralProjectionFixture {
 struct SBJStructuralFieldProjectionTests {
     @Test @MainActor
     func structuralFieldsRetainSourceNamesAndTypedKeyPaths() {
-        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, traversalOptions: .all)
         #expect(fields.map(\.name) == ["First", "Count", "Identifier"])
         #expect(fields.map { $0.metadata.sourceName } == ["first", "count", "identifier"])
         #expect(ObjectIdentifier(fields[0].metadata.valueType) == ObjectIdentifier(String.self))
@@ -73,7 +73,7 @@ extension SBJStructuralFieldProjectionTests {
     func structuralOnlyFieldConstructsModelAwareEditor() {
         let model = StructuralProjectionFixture()
         _ = SBJEditField(root: .constant(model), keyPath: \.first)
-        let descriptor = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, showsReadOnlyProperties: true)[0]
+        let descriptor = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, traversalOptions: .all)[0]
         #expect(ObjectIdentifier(descriptor.metadata.valueType) == ObjectIdentifier(String.self))
     }
 }
@@ -97,7 +97,7 @@ extension SBJStructuralFieldProjectionTests {
 
     @Test @MainActor
     func projectedStoredFieldsRetainStructuralIdentity() {
-        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: StructuralProjectionFixture.self, traversalOptions: .all)
         let locations = SBJEditorStructuralLocations.resolve(fields, of: StructuralProjectionFixture.self)
         let schema = SBJStructuralTraversal.definition(of: StructuralProjectionFixture.self)
         #expect(locations.map(\.identity) == schema.map(\.identityComponent))

@@ -8,9 +8,9 @@ enum SBJSemanticDescription {
 	static func nomenclature(_ info: SBJNomenclature?) -> String {
 		guard let info else { return "" }
 		return [
-			info.nonEmptyTitle.map { "Title: \($0)" },
+			info.nonEmptyTitle.map(SBJAIInstructions.titleDescription),
 			info.details,
-			info.aliases.isEmpty ? nil : "Aliases: " + info.aliases.joined(separator: ", "),
+			info.aliases.isEmpty ? nil : SBJAIInstructions.aliasesDescription(info.aliases),
 		].compactMap { $0 }.joined(separator: ". ")
 	}
 
@@ -32,8 +32,8 @@ enum SBJSemanticDescription {
 		}
 		return join([
 			property.info?.nonEmptyTitle == nil ? property.displayName : "",
-			"Swift type: \(property.valueType); category: \(property.kind)",
-			"\(property.storage == .stored ? "Stored" : "Computed"), \(property.access == .readWrite ? "writable in the application" : "read-only")",
+			SBJAIInstructions.propertyTypeDescription(property.valueType, category: String(describing: property.kind)),
+			SBJAIInstructions.propertyAccessDescription(stored: property.storage == .stored, writable: property.access == .readWrite),
 			nomenclature(property.info),
 			rules(constraints, property.hints),
 		])

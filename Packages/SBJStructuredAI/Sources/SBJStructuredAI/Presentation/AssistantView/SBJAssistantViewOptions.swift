@@ -9,6 +9,8 @@ public struct SBJAssistantViewOptions: Sendable, Equatable {
 	/// Exposes the feedback button and sheet; does not enable diagnostic collection.
 	public var hasFeedbackDialog: Bool
 	public var simpleCommands: Bool
+	/// Exposes the destructive, confirmation-protected session reset control.
+	public var hasResetButton: Bool
 
 	public init(
 		hasSpeechToggle: Bool = false,
@@ -16,7 +18,8 @@ public struct SBJAssistantViewOptions: Sendable, Equatable {
 		hasDiagnostics: Bool = false,
 		hasShareDialog: Bool = false,
 		hasFeedbackDialog: Bool = false,
-		simpleCommands: Bool = true
+		simpleCommands: Bool = true,
+		hasResetButton: Bool = false
 	) {
 #if canImport(Speech) && canImport(AVFoundation) && !os(watchOS) && !os(tvOS)
 		self.hasSpeechToggle = hasSpeechToggle
@@ -33,6 +36,7 @@ public struct SBJAssistantViewOptions: Sendable, Equatable {
 #endif
 		self.hasFeedbackDialog = hasFeedbackDialog
 		self.simpleCommands = simpleCommands
+		self.hasResetButton = hasResetButton
 	}
 }
 

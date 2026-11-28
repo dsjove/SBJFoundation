@@ -31,9 +31,9 @@ private struct DuckRoot {
 struct SBJTemplateConsolidationTests {
     @Test func productionProjectionSharesIdenticalCompressedDefinitions() throws {
         let projection = try SBJStaticReadStructure(type: DuckRoot.self)
-        #expect(projection.compact.contains("+First#1"))
-        #expect(projection.compact.contains("+Second#1"))
-        #expect(projection.compact.contains("+Third#1"))
+        #expect(projection.compact.contains("First:2+#1"))
+        #expect(projection.compact.contains("Second:5+#1"))
+        #expect(projection.compact.contains("Third:6+#1"))
         #expect(try SBJCompactStructureTestDecoder.expand(projection.compact) == projection.expanded)
     }
 
@@ -63,8 +63,8 @@ private struct RepeatedDuckRoot {
 extension SBJTemplateConsolidationTests {
     @Test func repeatedTypeCreatesTemplate() throws {
         let projection = try SBJStaticReadStructure(type: RepeatedDuckRoot.self)
-        #expect(projection.compact.contains("+First#1"))
-        #expect(projection.compact.contains("+Second#1"))
+        #expect(projection.compact.contains("First:2+#1"))
+        #expect(projection.compact.contains("Second:5+#1"))
         #expect(try SBJCompactStructureTestDecoder.expand(projection.compact) == projection.expanded)
     }
 }

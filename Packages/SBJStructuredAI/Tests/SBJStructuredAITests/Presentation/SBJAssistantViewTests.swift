@@ -1,5 +1,10 @@
 import SwiftUI
 import Testing
+#if os(macOS)
+import AppKit
+#elseif canImport(UIKit) && !os(watchOS)
+import UIKit
+#endif
 @testable import SBJStructuredAI
 
 @Suite("Backend-independent assistant views")
@@ -12,7 +17,7 @@ struct SBJAssistantViewTests {
         let options = SBJAssistantViewOptions(hasSpeechToggle: true, hasMicrophoneToggle: true,
                                              hasDiagnostics: true, hasShareDialog: true, hasFeedbackDialog: true)
         let view = SBJAssistantView(assistant: assistant, options: options)
-        _ = view.body
+        host(view)
     }
 
     @Test func multilineConversationAndFeedbackBuildWithoutFoundationModels() {
@@ -23,9 +28,9 @@ struct SBJAssistantViewTests {
         } inputAccessory: {
             Text("Accessory")
         }
-        _ = conversation.body
+        host(conversation)
         let feedback = SBJAssistantFeedbackView(feedback: SBJAssistantFeedback(), turnID: .init(), revision: 1)
-        _ = feedback.body
+        host(feedback)
     }
 
     @Test func feedbackIsOptInWithoutEnablingCollection() {
@@ -34,8 +39,39 @@ struct SBJAssistantViewTests {
         let options = SBJAssistantViewOptions(hasFeedbackDialog: true)
         #expect(options.hasFeedbackDialog)
         let view = SBJAssistantView(assistant: assistant, options: options)
-        _ = view.body
+        host(view)
         #expect(!assistant.feedback.isEnabled)
+    }
+
+    /// Evaluate stateful views through SwiftUI, never by accessing body directly.
+    private func host<Content: View>(_ content: Content) {
+#if os(macOS)
+        let hostingView = NSHostingView(rootView: content)
+        hostingView.frame = CGRect(x: 0, y: 0, width: 640, height: 480)
+        hostingView.layoutSubtreeIfNeeded()
+#elseif canImport(UIKit) && !os(watchOS)
+        let controller = UIHostingController(rootView: content)
+        controller.loadViewIfNeeded()
+        controller.view.frame = CGRect(x: 0, y: 0, width: 640, height: 480)
+        controller.view.setNeedsLayout()
+        controller.view.layoutIfNeeded()
+#else
+        // Construction-only smoke test where no hosting API is available.
+        withExtendedLifetime(content) {}
+#endif
+    }
+
+    @Test(arguments: [false, true])
+    func resetControlIsOptIn(enabled: Bool) {
+        #expect(!SBJAssistantViewOptions().hasResetButton)
+        let options = SBJAssistantViewOptions(hasResetButton: enabled)
+        #expect(options.hasResetButton == enabled)
+        let assistant = TestAssistant()
+        assistant.submit("Keep this conversation until confirmed")
+        let turn = assistant.currentTurnID
+        host(SBJAssistantView(assistant: assistant, options: options))
+        #expect(assistant.messages.count == 1)
+        #expect(assistant.currentTurnID == turn)
     }
 
     @Test func unavailableControlsAreDisabled() {

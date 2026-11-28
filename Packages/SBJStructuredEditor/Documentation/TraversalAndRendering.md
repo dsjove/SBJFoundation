@@ -23,3 +23,7 @@ Collection ordering, titles and identity policies come from `SBJCollectionTraver
 ## Verification
 
 The traversal-context tests check logical identity independently of current location and confirm that child contexts inherit search criteria without inheriting transient row state. Tests for collection behavior, structural projections and filter handling live under `Tests/SBJStructuredEditorTests`.
+
+Unnamed leaf collection members have no visible field label. Their traversal identifiers, locations and fallback navigation titles remain unchanged. Named members retain labels; unnamed compound members retain disclosure headers for navigation. Empty field labels do not allocate a separate label row in the text or adaptive labeled editors.
+
+Collection leaf labels use the configured element name; array and set leaves without one are unlabeled. Dictionary values fall back to the key description unless key presentation is excluded. Dictionary keys remain subject to creation constraints but are not projected as separate editable rows. Compound members retain disclosure headers.

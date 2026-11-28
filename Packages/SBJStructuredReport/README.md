@@ -56,3 +56,11 @@ The report only describes declarations made available by compiled structural met
 - `Presentation/` — SwiftUI viewer and report-specific nomenclature/symbology.
 
 See `Documentation/Refactoring-Iteration-4.md` for the coordinated migration and verification limits.
+
+### Model traversal options
+
+Pass `traversalOptions:` to `SBJDefinitionCatalog` or its `Builder` independently
+of `SBJDefinitionCatalogOptions` (sorting) and PDF/view formatting. The default
+`.definition` includes discoverable presentation-excluded declarations; `.all`
+restricts the catalog to user-facing fields. Private and fileprivate fields are
+never discoverable. Sorting an existing catalog preserves its traversal options.

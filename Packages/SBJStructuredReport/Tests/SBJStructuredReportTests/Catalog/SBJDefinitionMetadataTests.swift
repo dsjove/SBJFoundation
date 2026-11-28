@@ -38,8 +38,7 @@ private struct DefinitionMetadataFixture {
         return
     }
     let secret = try #require(fields.first { $0.swiftIdentifier == "secret" })
-    #expect(!secret.visibleToEditor)
-    #expect(!secret.visibleToSemanticEditor)
+    #expect(secret.isPresentationExcluded)
     let health = try #require(fields.first { $0.swiftIdentifier == "hitPoints" })
     #expect(health.info?.aliases.contains("HP") == true)
     #expect(!health.constraints.isEmpty)
@@ -136,4 +135,17 @@ private struct AtomicReportFixture {
     #expect(Set(fields.map(\.swiftIdentifier)) == Set(["value", "unit"]))
     let sorted = catalog.sorted(using: .init(propertySort: .alphabetical))
     #expect(sorted.types.first { $0.swiftType == UnitValue<LengthUnit>.self }?.isAtomic == true)
+}
+
+@Test func reportTraversalOptionsFilterFieldsAndPreserveOrdinals() throws {
+    let traversalOptions = SBJTraversalOptions.editor.subtracting(.computed)
+    let catalog = SBJDefinitionCatalog(DefinitionMetadataFixture.self, traversalOptions: traversalOptions)
+    let root = try #require(catalog.types.first { $0.swiftType == DefinitionMetadataFixture.self })
+    guard case .structure(let fields) = root.content else {
+        Issue.record("Expected structure definition")
+        return
+    }
+    #expect(fields.map(\.swiftIdentifier) == ["hitPoints"])
+    #expect(fields.map(\.declarationIndex) == [0])
+    #expect(catalog.sorted(using: .init()).traversalOptions == traversalOptions)
 }

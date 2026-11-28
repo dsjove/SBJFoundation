@@ -13,6 +13,7 @@ private protocol _SBJOptionalValue {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
         constraints: SBJConstraintProjection,
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         dateRange: ClosedRange<Date>?,
@@ -40,6 +41,7 @@ private protocol _SBJCollectionValue {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
         constraints: SBJConstraintProjection,
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -61,6 +63,7 @@ private protocol _SBJOptionalIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions,
         collectionItemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue]
 }
@@ -71,6 +74,7 @@ private protocol _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions,
         itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue]
 }
@@ -81,6 +85,7 @@ extension Optional: _SBJOptionalIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions,
         collectionItemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let optional = value as? Wrapped?, let wrapped = optional else { return [] }
@@ -88,6 +93,7 @@ extension Optional: _SBJOptionalIssueValue {
             value: wrapped,
             path: path,
             registry: registry,
+            traversalOptions: traversalOptions,
             collectionItemTitleKey: collectionItemTitleKey
         )
     }
@@ -99,6 +105,7 @@ extension Array: _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions,
         itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let values = value as? [Element] else { return [] }
@@ -111,7 +118,8 @@ extension Array: _SBJCollectionIssueValue {
             return SBJValueEditor.collectIssues(
                 value: element,
                 path: path + [title],
-                registry: registry
+                registry: registry,
+                traversalOptions: traversalOptions
             )
         }
     }
@@ -124,6 +132,7 @@ extension Set: _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions,
         itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let values = value as? Set<Element> else { return [] }
@@ -132,7 +141,8 @@ extension Set: _SBJCollectionIssueValue {
             return SBJValueEditor.collectIssues(
                 value: element,
                 path: path + [title],
-                registry: registry
+                registry: registry,
+                traversalOptions: traversalOptions
             )
         }
     }
@@ -144,6 +154,7 @@ extension Dictionary: _SBJCollectionIssueValue {
         value: Any,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions,
         itemTitleKey: AnyKeyPath?
     ) -> [SBJEditorCapabilityIssue] {
         guard let values = value as? [Key: Value] else { return [] }
@@ -151,7 +162,8 @@ extension Dictionary: _SBJCollectionIssueValue {
             SBJValueEditor.collectIssues(
                 value: element,
                 path: path + [SBJCollectionItemIdentification.configuredTitle(for: element, itemTitleKey: itemTitleKey) ?? "[\(String(describing: key))]"],
-                registry: registry
+                registry: registry,
+                traversalOptions: traversalOptions
             )
         }
     }
@@ -166,6 +178,7 @@ extension Optional: _SBJOptionalValue {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
         constraints: SBJConstraintProjection,
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         dateRange: ClosedRange<Date>?,
@@ -191,6 +204,7 @@ extension Optional: _SBJOptionalValue {
                 registry: registry,
                 textStyle: textStyle,
                 constraints: constraints,
+                dictionaryKeyGenerator: dictionaryKeyGenerator,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 dateRange: dateRange,
@@ -219,6 +233,7 @@ extension Array: _SBJCollectionValue {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
         constraints: SBJConstraintProjection,
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -266,6 +281,7 @@ extension Set: _SBJCollectionValue {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
         constraints: SBJConstraintProjection,
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -310,6 +326,7 @@ extension Dictionary: _SBJCollectionValue {
         registry: SBJEditorRegistry,
         textStyle: SBJStringStyle?,
         constraints: SBJConstraintProjection,
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator?,
         integerRange: ClosedRange<Int>?,
         numberRange: ClosedRange<Double>?,
         insertable: Bool,
@@ -333,6 +350,7 @@ extension Dictionary: _SBJCollectionValue {
                 registry: registry,
                 textStyle: textStyle,
                 constraints: constraints,
+                dictionaryKeyGenerator: dictionaryKeyGenerator,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 itemActions: itemActions,
@@ -354,6 +372,7 @@ enum SBJValueEditor {
         textStyle: SBJStringStyle? = nil,
         stringPresentation: SBJStringPresentationValue? = nil,
         constraints: SBJConstraintProjection = .init(),
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator? = nil,
         textMaximumLength: Int? = nil,
         integerRange: ClosedRange<Int>? = nil,
         numberRange: ClosedRange<Double>? = nil,
@@ -545,6 +564,7 @@ enum SBJValueEditor {
                 registry: registry,
                 textStyle: textStyle,
                 constraints: constraints,
+                dictionaryKeyGenerator: dictionaryKeyGenerator,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 dateRange: dateRange,
@@ -570,6 +590,7 @@ enum SBJValueEditor {
                 registry: registry,
                 textStyle: textStyle,
                 constraints: constraints,
+                dictionaryKeyGenerator: dictionaryKeyGenerator,
                 integerRange: integerRange,
                 numberRange: numberRange,
                 insertable: collectionInsertable,
@@ -587,7 +608,7 @@ enum SBJValueEditor {
         if SBJStructuralType.isAtomic(Value.self) {
             return wrapLeaf(
                 SBJAtomicValueEditor(label: label, value: value, registry: registry,
-                    showsReadOnlyProperties: context.branch.showsReadOnlyProperties),
+                    traversalOptions: context.branch.traversalOptions),
                 itemActions: itemActions, context: context
             )
         }
@@ -639,6 +660,7 @@ enum SBJValueEditor {
         value: Value,
         path: [String],
         registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions = .editor,
         collectionItemTitleKey: AnyKeyPath? = nil
     ) -> [SBJEditorCapabilityIssue] {
         if registry.hasCustomEditor(Value.self) { return [] }
@@ -651,6 +673,7 @@ enum SBJValueEditor {
                 value: value,
                 path: path,
                 registry: registry,
+                traversalOptions: traversalOptions,
                 collectionItemTitleKey: collectionItemTitleKey
             )
         }
@@ -659,14 +682,15 @@ enum SBJValueEditor {
                 value: value,
                 path: path,
                 registry: registry,
+                traversalOptions: traversalOptions,
                 itemTitleKey: collectionItemTitleKey
             )
         }
         if let associatedEnum = Value.self as? any SBJStructuredEnum.Type {
-            return associatedEnum._sbjCollectAssociatedEnumIssues(value: value, path: path, registry: registry)
+            return associatedEnum._sbjCollectAssociatedEnumIssues(value: value, path: path, registry: registry, traversalOptions: traversalOptions)
         }
         if let structural = Value.self as? any SBJMutableStructure.Type {
-            return structural._sbjStructuralCollectIssues(value: value, path: path, registry: registry)
+            return structural._sbjStructuralCollectIssues(value: value, path: path, registry: registry, traversalOptions: traversalOptions)
         }
         if caseIterableOptions(for: Value.self) != nil { return [] }
 

@@ -7,12 +7,12 @@ import SwiftUI
 /// use the shared semantic walker, rather than printing their private Swift state.
 @MainActor
 enum SBJEditorReadOnlyValue {
-    static func text(_ value: Any, hints: [SBJPropertyHint] = [], constraints: [SBJPropertyConstraint] = []) -> String {
+    static func text(_ value: Any, hints: [SBJPropertyHint] = [], constraints: [SBJPropertyConstraint] = [], traversalOptions: SBJTraversalOptions = .all) -> String {
         // Preserve the original collection policy when an optional wraps a collection.
         if case .optional? = SBJStructuralType.container(of: type(of: value)),
            let container = value as? any SBJStructuralValueContainer {
             guard let child = container.sbjStructuralChildren(itemTitleKey: nil, itemIdentifierKey: nil).first else { return "—" }
-            return text(child.value, hints: hints, constraints: constraints)
+            return text(child.value, hints: hints, constraints: constraints, traversalOptions: traversalOptions)
         }
         if let atomic = value as? any SBJAtomicStructuralValue { return atomic.presentedValue }
         if value is any SBJStructuralSearchAtomic {
@@ -22,7 +22,8 @@ enum SBJEditorReadOnlyValue {
             of: value, identityPath: [], locationPath: [], displayPath: [],
             isPositional: false, ancestorsWritable: false,
             itemTitleKey: SBJStructuralCollectionKeys.title(in: hints),
-            itemIdentifierKey: SBJStructuralCollectionKeys.identifier(in: constraints)
+            itemIdentifierKey: SBJStructuralCollectionKeys.identifier(in: constraints),
+            options: traversalOptions
         )
         if !descendants.isEmpty {
             let description = descendants.compactMap { occurrence -> String? in

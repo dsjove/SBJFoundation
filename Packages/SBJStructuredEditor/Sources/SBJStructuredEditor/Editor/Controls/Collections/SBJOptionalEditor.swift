@@ -12,6 +12,7 @@ struct SBJOptionalEditor<Wrapped>: View {
     let registry: SBJEditorRegistry
     let textStyle: SBJStringStyle?
     var constraints: SBJConstraintProjection = .init()
+    var dictionaryKeyGenerator: SBJDictionaryKeyGenerator? = nil
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let dateRange: ClosedRange<Date>?
@@ -39,7 +40,7 @@ struct SBJOptionalEditor<Wrapped>: View {
     private var wrappedNeedsDisclosure: Bool {
         if SBJEditorValueTraversal.isLeaf(Wrapped.self) { return false }
         if let structural = Wrapped.self as? any SBJMutableStructure.Type {
-            return structural._sbjStructuralFieldCount(showsReadOnlyProperties: context.branch.showsReadOnlyProperties) > 1
+            return structural._sbjStructuralFieldCount(traversalOptions: context.branch.traversalOptions) > 1
         }
         return false
     }
@@ -91,6 +92,7 @@ struct SBJOptionalEditor<Wrapped>: View {
                         originalValue: originalWrapped.map { SBJEditorOriginalValue($0) },
                         registry: registry, textStyle: textStyle,
                         constraints: constraints,
+                        dictionaryKeyGenerator: dictionaryKeyGenerator,
                         integerRange: integerRange, numberRange: numberRange,
                         dateRange: dateRange, colorSupportsAlpha: colorSupportsAlpha,
                         unitEditor: unitEditor, unitSystem: unitSystem,
@@ -105,7 +107,7 @@ struct SBJOptionalEditor<Wrapped>: View {
 
             } else if !(SBJEditorValueTraversal.isLeaf(Wrapped.self)),
                       let structural = Wrapped.self as? any SBJMutableStructure.Type,
-                      structural._sbjStructuralFieldCount(showsReadOnlyProperties: context.branch.showsReadOnlyProperties) > 1 {
+                      structural._sbjStructuralFieldCount(traversalOptions: context.branch.traversalOptions) > 1 {
                 SBJEditorDisclosureHeader(
                     label,
                     context: context,
@@ -130,6 +132,7 @@ struct SBJOptionalEditor<Wrapped>: View {
                         registry: registry,
                         textStyle: textStyle,
                         constraints: constraints,
+                        dictionaryKeyGenerator: dictionaryKeyGenerator,
                         integerRange: integerRange,
                         numberRange: numberRange,
                         dateRange: dateRange,

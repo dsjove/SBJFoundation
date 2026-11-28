@@ -24,21 +24,31 @@ enum SBJCompactStructure {
 			self.label = label
 			self.children = children
 			self.structuralType = structuralType
-			self.body = SBJCompactStructure.body(children.map { $0.expanded(includeIDs: false) })
+			let text = children.map { $0.signature() }.joined()
+            self.body = text.hasSuffix(";") ? String(text.dropLast()) : text
 		}
 
-		func expanded(includeIDs: Bool = true) -> String {
-			let head = (includeIDs ? String(identifier) : "") + label
-			guard !children.isEmpty else { return head + ";" }
-			return head + "{" + SBJCompactStructure.body(children.map { $0.expanded(includeIDs: includeIDs) }) + "}"
-		}
-	}
+        // Preserve the original structural fingerprint and template numbering.
+        private func signature() -> String {
+            guard !children.isEmpty else { return label + ";" }
+            let text = children.map { $0.signature() }.joined()
+            let body = text.hasSuffix(";") ? String(text.dropLast()) : text
+            return label + "{" + body + "}"
+        }
 
-	/// The closing brace already terminates the final declaration.
-	static func body(_ parts: [String]) -> String {
-		let text = parts.joined()
-		return text.hasSuffix(";") ? String(text.dropLast()) : text
-	}
+        func expanded(includeIDs: Bool = true) -> String {
+            let head = SBJCompactStructure.head(label, id: includeIDs ? String(identifier) : "")
+            guard !children.isEmpty else { return head }
+            return head + "{" + SBJCompactStructure.body(children.map { $0.expanded(includeIDs: includeIDs) }) + "}"
+        }
+    }
+
+    static func head(_ label: String, id: String) -> String {
+        let markerCount = label.hasPrefix("?") ? 2 : 1
+        return String(label.dropFirst(markerCount)) + ":" + id + String(label.prefix(markerCount))
+    }
+
+    static func body(_ parts: [String]) -> String { parts.joined(separator: ";") }
 
 	/// Ordinary labels stay bare. Quote only labels that would otherwise be
 	/// confused with delimiters, markers, IDs, or escape syntax.
@@ -141,17 +151,18 @@ enum SBJCompactStructure {
 
 		func emit(_ node: Node, useReferences: Bool) -> String {
 			let id = useReferences ? canonicalIDs[node.identifier]! : occurrenceIDs[node.identifier]!
-			let head = String(id) + node.label
+			let head = head(node.label, id: String(id))
 			if useReferences, let key = node.templateKey, let number = numbers[key] {
-				return head + "#\(number);"
+				return head + "#\(number)"
 			}
-			guard !node.children.isEmpty else { return head + ";" }
+			guard !node.children.isEmpty else { return head }
 			return head + "{" + body(node.children.map { emit($0, useReferences: useReferences) }) + "}"
 		}
 		let templates = definitions.enumerated().map { index, node in
 			"@\(index + 1){" + body(node.children.map { emit($0, useReferences: true) }) + "}"
-		}.joined()
-		return .init(compact: templates + emit(root, useReferences: true),
+		}.joined(separator: "\n")
+		let rootText = emit(root, useReferences: true)
+		return .init(compact: templates.isEmpty ? rootText : rootText + "\n" + templates,
 					 expanded: emit(root, useReferences: false),
 					 identifiers: occurrenceIDs, declarationCount: canonicalIDs.count)
 	}

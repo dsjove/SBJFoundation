@@ -29,7 +29,7 @@ extension EditorReportChoice {
 @MainActor
 struct SBJEditorReportContractTests {
     @Test func editorAndReportShareDefinitionAndVisibility() throws {
-        let fields = SBJStructuralFieldProjection.fields(of: EditorReportFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: EditorReportFixture.self, traversalOptions: .all)
         let catalog = SBJDefinitionCatalog(EditorReportFixture.self)
         let definition = try #require(catalog.types.first { $0.swiftType == EditorReportFixture.self })
         guard case .structure(let properties) = definition.content else {
@@ -37,14 +37,16 @@ struct SBJEditorReportContractTests {
             return
         }
         #expect(properties.map(\.swiftIdentifier) == ["name", "hidden", "computed", "identifier", "items"])
-        #expect(fields.map { $0.metadata.sourceName } == properties.filter(\.isUserFacing).map(\.swiftIdentifier))
+        #expect(fields.map { $0.metadata.sourceName } == properties.filter { !$0.isPresentationExcluded }.map(\.swiftIdentifier))
         for field in fields {
             let property = try #require(properties.first { $0.swiftIdentifier == field.metadata.sourceName })
             #expect(property.access == field.metadata.access)
             #expect(property.storage == field.metadata.storage)
             #expect(ObjectIdentifier(property.declaredType) == ObjectIdentifier(field.metadata.valueType))
-            #expect(property.visibleToEditor == property.visibleToSemanticEditor)
+            #expect(property.isPresentationExcluded == field.metadata.isPresentationExcluded)
         }
+        let allFields = SBJStructuralFieldProjection.fields(of: EditorReportFixture.self, traversalOptions: .definition)
+        #expect(allFields.map { $0.metadata.sourceName } == properties.map(\.swiftIdentifier))
         let computed = try #require(properties.first { $0.swiftIdentifier == "computed" })
         #expect(!computed.constraints.isEmpty)
         #expect(computed.access == .readOnly)

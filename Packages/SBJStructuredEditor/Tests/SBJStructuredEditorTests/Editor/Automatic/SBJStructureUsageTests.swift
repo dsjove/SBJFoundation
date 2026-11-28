@@ -42,7 +42,7 @@ struct SBJStructureUsageTests {
 
     @MainActor
     @Test func editorFieldLocationsUseStructuralSourceIdentity() {
-        let fields = SBJStructuralFieldProjection.fields(of: TestEditableValue.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: TestEditableValue.self, traversalOptions: .all)
         let definition = SBJStructuralTraversal.definition(of: TestEditableValue.self)
         for (editorOrdinal, field) in fields.enumerated() {
             let location = SBJEditorStructuralLocations.resolve([field], of: TestEditableValue.self, startingAt: editorOrdinal)[0]
@@ -59,7 +59,7 @@ struct SBJStructureUsageTests {
 
     @MainActor
     @Test func generatesFieldsFromUserFacingProperties() {
-        #expect(SBJStructuralFieldProjection.fields(of: TestEditableValue.self, showsReadOnlyProperties: true).map(\.name) == [
+        #expect(SBJStructuralFieldProjection.fields(of: TestEditableValue.self, traversalOptions: .all).map(\.name) == [
             "Name", "Level", "Nested", "Notes", "Nickname", "Immutable Identifier"
         ])
     }

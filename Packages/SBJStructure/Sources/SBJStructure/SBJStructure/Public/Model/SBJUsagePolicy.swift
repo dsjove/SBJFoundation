@@ -1,18 +1,9 @@
 import Foundation
 
-/// Shared interpretation of existing usage hints. Swift mutation capabilities
-/// and invariant validation remain independent of this editor policy.
-public enum SBJUsageConsumer: Sendable {
-    case visualEditor
-    case semanticEditor
-    case report
-}
-
 public enum SBJUsagePolicy {
-    /// Exclusion limits editing/discovery in editors, not report visibility.
-    public static func isVisible(_ hints: [SBJPropertyHint], to consumer: SBJUsageConsumer) -> Bool {
-        if case .report = consumer { return true }
-        return !hints.contains { hint in
+    /// Explicit presentation exclusion, independent of traversal selection.
+    public static func isPresentationExcluded(_ hints: [SBJPropertyHint]) -> Bool {
+        hints.contains { hint in
             if case .fieldPresentation(let value) = hint { return value.exclude }
             return false
         }
@@ -22,11 +13,8 @@ public enum SBJUsagePolicy {
     /// actual typed operations. No hint ever grants a structural capability.
     public static func allowedCollectionOperations(
         _ supported: Set<SBJCollectionOperationKind>,
-        hints: [SBJPropertyHint],
-        consumer: SBJUsageConsumer
+        hints: [SBJPropertyHint]
     ) -> Set<SBJCollectionOperationKind> {
-        guard isVisible(hints, to: consumer) else { return [] }
-        if case .report = consumer { return supported }
         var allowed = supported
         for hint in hints {
             switch hint {

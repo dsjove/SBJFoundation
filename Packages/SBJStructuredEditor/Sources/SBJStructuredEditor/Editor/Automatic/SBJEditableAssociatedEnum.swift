@@ -9,8 +9,8 @@ import SwiftUI
 public struct SBJEditorAssociatedValue<Root> {
     public let name: String
     private let makeView: (Binding<Root>, Root?, SBJEditorRegistry, SBJEditorFocusRequest?, SBJEditTraversalContext) -> AnyView
-    private let collectIssues: (Root, [String], SBJEditorRegistry) -> [SBJEditorCapabilityIssue]
-    private let matchesSearch: (Root, String, Bool) -> Bool
+    private let collectIssues: (Root, [String], SBJEditorRegistry, SBJTraversalOptions) -> [SBJEditorCapabilityIssue]
+    private let matchesSearch: (Root, String, SBJTraversalOptions) -> Bool
     private let hasChanged: (Root, Root?) -> Bool
     private let hasContent: (Root) -> Bool?
     private let containsEmptyContent: (Root, SBJEditorRegistry) -> Bool
@@ -59,17 +59,17 @@ public struct SBJEditorAssociatedValue<Root> {
                 context: context
             )
         }
-        self.collectIssues = { root, path, registry in
+        self.collectIssues = { root, path, registry, traversalOptions in
             SBJValueEditor.collectIssues(
                 value: get(root),
                 path: path + [name],
-                registry: registry
+                registry: registry, traversalOptions: traversalOptions
             )
         }
-        self.matchesSearch = { root, query, showsReadOnlyProperties in
+        self.matchesSearch = { root, query, traversalOptions in
             SBJEditorSearchMatcher.matches(
                 label: name, value: get(root), query: query,
-                showsReadOnlyProperties: showsReadOnlyProperties
+                traversalOptions: traversalOptions
             )
         }
         self.hasChanged = { root, originalRoot in
@@ -125,7 +125,7 @@ public struct SBJEditorAssociatedValue<Root> {
                     )
                 },
                 isChanged: changed,
-                matchesSearch: { query in matchesSearch(root.wrappedValue, query, context.branch.showsReadOnlyProperties) },
+                matchesSearch: { query in matchesSearch(root.wrappedValue, query, context.branch.traversalOptions) },
                 containsEmptyContent: { containsEmptyContent(root.wrappedValue, registry) },
                 navigationPath: context.navigationPath,
                 searchCriteria: context.branch.searchCriteria
@@ -144,9 +144,10 @@ public struct SBJEditorAssociatedValue<Root> {
     func issues(
         root: Root,
         path: [String],
-        registry: SBJEditorRegistry
+        registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions = .editor
     ) -> [SBJEditorCapabilityIssue] {
-        collectIssues(root, path, registry)
+        collectIssues(root, path, registry, traversalOptions)
     }
 }
 
@@ -203,11 +204,12 @@ public struct SBJEditorEnumCase<Root> {
     func issues(
         value: Root,
         path: [String],
-        registry: SBJEditorRegistry
+        registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions = .editor
     ) -> [SBJEditorCapabilityIssue] {
         guard matches(value) else { return [] }
         return associatedValues.flatMap { field in
-            field.issues(root: value, path: path, registry: registry)
+            field.issues(root: value, path: path, registry: registry, traversalOptions: traversalOptions)
         }
     }
 }
@@ -306,7 +308,8 @@ extension SBJStructuredEnum {
     internal static func _sbjCollectAssociatedEnumIssues(
         value: Any,
         path: [String],
-        registry: SBJEditorRegistry
+        registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions = .editor
     ) -> [SBJEditorCapabilityIssue] {
         guard let typed = value as? Self,
               let selected = sbjStructuralEditorCases.first(where: { $0.matches(typed) }) else {
@@ -318,7 +321,7 @@ extension SBJStructuredEnum {
                 )
             ]
         }
-        return selected.issues(value: typed, path: path, registry: registry)
+        return selected.issues(value: typed, path: path, registry: registry, traversalOptions: traversalOptions)
     }
 }
 

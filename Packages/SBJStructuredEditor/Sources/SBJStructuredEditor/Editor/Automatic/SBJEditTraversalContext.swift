@@ -93,7 +93,7 @@ public enum SBJEditorNomenclaturePlacement: Hashable, Sendable {
 
 public struct SBJEditorBranchContext: Hashable, Sendable {
     /// Inherited presentation filter; unlike row status, it survives descent.
-    public var showsReadOnlyProperties: Bool
+    public var traversalOptions: SBJTraversalOptions
     public var searchCriteria: SBJStructuralSearchCriteria
     public var placement: SBJEditorRowPlacement
     public var status: SBJEditorRowStatus
@@ -106,9 +106,9 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
         status: SBJEditorRowStatus = .init(),
         disclosureMode: SBJPresentationDisclosureMode = .closed,
         nomenclaturePlacement: SBJEditorNomenclaturePlacement = .overlay,
-        showsReadOnlyProperties: Bool = false
+        traversalOptions: SBJTraversalOptions = .editor
     ) {
-        self.showsReadOnlyProperties = showsReadOnlyProperties
+        self.traversalOptions = traversalOptions
         self.searchCriteria = searchCriteria
         self.placement = placement
         self.status = status
@@ -147,7 +147,7 @@ public struct SBJEditorBranchContext: Hashable, Sendable {
     }
 
     public var child: Self {
-        .init(searchCriteria: searchCriteria, showsReadOnlyProperties: showsReadOnlyProperties)
+        .init(searchCriteria: searchCriteria, traversalOptions: traversalOptions)
     }
 }
 

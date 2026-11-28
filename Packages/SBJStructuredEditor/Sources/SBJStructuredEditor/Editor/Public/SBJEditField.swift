@@ -20,6 +20,7 @@ import SBJUIVocabulary
     let collectionRemovable: Bool
     let collectionReorderable: Bool
     let collectionElementPresentation: SBJFieldPresentationValue?
+    let dictionaryKeyGenerator: SBJDictionaryKeyGenerator?
     let dictionaryPresentation: SBJDictionaryPresentationValue?
     let collectionItemTitleKey: AnyKeyPath?
     let collectionItemIdentifierKey: String?
@@ -53,11 +54,12 @@ import SBJUIVocabulary
       }.first
       let policy = SBJUsagePolicy.allowedCollectionOperations(
         Set(SBJCollectionOperationKind.allCases),
-        hints: metadata?.hints ?? [], consumer: .visualEditor
+        hints: metadata?.hints ?? []
       )
       collectionInsertable = policy.contains(.append) && policy.contains(.insertMember) && policy.contains(.insertKey)
       collectionRemovable = policy.contains(.remove) && policy.contains(.removeMember) && policy.contains(.removeKey)
       collectionReorderable = policy.contains(.move)
+      dictionaryKeyGenerator = metadata?.dictionaryKeyGenerator
       dictionaryPresentation = metadata?.hints.compactMap { hint -> SBJDictionaryPresentationValue? in
         if case .dictionaryPresentation(let value) = hint { return value }
         return nil
@@ -181,6 +183,7 @@ import SBJUIVocabulary
           registry: registry,
           stringPresentation: configuration.stringPresentation,
           constraints: configuration.constraintProjection,
+          dictionaryKeyGenerator: configuration.dictionaryKeyGenerator,
           textMaximumLength: configuration.textMaximumLength,
           integerRange: configuration.integerRange,
           numberRange: configuration.numberRange,

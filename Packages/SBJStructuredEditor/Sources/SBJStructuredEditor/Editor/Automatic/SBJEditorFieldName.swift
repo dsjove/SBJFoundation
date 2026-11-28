@@ -15,17 +15,19 @@ struct SBJEditorFieldName: View {
     let isUnknown: Bool
 
     var body: some View {
-        Group {
-            if isUnknown {
-                Text(text)
-                    .fontWeight(.semibold)
-                    .italic()
-            } else {
-                Text(text)
+        if !text.isEmpty {
+            Group {
+                if isUnknown {
+                    Text(text)
+                        .fontWeight(.semibold)
+                        .italic()
+                } else {
+                    Text(text)
+                }
             }
+            .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
+            .allowsHitTesting(false)
         }
-        .frame(minHeight: sbjFormatting.firstLineMinimumHeight, alignment: .center)
-        .allowsHitTesting(false)
     }
 }
 #endif

@@ -54,7 +54,7 @@ public enum SBJCollectionItemIdentification {
     }
 
     private static func nameProperty<Root: SBJStructured>(in type: Root.Type) -> SBJPropertyMetadata<Root>? {
-        type.sbjUserFacingProperties.first { $0.sourceName == "name" }
+        type.sbjProperties.filter { !$0.isPresentationExcluded }.first { $0.sourceName == "name" }
     }
 
     /// The declared Name value, independent of any generated collection label.
@@ -122,7 +122,7 @@ public enum SBJCollectionItemIdentification {
 
 private extension SBJStructured {
     static var sbjHasDeclaredName: Bool {
-        sbjUserFacingProperties.contains { $0.sourceName == "name" }
+        sbjProperties.filter { !$0.isPresentationExcluded }.contains { $0.sourceName == "name" }
     }
 }
 

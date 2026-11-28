@@ -4,56 +4,62 @@ import FoundationModels
 
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
 struct SBJAIReadValueTool: Tool {
-    let name = "readValue"
-    let description = "Read a requested document value. Not for greetings or conversation."
+    let name = SBJAIInstructions.readValueName
+    let description = SBJAIInstructions.readValueDescription
     let snapshot: SBJSemanticReadSnapshot
+    let includesSchemaInInstructions = true
+    var isCurrent: (@MainActor @Sendable () -> Bool)? = nil
 
     @Generable
     struct Arguments: Sendable {
-        @Guide(description: "Path from root: only numeric field IDs as strings, exact collection keys, or @n array positions. Never include field labels.")
+        @Guide(description: SBJAIInstructions.valuePathGuide)
         let keyPath: [String]
 
     }
 
     @concurrent
     func call(arguments: Arguments) async throws -> String {
-        try await SBJAIReadExecutor(snapshot: snapshot).execute(.read, keyPath: arguments.keyPath)
+        try await SBJAIReadExecutor(snapshot: snapshot, isCurrent: isCurrent).execute(.read, keyPath: arguments.keyPath)
     }
 }
 
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
 struct SBJAIReadKeysTool: Tool {
-    let name = "readKeys"
-    let description = "List current member keys of a requested collection, not its values."
+    let name = SBJAIInstructions.readKeysName
+    let description = SBJAIInstructions.readKeysDescription
     let snapshot: SBJSemanticReadSnapshot
+    let includesSchemaInInstructions = true
+    var isCurrent: (@MainActor @Sendable () -> Bool)? = nil
 
     @Generable
     struct Arguments: Sendable {
-        @Guide(description: "Path to collection: numeric field IDs and any ancestor member keys.")
+        @Guide(description: SBJAIInstructions.collectionPathGuide)
         let keyPath: [String]
     }
 
     @concurrent
     func call(arguments: Arguments) async throws -> String {
-        try await SBJAIReadExecutor(snapshot: snapshot).execute(.keys, keyPath: arguments.keyPath)
+        try await SBJAIReadExecutor(snapshot: snapshot, isCurrent: isCurrent).execute(.keys, keyPath: arguments.keyPath)
     }
 }
 
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
 struct SBJAIReadDescriptionTool: Tool {
-    let name = "readDescription"
-    let description = "Read the meaning, constraints and choices of a field at a key path, not its current value."
+    let name = SBJAIInstructions.readDescriptionName
+    let description = SBJAIInstructions.readDescriptionDescription
     let snapshot: SBJSemanticReadSnapshot
+    let includesSchemaInInstructions = true
+    var isCurrent: (@MainActor @Sendable () -> Bool)? = nil
 
     @Generable
     struct Arguments: Sendable {
-        @Guide(description: "Path from root: only numeric field IDs as strings, exact collection keys, or @n array positions. Never include field labels.")
+        @Guide(description: SBJAIInstructions.descriptionPathGuide)
         let keyPath: [String]
     }
 
     @concurrent
     func call(arguments: Arguments) async throws -> String {
-        try await SBJAIReadExecutor(snapshot: snapshot).execute(.describe, keyPath: arguments.keyPath)
+        try await SBJAIReadExecutor(snapshot: snapshot, isCurrent: isCurrent).execute(.describe, keyPath: arguments.keyPath)
     }
 }
 
@@ -61,11 +67,13 @@ struct SBJAIReadDescriptionTool: Tool {
 @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
 private struct SBJAIReadExecutor: Sendable {
     let snapshot: SBJSemanticReadSnapshot
+    let isCurrent: (@MainActor @Sendable () -> Bool)?
 
     @concurrent
     func execute(_ operation: SBJSemanticReadOperation, keyPath: [String]) async throws -> String {
         try Task.checkCancellation()
         do {
+            if let isCurrent, !(await isCurrent()) { return SBJSemanticReadResult.error(SBJAIInstructions.staleToolResult).promptText }
             let result = try snapshot.modelQuery(operation, stringKeyPath: keyPath).promptText
             let model = SystemLanguageModel.default
             let tokens: Int?
@@ -75,8 +83,9 @@ private struct SBJAIReadExecutor: Sendable {
                 catch { tokens = nil }
             } else { tokens = nil }
             try Task.checkCancellation()
+            if let isCurrent, !(await isCurrent()) { return SBJSemanticReadResult.error(SBJAIInstructions.staleToolResult).promptText }
             if let tokens, tokens > max(1, min(384, model.contextSize / 10)) {
-                return SBJSemanticReadResult.error("Result too large. Select a more specific field.").promptText
+                return SBJSemanticReadResult.error(SBJAIInstructions.resultTooLarge).promptText
             }
             return result
         } catch is CancellationError {

@@ -64,10 +64,13 @@ public struct SBJStructureExtensionMacro: MemberMacro {
         for member in extensionDecl.memberBlock.members {
             guard let variable = member.decl.as(VariableDeclSyntax.self) else { continue }
             for binding in variable.bindings {
-                guard SBJStructureGeneration.isComputed(binding),
+                guard !extensionDecl.modifiers.contains(where: { ["private", "fileprivate"].contains($0.name.text) }),
+                      SBJStructureGeneration.isComputed(binding),
                       SBJStructureGeneration.isDiscoverable(variable, binding: binding),
                       let description = SBJStructureGeneration.propertyDescription(
-                        variable: variable, binding: binding, rootType: typeName, in: context
+                        variable: variable, binding: binding, rootType: typeName,
+                        defaultVisibility: extensionDecl.modifiers.contains(where: { $0.name.text == "public" }) ? ".publicAccess" : extensionDecl.modifiers.contains(where: { $0.name.text == "package" }) ? ".packageAccess" : ".internalAccess",
+                        in: context
                       ) else { continue }
                 properties.append(description.entry)
             }

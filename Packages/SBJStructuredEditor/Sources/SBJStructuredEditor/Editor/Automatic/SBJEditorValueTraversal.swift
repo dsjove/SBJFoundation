@@ -93,6 +93,11 @@ enum SBJEditorValueTraversal {
         return []
     }
 
+    static func memberLabel<Value>(_ value: Value, fallback: String, itemTitleKey: AnyKeyPath?) -> String {
+        SBJCollectionItemIdentification.configuredTitle(for: value, itemTitleKey: itemTitleKey)
+            ?? (isLeaf(Value.self) ? "" : fallback)
+    }
+
     static func boundNode<Value>(
         named name: String, binding: Binding<Value>, originalValue: Value? = nil,
         context: SBJEditTraversalContext, registry: SBJEditorRegistry,
@@ -126,7 +131,7 @@ enum SBJEditorValueTraversal {
                     ),
                     matchesSearch: { query in
                         SBJEditorSearchMatcher.matches(label: name, value: binding.wrappedValue, query: query,
-                                                       showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
+                                                       traversalOptions: context.branch.traversalOptions)
                     }
                 )
             },
@@ -187,7 +192,7 @@ extension Array: SBJEditorTraversableValue {
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: rowTitle
             ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
-            return SBJEditorValueTraversal.node(named: rowTitle, value: item.value, context: childContext)
+            return SBJEditorValueTraversal.node(named: SBJEditorValueTraversal.memberLabel(item.value, fallback: rowTitle, itemTitleKey: itemTitleKey), value: item.value, context: childContext)
         }
     }
 }
@@ -208,7 +213,7 @@ extension Set: SBJEditorTraversableValue {
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
-            return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
+            return SBJEditorValueTraversal.node(named: SBJEditorValueTraversal.memberLabel(element, fallback: title, itemTitleKey: itemTitleKey), value: element, context: childContext)
         }
     }
 }
@@ -228,7 +233,7 @@ extension Dictionary: SBJEditorTraversableValue {
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             )
-            return SBJEditorValueTraversal.node(named: title, value: element, context: childContext)
+            return SBJEditorValueTraversal.node(named: SBJCollectionItemIdentification.configuredTitle(for: element, itemTitleKey: itemTitleKey) ?? String(describing: item.value.key), value: element, context: childContext)
         }
     }
 }
@@ -319,7 +324,7 @@ extension Array: SBJEditorBoundTraversableValue {
                 resolvedIndex: resolvedIndex
             )
             return SBJEditorValueTraversal.boundNode(
-                named: title, binding: elementBinding, originalValue: originalElement,
+                named: SBJEditorValueTraversal.memberLabel(element, fallback: title, itemTitleKey: itemTitleKey), binding: elementBinding, originalValue: originalElement,
                 context: childContext, registry: registry, itemActions: actions,
                 constraints: constraints.collectionElement
             )
@@ -341,16 +346,18 @@ extension Set: SBJEditorBoundTraversableValue {
             guard elementPresentation?.exclude != true else { return nil }
             let element = item.value
             let title = item.title
+            let label = SBJEditorValueTraversal.memberLabel(element, fallback: title, itemTitleKey: itemTitleKey)
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             ).withBranch(context.branch.withDisclosureMode(elementPresentation?.autoExpand == true ? .autoOpen : .closed))
             return SBJEditorTraversalNode(
-                context: childContext, name: title,
+                context: childContext, name: label,
                 render: { renderedContext in
                     AnyView(SBJSetEntryEditor(
                         element: element,
                         originalElement: (originalValue as? Set<Element>)?.contains(element) == true ? element : nil,
                         title: title,
+                        fieldLabel: label,
                         registry: registry,
                         context: renderedContext,
                         configuration: .init(constraints: constraints.collectionElement),
@@ -376,7 +383,7 @@ extension Set: SBJEditorBoundTraversableValue {
                         ),
                         matchesSearch: { query in
                             SBJEditorSearchMatcher.matches(label: title, value: element, query: query,
-                                                           showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
+                                                           traversalOptions: context.branch.traversalOptions)
                         }
                     )
                 }
@@ -397,8 +404,11 @@ extension Dictionary: SBJEditorBoundTraversableValue {
             let title = dictionaryPresentation?.key?.exclude == true
                 ? (SBJCollectionItemIdentification.configuredTitle(for: item.value.value, itemTitleKey: itemTitleKey) ?? "Value")
                 : item.title
-            let valueLabel = title
             let entryValue = item.value.value
+            let valueLabel = SBJCollectionItemIdentification.configuredTitle(for: entryValue, itemTitleKey: itemTitleKey)
+                ?? (dictionaryPresentation?.key?.exclude == true
+                    ? (SBJEditorValueTraversal.isLeaf(Value.self) ? "" : "Value")
+                    : String(describing: key))
             let childContext = context.collectionChild(
                 identifier: item.identifier, location: item.location, title: title
             ).withBranch(context.branch.withDisclosureMode(dictionaryPresentation?.value?.autoExpand == true ? .autoOpen : .closed))
@@ -425,21 +435,7 @@ extension Dictionary: SBJEditorBoundTraversableValue {
                 context: childContext, registry: registry, itemActions: actions,
                 constraints: constraints.dictionaryValue
             )
-            let keyConstraints = constraints.dictionaryKey
-            guard !keyConstraints.constraints.isEmpty, dictionaryPresentation?.key?.exclude != true, insertable, removable else {
-                return [valueNode]
-            }
-            let keyContext = childContext.property("key")
-            let keyNode = SBJEditorTraversalNode(context: keyContext, name: "Key", render: { renderedContext in
-                AnyView(SBJDictionaryKeyEditor(key: key, parent: parent, registry: registry,
-                    constraints: keyConstraints, context: renderedContext))
-            }, isIncluded: { criteria in
-                criteria.includes(isChanged: (originalValue as? [Key: Value])?.keys.contains(key) != true,
-                    containsEmptyContent: SBJContentCheck.containsEmptyContent(key),
-                    matchesSearch: { SBJEditorSearchMatcher.matches(label: "Key", value: key, query: $0,
-                                                                            showsReadOnlyProperties: context.branch.showsReadOnlyProperties) })
-            })
-            return [keyNode, valueNode]
+            return [valueNode]
         }
     }
 }

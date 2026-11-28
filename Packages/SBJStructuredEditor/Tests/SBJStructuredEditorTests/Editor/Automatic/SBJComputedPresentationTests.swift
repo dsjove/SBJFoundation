@@ -14,7 +14,7 @@ private struct EditorComputedFixture: Codable {
 struct SBJComputedPresentationTests {
     @MainActor
     @Test func computedFieldIsReadOnly() {
-        let fields = SBJStructuralFieldProjection.fields(of: EditorComputedFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: EditorComputedFixture.self, traversalOptions: .all)
         let visible = fields.filter { $0.name == "Modifier" }
         #expect(visible.count == 1)
         #expect(visible.first?.metadata.access == .readOnly)
@@ -42,7 +42,7 @@ struct SBJExtensionComputedPresentationTests {
     @MainActor
     @Test func extensionComputedAppearsReadOnlyUnlessExcluded() {
         #expect(SBJStructuralFieldProjection.fields(of: ExtensionEditorFixture.self).map(\.name) == ["Score"])
-        let fields = SBJStructuralFieldProjection.fields(of: ExtensionEditorFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: ExtensionEditorFixture.self, traversalOptions: .all)
         #expect(fields.filter { $0.name == "Modifier" }.count == 1)
         #expect(fields.first { $0.name == "Modifier" }?.metadata.access == .readOnly)
         #expect(fields.allSatisfy { $0.name != "Not Presented" })
@@ -67,7 +67,7 @@ extension MixedEditorComputedFixture {
 struct SBJCombinedComputedPresentationTests {
     @MainActor
     @Test func primaryAndExtensionComputedPropertiesShareVisibility() {
-        let fields = SBJStructuralFieldProjection.fields(of: MixedEditorComputedFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: MixedEditorComputedFixture.self, traversalOptions: .all)
         #expect(fields.count == 4) // Stored base plus three visible computed fields.
         let primary = fields.first { $0.name == "Primary Visible" }
         let contributed = fields.first { $0.name == "Extension Visible" }
@@ -99,7 +99,7 @@ extension SBJComputedPresentationTests {
     @Test func readonlyFieldsKeepMetadataAndDoNotExposePrivateState() {
         let root = ReadOnlyParentFixture()
         #expect(SBJStructuralFieldProjection.fields(of: ReadOnlyParentFixture.self).isEmpty)
-        let fields = SBJStructuralFieldProjection.fields(of: ReadOnlyParentFixture.self, showsReadOnlyProperties: true)
+        let fields = SBJStructuralFieldProjection.fields(of: ReadOnlyParentFixture.self, traversalOptions: .all)
         #expect(fields.allSatisfy { $0.metadata.access == .readOnly })
         #expect(fields.allSatisfy { $0.metadata.mutableProperty() == nil })
         #expect(fields.last?.metadata.validationError(in: root) != nil)

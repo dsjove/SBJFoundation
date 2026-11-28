@@ -13,6 +13,8 @@ struct SBJAssistantComposer<Accessory: View>: View {
     let canShare: Bool
     let canEdit: Bool
     let canSend: Bool
+    let canStartNewSession: Bool
+    let startNewSession: () -> Void
     let inputAccessory: Accessory
     let displayError: (String) -> String
     let send: () -> Void
@@ -21,6 +23,7 @@ struct SBJAssistantComposer<Accessory: View>: View {
         VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 10) {
                 leadingActions
+                if options.hasResetButton { newSessionButton }
                 promptField
                 inputAccessory
 #if canImport(Speech) && canImport(AVFoundation) && !os(watchOS) && !os(tvOS)
@@ -37,6 +40,22 @@ struct SBJAssistantComposer<Accessory: View>: View {
                     .padding(.horizontal)
             }
         }
+    }
+
+    private var newSessionButton: some View {
+        Button(action: startNewSession) {
+            Label(N.newSession.title, systemImage: "trash.fill")
+                .labelStyle(.iconOnly)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(Color.red)
+        .accessibilityLabel(N.newSession.title)
+#if os(macOS) || targetEnvironment(macCatalyst)
+        .help(N.newSession.title)
+#endif
+        .disabled(!canStartNewSession)
     }
 
     private var promptField: some View {

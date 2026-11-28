@@ -16,13 +16,19 @@ struct SBJSingleLineTextEditor: View {
     var invalid: Bool = false
 
     var body: some View {
-        SBJAdaptiveFieldLayout(
-            controlWidth: .singleLineText(maximumLength: maximumLength)
-        ) {
-            SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
-                .accessibilityHidden(true)
-        } control: {
-            field
+        Group {
+            if label.isEmpty {
+                field
+            } else {
+                SBJAdaptiveFieldLayout(
+                    controlWidth: .singleLineText(maximumLength: maximumLength)
+                ) {
+                    SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
+                        .accessibilityHidden(true)
+                } control: {
+                    field
+                }
+            }
         }
         .onAppear(perform: claimFocus)
     }

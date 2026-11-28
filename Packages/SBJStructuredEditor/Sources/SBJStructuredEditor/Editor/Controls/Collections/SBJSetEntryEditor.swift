@@ -17,6 +17,7 @@ struct SBJSetEntryEditor<Element: Hashable>: View {
     let element: Element
     let originalElement: Element?
     let title: String
+    let fieldLabel: String
     let registry: SBJEditorRegistry
     let configuration: Configuration
     let context: SBJEditTraversalContext
@@ -29,6 +30,7 @@ struct SBJSetEntryEditor<Element: Hashable>: View {
         element: Element,
         originalElement: Element? = nil,
         title: String,
+        fieldLabel: String? = nil,
         registry: SBJEditorRegistry,
         context: SBJEditTraversalContext,
         configuration: Configuration = .init(),
@@ -38,6 +40,7 @@ struct SBJSetEntryEditor<Element: Hashable>: View {
         self.element = element
         self.originalElement = originalElement
         self.title = title
+        self.fieldLabel = fieldLabel ?? title
         self.registry = registry
         self.configuration = configuration
         self.context = context
@@ -63,7 +66,7 @@ struct SBJSetEntryEditor<Element: Hashable>: View {
             HStack(alignment: .center, spacing: 8) {
 
                 SBJValueEditor.makeView(
-                    label: title,
+                    label: fieldLabel,
                     value: $draft,
                     originalValue: originalElement.map { SBJEditorOriginalValue($0) },
                     registry: registry,

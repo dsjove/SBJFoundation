@@ -1,7 +1,7 @@
 import Foundation
 import SBJLocalization
 
-/// A lightweight presentation boundary. Staged-change members are retained for existing hosts.
+/// A lightweight presentation boundary, including staged-change review.
 @MainActor
 public protocol SBJAssistantPresenting: AnyObject {
 	var availabilityState: SBJAssistantState { get }
@@ -29,6 +29,8 @@ public protocol SBJAssistantPresenting: AnyObject {
 	var canPrintInstructions: Bool { get }
 	func printInstructions()
 
+	/// Discard the current conversation and prepare a fresh session.
+	func startNewSession()
 	func submit(_ text: String)
 	func stop()
 	func approve()

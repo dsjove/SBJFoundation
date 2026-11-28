@@ -14,8 +14,10 @@ struct SBJSheetTextEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
-                .accessibilityHidden(true)
+            if !label.isEmpty {
+                SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
+                    .accessibilityHidden(true)
+            }
             PlaceholderMultilineTextField(
                 label, text: $value, presentation: presentation,
                 requestInitialFocus: { focusRequest?.claim() ?? false }

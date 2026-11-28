@@ -39,10 +39,10 @@ enum SBJSemanticReadFixtureChoice: Codable {
 struct SBJSemanticReadFixture {
     @SBJInteger(min: 1, max: 20)
     var level = 9
-    static let levelNomenclature = SBJNomenclature(title: "Experience level", summary: "Current experience tier.", details: "Used for level-dependent calculations.", aliases: ["Character level", "CHARACTER LEVEL", "EXPERIENCE LEVEL"], accessibilityLabel: "TEST ACCESSIBILITY LABEL", accessibilityHint: "TEST ACCESSIBILITY HINT")
+    static let levelNomenclature = SBJNomenclature(title: "Experience level", summary: "Current experience tier.", details: "Used for level-dependent calculations.", aliases: ["Record level", "RECORD LEVEL", "EXPERIENCE LEVEL"], accessibilityLabel: "TEST ACCESSIBILITY LABEL", accessibilityHint: "TEST ACCESSIBILITY HINT")
     @SBJString(allowedValues: ["Alpha", "Beta"], pattern: "[A-Za-z]+")
     var mode = "Alpha"
-    static let modeNomenclature = SBJNomenclature(title: "Mode", details: "Character level may determine this mode.")
+    static let modeNomenclature = SBJNomenclature(title: "Mode", details: "Record level may determine this mode.")
     let fixed = "Immutable value"
     var doubled: Int { level * 2 }
     @SBJArray(elementName: \SBJSemanticReadFixtureItem.name, minCount: 1, maxCount: 10)
@@ -84,7 +84,7 @@ struct SBJSemanticReadSnapshotTests {
         #expect(try record(snapshot, .read, "fixed").readValue == .text("Immutable value"))
         let description = try record(snapshot, .describe, "level").metadata?["description"]?.label ?? ""
         #expect(description.contains("Experience level"))
-        #expect(description.contains("Character level"))
+        #expect(description.contains("Record level"))
         #expect(description.contains("Used for level-dependent calculations"))
         #expect(description.contains("Range 1–20"))
         #expect(!description.contains("Current experience tier."))
@@ -98,15 +98,37 @@ struct SBJSemanticReadSnapshotTests {
         #expect(!String(reflecting: all).contains("EXCLUDED"))
     }
 
+    @Test func traversalOptionsFilterSchemaAndSnapshotTogether() throws {
+        let instance = SBJSemanticReadFixture()
+        let full = try SBJSemanticReadSnapshot(instance: instance)
+        let filtered = try SBJSemanticReadSnapshot(instance: instance, traversalOptions: .editor.subtracting(.computed))
+        #expect(!filtered.paths.contains("$/fixed"))
+        #expect(!filtered.paths.contains("$/doubled"))
+        #expect(filtered.declarationIdentifier(for: [.field("fixed")]) == nil)
+        #expect(filtered.declarationIdentifier(for: [.field("doubled")]) == nil)
+        #expect(try record(filtered, .read, "level").readValue == .signed(9))
+        let fullID = try #require(full.declarationIdentifier(for: [.field("exactUnsigned")]))
+        let filteredID = try #require(filtered.declarationIdentifier(for: [.field("exactUnsigned")]))
+        #expect(try full.resolveLeaf([String(fullID)]).location == filtered.resolveLeaf([String(filteredID)]).location)
+        #expect(try SBJCompactStructureTestDecoder.expand(filtered.structuralDescription()) == filtered.structuralDescription(usesTemplates: false))
+    }
+
+    @Test func explicitPresentationExclusionOverride() throws {
+        let snapshot = try SBJSemanticReadSnapshot(instance: SBJSemanticReadFixture(), traversalOptions: .definition)
+        #expect(try record(snapshot, .read, "hidden").readValue == .text("HIDDEN ROOT VALUE"))
+        #expect(snapshot.declarationIdentifier(for: [.field("excluded")]) == nil)
+        #expect(snapshot.paths.contains("$/items/0/hiddenItem"))
+    }
+
     @Test func staticDefinitionAndRootDiscovery() throws {
         let snapshot = try SBJSemanticReadSnapshot(instance: SBJSemanticReadFixture())
         let level = try #require(snapshot.entries.first { $0.path == "$/level" })
-        #expect(level.aliases == ["Character level"])
+        #expect(level.aliases == ["Record level"])
         let items = snapshot.entries.filter { $0.path == "$/items/0" || $0.path == "$/items/1" }
         #expect(items.compactMap(\.position) == [1, 2])
         #expect(Set(snapshot.paths).count == snapshot.entries.count)
         let text = snapshot.structuralDescription()
-        #expect(text.contains("Experience level,Character level"))
+        #expect(text.contains("Experience level,Record level"))
         #expect(!text.contains("Used for level-dependent calculations"))
         #expect(!text.contains("Immutable value"))
         #expect(!text.contains("HIDDEN ROOT VALUE"))
@@ -170,24 +192,24 @@ struct SBJSemanticReadSnapshotTests {
 
     @Test func onDemandCollectionKeysTrackNamesWithoutChangingDeclarations() throws {
         var fixture = SBJSemanticReadFixture()
-        fixture.items[0].name = "Pebble"
+        fixture.items[0].name = "Alpha"
         let before = try SBJSemanticReadSnapshot(instance: fixture)
         let items = String(try #require(before.declarationIdentifier(for: [.field("items")])))
         let rank = String(try #require(before.declarationIdentifier(for: [.field("items"), .member, .field("rank")])))
         let keys = try before.modelQuery(.keys, stringKeyPath: [items])
-        #expect(keys.available?.members.map(\.key) == ["Pebble", "Same"])
+        #expect(keys.available?.members.map(\.key) == ["Alpha", "Same"])
         #expect(keys.readValue == nil)
         let incomplete = try before.modelQuery(.read, stringKeyPath: [items, rank])
         #expect(incomplete.memberRequest != nil)
         #expect(incomplete.memberRequest?.action == .insert)
         #expect(incomplete.memberRequest?.keyPosition == 2)
         #expect(incomplete.memberRequest?.available == keys.available)
-        #expect(try before.modelQuery(.read, stringKeyPath: [items, "Pebble", rank]).readValue == .signed(7))
+        #expect(try before.modelQuery(.read, stringKeyPath: [items, "Alpha", rank]).readValue == .signed(7))
         fixture.items[0].name = "Quartz"
         let after = try SBJSemanticReadSnapshot(instance: fixture)
         #expect(before.structuralDescription() == after.structuralDescription())
         #expect(try after.modelQuery(.keys, stringKeyPath: [items]).available?.members.map(\.key) == ["Quartz", "Same"])
-        let stale = try after.modelQuery(.read, stringKeyPath: [items, "Pebble", rank])
+        let stale = try after.modelQuery(.read, stringKeyPath: [items, "Alpha", rank])
         #expect(stale.memberRequest?.action == .replace)
         #expect(stale.available?.members.map(\.key) == ["Quartz", "Same"])
     }

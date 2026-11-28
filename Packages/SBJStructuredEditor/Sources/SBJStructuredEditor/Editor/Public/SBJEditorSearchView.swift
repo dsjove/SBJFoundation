@@ -1,5 +1,6 @@
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
+import SBJStructure
 import SBJFileResources
 import SBJUIVocabulary
 import SBJStructuredReport
@@ -18,6 +19,7 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
     private let value: Value
     private let presentationModel: SBJEditorPresentationModel
     private let registry: SBJEditorRegistry
+    private let traversalOptions: SBJTraversalOptions
     @State private var draftSearchText: String
     // Distinguishes our debounced commits from programmatic model updates.
     @State private var lastCommittedSearchText: String
@@ -25,17 +27,19 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
     public init(
         value: Value,
         presentationModel: SBJEditorPresentationModel,
-        registry: SBJEditorRegistry = .init()
+        registry: SBJEditorRegistry = .init(),
+        traversalOptions: SBJTraversalOptions = .editor
     ) {
         self.value = value
         self.presentationModel = presentationModel
         self.registry = registry
+        self.traversalOptions = traversalOptions
         self._draftSearchText = State(initialValue: presentationModel.searchCriteria.searchQuery)
         self._lastCommittedSearchText = State(initialValue: presentationModel.searchCriteria.searchQuery)
     }
 
     private func refreshIssues() {
-        let issues = SBJEditorDiagnostics.issues(for: value, registry: registry)
+        let issues = SBJEditorDiagnostics.issues(for: value, registry: registry, traversalOptions: traversalOptions)
         presentationModel.replaceIssues(issues)
     }
 
@@ -62,7 +66,7 @@ public struct SBJEditorSearchView<Value: SBJMutableStructure>: View {
 		.sheet(isPresented: $model.isShowingStructure) {
 			NavigationStack {
 				SBJDefinitionReportView(
-					catalog: SBJDefinitionCatalog(Value.self)
+					catalog: SBJDefinitionCatalog(Value.self, traversalOptions: traversalOptions)
 				)
 				.sbjInlineNavigationTitle()
 				.toolbar {

@@ -6,11 +6,13 @@ import Foundation
 private struct SBJStructuralSearchMatcher {
     let originalQuery: String
     let normalizedQuery: String
+    let traversalOptions: SBJTraversalOptions
 
-    init?(_ search: String) {
+    init?(_ search: String, traversalOptions: SBJTraversalOptions = .all) {
         guard let query = search.querify else { return nil }
         let normalized = query.normalizedSearchText
         guard !normalized.isEmpty else { return nil }
+        self.traversalOptions = traversalOptions
         self.originalQuery = query
         self.normalizedQuery = normalized
     }
@@ -20,8 +22,9 @@ private struct SBJStructuralSearchMatcher {
     }
 
     private func matchesStructured<Root: SBJStructured>(_ root: Root, depth: Int) -> Bool {
-        Root.sbjUserFacingProperties.contains { property in
-            matchesText(property.displayName) || matchesText(property.sourceName) ||
+        Root.sbjProperties.contains { property in
+            guard traversalOptions.includes(property) else { return false }
+            return matchesText(property.displayName) || matchesText(property.sourceName) ||
                 matches(property.value(in: root), depth: depth + 1)
         }
     }
@@ -119,12 +122,12 @@ public func sbjPredicated(_ text: String, search: String) -> Bool {
 
 /// Matches an arbitrary value for structural/editor search without first
 /// constructing a recursive textual description of the entire value.
-public func sbjPredicated<Value>(_ value: Value, search: String) -> Bool {
-    guard let matcher = SBJStructuralSearchMatcher(search) else { return true }
+public func sbjPredicated<Value>(_ value: Value, search: String, traversalOptions: SBJTraversalOptions = .all) -> Bool {
+    guard let matcher = SBJStructuralSearchMatcher(search, traversalOptions: traversalOptions) else { return true }
     return matcher.matches(value)
 }
 
-public func sbjPredicated<Value>(label: String, value: Value, search: String) -> Bool {
-    guard let matcher = SBJStructuralSearchMatcher(search) else { return true }
+public func sbjPredicated<Value>(label: String, value: Value, search: String, traversalOptions: SBJTraversalOptions = .all) -> Bool {
+    guard let matcher = SBJStructuralSearchMatcher(search, traversalOptions: traversalOptions) else { return true }
     return matcher.matchesText(label) || matcher.matches(value)
 }

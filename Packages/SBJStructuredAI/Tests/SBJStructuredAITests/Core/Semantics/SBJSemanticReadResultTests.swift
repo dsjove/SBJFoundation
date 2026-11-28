@@ -76,12 +76,12 @@ struct SBJSemanticReadResultTests {
     }
 
     @Test func availableKeysAndNegotiation() {
-        let keys = SBJSemanticReadResult.CollectionKeys(members: [.init(key: "Pebble", title: nil), .init(key: "@2", title: "Granite")], unaddressableCount: 0)
-        #expect(SBJSemanticReadResult.keys(keys).promptText == "keys:Pebble,@2=Granite")
+        let keys = SBJSemanticReadResult.CollectionKeys(members: [.init(key: "Alpha", title: nil), .init(key: "@2", title: "Beta")], unaddressableCount: 0)
+        #expect(SBJSemanticReadResult.keys(keys).promptText == "keys:Alpha,@2=Beta")
         #expect(SBJSemanticReadResult.keys(.init(members: [], unaddressableCount: 0)).promptText == "keys:")
         #expect(SBJSemanticReadResult.keys(.init(members: [], unaddressableCount: 2)).promptText == "keys:;unaddressable:2")
-        #expect(SBJSemanticReadResult.memberRequired(.init(action: .insert, keyPosition: 3, collectionID: 42, available: keys, reason: "Missing member")).promptText == "memberRequired:insert:3;keys:Pebble,@2=Granite")
-        #expect(SBJSemanticReadResult.memberRequired(.init(action: .replace, keyPosition: 3, collectionID: 42, available: keys, reason: "Invalid member")).promptText == "memberRequired:replace:3;keys:Pebble,@2=Granite")
+        #expect(SBJSemanticReadResult.memberRequired(.init(action: .insert, keyPosition: 3, collectionID: 42, available: keys, reason: "Missing member")).promptText == "memberRequired:insert:3;keys:Alpha,@2=Beta")
+        #expect(SBJSemanticReadResult.memberRequired(.init(action: .replace, keyPosition: 3, collectionID: 42, available: keys, reason: "Invalid member")).promptText == "memberRequired:replace:3;keys:Alpha,@2=Beta")
     }
 
     @Test func quotedKeysAndStructuredData() {
@@ -90,4 +90,15 @@ struct SBJSemanticReadResultTests {
         let data: SBJSemanticValue = .object(["b": .array([.null, .text("a\"b\\c\n")]), "a": .bool(true)])
         #expect(read(data).promptText == #"value:{"a"=true;"b"=[null,"a\"b\\c\n"]}"#)
     }
+    @Test func centralizedModelTextAndLexicalExamples() {
+        #expect(SBJAIInstructions.session == [SBJAIInstructions.lexicalGrammar, SBJAIInstructions.structureGrammar, SBJAIInstructions.pathResolution, SBJAIInstructions.responseGrammar].joined(separator: "\n\n"))
+        #expect(SBJAIInstructions.session.contains("lowest numeric field ID"))
+        #expect(SBJAIInstructions.session.contains(SBJAIInstructions.readKeysName))
+        #expect(SBJAIInstructions.descriptionPathGuide.contains("member keys optional"))
+        #expect(SBJSemanticReadResult.error(SBJAIInstructions.invalidFieldKey(2)).promptText == #"error:"Key 2 must be a decimal field ID, without its label.""#)
+        #expect(SBJCompactStructure.name("9,Label") == #""9,Label""#)
+        #expect(SBJCompactStructure.name("Field?Name") == #""Field?Name""#)
+        #expect(SBJCompactStructure.name("Amount") == "Amount")
+    }
+
 }

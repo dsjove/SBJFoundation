@@ -5,9 +5,9 @@ import SwiftUI
 /// Apply editor presentation policy after canonical semantic visibility.
 @MainActor
 enum SBJStructuralFieldProjection {
-    static func fields<Root: SBJMutableStructure>(of type: Root.Type, showsReadOnlyProperties: Bool = false) -> [SBJEditorPropertyDescriptor<Root>] {
-        let visitor = SBJStructuralFieldCollector<Root>(showsReadOnlyProperties: showsReadOnlyProperties)
-        for property in type.sbjUserFacingProperties {
+    static func fields<Root: SBJMutableStructure>(of type: Root.Type, traversalOptions: SBJTraversalOptions = .editor) -> [SBJEditorPropertyDescriptor<Root>] {
+        let visitor = SBJStructuralFieldCollector<Root>()
+		for property in type.sbjProperties.filter({ traversalOptions.includes($0) }) {
             property.visitTypedProperty(with: visitor)
         }
         return visitor.descriptors
@@ -17,11 +17,6 @@ enum SBJStructuralFieldProjection {
 @MainActor
 private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @preconcurrency SBJTypedPropertyVisitor {
     private(set) var descriptors: [SBJEditorPropertyDescriptor<Root>] = []
-    private let showsReadOnlyProperties: Bool
-
-    init(showsReadOnlyProperties: Bool) {
-        self.showsReadOnlyProperties = showsReadOnlyProperties
-    }
 
     func visit<Value>(_ keyPath: KeyPath<Root, Value>, metadata: SBJPropertyMetadata<Root>) {
         let disclosure: SBJPresentationDisclosureMode = metadata.hints.compactMap { hint in
@@ -30,7 +25,7 @@ private final class SBJStructuralFieldCollector<Root: SBJMutableStructure>: @pre
         }.first ?? .closed
         if metadata.access == .readWrite, let writable = keyPath as? WritableKeyPath<Root, Value> {
             descriptors.append(.init(metadata: metadata, keyPath: writable, disclosureMode: disclosure))
-        } else if showsReadOnlyProperties {
+        } else {
             descriptors.append(.init(metadata: metadata, readOnly: keyPath))
         }
     }

@@ -108,9 +108,14 @@ public enum SBJStructureGeneration {
         var propertyEntries: [String] = []
         var writableStoredNames: [String] = []
         var stateMembers: [String] = []
+        var comparisonMembers: [String] = []
         var hasUninspectableState = structDecl.memberBlock.members.contains { member in
             guard let conditional = member.decl.as(IfConfigDeclSyntax.self) else { return false }
             return containsConditionalStoredState(conditional)
+        }
+        var hasUninspectableComparisonState = structDecl.memberBlock.members.contains { member in
+            guard let conditional = member.decl.as(IfConfigDeclSyntax.self) else { return false }
+            return containsConditionalStoredState(conditional, forComparison: true)
         }
         var readableStateMembers: [String] = []
         var storedSemanticMembers: [String] = []
@@ -144,16 +149,21 @@ public enum SBJStructureGeneration {
             for binding in variable.bindings {
                 guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else {
                     hasUninspectableState = true
+                    if !hasAttribute(named: "SBJExcludeFromStructuralEquivalence", on: variable) { hasUninspectableComparisonState = true }
                     continue
                 }
                 let name = identifier.identifier.text
 
                 let computed = isComputed(binding)
-                if !computed { stateMembers.append(name) }
+                if !computed {
+                    stateMembers.append(name)
+                    if !hasAttribute(named: "SBJExcludeFromStructuralEquivalence", on: variable) { comparisonMembers.append(name) }
+                }
                 if variable.modifiers.contains(where: { $0.name.text == "lazy" }) {
                     // A lazy getter mutates a value-type receiver and cannot be read by this witness.
                     // Do not silently report equal state; a custom witness can define this contract.
                     hasUninspectableState = true
+                    if !hasAttribute(named: "SBJExcludeFromStructuralEquivalence", on: variable) { hasUninspectableComparisonState = true }
                     continue
                 }
                 if !computed { readableStateMembers.append(name) }
@@ -231,7 +241,7 @@ public enum SBJStructureGeneration {
             result.append(contentsOf: layer.structMembers(access: access, fields: entries))
         }
 
-        let contentExpression = "Self.sbjProperties.contains { $0.isUserFacing && SBJContentCheck.hasContent($0.value(in: self)) }"
+        let contentExpression = "Self.sbjProperties.contains { !$0.isPresentationExcluded && SBJContentCheck.hasContent($0.value(in: self)) }"
         result.append(
             DeclSyntax(stringLiteral: """
             \(access)var _hasContent: Bool {
@@ -268,9 +278,9 @@ public enum SBJStructureGeneration {
             )
         }
 
-        let structuralExpression = hasUninspectableState ? "false" : stateMembers.isEmpty
+        let structuralExpression = hasUninspectableComparisonState ? "false" : comparisonMembers.isEmpty
             ? "true"
-            : stateMembers.map { "SBJStructuralCompare.equals(self.\($0), other.\($0))" }.joined(separator: " &&\n")
+            : comparisonMembers.map { "SBJStructuralCompare.equals(self.\($0), other.\($0))" }.joined(separator: " &&\n")
         result.append(
             DeclSyntax(stringLiteral: """
             \(access)func _sbjStructuralEquals(_ other: Self) -> Bool {
@@ -1598,7 +1608,7 @@ public enum SBJStructureGeneration {
     // The same annotation translator serves primary declarations and structural extensions.
     public static func propertyDescription(
         variable: VariableDeclSyntax, binding: PatternBindingSyntax,
-        rootType: String, in context: some MacroExpansionContext
+        rootType: String, defaultVisibility: String = ".internalAccess", in context: some MacroExpansionContext
     ) -> (entry: String, invariants: [String])? {
         guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self) else { return nil }
         let name = identifier.identifier.text
@@ -1834,23 +1844,37 @@ public enum SBJStructureGeneration {
             hintMetadata.append(".elementName(\(elementName))")
         }
 
+        let dictionaryKeyGenerator: String
+        if let expression = collectionPresentationOption("keyGenerator", annotation: "SBJDictionary", on: variable), expression != "true", expression != "nil" {
+            dictionaryKeyGenerator = "SBJDictionaryKeyGenerator(for: \\Self.\(name), \(expression))"
+        } else {
+            dictionaryKeyGenerator = "nil"
+        }
         let constraints = constraintMetadata.joined(separator: ", ")
         let hints = hintMetadata.joined(separator: ", ")
-        let entry = "SBJPropertyMetadata<\(rootType)>(sourceName: \"\(name)\", displayName: \(fieldDisplayName(on: variable, fallback: name)), keyPath: \\Self.\(name), kind: \(kind), storage: \(computed ? ".computed" : ".stored"), access: \(writable ? ".readWrite" : ".readOnly"), constraints: [\(constraints)], hints: [\(hints)], info: Self.propertyNomenclature(for: \\Self.\(name)), validate: { _sbjRoot, _sbjPath in let \(name) = _sbjRoot.\(name); \(invariantStatements.map { $0.replacingOccurrences(of: "keyPath.appending", with: "_sbjPath.appending") }.joined(separator: "; ")) })"
+        let visibility: String
+        switch variable.modifiers.first(where: { $0.detail == nil && ["public", "open", "package", "internal", "private", "fileprivate"].contains($0.name.text) })?.name.text {
+        case "public", "open": visibility = ".publicAccess"
+        case "package": visibility = ".packageAccess"
+        case "internal", "private", "fileprivate": visibility = ".internalAccess"
+        default: visibility = defaultVisibility
+        }
+        let entry = "SBJPropertyMetadata<\(rootType)>(sourceName: \"\(name)\", displayName: \(fieldDisplayName(on: variable, fallback: name)), keyPath: \\Self.\(name), kind: \(kind), storage: \(computed ? ".computed" : ".stored"), visibility: \(visibility), access: \(writable ? ".readWrite" : ".readOnly"), constraints: [\(constraints)], hints: [\(hints)], dictionaryKeyGenerator: \(dictionaryKeyGenerator), info: Self.propertyNomenclature(for: \\Self.\(name)), validate: { _sbjRoot, _sbjPath in let \(name) = _sbjRoot.\(name); \(invariantStatements.map { $0.replacingOccurrences(of: "keyPath.appending", with: "_sbjPath.appending") }.joined(separator: "; ")) })"
 
         return (entry, invariantStatements)
     }
 
     /// Examine every conditional branch, including nested conditionals, for instance storage.
-    private static func containsConditionalStoredState(_ conditional: IfConfigDeclSyntax) -> Bool {
+    private static func containsConditionalStoredState(_ conditional: IfConfigDeclSyntax, forComparison: Bool = false) -> Bool {
         for clause in conditional.clauses {
             guard let members = clause.elements?.as(MemberBlockItemListSyntax.self) else { continue }
             for member in members {
                 if let nested = member.decl.as(IfConfigDeclSyntax.self) {
-                    if containsConditionalStoredState(nested) { return true }
+                    if containsConditionalStoredState(nested, forComparison: forComparison) { return true }
                 } else if let variable = member.decl.as(VariableDeclSyntax.self),
                           !variable.modifiers.contains(where: { ["static", "class"].contains($0.name.text) }),
-                          variable.bindings.contains(where: { !isComputed($0) }) {
+                          variable.bindings.contains(where: { !isComputed($0) }),
+                          !forComparison || !hasAttribute(named: "SBJExcludeFromStructuralEquivalence", on: variable) {
                     return true
                 }
             }

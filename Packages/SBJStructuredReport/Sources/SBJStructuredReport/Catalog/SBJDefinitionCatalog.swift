@@ -33,7 +33,9 @@ public struct SBJDefinitionProperty {
     public let declarationIndex: Int
     public let storage: SBJPropertyStorage
     public let access: SBJPropertyAccess
-    public let isUserFacing: Bool
+    public let visibility: SBJPropertyVisibility
+    /// Explicit field-presentation exclusion; traversal options determine inclusion.
+    public let isPresentationExcluded: Bool
     public var isComputed: Bool { storage == .computed }
 
     public var title: String? {
@@ -42,10 +44,6 @@ public struct SBJDefinitionProperty {
     }
     public var typeName: String { String(reflecting: declaredType) }
 
-    /// Declaration-level usage policy. Report visibility is independent of
-    /// visual/semantic editor visibility; excluded editor fields are documented.
-    public var visibleToEditor: Bool { isUserFacing }
-    public var visibleToSemanticEditor: Bool { isUserFacing }
 }
 
 public struct SBJDefinitionPayload {
@@ -87,6 +85,7 @@ public struct SBJDefinitionType {
 public struct SBJDefinitionCatalog {
     public let types: [SBJDefinitionType]
     public let options: SBJDefinitionCatalogOptions
+    public let traversalOptions: SBJTraversalOptions
 
     /// Re-sorts the complete discovered catalog without reconstructing model values.
     public func sorted(using options: SBJDefinitionCatalogOptions) -> SBJDefinitionCatalog {
@@ -108,7 +107,7 @@ public struct SBJDefinitionCatalog {
         let ordered = options.typeSort == .alphabetical
             ? types.sorted { Self.sortNames($0.swiftName, $0.declarationIndex, $1.swiftName, $1.declarationIndex) }
             : types.sorted { $0.declarationIndex < $1.declarationIndex }
-        return SBJDefinitionCatalog(types: ordered, options: options)
+        return SBJDefinitionCatalog(types: ordered, options: options, traversalOptions: traversalOptions)
     }
 
     private static func sortNames(_ a: String, _ ai: Int, _ b: String, _ bi: Int) -> Bool {
@@ -116,8 +115,8 @@ public struct SBJDefinitionCatalog {
         return comparison == .orderedSame ? ai < bi : comparison == .orderedAscending
     }
 
-    public init<Root: SBJStructured>(_ root: Root.Type, options: SBJDefinitionCatalogOptions = .init()) {
-        var builder = Builder(options: options)
+    public init<Root: SBJStructured>(_ root: Root.Type, traversalOptions: SBJTraversalOptions = .definition, options: SBJDefinitionCatalogOptions = .init()) {
+        var builder = Builder(traversalOptions: traversalOptions, options: options)
         builder.add(root)
         self = builder.build()
     }
@@ -126,8 +125,9 @@ public struct SBJDefinitionCatalog {
         private var definitions: [ObjectIdentifier: SBJDefinitionType] = [:]
         private var order: [ObjectIdentifier] = []
         private let options: SBJDefinitionCatalogOptions
+        private let traversalOptions: SBJTraversalOptions
 
-        public init(options: SBJDefinitionCatalogOptions = .init()) { self.options = options }
+        public init(traversalOptions: SBJTraversalOptions = .definition, options: SBJDefinitionCatalogOptions = .init()) { self.options = options; self.traversalOptions = traversalOptions }
 
         public mutating func add<Root: SBJStructured>(_ type: Root.Type) {
             discover(type)
@@ -136,13 +136,13 @@ public struct SBJDefinitionCatalog {
         private mutating func registerStructure<Root: SBJStructured>(_ type: Root.Type) {
             let id = ObjectIdentifier(type)
             guard definitions[id] == nil else { return }
-            var fields = SBJStructuralTraversal.definition(of: type).map { field in
+            var fields = SBJStructuralTraversal.definition(of: type, options: traversalOptions).map { field in
                 SBJDefinitionProperty(
                     swiftIdentifier: field.sourceName, displayName: field.displayName,
                     declaredType: field.valueType, kind: field.kind,
                     info: field.info, constraints: field.constraints, hints: field.hints,
                     declarationIndex: field.ordinal, storage: field.metadata.storage,
-                    access: field.metadata.access, isUserFacing: field.metadata.isUserFacing)
+                    access: field.metadata.access, visibility: field.metadata.visibility, isPresentationExcluded: field.metadata.isPresentationExcluded)
             }
             if options.propertySort == .alphabetical {
                 fields.sort { Self.comesFirst($0.swiftIdentifier, $0.declarationIndex,
@@ -201,7 +201,7 @@ public struct SBJDefinitionCatalog {
         }
 
         private mutating func discover(_ type: Any.Type) {
-            for declared in SBJStructuralTraversal.reachableTypes(from: type) {
+            for declared in SBJStructuralTraversal.reachableTypes(from: type, options: traversalOptions) {
                 guard definitions[ObjectIdentifier(declared)] == nil else { continue }
                 if let enumType = declared as? any SBJStructuredEnum.Type {
                     registerAssociatedEnum(enumType)
@@ -224,11 +224,12 @@ public struct SBJDefinitionCatalog {
                 result.sort { Self.comesFirst($0.swiftName, $0.declarationIndex,
                                               $1.swiftName, $1.declarationIndex) }
             }
-            return SBJDefinitionCatalog(types: result, options: options)
+            return SBJDefinitionCatalog(types: result, options: options, traversalOptions: traversalOptions)
         }
     }
 
-    private init(types: [SBJDefinitionType], options: SBJDefinitionCatalogOptions) {
+    private init(types: [SBJDefinitionType], options: SBJDefinitionCatalogOptions, traversalOptions: SBJTraversalOptions) {
+        self.traversalOptions = traversalOptions
         self.types = types
         self.options = options
     }

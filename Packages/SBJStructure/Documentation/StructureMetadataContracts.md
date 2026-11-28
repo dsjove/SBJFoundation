@@ -22,3 +22,29 @@ These tests must be run with the package's specified Swift 6.4 toolchain and App
 Collection nomenclature is independent of structural properties. `SBJCollectionItemIdentification.hasDeclaredName(_:)` checks for an actual user-facing `name` property regardless of content; `declaredName(for:)` reads its current usable text. A configured title takes precedence for collection presentation, followed by a declared name, then the existing fallback. No synthetic name or description is added to the canonical structure.
 
 `SBJStructuralType.optionalPresence(of:)` distinguishes non-optionals, unset optionals and set optionals, even when the wrapped value is empty or itself an unset optional. The existing optional collection operation implementation continues to enforce cardinality zero or one. Inactive union cases and invalid addresses are resolution outcomes, not optional states.
+
+## Traversal options and stored-state equivalence
+
+`SBJTraversalOptions` selects discoverable properties by storage (`stored`,
+`computed`), mutability (`readOnly`, `readWrite`) and declared visibility
+(`publicAccess`, `packageAccess`, `internalAccess`). Select at least one option
+in each dimension. Within a dimension selections are inclusive; dimensions
+combine restrictively. Start from `.all` and remove unwanted flags, or use
+`.editor` for writable user-facing properties. `.definition` additionally
+includes presentation-excluded declarations for definition reports.
+
+`SBJStructuralTraversal` applies options before accessing property values and
+preserves original declaration ordinals, including when recursing through
+collections and associated enum payloads. No option exposes private or
+fileprivate declarations. Explicit developer-provided names and presentations
+remain separate from property traversal.
+
+Structural equivalence is synthesized from stored instance declarations, both
+`let` and `var`, including private/fileprivate state. Static and computed
+properties are not compared. `@SBJExcludeFromStructuralEquivalence` omits a
+stored property from its containing instance's synthesized comparison only;
+it does not change discovery, validation, resource traversal, content checking
+or reconstruction. `@SBJExclude` still affects discovery, not comparison.
+The existing conservative behavior for uninspectable lazy, conditional and
+destructured declarations remains when they have not been explicitly excluded
+from comparison. A custom comparison witness may define those cases.

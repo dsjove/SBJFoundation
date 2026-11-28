@@ -66,7 +66,39 @@ extension SBJCollectionAndUnitInteractionTests {
             of: values, context: .root,
             elementPresentation: SBJFieldPresentationValue(autoExpand: true)
         )
-        #expect(visible.map(\.name) == ["[0]", "[1]"])
+        #expect(visible.map(\.name) == ["", ""])
         #expect(visible.allSatisfy { $0.disclosureMode == .autoOpen })
+        #expect(Set(visible.map(\.id)).count == 2)
+        let bound = SBJEditorValueTraversal.boundChildren(of: Binding.constant(values), context: .root, registry: .init())
+        #expect(bound.map(\.name) == ["", ""])
+        #expect(bound.map(\.id) == visible.map(\.id))
+    }
+}
+
+
+extension SBJCollectionAndUnitInteractionTests {
+    @Test func collectionLeafLabels() {
+        let registry = SBJEditorRegistry()
+        let notes = ["first", "second"]
+        let named = SBJEditorValueTraversal.boundChildren(of: Binding.constant(notes), context: .root, registry: registry, itemTitleKey: \String.self)
+        #expect(named.map(\.name) == notes)
+        #expect(named.allSatisfy { !$0.isDisclosure })
+        let tags = Set(notes)
+        let unnamedSet = SBJEditorValueTraversal.boundChildren(of: Binding.constant(tags), context: .root, registry: registry)
+        #expect(unnamedSet.map(\.name) == ["", ""])
+        let namedSet = SBJEditorValueTraversal.boundChildren(of: Binding.constant(tags), context: .root, registry: registry, itemTitleKey: \String.self)
+        #expect(Set(namedSet.map(\.name)) == tags)
+        #expect(namedSet.allSatisfy { !$0.isDisclosure })
+        let values = ["key": "value"]
+        let fallback = SBJEditorValueTraversal.boundChildren(of: Binding.constant(values), context: .root, registry: registry)
+        #expect(fallback.map(\.name) == ["key"])
+        let override = SBJEditorValueTraversal.boundChildren(of: Binding.constant(values), context: .root, registry: registry, itemTitleKey: \String.self)
+        #expect(override.map(\.name) == ["value"])
+        let hiddenKey = SBJEditorValueTraversal.boundChildren(of: Binding.constant(values), context: .root, registry: registry, dictionaryPresentation: .init(key: .init(exclude: true)))
+        #expect(hiddenKey.map(\.name) == [""])
+        #expect(fallback.map(\.id) == override.map(\.id))
+        #expect(fallback.map(\.id) == hiddenKey.map(\.id))
+        let nested = SBJEditorValueTraversal.boundChildren(of: Binding.constant([["first"]]), context: .root, registry: registry)
+        #expect(nested.first?.isDisclosure == true)
     }
 }

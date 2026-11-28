@@ -36,7 +36,7 @@ import SBJUIVocabulary
         Binding<Root>, Root?, SBJEditorRegistry, String?, SBJEditorFocusRequest?, Bool,
         SBJEditTraversalContext, Bool
       ) -> AnyView
-    private let collectIssues: (Root, [String], SBJEditorRegistry) -> [SBJEditorCapabilityIssue]
+    private let collectIssues: (Root, [String], SBJEditorRegistry, SBJTraversalOptions) -> [SBJEditorCapabilityIssue]
     private let traverseChildren: (Root, SBJEditTraversalContext) -> [SBJEditorTraversalNode]
     private let traverseBoundChildren: (Binding<Root>, Root?, SBJEditorRegistry, SBJEditTraversalContext) -> [SBJEditorTraversalNode]
 
@@ -98,11 +98,12 @@ import SBJUIVocabulary
           insertable: configuration.collectionInsertable
         )
       }
-      self.collectIssues = { root, path, registry in
+      self.collectIssues = { root, path, registry, traversalOptions in
         SBJValueEditor.collectIssues(
           value: root[keyPath: keyPath],
           path: path + [name],
           registry: registry,
+          traversalOptions: traversalOptions,
           collectionItemTitleKey: configuration.collectionItemTitleKey
         )
       }
@@ -122,7 +123,7 @@ import SBJUIVocabulary
               HStack(alignment: .firstTextBaseline) {
                 Text(overrideName ?? name)
                 Spacer(minLength: 8)
-                Text(SBJEditorReadOnlyValue.text(root.wrappedValue[keyPath: keyPath], hints: metadata.hints, constraints: metadata.constraints))
+                Text(SBJEditorReadOnlyValue.text(root.wrappedValue[keyPath: keyPath], hints: metadata.hints, constraints: metadata.constraints, traversalOptions: context.branch.traversalOptions))
                   .foregroundStyle(.secondary)
                   .textSelection(.enabled)
               }
@@ -134,7 +135,7 @@ import SBJUIVocabulary
       }
       self.traverseChildren = { _, _ in [] }
       self.traverseBoundChildren = { _, _, _, _ in [] }
-      self.collectIssues = { _, _, _ in [] }
+      self.collectIssues = { _, _, _, _ in [] }
     }
 
     /// A render-independent logical traversal node. The generic property's
@@ -172,7 +173,7 @@ import SBJUIVocabulary
         isIncluded: { [self] criteria in
           self.isIncluded(root: root.wrappedValue, originalRoot: originalRoot,
                           registry: registry, criteria: criteria,
-                          showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
+                          traversalOptions: context.branch.traversalOptions)
         },
         children: { [traverseBoundChildren] projectedContext in
           traverseBoundChildren(root, originalRoot, registry, projectedContext)
@@ -200,9 +201,10 @@ import SBJUIVocabulary
     func issues(
       root: Root,
       path: [String],
-      registry: SBJEditorRegistry
+      registry: SBJEditorRegistry,
+        traversalOptions: SBJTraversalOptions = .editor
     ) -> [SBJEditorCapabilityIssue] {
-      collectIssues(root, path, registry)
+      collectIssues(root, path, registry, traversalOptions)
     }
 
     func isIncluded(
@@ -210,14 +212,14 @@ import SBJUIVocabulary
       originalRoot: Root? = nil,
       registry: SBJEditorRegistry,
       criteria: SBJStructuralSearchCriteria,
-      showsReadOnlyProperties: Bool = false
+      traversalOptions: SBJTraversalOptions = .editor
     ) -> Bool {
       criteria.includes(
         isChanged: hasChanged(in: root, from: originalRoot),
         containsEmptyContent: containsEmptyContent(root: root, registry: registry),
         matchesSearch: { query in
           SBJEditorSearchMatcher.matches(label: name, value: metadata.value(in: root), query: query,
-                                        showsReadOnlyProperties: showsReadOnlyProperties)
+                                        traversalOptions: traversalOptions)
         }
       )
     }
@@ -256,7 +258,7 @@ import SBJUIVocabulary
           isChanged: changed,
           matchesSearch: { query in
             SBJEditorSearchMatcher.matches(label: name, value: metadata.value(in: root.wrappedValue), query: query,
-                                           showsReadOnlyProperties: context.branch.showsReadOnlyProperties)
+                                           traversalOptions: context.branch.traversalOptions)
           },
           containsEmptyContent: {
             containsEmptyContent(root: root.wrappedValue, registry: registry)

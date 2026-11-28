@@ -31,32 +31,38 @@ private struct EnhancedConstraintEditorFixture {
     #expect(dictionary.constraintProjection.dictionaryValue.integerRange == 1...20)
 }
 
+private struct DictionaryCreationFixture { var values: [String: String] = [:] }
+
 @MainActor @Test func finiteDictionaryKeysUseUnusedChoices() {
     let registry = SBJEditorRegistry()
     let keys = SBJConstraintProjection([.stringRules(.init(allowedValues: ["one", "two"]))])
     let values = SBJConstraintProjection([.stringRules(.init(allowedValues: ["yes", "no"]))])
+    let stringGenerator = SBJDictionaryKeyGenerator(for: \DictionaryCreationFixture.values) { dictionary, value in
+        ["one", "two"].first { !dictionary.keys.contains($0) }
+    }
     let entry = registry.createDictionaryEntry(key: String.self, value: String.self,
-        existing: ["one": "yes"], keyConstraints: keys, valueConstraints: values)
+        existing: ["one": "yes"], generator: stringGenerator, keyConstraints: keys, valueConstraints: values)
     #expect(entry?.0 == "two")
     #expect(entry?.1 == "yes")
     let exhausted = registry.createDictionaryEntry(key: String.self, value: String.self,
-        existing: ["one": "yes", "two": "no"], keyConstraints: keys, valueConstraints: values)
+        existing: ["one": "yes", "two": "no"], generator: stringGenerator, keyConstraints: keys, valueConstraints: values)
     #expect(exhausted == nil)
 }
 
-@MainActor @Test func constrainedDictionaryUsesSeparateKeyAndValueRows() {
+@MainActor @Test func constrainedDictionaryUsesOnlyValueRows() {
     let binding = Binding.constant(["one": 10])
     let constraints = SBJConstraintProjection([
         .dictionaryKeyRule(.string(.init(allowedValues: ["one", "two"]))),
         .dictionaryValueRule(.integer(.init(min: 1, max: 20)))
     ])
     let rows = SBJEditorValueTraversal.boundChildren(of: binding, context: .root, registry: .init(), constraints: constraints)
-    #expect(rows.count == 2)
-    #expect(rows.first?.name == "Key")
+    #expect(rows.count == 1)
+    #expect(rows.first?.name == "one")
+    #expect(rows.first?.isDisclosure == false)
     #expect(Set(rows.map(\.id)).count == rows.count)
     let readOnlyKeys = SBJEditorValueTraversal.boundChildren(of: binding, context: .root, registry: .init(), constraints: constraints, removable: false)
     #expect(readOnlyKeys.count == 1)
-    #expect(readOnlyKeys.first?.name != "Key")
+    #expect(readOnlyKeys.first?.name == "one")
 }
 
 @MainActor @Test func finiteStringCreationUsesDeclaredChoices() {

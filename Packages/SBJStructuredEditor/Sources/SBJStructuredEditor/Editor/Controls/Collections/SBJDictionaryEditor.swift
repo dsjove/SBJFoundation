@@ -1,3 +1,4 @@
+import SBJStructure
 import SBJUIVocabulary
 #if !os(tvOS) && !os(watchOS)
 import Foundation
@@ -11,6 +12,7 @@ struct SBJDictionaryEditor<Key: Hashable, Value>: View {
     let registry: SBJEditorRegistry
     let textStyle: SBJStringStyle?
     var constraints: SBJConstraintProjection = .init()
+    var dictionaryKeyGenerator: SBJDictionaryKeyGenerator? = nil
     let integerRange: ClosedRange<Int>?
     let numberRange: ClosedRange<Double>?
     let itemActions: SBJEditorItemActions?
@@ -24,27 +26,29 @@ struct SBJDictionaryEditor<Key: Hashable, Value>: View {
     }
 
     private var addCandidate: (Key, Value)? {
-        registry.createDictionaryEntry(key: Key.self, value: Value.self, existing: value,
+        registry.createDictionaryEntry(key: Key.self, value: Value.self, existing: value, generator: dictionaryKeyGenerator,
             keyConstraints: constraints.dictionaryKey, valueConstraints: constraints.dictionaryValue)
     }
 
     var body: some View {
-        let canAdd = addCandidate != nil
+        let canAdd = dictionaryKeyGenerator != nil
         return VStack(alignment: .leading, spacing: 6) {
             SBJEditorDisclosureHeader(
                 "\(label) (\(value.count))",
                 context: context,
                 isExpanded: disclosureBinding,
-				leadingActions: AnyView(
-					HStack(spacing: 6) {
-						SBJAddButton(label) {
-							guard let (key, entryValue) = addCandidate else { return }
-							value.updateValue(entryValue, forKey: key)
-							presentationModel.open(context.itemIdentifier)
-						}
-						.disabled(!canAdd || !insertable)
-					}
-				), optionalControl: optionalControl,
+                leadingActions: AnyView(
+                    HStack(spacing: 6) {
+                        if canAdd {
+                            SBJAddButton(label) {
+                                guard let (key, entryValue) = addCandidate else { return }
+                                value.updateValue(entryValue, forKey: key)
+                                presentationModel.open(context.itemIdentifier)
+                            }
+                            .disabled(!insertable)
+                        }
+                    }
+                ), optionalControl: optionalControl,
                 trailingActions: AnyView(
                     HStack(spacing: 6) {
                         if let itemActions { itemActions.trailingView }

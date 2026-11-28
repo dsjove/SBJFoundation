@@ -67,8 +67,8 @@ struct SBJDiscoveryContractTests {
     @Test func nonCodableDiscoveryRespectsReadAndWriteAccess() {
         let properties = DiscoveryFixture.sbjProperties
         #expect(properties.map(\.sourceName) == ["title", "reportOnly", "restricted", "immutable", "computed", "writable"])
-        #expect(DiscoveryFixture.sbjUserFacingProperties.map(\.sourceName) == ["title", "restricted", "immutable", "computed", "writable"])
-        #expect(DiscoveryFixture.sbjMutableProperties.map(\.structuralMetadata.sourceName) == ["title", "writable"])
+        #expect(DiscoveryFixture.sbjProperties.filter { !$0.isPresentationExcluded }.map(\.sourceName) == ["title", "restricted", "immutable", "computed", "writable"])
+        #expect(DiscoveryFixture.sbjMutableProperties.map(\.structuralMetadata.sourceName) == ["title", "reportOnly", "writable"])
         #expect(properties.first { $0.sourceName == "restricted" }?.access == .readOnly)
         let visitor = ReadVisitor()
         for property in properties { property.visitTypedProperty(with: visitor) }

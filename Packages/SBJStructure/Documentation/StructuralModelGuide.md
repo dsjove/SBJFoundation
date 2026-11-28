@@ -24,7 +24,7 @@ struct MeasurementRecord: Codable {
 
 `SBJStructuralTraversal.definition(of:)` describes a type without an instance and includes immutable and computed properties. `schema(of:)` and `visitValues(in:_:)` operate on writable structures. `SBJMutableStructure` exposes writable-property capabilities for consumers that need mutation.
 
-`sbjUserFacingProperties` filters the canonical definition for shared Editor/AI visibility. Private and fileprivate properties and `@SBJExclude` declarations are not part of the published definition. `@SBJFieldPresentation(exclude: true)` remains visible to Report but not to user-facing consumers.
+`SBJTraversalOptions` filters the canonical definition. Private and fileprivate properties and `@SBJExclude` declarations are not part of the published definition. `@SBJFieldPresentation(exclude: true)` is excluded by default from Editor and AI traversal and included by `.definition`. The caller may explicitly include presentation-excluded fields.
 
 ## Content, validation and comparison
 

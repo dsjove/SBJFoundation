@@ -19,6 +19,14 @@ final class TestAssistant: SBJAssistantPresenting {
     var canApprove: Bool { false }
     var frameworkDiagnostics: [String] = []
     var frameworkTranscript: String?
+    func startNewSession() {
+        messages.removeAll()
+        frameworkDiagnostics.removeAll()
+        frameworkTranscript = nil
+        isResponding = false
+        currentTurnID = UUID()
+        feedback.deleteAll()
+    }
     func submit(_ text: String) { messages.append(.init(speaker: .user, text: text)) }
     func stop() { isResponding = false }
     func approve() {}

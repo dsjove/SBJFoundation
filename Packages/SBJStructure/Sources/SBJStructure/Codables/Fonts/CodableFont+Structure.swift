@@ -4,11 +4,11 @@ import Foundation
 extension CodableFont: SBJMutableStructure {
     public static var sbjProperties: [SBJPropertyMetadata<Self>] {
         [
-            .init(sourceName: "family", displayName: "Family", keyPath: \.family, access: .readWrite),
-            .init(sourceName: "size", displayName: "Size", keyPath: \.size, kind: .number, access: .readWrite),
-            .init(sourceName: "weight", displayName: "Weight", keyPath: \.weight, access: .readWrite),
-            .init(sourceName: "italic", displayName: "Italic", keyPath: \.italic, kind: .bool, access: .readWrite),
-            .init(sourceName: "width", displayName: "Width", keyPath: \.width, access: .readWrite),
+            .init(sourceName: "family", displayName: "Family", keyPath: \.family, visibility: .publicAccess, access: .readWrite),
+            .init(sourceName: "size", displayName: "Size", keyPath: \.size, kind: .number, visibility: .publicAccess, access: .readWrite),
+            .init(sourceName: "weight", displayName: "Weight", keyPath: \.weight, visibility: .publicAccess, access: .readWrite),
+            .init(sourceName: "italic", displayName: "Italic", keyPath: \.italic, kind: .bool, visibility: .publicAccess, access: .readWrite),
+            .init(sourceName: "width", displayName: "Width", keyPath: \.width, visibility: .publicAccess, access: .readWrite),
         ]
     }
 

@@ -56,3 +56,17 @@ See [Iteration 2](Documentation/Refactoring-Iteration-2.md) for the new discover
 ## Typed value operations
 
 See [Documentation/ValueOperations.md](Documentation/ValueOperations.md) for executable scalar operations, safety rules, and a clearly labeled coverage roadmap for the other supported structural types. Collection and optional operations remain in the existing collection mutation engine.
+
+### Dictionary insertion and presentation exclusion
+
+`@SBJDictionary` optionally accepts a typed `keyGenerator` closure or function. It receives the existing dictionary and the newly initialized value, and returns a key or `nil`. For example:
+
+```swift
+@SBJDictionary(keyGenerator: { (existing: [Int: String], value: String) -> Int? in
+    let key = value.count
+    return existing.keys.contains(key) ? nil : key
+})
+var entries: [Int: String] = [:]
+```
+
+The generator is metadata, not a validation rule, and never regenerates keys when an existing value changes. `isPresentationExcluded` describes only the explicit field-presentation exclusion. Traversal selection uses `SBJTraversalOptions`.

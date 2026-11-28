@@ -50,7 +50,7 @@ struct SBJEditorBranchContextTests {
     @Test("child retains search while resetting row status and placement")
     func childResetsTransientRowState() {
         let criteria = SBJStructuralSearchCriteria(searchQuery: "backstory", showChangedOnly: true)
-        let branch = SBJEditorBranchContext(searchCriteria: criteria, showsReadOnlyProperties: true)
+        let branch = SBJEditorBranchContext(searchCriteria: criteria, traversalOptions: .all)
             .withStatus(.init(isChanged: true, hasContent: false, isInvalid: true))
             .withPlacement(.embedded)
             .withDisclosureMode(.alwaysOpen)
@@ -59,7 +59,7 @@ struct SBJEditorBranchContextTests {
 
         #expect(parent.branch.status.isChanged)
         #expect(child.branch.searchCriteria == criteria)
-        #expect(child.branch.showsReadOnlyProperties)
+        #expect(child.branch.traversalOptions == .all)
         #expect(child.branch.status == .init())
         #expect(child.branch.placement == .normal)
         #expect(child.branch.disclosureMode == .closed)

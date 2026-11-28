@@ -53,25 +53,26 @@ public enum SBJStructuralTraversal {
     /// immutable properties. This is a type-level definition and requires no
     /// instance, no writable property, and no editor-specific conformance.
     public static func definition<Root: SBJStructured>(
-        of type: Root.Type
+        of type: Root.Type, options: SBJTraversalOptions = .definition
     ) -> [SBJStructuralDefinitionProperty<Root>] {
-        type.sbjProperties.enumerated().map { ordinal, metadata in
-            SBJStructuralDefinitionProperty(ordinal: ordinal, metadata: metadata)
+        type.sbjProperties.enumerated().compactMap { ordinal, metadata in
+            guard options.includes(metadata) else { return nil }
+            return SBJStructuralDefinitionProperty(ordinal: ordinal, metadata: metadata)
         }
     }
 
     /// Visits all structural declarations, even if they cannot be mutated.
     public static func visitDefinition<Root: SBJStructured>(
-        of type: Root.Type,
+        of type: Root.Type, options: SBJTraversalOptions = .definition,
         _ visit: (SBJStructuralDefinitionProperty<Root>) throws -> Void
     ) rethrows {
-        for property in definition(of: type) { try visit(property) }
+        for property in definition(of: type, options: options) { try visit(property) }
     }
 
     /// Immediate declared child types, in declaration order. Collection children
     /// describe types, never current members. Associated enums expose every case's
     /// payload types, independently of the current case. Scalar leaves have no children.
-    public static func childTypes(of type: Any.Type) -> [Any.Type] {
+    public static func childTypes(of type: Any.Type, options: SBJTraversalOptions = .definition) -> [Any.Type] {
         if let container = SBJStructuralType.container(of: type) {
             return container.childTypes
         }
@@ -79,7 +80,7 @@ public enum SBJStructuralTraversal {
             return payloadTypes(of: associated)
         }
         if let structure = type as? any SBJStructured.Type {
-            return propertyTypes(of: structure)
+            return propertyTypes(of: structure, options: options)
         }
         return []
     }
@@ -87,25 +88,25 @@ public enum SBJStructuralTraversal {
     /// All reachable declared types in depth-first declaration order. Each type
     /// appears once, including container wrappers and scalar leaves. Repeated
     /// references and recursive definitions terminate by metatype identity.
-    public static func reachableTypes(from root: Any.Type) -> [Any.Type] {
+    public static func reachableTypes(from root: Any.Type, options: SBJTraversalOptions = .definition) -> [Any.Type] {
         var visited = Set<ObjectIdentifier>()
         var result: [Any.Type] = []
         func visit(_ type: Any.Type) {
             guard visited.insert(ObjectIdentifier(type)).inserted else { return }
             result.append(type)
-            for child in childTypes(of: type) { visit(child) }
+            for child in childTypes(of: type, options: options) { visit(child) }
         }
         visit(root)
         return result
     }
 
     /// Visits the same instance-independent type graph as reachableTypes(from:).
-    public static func visitTypes(from root: Any.Type, _ visit: (Any.Type) throws -> Void) rethrows {
-        for type in reachableTypes(from: root) { try visit(type) }
+    public static func visitTypes(from root: Any.Type, options: SBJTraversalOptions = .definition, _ visit: (Any.Type) throws -> Void) rethrows {
+        for type in reachableTypes(from: root, options: options) { try visit(type) }
     }
 
-    private static func propertyTypes<Root: SBJStructured>(of type: Root.Type) -> [Any.Type] {
-        definition(of: type).map(\.valueType)
+    private static func propertyTypes<Root: SBJStructured>(of type: Root.Type, options: SBJTraversalOptions) -> [Any.Type] {
+        definition(of: type, options: options).map(\.valueType)
     }
 
     private static func payloadTypes<Root: SBJStructuredEnum>(of type: Root.Type) -> [Any.Type] {
@@ -116,37 +117,37 @@ public enum SBJStructuralTraversal {
     /// The returned descriptors preserve declaration order and their original
     /// structural metadata. User-facing exclusions are respected.
     public static func schema<Root: SBJMutableStructure>(
-        of type: Root.Type
+        of type: Root.Type, options: SBJTraversalOptions = .editor
     ) -> [SBJStructuralPropertyLocation<Root>] {
-        properties(of: type)
+        properties(of: type, options: options)
     }
 
     /// Visits the schema in declaration order without requiring an instance.
     public static func visitSchema<Root: SBJMutableStructure>(
-        of type: Root.Type,
+        of type: Root.Type, options: SBJTraversalOptions = .editor,
         _ visit: (SBJStructuralPropertyLocation<Root>) throws -> Void
     ) rethrows {
-        for location in schema(of: type) { try visit(location) }
+        for location in schema(of: type, options: options) { try visit(location) }
     }
 
     /// Visits each writable property of a concrete model instance. Value access
     /// is delegated to the same descriptors returned by schema traversal.
     public static func visitValues<Root: SBJMutableStructure>(
-        in root: Root,
+        in root: Root, options: SBJTraversalOptions = .editor,
         _ visit: (SBJStructuralPropertyLocation<Root>, Any) throws -> Void
     ) rethrows {
-        for location in schema(of: Root.self) {
+        for location in schema(of: Root.self, options: options) {
             try visit(location, location.property.value(in: root))
         }
     }
 
     public static func properties<Root: SBJMutableStructure>(
-        of type: Root.Type
+        of type: Root.Type, options: SBJTraversalOptions = .editor
     ) -> [SBJStructuralPropertyLocation<Root>] {
         let ordinalByName = Dictionary(uniqueKeysWithValues: type.sbjProperties.enumerated().map { ($0.element.sourceName, $0.offset) })
         return type.sbjMutableProperties.compactMap { property in
             let name = property.structuralMetadata.sourceName
-            guard let ordinal = ordinalByName[name] else { return nil }
+            guard options.includes(property.structuralMetadata), let ordinal = ordinalByName[name] else { return nil }
             return SBJStructuralPropertyLocation(ordinal: ordinal, property: property)
         }
     }

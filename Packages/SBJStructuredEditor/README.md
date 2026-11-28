@@ -42,7 +42,7 @@ The editor provides controls for text, numbers, dates, URLs, colors, booleans, e
 
 Array actions resolve the **current** collection position when invoked, rather than trusting an old row index. Sets and dictionary entries apply uniqueness checks; some collection insertions are unavailable when valid choices are exhausted. Invalid numeric or URL drafts remain in the editing control until a valid value can be committed; they do not overwrite the bound model with invalid data.
 
-The editor projects `sbjUserFacingProperties` on the `SBJStructured` type, whether stored or computed. Read/write properties are editable; immutable and read-only computed properties are hidden by default. Set `SBJEditorOptions(showsReadOnlyProperties: true)` to display them using read-only presentation. Codable is not required. Report documents the complete published definition, including presentation-excluded fields. Both consumers use the same canonical metadata.
+The editor projects `sbjProperties` on the `SBJStructured` type according to `SBJTraversalOptions`, whether stored or computed. Read/write properties are editable; immutable and read-only computed properties are hidden by default. Set `traversalOptions: .all` to display them using read-only presentation. Codable is not required. Report documents the complete published definition, including presentation-excluded fields. Both consumers use the same canonical metadata.
 
 ## Search, issues, and navigation
 
@@ -57,3 +57,7 @@ The `SBJStructuredEditorNomenclature` and `SBJStructuredEditorSymbology` sets pr
 Interactive editor views are unavailable on watchOS and tvOS. Shared model/validation behavior belongs to lower-level packages and is tested there. Editor tests focus on projection, binding, collection mutation, navigation state, and creation rules—not the compiler, exact wording, or SwiftUI rendering snapshots. Interactive focus and scrolling should also be checked in a host application on supported platforms.
 
 See [Architecture](Documentation/Architecture.md), [Public APIs and construction](Documentation/PublicApiAndConstruction.md), [Traversal and rendering](Documentation/TraversalAndRendering.md), and [Controls and test coverage](Documentation/ControlsAndTestCoverage.md).
+
+### Dictionary insertion
+
+Dictionary insertion requires a developer-provided `@SBJDictionary(keyGenerator:)`. The editor first constructs the new value, then calls the generator with the current dictionary and that value. A nil result, collision or invalid key rejects the insertion. Without a generator, no add action is displayed. Existing keys are not separately editable.

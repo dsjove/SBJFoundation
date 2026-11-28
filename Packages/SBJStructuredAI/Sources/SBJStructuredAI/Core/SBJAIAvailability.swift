@@ -1,4 +1,5 @@
 import Foundation
+import SBJStructure
 #if canImport(FoundationModels) && !os(watchOS) && !os(tvOS)
 import FoundationModels
 #endif
@@ -13,14 +14,16 @@ public enum SBJAIAvailability {
 	/// Construction does not load a model, read the snapshot, or start a conversation.
 	public static func makeAssistant<Root>(
 		snapshot: @escaping @MainActor () -> SBJAssistantDocument<Root>?,
+		persist: (@MainActor (Root, String, Int, @escaping @MainActor (Result<Void, Error>) -> Void) -> Void)? = nil,
 		domainInstructions: String,
+        traversalOptions: SBJTraversalOptions = .all,
 		diagnostic: (@MainActor (SBJAssistantDiagnostic, UUID, Int) -> Void)? = nil,
 		displayError: @escaping @MainActor (String) -> String = { $0 }
 	) -> (any SBJAssistantCoordinating & SBJAssistantPresenting)? {
 		#if canImport(FoundationModels) && !os(watchOS) && !os(tvOS) && !arch(x86_64)
 		if #available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *) {
 			return SBJAIAssistantCoordinator(
-				snapshot: snapshot, domainInstructions: domainInstructions,
+				snapshot: snapshot, persist: persist, domainInstructions: domainInstructions, traversalOptions: traversalOptions,
 				diagnostic: diagnostic, displayError: displayError
 			)
 		}

@@ -34,17 +34,22 @@ enum SBJCompactStructureTestDecoder {
         mutating func body() throws -> [Element] {
             try consume("{")
             var elements: [Element] = []
-            while peek != "}" { elements.append(try element()) }
+            if peek != "}" {
+                elements.append(try element())
+                while peek == ";" {
+                    try consume(";")
+                    elements.append(try element())
+                }
+            }
             try consume("}")
             return elements
         }
 
         mutating func element() throws -> Element {
-            let id = try number()
             let start = index
             var quoted = false
             while let c = peek {
-                if !quoted && ";{}#@".contains(c) { break }
+                if !quoted && c == ":" { break }
                 if quoted && c == "\\" {
                     index += 1
                     guard peek != nil else { throw Failure.invalidSyntax }
@@ -52,15 +57,19 @@ enum SBJCompactStructureTestDecoder {
                 index += 1
             }
             guard !quoted, start < index else { throw Failure.invalidSyntax }
-            let label = String(characters[start..<index])
+            let title = String(characters[start..<index])
+            try consume(":")
+            let id = try number()
+            var marker = ""
+            if peek == "?" { try consume("?"); marker = "?" }
+            guard let kind = peek, "+|:*-".contains(kind) else { throw Failure.invalidSyntax }
+            try consume(kind)
+            let label = marker + String(kind) + title
             if peek == "{" { return .init(id: id, label: label, children: try body(), reference: nil) }
             if peek == "#" {
                 try consume("#")
-                let reference = try number()
-                if peek != "}" { try consume(";") }
-                return .init(id: id, label: label, children: [], reference: reference)
+                return .init(id: id, label: label, children: [], reference: try number())
             }
-            if peek != "}" { try consume(";") }
             return .init(id: id, label: label, children: [], reference: nil)
         }
     }
@@ -69,13 +78,14 @@ enum SBJCompactStructureTestDecoder {
         guard !text.isEmpty else { return "" }
         var parser = Parser(characters: Array(text))
         var templates: [Int: [Element]] = [:]
-        while parser.peek == "@" {
+        let root = try parser.element()
+        while parser.peek == "\n" {
+            try parser.consume("\n")
             try parser.consume("@")
             let id = try parser.number()
             let body = try parser.body()
             guard templates.updateValue(body, forKey: id) == nil else { throw Failure.invalidSyntax }
         }
-        let root = try parser.element()
         guard parser.peek == nil else { throw Failure.invalidSyntax }
         var seen = Set<Int>()
         func validate(_ element: Element) throws {
@@ -87,7 +97,7 @@ enum SBJCompactStructureTestDecoder {
         try validate(root)
         guard seen == Set(1...seen.count) else { throw Failure.invalidSyntax }
         func emit(_ element: Element, active: Set<Int>) throws -> String {
-            let head = "\(element.id)\(element.label)"
+            let head = SBJCompactStructure.head(element.label, id: String(element.id))
             var children = element.children
             var nextActive = active
             if let reference = element.reference {
@@ -96,7 +106,7 @@ enum SBJCompactStructureTestDecoder {
                 children = definition
                 nextActive.insert(reference)
             }
-            if children.isEmpty { return head + ";" }
+            if children.isEmpty { return head }
             return head + "{" + SBJCompactStructure.body(try children.map { try emit($0, active: nextActive) }) + "}"
         }
         return try emit(root, active: [])
@@ -117,7 +127,7 @@ struct SBJCompactStructureTests {
         }
         let root = Node(identifier: 1, label: "|Attacks", children: [attack(2, "First"), attack(10, "Second")])
         let compressed = SBJCompactStructure.render(root)
-        #expect(compressed == "@1{3-Attack Bonus;4-Damage Type;5?-Range}1|Attacks{2+First#1;6+Second#1}")
+        #expect(compressed == "Attacks:1|{First:2+#1;Second:6+#1}\n@1{Attack Bonus:3-;Damage Type:4-;Range:5?-}")
         #expect(try SBJCompactStructureTestDecoder.expand(compressed) == SBJCompactStructure.render(root, usesTemplates: false))
         #expect(compressed.utf8.count < SBJCompactStructure.render(root, usesTemplates: false).utf8.count)
     }
@@ -139,8 +149,8 @@ struct SBJCompactStructureTests {
         }
         let root = Node(identifier: 1, label: "+Root", children: [group(10, "+First"), group(50, "+Second"), equipment(90, "+Other"), equipment(100, "+Spare")])
         let compressed = SBJCompactStructure.render(root)
-        #expect(compressed.contains("+Equipment#1;"))
-        #expect(compressed.contains("9+Second#2"))
+        #expect(compressed.contains("Equipment:3+#1;"))
+        #expect(compressed.contains("Second:9+#2"))
         #expect(try SBJCompactStructureTestDecoder.expand(compressed) == SBJCompactStructure.render(root, usesTemplates: false))
         #expect(SBJCompactStructure.render(root) == compressed)
     }
@@ -152,8 +162,8 @@ struct SBJCompactStructureTests {
             .init(identifier: 7, label: "+C", children: [.init(identifier: 8, label: "-A different sufficiently long property name")], structuralType: ObjectIdentifier(Double.self))
         ])
         let compressed = SBJCompactStructure.render(root)
-        #expect(compressed.contains("2+A#1"))
-        #expect(compressed.contains("4+B#1"))
+        #expect(compressed.contains("A:2+#1"))
+        #expect(compressed.contains("B:4+#1"))
         #expect(try SBJCompactStructureTestDecoder.expand(compressed) == SBJCompactStructure.render(root, usesTemplates: false))
     }
 
@@ -166,10 +176,10 @@ struct SBJCompactStructureTests {
             .init(identifier: 8, label: "+D", children: [.init(identifier: 9, label: label)])
         ])
         let compressed = SBJCompactStructure.render(root)
-        #expect(compressed.contains("2+A#1"))
-        #expect(compressed.contains("4+B#1"))
-        #expect(compressed.contains("5+C{"))
-        #expect(compressed.contains("7+D{"))
+        #expect(compressed.contains("A:2+#1"))
+        #expect(compressed.contains("B:4+#1"))
+        #expect(compressed.contains("C:5+{"))
+        #expect(compressed.contains("D:7+{"))
         #expect(try SBJCompactStructureTestDecoder.expand(compressed) == SBJCompactStructure.render(root, usesTemplates: false))
     }
 
@@ -181,10 +191,10 @@ struct SBJCompactStructureTests {
             ], structuralType: type)
         })
         let compressed = SBJCompactStructure.render(root)
-        #expect(compressed.contains("@1{3?-Temporary Hit Points,THP}"))
-        #expect(compressed.contains("2+Health#1"))
-        #expect(compressed.contains("4+Health#1"))
-        #expect(compressed.contains("5+Health#1"))
+        #expect(compressed.contains("@1{Temporary Hit Points,THP:3?-}"))
+        #expect(compressed.contains("Health:2+#1"))
+        #expect(compressed.contains("Health:4+#1"))
+        #expect(compressed.contains("Health:5+#1"))
         #expect(try SBJCompactStructureTestDecoder.expand(compressed) == SBJCompactStructure.render(root, usesTemplates: false))
     }
 
@@ -196,9 +206,9 @@ struct SBJCompactStructureTests {
             ], structuralType: type)
         })
         let compressed = SBJCompactStructure.render(root)
-        #expect(compressed.contains("@1{3-V}"))
-        #expect(compressed.contains("2+Rule#1"))
-        #expect(compressed.contains("4+Rule#1"))
+        #expect(compressed.contains("@1{V:3-}"))
+        #expect(compressed.contains("Rule:2+#1"))
+        #expect(compressed.contains("Rule:4+#1"))
         #expect(try SBJCompactStructureTestDecoder.expand(compressed) == SBJCompactStructure.render(root, usesTemplates: false))
     }
 
@@ -212,7 +222,7 @@ struct SBJCompactStructureTests {
         }
         let root = Node(identifier: 1, label: "+Root", children: [attack(2), attack(5)])
         let catalog = SBJCompactStructure.catalog(root)
-        #expect(catalog.compact == "@1{3+Range{4-Distance}}1+Root{2+Attack#1;5+Attack#1}")
+        #expect(catalog.compact == "Root:1+{Attack:2+#1;Attack:5+#1}\n@1{Range:3+{Distance:4-}}")
         #expect(catalog.declarationCount == 5)
         #expect(catalog.identifiers[3] == catalog.identifiers[6])
         #expect(catalog.identifiers[4] == catalog.identifiers[7])

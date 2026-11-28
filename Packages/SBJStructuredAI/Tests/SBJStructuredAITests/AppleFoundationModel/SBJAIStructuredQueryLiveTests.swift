@@ -33,6 +33,8 @@ struct SBJAIStructuredQueryLiveTests {
         #expect(coordinator.messages.last?.text.contains("7381") == true)
         #expect(coordinator.structureContext?.paths.contains("$/scores/key:Quartz/value") == true)
         #expect(coordinator.frameworkTranscript?.contains("readValue") == true)
+        #expect(coordinator.frameworkDiagnostics.contains { $0.hasPrefix("Native transcript tools:") && $0.contains("readDescription") })
+        #expect(!coordinator.frameworkDiagnostics.contains { $0.hasPrefix("Tool registration mismatch:") })
     }
 }
 #endif

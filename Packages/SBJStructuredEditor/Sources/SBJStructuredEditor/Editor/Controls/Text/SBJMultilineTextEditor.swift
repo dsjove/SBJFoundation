@@ -16,8 +16,10 @@ struct SBJMultilineTextEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
-                .accessibilityHidden(true)
+            if !label.isEmpty {
+                SBJEditorFieldName(text: label, isUnknown: labelIsUnknown)
+                    .accessibilityHidden(true)
+            }
             TextEditor(text: $value)
                 .sbjMultilineField(isFocused: $isFocused, minHeight: 84)
                 .sbjTextInput(presentation)

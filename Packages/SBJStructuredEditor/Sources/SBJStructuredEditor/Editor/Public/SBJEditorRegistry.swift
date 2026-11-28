@@ -153,31 +153,18 @@ public struct SBJEditorRegistry {
         return candidate
     }
 
-    /// Creates a dictionary entry with an unused key and a constructible value.
-    /// Exhausted CaseIterable key domains must not fall through to defaults.
+    /// Creates a value before invoking the developer's explicit key policy.
     func createDictionaryEntry<Key: Hashable, Value>(
         key: Key.Type, value: Value.Type, existing: [Key: Value],
+        generator: SBJDictionaryKeyGenerator?,
         keyConstraints: SBJConstraintProjection = .init(),
         valueConstraints: SBJConstraintProjection = .init()
     ) -> (Key, Value)? {
-        let candidate: Key?
-        if let choices = keyConstraints.allowedStrings, key == String.self {
-            candidate = choices.compactMap { $0 as? Key }.first { !existing.keys.contains($0) }
-        } else if let cases = caseIterableOptions(for: key) {
-            candidate = cases.first { existing[$0] == nil }
-        } else {
-            candidate = create(key)
-        }
-        guard let candidate, !existing.keys.contains(candidate) else { return nil }
-        // A finite string domain can supply a valid initial value. Other types
-        // retain the registry's construction policy; invalid defaults can be repaired.
-        let newValue: Value?
-        if let choices = valueConstraints.allowedStrings, value == String.self {
-            newValue = choices.first.flatMap { $0 as? Value }
-        } else {
-            newValue = create(value)
-        }
-        guard let newValue else { return nil }
+        guard let generator,
+              let newValue = create(value, constraints: valueConstraints),
+              let candidate = generator.key(for: existing, value: newValue),
+              !existing.keys.contains(candidate),
+              keyConstraints.scalarValidationError(for: candidate) == nil else { return nil }
         return (candidate, newValue)
     }
 

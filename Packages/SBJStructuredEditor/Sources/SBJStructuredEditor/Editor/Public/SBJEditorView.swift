@@ -1,3 +1,4 @@
+import SBJStructure
 #if !os(tvOS) && !os(watchOS)
 import SwiftUI
 import SBJFileResources
@@ -18,6 +19,7 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
     private let presentationModel: SBJEditorPresentationModel
     private let registry: SBJEditorRegistry
     private let documentID: String?
+    private let traversalOptions: SBJTraversalOptions
     private let options: SBJEditorOptions
     private let snapshot: (Value) -> Value
     @State private var originalValue: Value
@@ -33,12 +35,14 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
         presentationModel: SBJEditorPresentationModel,
         registry: SBJEditorRegistry = .init(),
         documentID: String? = nil,
+        traversalOptions: SBJTraversalOptions = .editor,
         options: SBJEditorOptions = .init(),
         snapshot: @escaping (Value) -> Value = { $0 }
     ) {
         self._value = value
         self.documentID = documentID
         self.options = options
+        self.traversalOptions = traversalOptions
         self.presentationModel = presentationModel
         self.registry = registry
         self.snapshot = snapshot
@@ -54,7 +58,7 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
                     binding: SBJAnyBinding($value),
                     originalValue: originalValue,
                     registry: registry,
-                    context: .root.withBranch(.init(showsReadOnlyProperties: options.showsReadOnlyProperties))
+                    context: .root.withBranch(.init(traversalOptions: traversalOptions))
                 ),
                 presentationModel: presentationModel
             )
@@ -104,24 +108,27 @@ public struct SBJEditorView<Value: SBJMutableStructure>: View {
 public struct SBJCodableEditorCore<Value: SBJMutableStructure>: View {
     @Binding private var value: Value
     private let registry: SBJEditorRegistry
+    private let traversalOptions: SBJTraversalOptions
     private let options: SBJEditorOptions
     @State private var presentationModel = SBJEditorPresentationModel()
 
     public init(
         value: Binding<Value>,
         registry: SBJEditorRegistry = .init(),
+        traversalOptions: SBJTraversalOptions = .editor,
         options: SBJEditorOptions = .init()
     ) {
         self._value = value
         self.registry = registry
         self.options = options
+        self.traversalOptions = traversalOptions
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SBJEditorSearchView(value: value, presentationModel: presentationModel, registry: registry)
+            SBJEditorSearchView(value: value, presentationModel: presentationModel, registry: registry, traversalOptions: traversalOptions)
             SBJEditorScrollView(presentationModel: presentationModel) {
-                SBJEditorView(value: $value, presentationModel: presentationModel, registry: registry, options: options)
+                SBJEditorView(value: $value, presentationModel: presentationModel, registry: registry, traversalOptions: traversalOptions, options: options)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -132,21 +139,24 @@ public struct SBJCodableEditorCore<Value: SBJMutableStructure>: View {
 public struct SBJCodableEditor<Value: SBJMutableStructure>: View {
     @Binding private var value: Value
     private let registry: SBJEditorRegistry
+    private let traversalOptions: SBJTraversalOptions
     private let options: SBJEditorOptions
 
     public init(
         _ title: String? = nil,
         value: Binding<Value>,
         registry: SBJEditorRegistry = .init(),
+        traversalOptions: SBJTraversalOptions = .editor,
         options: SBJEditorOptions = .init()
     ) {
         self._value = value
         self.registry = registry
         self.options = options
+        self.traversalOptions = traversalOptions
     }
 
     public var body: some View {
-        SBJCodableEditorCore(value: $value, registry: registry, options: options)
+        SBJCodableEditorCore(value: $value, registry: registry, traversalOptions: traversalOptions, options: options)
     }
 }
 #endif

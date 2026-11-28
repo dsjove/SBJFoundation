@@ -10,12 +10,12 @@ struct SBJAtomicValueEditor<Value>: View {
     let label: String
     @Binding var value: Value
     let registry: SBJEditorRegistry
-    let showsReadOnlyProperties: Bool
+    let traversalOptions: SBJTraversalOptions
     @State private var isEditing = false
     @State private var detailModel = SBJEditorPresentationModel()
 
     private var detailContext: SBJEditTraversalContext {
-        .root.withBranch(.init(showsReadOnlyProperties: showsReadOnlyProperties))
+        .root.withBranch(.init(traversalOptions: traversalOptions))
     }
 
     private var detailRows: [SBJEditorTraversalNode] {
@@ -40,7 +40,7 @@ struct SBJAtomicValueEditor<Value>: View {
             } label: {
                 Text((value as? any SBJAtomicStructuralValue)?.presentedValue ?? "—")
             }
-            .accessibilityLabel(label)
+            .accessibilityLabel(label.isEmpty ? "Collection member" : label)
             .popover(isPresented: $isEditing) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 8) {

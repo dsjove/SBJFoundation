@@ -159,7 +159,7 @@ private struct SemanticSearchFixture {
     #expect(sbjPredicated(root, search: "derived-token"))
     #expect(!sbjPredicated(root, search: "private-token"))
     #expect(!sbjPredicated(root, search: "hidden-token"))
-    let property = SemanticSearchFixture.sbjUserFacingProperties.first { $0.sourceName == "computed" }
+    let property = SemanticSearchFixture.sbjProperties.filter { !$0.isPresentationExcluded }.first { $0.sourceName == "computed" }
     #expect(property?.matchesSearch(in: root, query: "derived-token") == true)
     #expect(property?.hasContent(in: root) == true)
 }

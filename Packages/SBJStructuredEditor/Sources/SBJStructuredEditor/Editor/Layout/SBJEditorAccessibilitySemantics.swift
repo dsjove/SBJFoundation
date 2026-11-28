@@ -14,7 +14,7 @@ struct SBJEditorAccessibilitySemantics {
         hasContent: Bool?,
         isInvalid: Bool
     ) -> String {
-        var parts = [label]
+        var parts = [label.isEmpty ? "Collection member" : label]
         if isChanged { parts.append("changed") }
         if hasContent == false { parts.append("no content") }
         if isInvalid { parts.append("invalid") }

@@ -40,8 +40,8 @@ struct SBJStaticReadStructure: Sendable {
 	let compact: String
 	let expanded: String
 
-	init(type: Any.Type) throws {
-		var builder = Builder()
+	init(type: Any.Type, traversalOptions: SBJTraversalOptions = .all) throws {
+		var builder = Builder(traversalOptions: traversalOptions)
 		let info = (type as? any SBJNomenclatureProviding.Type)?.nomenclature
 		let root = try builder.node(type: type, title: info?.nonEmptyTitle ?? String(describing: type),
 									path: [], info: info, description: SBJSemanticDescription.type(type), ancestors: [])
@@ -70,6 +70,7 @@ struct SBJStaticReadStructure: Sendable {
 	}
 
 	private struct Builder {
+        let traversalOptions: SBJTraversalOptions
 		var declarations: [Declaration] = []
 
 		static func names(_ title: String, _ info: SBJNomenclature?) -> String {
@@ -83,7 +84,7 @@ struct SBJStaticReadStructure: Sendable {
 
 		mutating func node(type declared: Any.Type, title: String, path: [Step], info supplied: SBJNomenclature?,
 						   description: String, ancestors: Set<ObjectIdentifier>,
-						   constraints: [SBJPropertyConstraint] = [], collectionMember: Bool = false, omitDeclaration: Bool = false) throws -> SBJCompactStructure.Node? {
+						   constraints: [SBJPropertyConstraint] = [], collectionMember: Bool = false, omitDeclaration: Bool = false, hints: [SBJPropertyHint] = [], configuredMemberName: Bool = false) throws -> SBJCompactStructure.Node? {
 			var type = declared
 			var optional = false
 			while case .optional(let wrapped)? = SBJStructuralType.container(of: type) {
@@ -117,7 +118,7 @@ struct SBJStaticReadStructure: Sendable {
 				let nested = SBJStructuralType.container(of: element) != nil
 				if let child = try node(type: element, title: "Element", path: path + [.member], info: nil,
 										description: SBJSemanticDescription.join([SBJSemanticDescription.type(element), SBJSemanticDescription.rules(projection.collectionElement.constraints)]),
-										ancestors: next, constraints: projection.collectionElement.constraints, collectionMember: true, omitDeclaration: !nested) {
+										ancestors: next, constraints: projection.collectionElement.constraints, collectionMember: true, omitDeclaration: !nested, configuredMemberName: SBJStructuralCollectionKeys.title(in: hints) != nil) {
 					// Collection element shape is implicit; nested collections retain a node.
 					children = nested ? [child] : child.children
 				}
@@ -126,7 +127,7 @@ struct SBJStaticReadStructure: Sendable {
 				let keyNode = try node(type: key, title: "Key", path: entryPath + [.field("key")], info: nil,
 									   description: SBJSemanticDescription.join([SBJSemanticDescription.type(key), SBJSemanticDescription.rules(projection.dictionaryKey.constraints)]), ancestors: next, constraints: projection.dictionaryKey.constraints)
 				let valueNode = try node(type: value, title: "Value", path: entryPath + [.field("value")], info: nil,
-										 description: SBJSemanticDescription.join([SBJSemanticDescription.type(value), SBJSemanticDescription.rules(projection.dictionaryValue.constraints)]), ancestors: next, constraints: projection.dictionaryValue.constraints, collectionMember: true)
+										 description: SBJSemanticDescription.join([SBJSemanticDescription.type(value), SBJSemanticDescription.rules(projection.dictionaryValue.constraints)]), ancestors: next, constraints: projection.dictionaryValue.constraints, collectionMember: true, configuredMemberName: SBJStructuralCollectionKeys.title(in: hints) != nil)
 				children = [keyNode, valueNode].compactMap { $0 }
 			default:
 				if SBJStructuralType.isAtomic(type) {
@@ -137,10 +138,10 @@ struct SBJStaticReadStructure: Sendable {
 					children = try properties(structure, path: path, ancestors: next)
 				}
 			}
-			if collectionMember, marker == "+", !SBJCollectionItemIdentification.hasDeclaredName(type) {
+			if collectionMember, configuredMemberName, marker == "+", !SBJCollectionItemIdentification.hasDeclaredName(type) {
 				let nameID = declarations.count + 1
-				declarations.append(.init(id: nameID, title: "name", path: path + [.memberName], type: "String", description: "Name identifying this collection member", info: nil, cases: [], isCollection: false))
-				children.append(.init(identifier: nameID, label: "-name"))
+				declarations.append(.init(id: nameID, title: "name", path: path + [.memberName], type: "String?", description: SBJAIInstructions.memberNameDescription, info: nil, cases: [], isCollection: false))
+				children.append(.init(identifier: nameID, label: "?-name"))
 			}
 			// Empty structures are omitted, but optional presence and collection
 			// counts remain addressable even when their element type is opaque.
@@ -167,12 +168,12 @@ struct SBJStaticReadStructure: Sendable {
 
 		mutating func properties<Root: SBJStructured>(_ type: Root.Type, path: [Step], ancestors: Set<ObjectIdentifier>) throws -> [SBJCompactStructure.Node] {
 			var result: [SBJCompactStructure.Node] = []
-			for declaration in SBJStructuralTraversal.definition(of: type) where declaration.metadata.isUserFacing {
+			for declaration in SBJStructuralTraversal.definition(of: type, options: traversalOptions) {
 				let property = declaration.metadata
 				if let child = try node(type: declaration.valueType, title: declaration.displayName,
 										path: path + [.field(declaration.sourceName)], info: declaration.info,
 										description: SBJSemanticDescription.property(property), ancestors: ancestors,
-										constraints: declaration.constraints) { result.append(child) }
+										constraints: declaration.constraints, hints: property.hints) { result.append(child) }
 			}
 			return result
 		}
@@ -204,7 +205,7 @@ struct SBJStaticReadStructure: Sendable {
 				let title = ambiguous ? group.name + " " + group.cases.joined(separator: "/") : group.name
 				if let child = try node(type: group.type, title: title,
 										path: path + [.enumPayload(group.cases, group.name)], info: nil,
-										description: SBJSemanticDescription.join([SBJSemanticDescription.type(group.type), "Cases: " + group.cases.joined(separator: ", ")]),
+										description: SBJSemanticDescription.join([SBJSemanticDescription.type(group.type), SBJAIInstructions.casesDescription(group.cases)]),
 										ancestors: ancestors) { result.append(child) }
 			}
 			return result

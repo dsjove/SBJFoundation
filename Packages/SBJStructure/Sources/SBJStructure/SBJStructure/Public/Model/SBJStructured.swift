@@ -48,8 +48,6 @@ public extension SBJStructured {
     static var _sbjDeclaredProperties: [SBJPropertyMetadata<Self>] { [] }
     static var sbjProperties: [SBJPropertyMetadata<Self>] { _sbjDeclaredProperties }
     static var sbjHasCompleteStoredDefinition: Bool { false }
-    /// Shared semantic boundary for Editor and AI; Report uses the full definition.
-    static var sbjUserFacingProperties: [SBJPropertyMetadata<Self>] { sbjProperties.filter(\.isUserFacing) }
     /// Assembles declaration-site metadata with the property's runtime accessibility.
     /// Returns nil when neither source contributes accessibility semantics.
     func accessibilityItem<Value>(for keyPath: KeyPath<Self, Value>) -> AccessibleItem? {
@@ -89,7 +87,7 @@ public extension SBJStructured {
     func sbjContainsEmptyContent(treatingAsLeaf: (Any.Type) -> Bool = { _ in false }) -> Bool {
         if !hasContent { return true }
         if SBJStructuralType.isAtomic(Self.self) || treatingAsLeaf(Self.self) { return false }
-        return Self.sbjUserFacingProperties.contains { property in
+        return Self.sbjProperties.filter { !$0.isPresentationExcluded }.contains { property in
             property.containsEmptyContent(in: self, treatingAsLeaf: treatingAsLeaf)
         }
     }
@@ -167,6 +165,8 @@ public extension SBJStructured {
     }
 }
 
+public enum SBJPropertyVisibility: Sendable, Equatable { case publicAccess, packageAccess, internalAccess }
+
 public enum SBJPropertyStorage: Sendable, Equatable { case stored, computed }
 public enum SBJPropertyAccess: Sendable, Equatable { case readOnly, readWrite }
 
@@ -185,15 +185,17 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
     public let displayName: String
     public let keyPath: PartialKeyPath<Root>
     public let kind: SBJPropertyKind
+    public let visibility: SBJPropertyVisibility
     public let storage: SBJPropertyStorage
     public let access: SBJPropertyAccess
     public var valueType: Any.Type { type(of: keyPath).valueType }
-    public var isUserFacing: Bool { SBJUsagePolicy.isVisible(hints, to: .semanticEditor) }
+    public var isPresentationExcluded: Bool { SBJUsagePolicy.isPresentationExcluded(hints) }
     private let typedVisit: (any SBJTypedPropertyVisitor<Root>, Self) -> Void
     private let makeMutable: (Self) -> SBJMutableProperty<Root>?
     private let validateAtPath: (Root, SBJValidationKeyPath) throws -> Void
     public let constraints: [SBJPropertyConstraint]
     public let hints: [SBJPropertyHint]
+    public let dictionaryKeyGenerator: SBJDictionaryKeyGenerator?
     public let info: SBJNomenclature?
     private let containsEmptyValue: (Root, (Any.Type) -> Bool) -> Bool
     private let structurallyEqualValue: (Root, Root) -> Bool
@@ -205,9 +207,11 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
         keyPath: KeyPath<Root, Value>,
         kind: SBJPropertyKind = .inferred,
         storage: SBJPropertyStorage = .stored,
+        visibility: SBJPropertyVisibility = .internalAccess,
         access: SBJPropertyAccess = .readOnly,
         constraints: [SBJPropertyConstraint] = [],
         hints: [SBJPropertyHint] = [],
+        dictionaryKeyGenerator: SBJDictionaryKeyGenerator? = nil,
         info: SBJNomenclature? = nil,
         structurallyEqual: @escaping (Value, Value) -> Bool = { lhs, rhs in
             SBJStructuralCompare.equals(lhs, rhs)
@@ -219,6 +223,7 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
         self.keyPath = keyPath
         self.kind = kind
         self.storage = storage
+        self.visibility = visibility
         self.access = access
         self.typedVisit = { visitor, metadata in visitor.visit(keyPath, metadata: metadata) }
         self.makeMutable = { metadata in
@@ -231,6 +236,7 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
         }
         self.constraints = constraints
         self.hints = hints
+        self.dictionaryKeyGenerator = dictionaryKeyGenerator
         self.info = info
         self.containsEmptyValue = { root, treatingAsLeaf in
             SBJContentCheck.containsEmptyContent(
@@ -251,7 +257,7 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
 
     public func value(in root: Root) -> Any { root[keyPath: keyPath] }
     public func visitTypedProperty(with visitor: any SBJTypedPropertyVisitor<Root>) { typedVisit(visitor, self) }
-    public func mutableProperty() -> SBJMutableProperty<Root>? { isUserFacing ? makeMutable(self) : nil }
+    public func mutableProperty() -> SBJMutableProperty<Root>? { makeMutable(self) }
     public func validate(in root: Root, at path: SBJValidationKeyPath) throws { try validateAtPath(root, path) }
 
     /// Finds resource references in this property and its structured descendants.
@@ -272,8 +278,8 @@ public struct SBJPropertyMetadata<Root: SBJStructured> {
     }
 
     /// Shared semantic search for both read-only and writable properties.
-    public func matchesSearch(in root: Root, query: String) -> Bool {
-        sbjPredicated(label: displayName, value: value(in: root), search: query)
+    public func matchesSearch(in root: Root, query: String, traversalOptions: SBJTraversalOptions = .all) -> Bool {
+        traversalOptions.includes(self) && sbjPredicated(label: displayName, value: value(in: root), search: query, traversalOptions: traversalOptions)
     }
 
     /// User-meaningful content, independent of writability and storage.

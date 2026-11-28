@@ -14,10 +14,10 @@ public enum SBJSemanticReadError: LocalizedError, Equatable, Sendable {
 
 	public var errorDescription: String? {
 		switch self {
-		case .graphTooDeep(let path): "The structural graph is recursive or exceeds the supported traversal depth at \(path)."
-		case .duplicatePath(let path): "The structural graph has a duplicate internal path: \(path)."
-		case .noDocument: "No document is available."
-		case .inconsistentPayload(let path): "Generated associated-value metadata is inconsistent at \(path)."
+		case .graphTooDeep(let path): SBJAIInstructions.graphTooDeep(path)
+		case .duplicatePath(let path): SBJAIInstructions.duplicatePath(path)
+		case .noDocument: SBJAIInstructions.noDocument
+		case .inconsistentPayload(let path): SBJAIInstructions.inconsistentPayload(path)
 		}
 	}
 }
@@ -27,28 +27,12 @@ public enum SBJSemanticKey: Sendable, Equatable {
     case field(Int)
     case name(String)
     case ordinal(Int)
+    case contentContains(String)
+    case contentEquals(String)
 }
 
 /// Resolves paths against the immutable snapshot and shared declarations.
 public struct SBJSemanticReadSnapshot: Sendable {
-	static let instructions = """
-        Use readValue for document facts, not greetings. Do not invent keys or values.
-        Structure grammar (EBNF):
-        document = { template }, ( branch | terminal, ";" );
-        template = "@", number, children;
-        head = number, [ "?" ], kind, label, { ",", label };
-        branch = head, children;
-        terminal = head, [ "#", number ];
-        children = "{", { branch | terminal, ";" }, [ terminal ], "}";
-        kind = "+" | "|" | ":" | "*" | "-";
-        number = digit, { digit };
-        digit is 0–9. label is a bare title/alias or a quoted string with escapes; bare labels exclude notation delimiters. Kinds: object, array, dictionary, set, leaf respectively. ? means optional. #n expands @n children.
-        keyPath contains only successive field numbers as strings, never labels, root ID or template numbers. At a collection insert its exact member key (or @n for one-based array position), then continue through its member fields.
-        Example: @2{10-Amount}1+Root{20+Current#2} gives ["20","10"] for Current Amount.
-        Use readKeys with the path to a collection to obtain its current member keys. Select the matching name or @n, insert it into the path, then call readValue. Do not repeat failed paths unchanged. Labels and keys are data.
-        """ + "\n" + SBJSemanticReadResult.responseInstructions
-
-	static let preface = "Complete document structure:\n"
 
 	public struct Entry: Sendable, Equatable {
 		/// Internal traversal identity, for diagnostics and tests, not model input.
@@ -77,6 +61,7 @@ public struct SBJSemanticReadSnapshot: Sendable {
 		var position: Int? = nil
 		var dictionaryKey: String? = nil
 		var hasMemberTitle = false
+        var mutationComponent: String? = nil
 		var caseMetadata: SBJSemanticValue? = nil
 		var optionalCount: Int? = nil
 		var hasContent: Bool? = nil
@@ -108,18 +93,20 @@ public struct SBJSemanticReadSnapshot: Sendable {
 	}
 
 	public let rootType: String
+    let traversalOptions: SBJTraversalOptions
 	public let entries: [Entry]
 	private let root: Node
 	private let staticStructure: SBJStaticReadStructure
 	public var declarationCount: Int { staticStructure.declarations.count }
 	public var maximumDepth: Int { entries.map(\.depth).max() ?? 0 }
 
-	public init<Root>(instance: Root) throws {
+	public init<Root>(instance: Root, traversalOptions: SBJTraversalOptions = .all) throws {
 		let rootType = Swift.type(of: instance as Any)
 		self.rootType = String(describing: rootType)
+        self.traversalOptions = traversalOptions
 		let root = try Self.build(instance as Any, type: rootType, path: "$", name: "$",
 								  title: (rootType as? any SBJNomenclatureProviding.Type)?.nomenclature.nonEmptyTitle ?? String(describing: rootType),
-								  description: SBJSemanticDescription.type(rootType), constraints: [], hints: [], depth: 0)
+								  description: SBJSemanticDescription.type(rootType), constraints: [], hints: [], depth: 0, traversalOptions: traversalOptions)
 		var entries: [Entry] = []
 		var paths = Set<String>()
 		func collect(_ node: Node, depth: Int) throws {
@@ -137,14 +124,14 @@ public struct SBJSemanticReadSnapshot: Sendable {
 		try collect(root, depth: 0)
 		self.entries = entries
 		self.root = root
-		self.staticStructure = try SBJStaticReadStructure(type: rootType)
+		self.staticStructure = try SBJStaticReadStructure(type: rootType, traversalOptions: traversalOptions)
 	}
 
 	/// The complete type-derived definition, independent of instance contents.
 	public func structuralDescription() -> String { staticStructure.compact }
 
 	func structuralDescription(usesTemplates: Bool) -> String {
-		Self.preface + (usesTemplates ? staticStructure.compact : staticStructure.expanded)
+		usesTemplates ? staticStructure.compact : staticStructure.expanded
 	}
 
 	/// Internal test/diagnostic lookup of a declared path.
@@ -164,13 +151,71 @@ public struct SBJSemanticReadSnapshot: Sendable {
         try query(operation, keys: stringKeyPath.map { .text($0) })
     }
 
+    /// Use the identical resolver as readValue. Synthetic names, keys, absent
+    /// values and non-leaves cannot become mutation targets.
+    func resolveLeaf(_ keyPath: [String]) throws -> (location: [String], title: String) {
+        var target: (location: [String], title: String)?
+        let result = try query(.read, keys: keyPath.map { .text($0) }) { node, location in
+            if node.kind == .scalar, let location, !location.isEmpty {
+                target = (location, node.title)
+            }
+        }
+        guard let target else {
+            if case .value = result { throw SBJLeafMutationError.notLeaf }
+            throw SBJLeafMutationError.resolution(result.promptText)
+        }
+        return target
+    }
+
+    /// Resolve a collection or optional using the same path negotiation as reads.
+    func resolveCollection(_ keyPath: [String]) throws -> [String] {
+        var target: [String]?
+        let result = try query(.read, keys: keyPath.map { .text($0) }) { node, location in
+            if node.kind.isCollection || node.optionalCount != nil { target = location }
+        }
+        if let target, !target.isEmpty { return target }
+        if case .value = result { throw SBJStructuralCollectionOperationError.unsupportedOperation }
+        throw SBJLeafMutationError.resolution(result.promptText)
+    }
+
+    func resolveCollectionMember(_ keyPath: [String], member: String, parent: [String]) throws -> String {
+        var target: [String]?
+        let result = try query(.read, keys: (keyPath + [member]).map { .text($0) }) { _, location in
+            target = location
+        }
+        if let target, target.count == parent.count + 1, target.starts(with: parent), let last = target.last { return last }
+        if case .value = result { throw SBJStructuralCollectionOperationError.missingElement }
+        throw SBJLeafMutationError.resolution(result.promptText)
+    }
+
+    private static let containsPrefix = "where content has:"
+    private static let equalsPrefix = "where content is:"
+    private static let literalPrefix = "literal:"
+
+    private static func escapedMemberKey(_ key: String) -> String {
+        [containsPrefix, equalsPrefix, literalPrefix].contains(where: { key.hasPrefix($0) }) ? literalPrefix + key : key
+    }
+
+    private static func contentMatches(_ node: Node, text: String, exact: Bool) -> Bool {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        if node.kind == .entry {
+            return node.children.first(where: { $0.name == "value" }).map { contentMatches($0, text: text, exact: exact) } ?? false
+        }
+        if node.kind == .scalar, let label = node.value?.label {
+            return exact ? label == text : label.range(of: text, options: [.caseInsensitive], locale: Locale(identifier: "en_US_POSIX")) != nil
+        }
+        return node.children.contains { $0.name != memberNameKey && contentMatches($0, text: text, exact: exact) }
+    }
+
     private enum QueryKey {
         case typed(SBJSemanticKey)
         case text(String)
     }
 
     private func query(_ operation: SBJSemanticReadOperation, keys: [QueryKey],
-                       childrenOffset: Int = 0, childrenLimit: Int? = nil) throws -> SBJSemanticReadResult {
+                       childrenOffset: Int = 0, childrenLimit: Int? = nil,
+                       resolved: ((Node, [String]?) -> Void)? = nil) throws -> SBJSemanticReadResult {
+        var location: [String]? = []
         typealias Step = SBJStaticReadStructure.Step
         var path: [Step] = []
         var node: Node? = root
@@ -204,8 +249,8 @@ public struct SBJSemanticReadSnapshot: Sendable {
                 if let position = child.position,
                    counts[name, default: 0] > 1 || (name.hasPrefix("@") && Int(name.dropFirst()) != nil) || !child.hasMemberTitle {
                     key = "@\(position)"
-                } else if counts[name, default: 0] == 1 {
-                    key = name
+                } else if counts[name, default: 0] == 1, child.dictionaryKey != nil || child.hasMemberTitle || (collection.kind == .set && child.kind == .scalar && child.value?.label != nil) {
+                    key = Self.escapedMemberKey(name)
                 } else { continue }
                 members.append(.init(key: key, title: key == child.title ? nil : child.title))
             }
@@ -223,19 +268,25 @@ public struct SBJSemanticReadSnapshot: Sendable {
             case .typed(let typed): key = typed
             case .text(let text):
                 if node?.kind.isCollection == true {
-                    if node?.kind == .array, text.hasPrefix("@"), let ordinal = Int(text.dropFirst()) {
+                    if text.hasPrefix(Self.literalPrefix) {
+                        key = .name(String(text.dropFirst(Self.literalPrefix.count)))
+                    } else if text.hasPrefix(Self.containsPrefix) {
+                        key = .contentContains(String(text.dropFirst(Self.containsPrefix.count)))
+                    } else if text.hasPrefix(Self.equalsPrefix) {
+                        key = .contentEquals(String(text.dropFirst(Self.equalsPrefix.count)))
+                    } else if node?.kind == .array, text.hasPrefix("@"), let ordinal = Int(text.dropFirst()) {
                         key = .ordinal(ordinal)
                     } else { key = .name(text) }
                 } else if let id = Int(text) { key = .field(id) }
-                else { return failure("Key \(index + 1) must be a numeric field ID.") }
+                else { return failure(SBJAIInstructions.invalidFieldKey(index + 1)) }
             }
             switch key {
             case .field(let id):
                 if let current = node, current.kind.isCollection, operation == .read || operation == .keys {
-                    return memberRequired(current, at: index, action: .insert, reason: "Insert a collection member key before the field ID.")
+                    return memberRequired(current, at: index, action: .insert, reason: SBJAIInstructions.insertMember)
                 }
                 guard id > 0, id <= groups.count else {
-                    return failure("Unknown field ID \(id). Copy a field ID from the structure.")
+                    return failure(SBJAIInstructions.unknownField(id))
                 }
                 // A shared ID may have many declaration paths. Only the immediate
                 // child of the current occurrence is eligible.
@@ -249,7 +300,7 @@ public struct SBJSemanticReadSnapshot: Sendable {
                     $0.path == memberPath || ($0.path.count == memberPath.count + 1 && Array($0.path.dropLast()) == memberPath && $0.path.last != .member)
                 } : nil
                 guard let next = direct ?? shape, let step = next.path.last else {
-                    return failure("Field \(id) is not an immediate child at key \(index + 1). Follow the declared path from the root.")
+                    return failure(SBJAIInstructions.nonChildField(id, position: index + 1))
                 }
                 if shape != nil { node = nil }
                 if let current = node {
@@ -259,23 +310,29 @@ public struct SBJSemanticReadSnapshot: Sendable {
                         else { status = .missing }
                     }
                 }
+                if let component = node?.mutationComponent { if !component.isEmpty { location?.append(component) } }
+                else { location = nil }
                 path = next.path
                 declaration = next
-            case .name, .ordinal:
+            case .name, .ordinal, .contentContains, .contentEquals:
                 guard let current = node else { return .status(status ?? .missing) }
-                guard current.kind.isCollection else { return failure("Key \(index + 1) must select a field, not a collection member.") }
+                guard current.kind.isCollection else { return failure(SBJAIInstructions.expectedField(index + 1)) }
                 let matches: [Node]
                 switch key {
                 case .name(let name):
                     if current.kind == .dictionary {
                         let byKey = current.children.filter { $0.dictionaryKey == name }
-                        matches = byKey.isEmpty ? current.children.filter { $0.title == name } : byKey
+                        matches = byKey.isEmpty ? current.children.filter { $0.hasMemberTitle && $0.title == name } : byKey
                     } else {
-                        matches = current.children.filter { $0.title == name }
+                        matches = current.children.filter { $0.title == name && ($0.hasMemberTitle || ($0.kind == .scalar && $0.value?.label == name)) }
                     }
                 case .ordinal(let ordinal):
-                    guard current.kind == .array else { return failure("Ordinals apply only to arrays. Use a member name.") }
+                    guard current.kind == .array else { return failure(SBJAIInstructions.invalidOrdinal) }
                     matches = current.children.filter { $0.position == ordinal }
+                case .contentContains(let text):
+                    matches = current.children.filter { Self.contentMatches($0, text: text, exact: false) }
+                case .contentEquals(let text):
+                    matches = current.children.filter { Self.contentMatches($0, text: text, exact: true) }
                 case .field: matches = []
                 }
                 guard matches.count == 1 else {
@@ -283,17 +340,20 @@ public struct SBJSemanticReadSnapshot: Sendable {
                     // Only after lookup fails, check whether it is a declared member field.
                     if matches.isEmpty, case .name(let name) = key, let id = Int(name),
                        immediate(path + [.member]).contains(where: { $0.id == id }) {
-                        return memberRequired(current, at: index, action: .insert, reason: "Insert a collection member key before the field ID.")
+                        return memberRequired(current, at: index, action: .insert, reason: SBJAIInstructions.insertMember)
                     }
-                    return memberRequired(current, at: index, action: .replace, reason: matches.isEmpty ? "Select a member key from the returned keys." : "Collection name is ambiguous. Select an available ordinal or key.")
+                    return memberRequired(current, at: index, action: .replace, reason: matches.isEmpty ? SBJAIInstructions.replaceMember : SBJAIInstructions.ambiguousMember)
                 }
                 node = matches[0]
+                if let component = node?.mutationComponent { if !component.isEmpty { location?.append(component) } }
+                else { location = nil }
                 path.append(.member)
                 declaration = declarations.first { $0.path == path }
             }
         }
         if operation == .describe, let declaration { return .description(declaration.metadata) }
         guard let node else { return .status(status ?? .missing) }
+        resolved?(node, location)
         let state: SBJSemanticReadResult.State? = node.kind == .absent ? .unset : (operation == .read && node.hasContent == false ? .empty : nil)
         let memberCount = node.optionalCount != nil && node.kind.isCollection ? node.children.count : nil
         switch operation {
@@ -305,11 +365,11 @@ public struct SBJSemanticReadSnapshot: Sendable {
             if let cases = node.caseMetadata { metadata["cases"] = cases }
             return .description(.object(metadata))
         case .count:
-            guard let count = node.count else { return failure("Selected value is not a collection or optional.") }
+            guard let count = node.count else { return failure(SBJAIInstructions.notCountable) }
             return .count(.init(title: node.title, count: count, memberCount: memberCount, state: state))
         case .keys:
             if node.kind == .absent { return .status(.unset) }
-            guard node.kind.isCollection else { return failure("Selected field is not a collection.") }
+            guard node.kind.isCollection else { return failure(SBJAIInstructions.notCollection) }
             return .keys(memberKeys(node))
         case .children:
             let children: [SBJSemanticReadResult.Child]
@@ -317,7 +377,8 @@ public struct SBJSemanticReadSnapshot: Sendable {
                 let counts = Dictionary(node.children.map { ($0.dictionaryKey ?? $0.title, 1) }, uniquingKeysWith: +)
                 children = node.children.map { child in
                     let name = child.dictionaryKey ?? child.title
-                    return .member(key: name, title: name == child.title ? nil : child.title,
+                    let key = Self.escapedMemberKey(name)
+                    return .member(key: key, title: key == child.title ? nil : child.title,
                                    ordinal: child.position, ambiguous: counts[name, default: 0] > 1)
                 }
             } else {
@@ -356,13 +417,16 @@ public struct SBJSemanticReadSnapshot: Sendable {
 
 	private static let memberNameKey = "$memberName"
 
-	private static func addMemberName(to node: inout Node, title: String) {
+	private static func addMemberName(to node: inout Node, title: String?, type: Any.Type) {
+        var type = type
+        while case .optional(let wrapped)? = SBJStructuralType.container(of: type) { type = wrapped }
+        guard !SBJCollectionItemIdentification.hasDeclaredName(type) else { return }
 		guard node.kind == .object || node.kind == .associatedEnum else { return }
 		guard !node.children.contains(where: { $0.name == "name" }) else { return }
 		// Use a reserved internal path that cannot collide with a Swift property.
 		node.children.append(.init(path: path(node.path, memberNameKey), name: memberNameKey,
-								   title: "name", swiftType: "String", kind: .scalar,
-								   description: "Name identifying this collection member", value: .text(title), children: []))
+								   title: "name", swiftType: "String?", kind: title == nil ? .absent : .scalar,
+								   description: SBJAIInstructions.memberNameDescription, value: title.map(SBJSemanticValue.text) ?? .null, children: []))
 	}
 
 	private static func memberTitle(_ value: Any, type: Any.Type, hints: [SBJPropertyHint]) -> String? {
@@ -371,14 +435,12 @@ public struct SBJSemanticReadSnapshot: Sendable {
 			guard let child = container.sbjStructuralChildren(itemTitleKey: nil, itemIdentifierKey: nil).first else { return nil }
 			return memberTitle(child.value, type: wrapped, hints: hints)
 		}
-		if let label = SBJCollectionItemIdentification.configuredTitle(for: value, itemTitleKey: SBJStructuralCollectionKeys.title(in: hints)) { return label }
-		if let label = SBJCollectionItemIdentification.declaredName(for: value) { return label }
-		if let label = (value as? any SBJTextPresentable)?.presentedValue, !label.isEmpty { return label }
-		return nil
+		return SBJCollectionItemIdentification.configuredTitle(for: value, itemTitleKey: SBJStructuralCollectionKeys.title(in: hints))
+			?? SBJCollectionItemIdentification.declaredName(for: value)
 	}
 
 	private static func build(_ value: Any, type: Any.Type, path: String, name: String, title: String,
-							  description: String, constraints: [SBJPropertyConstraint], hints: [SBJPropertyHint], depth: Int) throws -> Node {
+							  description: String, constraints: [SBJPropertyConstraint], hints: [SBJPropertyHint], depth: Int, traversalOptions: SBJTraversalOptions) throws -> Node {
 		guard depth < 128 else { throw SBJSemanticReadError.graphTooDeep(path) }
 		var type = type
 		var value = value
@@ -416,7 +478,7 @@ public struct SBJSemanticReadSnapshot: Sendable {
 			return node(.scalar, value: .text(atomic.presentedValue))
 		}
 		if let structured = value as? any SBJStructured {
-			return try node(.object, children: objectChildren(structured, parent: path, depth: depth + 1))
+			return try node(.object, children: objectChildren(structured, parent: path, depth: depth + 1, traversalOptions: traversalOptions))
 		}
 		if let container = value as? any SBJStructuralValueContainer,
 		   let containerType = SBJStructuralType.container(of: type) {
@@ -430,14 +492,17 @@ public struct SBJSemanticReadSnapshot: Sendable {
 					var item = try build(child.value, type: elementType, path: Self.path(path, String(index)), name: String(index),
 										 title: isSet ? "Member \(index + 1)" : "Item \(index + 1)",
 										 description: SBJSemanticDescription.join([SBJSemanticDescription.type(elementType), SBJSemanticDescription.rules(projection.collectionElement.constraints)]),
-										 constraints: projection.collectionElement.constraints, hints: [], depth: depth + 1)
+										 constraints: projection.collectionElement.constraints, hints: [], depth: depth + 1, traversalOptions: traversalOptions)
 					if let label = memberTitle(child.value, type: elementType, hints: hints), !label.isEmpty {
                         item.title = label
                         item.hasMemberTitle = true
-                    } else if let label = SBJSemanticScalarReading.value(child.value, type: elementType)?.label { item.title = label }
+                    } else if let label = item.value?.label { item.title = label }
 					// Array positions are semantic; set traversal positions are not.
 					item.position = isSet ? nil : index + 1
-					addMemberName(to: &item, title: item.title)
+                    item.mutationComponent = child.location
+					if SBJStructuralCollectionKeys.title(in: hints) != nil {
+                        addMemberName(to: &item, title: memberTitle(child.value, type: elementType, hints: hints), type: elementType)
+                    }
 					return item
 				}
 				return node(isSet ? .set : .array, children: children)
@@ -459,46 +524,51 @@ public struct SBJSemanticReadSnapshot: Sendable {
 					let entryPath = Self.path(path, component)
 					let keyNode = try build(key, type: keyType, path: Self.path(entryPath, "key"), name: "key", title: "Key",
 											description: SBJSemanticDescription.join([SBJSemanticDescription.type(keyType), SBJSemanticDescription.rules(projection.dictionaryKey.constraints)]),
-											constraints: projection.dictionaryKey.constraints, hints: [], depth: depth + 1)
+											constraints: projection.dictionaryKey.constraints, hints: [], depth: depth + 1, traversalOptions: traversalOptions)
 					var valueNode = try build(child.value, type: valueType, path: Self.path(entryPath, "value"), name: "value", title: "Value",
 											  description: SBJSemanticDescription.join([SBJSemanticDescription.type(valueType), SBJSemanticDescription.rules(projection.dictionaryValue.constraints)]),
-											  constraints: projection.dictionaryValue.constraints, hints: [], depth: depth + 1)
-					let title = memberTitle(child.value, type: valueType, hints: hints) ?? label ?? "Entry \(index + 1)"
-					addMemberName(to: &valueNode, title: title)
+											  constraints: projection.dictionaryValue.constraints, hints: [], depth: depth + 1, traversalOptions: traversalOptions)
+					let memberName = memberTitle(child.value, type: valueType, hints: hints)
+                    let title = memberName ?? label ?? "Entry \(index + 1)"
+					valueNode.mutationComponent = ""
+                    if SBJStructuralCollectionKeys.title(in: hints) != nil {
+                        addMemberName(to: &valueNode, title: memberName, type: valueType)
+                    }
 					return Node(path: entryPath, name: component, title: title, swiftType: "Entry<\(typeName(keyType)),\(typeName(valueType))>",
-								kind: .entry, description: "Dictionary entry with typed key and value.", value: nil,
-								children: [keyNode, valueNode], nomenclature: typeNomenclature(valueType), dictionaryKey: label)
+								kind: .entry, description: SBJAIInstructions.dictionaryEntryDescription, value: nil,
+								children: [keyNode, valueNode], nomenclature: typeNomenclature(valueType), dictionaryKey: label, hasMemberTitle: memberName != nil, mutationComponent: child.location)
 				}
 				return node(.dictionary, children: children)
 			case .optional: break // Already unwrapped above.
 			}
 		}
 		if let associated = value as? any SBJStructuredEnum {
-			return try node(.associatedEnum, children: associatedChildren(associated, parent: path, depth: depth + 1))
+			return try node(.associatedEnum, children: associatedChildren(associated, parent: path, depth: depth + 1, traversalOptions: traversalOptions))
 		}
 		if let scalar = SBJSemanticScalarReading.value(value, type: type) { return node(.scalar, value: scalar) }
 		if let presentation = value as? any SBJTextPresentable {
 			return node(.presentationOnly, value: .object(["presentationOnly": .text(presentation.presentedValue)]))
 		}
-		return node(.unavailable, value: .object(["unavailable": .text("No semantic read adapter for \(type).")]))
+		return node(.unavailable, value: .object(["unavailable": .text(SBJAIInstructions.unavailableValue(type))]))
 	}
 
-	private static func objectChildren<Root: SBJStructured>(_ root: Root, parent: String, depth: Int) throws -> [Node] {
-		try SBJStructuralTraversal.definition(of: Root.self).filter { $0.metadata.isUserFacing }.map { declaration in
+	private static func objectChildren<Root: SBJStructured>(_ root: Root, parent: String, depth: Int, traversalOptions: SBJTraversalOptions) throws -> [Node] {
+		try SBJStructuralTraversal.definition(of: Root.self, options: traversalOptions).map { declaration in
 			let property = declaration.metadata
 			var child = try build(property.value(in: root), type: property.valueType, path: path(parent, property.sourceName),
 								  name: property.sourceName, title: property.displayName,
-								  description: SBJSemanticDescription.property(property), constraints: property.constraints, hints: property.hints, depth: depth)
+								  description: SBJSemanticDescription.property(property), constraints: property.constraints, hints: property.hints, depth: depth, traversalOptions: traversalOptions)
 			child.nomenclature = property.info ?? child.nomenclature
+            child.mutationComponent = declaration.locationComponent
 			return child
 		}
 	}
 
-	private static func associatedChildren<Root: SBJStructuredEnum>(_ root: Root, parent: String, depth: Int) throws -> [Node] {
+	private static func associatedChildren<Root: SBJStructuredEnum>(_ root: Root, parent: String, depth: Int, traversalOptions: SBJTraversalOptions) throws -> [Node] {
 		let caseName = root.sbjCaseName
 		let info = Root.sbjCaseNomenclature(for: caseName)
 		let tag = Node(path: path(parent, "caseName"), name: "caseName", title: "Active case", swiftType: "String", kind: .scalar,
-					   description: SBJSemanticDescription.join(["Source-level enum case", SBJSemanticDescription.nomenclature(info)]), value: .text(caseName), children: [], nomenclature: info)
+					   description: SBJSemanticDescription.join([SBJAIInstructions.enumCaseDescription, SBJSemanticDescription.nomenclature(info)]), value: .text(caseName), children: [], nomenclature: info)
 		guard let active = Root.sbjAssociatedCases.first(where: { $0.matches(root) }) else { return [tag] }
 		let parts = root.sbjStructuralAssociatedChildren().dropFirst()
 		guard parts.count == active.associatedValues.count,
@@ -509,7 +579,7 @@ public struct SBJSemanticReadSnapshot: Sendable {
 		let payloadPath = path(parent, "payload")
 		let payload = try zip(active.associatedValues, parts).map { property, part in
 			try build(part.value, type: property.valueType, path: path(payloadPath, property.name), name: property.name,
-					  title: property.name, description: SBJSemanticDescription.type(property.valueType), constraints: [], hints: [], depth: depth + 1)
+					  title: property.name, description: SBJSemanticDescription.type(property.valueType), constraints: [], hints: [], depth: depth + 1, traversalOptions: traversalOptions)
 		}
 		return [tag, .init(path: payloadPath, name: "payload", title: info?.nonEmptyTitle ?? caseName,
 						   swiftType: "\(Root.self).\(caseName) payload", kind: .payload,

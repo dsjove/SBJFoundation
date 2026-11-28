@@ -165,7 +165,7 @@ public enum SBJDefinitionPDFReport {
                      String(describing: field.info?.accessibilityLabel),
                      String(describing: field.info?.accessibilityHint),
                      String(describing: field.kind), String(describing: field.storage),
-                     String(describing: field.access), String(field.isUserFacing),
+                     String(describing: field.access), String(field.isPresentationExcluded),
                      field.info?.aliases.joined(separator: "|") ?? "",
                      field.constraints.map(\.description).joined(separator: "|"),
                      field.hints.map(\.description).joined(separator: "|")].joined(separator: "\u{1f}")
@@ -248,8 +248,8 @@ public enum SBJDefinitionPDFReport {
                     if let aliases = field.info?.aliases, !aliases.isEmpty {
                         metadata("Aliases", aliases.joined(separator: ", "))
                     }
-                    if !field.visibleToEditor || !field.visibleToSemanticEditor {
-                        metadata("Editor availability", "Excluded from visual and natural-language editors")
+                    if field.isPresentationExcluded {
+                        metadata("Presentation", "Excluded by default")
                     }
                     if !field.constraints.isEmpty {
                         for constraint in field.constraints { metadata("Validation", constraint.description) }

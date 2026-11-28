@@ -14,7 +14,7 @@ SwiftUI view types and their initializers are public where hosting clients must 
 
 ## Property visibility
 
-`SBJEditorOptions(showsReadOnlyProperties: false)` is the default. Both stored and computed properties remain discoverable in Structure, but the automatic editor projects writable properties only. Set the option to `true` to include read-only rows. The policy is inherited by nested objects and collection payloads, applies to text search, and does not alter structural validation or Report definitions. Host views can pass an updated options value to implement a future toggle.
+`traversalOptions: .editor` is the default. Both stored and computed properties remain discoverable in Structure, but the automatic editor projects writable properties only. Pass `.all` to include read-only rows. The policy is inherited by nested objects and collection payloads, applies to text search, and does not alter structural validation or Report definitions. Host views can pass an updated options value to implement a future toggle.
 
 ## Construction precedence
 
@@ -39,3 +39,10 @@ SwiftUI view types and their initializers are public where hosting clients must 
 Construction tests exercise registered exact-type overrides, ordinary primitive defaults, collection-aware creation, and exhausted collection refusal. Existing package tests cover per-property binding registration, array element creation, structural traversal, and custom editor behavior. UI integration tests should exercise for focus, optional-collection controls, bindings during reordering, and actual removal confirmation.
 
 This document describes the current interface and its explicit boundaries. It does not claim runtime UI or cross-platform performance verification.
+
+Pass `traversalOptions:` independently of `SBJEditorOptions` on `SBJEditorView`,
+`SBJEditorSearchView` and the default editor compositions. For example,
+`SBJTraversalOptions.all.subtracting(.computed)` includes readable stored
+properties, while `.editor` preserves the writable-only default. The same
+options are inherited by nested rows, recursive text search and editor
+capability diagnostics. Model invariants remain independent of traversal.

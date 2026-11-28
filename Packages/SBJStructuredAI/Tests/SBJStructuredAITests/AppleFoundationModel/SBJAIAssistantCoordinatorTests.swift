@@ -17,7 +17,7 @@ struct SBJAIAssistantCoordinatorTests {
         coordinator.printInstructions()
         #expect(coordinator.messages.count == 1)
         #expect(coordinator.messages.last?.speaker == .diagnostic)
-        let expected = coordinator.instructions + "\n\n" + context.structuralDescription(usesTemplates: true)
+        let expected = coordinator.instructions + "\n\n" + SBJAIInstructions.structureHeading + context.structuralDescription(usesTemplates: true)
         #expect(coordinator.messages.last?.text == expected)
         #expect(coordinator.exportText.contains(expected))
         #expect(coordinator.sessionInstructions == nil)
@@ -28,9 +28,9 @@ struct SBJAIAssistantCoordinatorTests {
 
     @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test func instructionsStartWithDomain() {
-        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, domainInstructions: "The business domain is Role Playing Game Character.")
-        #expect(coordinator.instructions.hasPrefix("The business domain is Role Playing Game Character.\n\n"))
-        #expect(coordinator.instructions.contains("readValue"))
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, domainInstructions: "The business domain is Inventory Record.")
+        #expect(coordinator.instructions == "The business domain is Inventory Record.\n\n" + SBJAIInstructions.session)
+        #expect(coordinator.instructions.contains("readKeys"))
         #expect(!coordinator.instructions.contains("nextOffset"))
     }
 
@@ -69,6 +69,27 @@ struct SBJAIAssistantCoordinatorTests {
     }
 
     @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
+    @Test func newSessionClearsConversationWithoutDeactivating() {
+        let coordinator = SBJAIAssistantCoordinator<Int>(snapshot: { nil }, domainInstructions: "Test document.")
+        coordinator.activate()
+        let assistant: any SBJAssistantPresenting = coordinator
+        coordinator.printInstructions()
+        let previousTurn = assistant.currentTurnID
+        assistant.feedback.isEnabled = true
+        assistant.feedback.recordCorrection(turnID: previousTurn, revision: -1, category: .wrongField)
+        assistant.startNewSession()
+        #expect(assistant.isActive)
+        #expect(!assistant.isResponding)
+        #expect(assistant.messages.isEmpty)
+        #expect(assistant.frameworkDiagnostics.isEmpty)
+        #expect(assistant.frameworkTranscript == nil)
+        #expect(coordinator.sessionInstructions == nil)
+        #expect(assistant.currentTurnID != previousTurn)
+        #expect(assistant.feedback.events.isEmpty)
+        #expect(assistant.feedback.isEnabled)
+    }
+
+    @available(iOS 27.0, macOS 27.0, macCatalyst 27.0, visionOS 27.0, *)
     @Test("An arbitrary root needs no structural conformance and cannot be persisted")
     func inertMutationAPI() {
         struct Root { let name: String }
@@ -79,11 +100,9 @@ struct SBJAIAssistantCoordinatorTests {
         coordinator.activate()
         coordinator.approve()
         coordinator.reject()
-        coordinator.restore()
         coordinator.synchronize()
         #expect(coordinator.pendingProposal == nil)
         #expect(!coordinator.canApprove)
-        #expect(!coordinator.canRestore)
         #expect(!coordinator.isPersisting)
         #expect(persistCalls == 0)
         #expect(coordinator.hasDocument)
